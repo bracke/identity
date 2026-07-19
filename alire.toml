@@ -23,3 +23,9 @@ cryptolib = { path = "../cryptolib" }
 [[actions]]
 type = "test"
 command = ["sh", "-c", "cd crates/identity_tests && alr build && ./bin/identity_tests"]
+
+# Build dependencies in the development profile (-Og) too, not the default
+# release (-O3), so every root in the workspace shares object files instead of
+# forcing a full rebuild of shared dependencies on each switch.
+[build-profiles]
+"*" = "development"

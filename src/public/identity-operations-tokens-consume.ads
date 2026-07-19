@@ -1,4 +1,4 @@
-with Identity.Adapters.Repositories.Memory;
+with Identity.Adapters.Repositories.Stores;
 with Identity.Identifiers.Entities;
 with Identity.Identifiers.Registry;
 with Identity.Secrets.Tokens;
@@ -16,7 +16,7 @@ package Identity.Operations.Tokens.Consume is
    end record;
 
    function Execute
-     (Repository : in out Identity.Adapters.Repositories.Memory.Store;
+     (Repository : in out Identity.Adapters.Repositories.Stores.Store_Interface'Class;
       Token      : Identity.Identifiers.Entities.Token_Id;
       Purpose    : Identity.Identifiers.Registry.Registry_Id;
       Secret     : Identity.Secrets.Tokens.Reset_Token_Secret;
@@ -24,7 +24,7 @@ package Identity.Operations.Tokens.Consume is
       return Identity.Tokens.Verification.Token_Verification_Outcome;
 
    function Execute
-     (Repository : in out Identity.Adapters.Repositories.Memory.Store;
+     (Repository : in out Identity.Adapters.Repositories.Stores.Store_Interface'Class;
       Request    : Consume_Request)
       return Identity.Tokens.Verification.Token_Verification_Outcome;
 end Identity.Operations.Tokens.Consume;

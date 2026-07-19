@@ -29,10 +29,10 @@ package body Identity.Operations.Sessions.Purge_Retained is
    end Retention_Boundary;
 
    function Execute
-     (Repository   : in out Identity.Adapters.Repositories.Memory.Store;
+     (Repository   : in out Identity.Adapters.Repositories.Stores.Store_Interface'Class;
       Retain_After : Identity.Times.Instant) return Natural is
    begin
-      return Identity.Adapters.Repositories.Memory.Purge_Retained_Sessions
+      return Identity.Adapters.Repositories.Stores.Purge_Retained_Sessions
         (Repository, Retain_After);
    end Execute;
 end Identity.Operations.Sessions.Purge_Retained;

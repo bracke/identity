@@ -1,4 +1,4 @@
-with Identity.Adapters.Repositories.Memory;
+with Identity.Adapters.Repositories.Stores;
 with Identity.Accounts.Administrative;
 with Identity.Identifiers.Entities;
 
@@ -10,13 +10,13 @@ package Identity.Operations.Accounts.Disable is
    end record;
 
    function Execute
-     (Repository : in out Identity.Adapters.Repositories.Memory.Store;
+     (Repository : in out Identity.Adapters.Repositories.Stores.Store_Interface'Class;
       Request    : Disable_Request)
-      return Identity.Adapters.Repositories.Memory.Command_Status;
+      return Identity.Adapters.Repositories.Stores.Command_Status;
 
    function Execute
-     (Repository : in out Identity.Adapters.Repositories.Memory.Store;
+     (Repository : in out Identity.Adapters.Repositories.Stores.Store_Interface'Class;
       Account    : Identity.Identifiers.Entities.Account_Id;
       Principal  : Identity.Identifiers.Entities.Principal_Id)
-      return Identity.Adapters.Repositories.Memory.Command_Status;
+      return Identity.Adapters.Repositories.Stores.Command_Status;
 end Identity.Operations.Accounts.Disable;

@@ -4,22 +4,22 @@ with Identity.Tokens.Purposes;
 
 package body Identity.Operations.Verification.Request is
    function Execute
-     (Repository : in out Identity.Adapters.Repositories.Memory.Store;
+     (Repository : in out Identity.Adapters.Repositories.Stores.Store_Interface'Class;
       Contact    : Identity.Contacts.Bindings.Contact_Binding_Record;
       Token      : Identity.Tokens.Definitions.Action_Token_Record)
-      return Identity.Adapters.Repositories.Memory.Command_Status is
+      return Identity.Adapters.Repositories.Stores.Command_Status is
    begin
-      return Identity.Adapters.Repositories.Memory.Request_Contact_Verification
+      return Identity.Adapters.Repositories.Stores.Request_Contact_Verification
         (Repository, Contact, Token);
    end Execute;
 
    function Execute
-     (Repository : in out Identity.Adapters.Repositories.Memory.Store;
+     (Repository : in out Identity.Adapters.Repositories.Stores.Store_Interface'Class;
       Contact    : Identity.Contacts.Bindings.Contact_Binding_Record;
       Request    : Verification_Token_Request)
-      return Identity.Adapters.Repositories.Memory.Command_Status is
+      return Identity.Adapters.Repositories.Stores.Command_Status is
    begin
-      return Identity.Adapters.Repositories.Memory.Request_Contact_Verification
+      return Identity.Adapters.Repositories.Stores.Request_Contact_Verification
         (Repository,
          Contact,
          (Id              => Request.Id,

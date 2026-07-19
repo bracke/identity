@@ -1,4 +1,4 @@
-dependency:identity=1.0.0-dev=69f1dcdff9d1012745abe181d3de20dff69e58a49ecdfc83f3bc0c3e798cbb03
+dependency:identity=1.0.0-dev=2f0052f24a307972111e03de8da1d9222ba1225770f4db56ce85ef16d48d2276
 external:IDENTITY_EXAMPLES_LIBRARY_TYPE=default
 external:LIBRARY_TYPE=default
 profile:identity_examples=DEVELOPMENT

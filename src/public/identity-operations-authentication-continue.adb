@@ -1,21 +1,21 @@
 package body Identity.Operations.Authentication.Continue is
    function Complete_Challenge
-     (Repository : in out Identity.Adapters.Repositories.Memory.Store;
+     (Repository : in out Identity.Adapters.Repositories.Stores.Store_Interface'Class;
       Challenge  : Identity.Identifiers.Entities.Challenge_Id;
       Principal  : Identity.Identifiers.Entities.Principal_Id;
       Now        : Identity.Times.Instant)
       return Identity.Authentication.Transactions.Authentication_Transaction_Status is
    begin
-      return Identity.Adapters.Repositories.Memory.Complete_Challenge
+      return Identity.Adapters.Repositories.Stores.Complete_Challenge
         (Repository, Challenge, Principal, Now);
    end Complete_Challenge;
 
    function Complete_Challenge
-     (Repository : in out Identity.Adapters.Repositories.Memory.Store;
+     (Repository : in out Identity.Adapters.Repositories.Stores.Store_Interface'Class;
       Request    : Staged_Challenge_Completion_Request)
       return Identity.Authentication.Transactions.Authentication_Transaction_Status is
    begin
-      return Identity.Adapters.Repositories.Memory.Complete_Challenge
+      return Identity.Adapters.Repositories.Stores.Complete_Challenge
         (Repository,
          Request.Challenge,
          Request.Principal,
@@ -25,22 +25,22 @@ package body Identity.Operations.Authentication.Continue is
    end Complete_Challenge;
 
    function Satisfy
-     (Repository  : in out Identity.Adapters.Repositories.Memory.Store;
+     (Repository  : in out Identity.Adapters.Repositories.Stores.Store_Interface'Class;
       Transaction : Identity.Identifiers.Entities.Authentication_Transaction_Id;
       Principal   : Identity.Identifiers.Entities.Principal_Id;
       Now         : Identity.Times.Instant)
       return Identity.Authentication.Transactions.Authentication_Transaction_Status is
    begin
-      return Identity.Adapters.Repositories.Memory.Satisfy_Authentication_Transaction
+      return Identity.Adapters.Repositories.Stores.Satisfy_Authentication_Transaction
         (Repository, Transaction, Principal, Now);
    end Satisfy;
 
    function Satisfy
-     (Repository : in out Identity.Adapters.Repositories.Memory.Store;
+     (Repository : in out Identity.Adapters.Repositories.Stores.Store_Interface'Class;
       Request    : Staged_Satisfaction_Request)
       return Identity.Authentication.Transactions.Authentication_Transaction_Status is
    begin
-      return Identity.Adapters.Repositories.Memory.Satisfy_Authentication_Transaction
+      return Identity.Adapters.Repositories.Stores.Satisfy_Authentication_Transaction
         (Repository,
          Request.Transaction,
          Request.Principal,

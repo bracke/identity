@@ -5,25 +5,25 @@ with Identity.Tokens.Purposes;
 
 package body Identity.Operations.Passwords.Request_Reset is
    function Execute
-     (Repository : in out Identity.Adapters.Repositories.Memory.Store;
+     (Repository : in out Identity.Adapters.Repositories.Stores.Store_Interface'Class;
       Token      : Identity.Tokens.Definitions.Action_Token_Record)
-      return Identity.Adapters.Repositories.Memory.Command_Status is
+      return Identity.Adapters.Repositories.Stores.Command_Status is
    begin
       if Identity.Identifiers.Registry.Image (Token.Purpose)
         /= Identity.Identifiers.Registry.Image (Identity.Tokens.Purposes.Password_Reset)
       then
-         return Identity.Adapters.Repositories.Memory.State_Conflict;
+         return Identity.Adapters.Repositories.Stores.State_Conflict;
       end if;
 
-      return Identity.Adapters.Repositories.Memory.Issue_Token (Repository, Token);
+      return Identity.Adapters.Repositories.Stores.Issue_Token (Repository, Token);
    end Execute;
 
    function Execute
-     (Repository : in out Identity.Adapters.Repositories.Memory.Store;
+     (Repository : in out Identity.Adapters.Repositories.Stores.Store_Interface'Class;
       Request    : Reset_Request)
-      return Identity.Adapters.Repositories.Memory.Command_Status is
+      return Identity.Adapters.Repositories.Stores.Command_Status is
    begin
-      return Identity.Adapters.Repositories.Memory.Issue_Token
+      return Identity.Adapters.Repositories.Stores.Issue_Token
         (Repository,
          (Id              => Request.Id,
           Purpose         => Identity.Tokens.Purposes.Password_Reset,

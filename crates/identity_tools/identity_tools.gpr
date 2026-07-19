@@ -1,10 +1,9 @@
-with "../../identity.gpr";
 with "config/identity_tools_config.gpr";
 
 project Identity_Tools is
    for Source_Dirs use ("src", "config");
    for Main use ("identity_tools.adb");
-   for Object_Dir use "obj";
+   for Object_Dir use "obj/" & Identity_Tools_Config.Build_Profile;
    for Exec_Dir use "bin";
    for Create_Missing_Dirs use "True";
 
@@ -12,4 +11,8 @@ project Identity_Tools is
       for Default_Switches ("Ada") use
         Identity_Tools_Config.Ada_Compiler_Switches & ("-gnat2022", "-gnatwe", "-gnatyM120", "-gnatX");
    end Compiler;
+
+   package Binder is
+      for Switches ("Ada") use ("-Es");
+   end Binder;
 end Identity_Tools;

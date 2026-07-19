@@ -1,4 +1,4 @@
-with Identity.Adapters.Repositories.Memory;
+with Identity.Adapters.Repositories.Stores;
 with Identity.Assurance.Attributes;
 with Identity.Assurance.Levels;
 with Identity.Identifiers.Entities;
@@ -43,18 +43,18 @@ package Identity.Operations.Sessions.Rotate is
    end record;
 
    function Execute
-     (Repository  : in out Identity.Adapters.Repositories.Memory.Store;
+     (Repository  : in out Identity.Adapters.Repositories.Stores.Store_Interface'Class;
       Predecessor : Identity.Identifiers.Entities.Session_Id;
       Successor   : Identity.Sessions.Definitions.Session_Record)
-      return Identity.Adapters.Repositories.Memory.Command_Status;
+      return Identity.Adapters.Repositories.Stores.Command_Status;
 
    function Execute
-     (Repository : in out Identity.Adapters.Repositories.Memory.Store;
+     (Repository : in out Identity.Adapters.Repositories.Stores.Store_Interface'Class;
       Request    : Rotate_Request)
-      return Identity.Adapters.Repositories.Memory.Command_Status;
+      return Identity.Adapters.Repositories.Stores.Command_Status;
 
    function Execute
-     (Repository : in out Identity.Adapters.Repositories.Memory.Store;
+     (Repository : in out Identity.Adapters.Repositories.Stores.Store_Interface'Class;
       Request    : Staged_Rotate_Request)
-      return Identity.Adapters.Repositories.Memory.Command_Status;
+      return Identity.Adapters.Repositories.Stores.Command_Status;
 end Identity.Operations.Sessions.Rotate;

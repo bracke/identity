@@ -13,6 +13,29 @@ registry, repository capability contracts, and documentation/registry seeds.
 
 Direct cryptolib imports are confined to `Identity.Crypto.Cryptolib.*`.
 
+## Documentation
+
+- [`docs/architecture.md`](docs/architecture.md) - layering and the public
+  contract boundary.
+- [`docs/threat-model.md`](docs/threat-model.md) - the V1 threat model.
+- [`SECURITY.md`](SECURITY.md) - supported versions and reporting.
+- [`CONTRIBUTING.md`](CONTRIBUTING.md) and
+  [`CODE_OF_CONDUCT.md`](CODE_OF_CONDUCT.md).
+- [`CHANGELOG.md`](CHANGELOG.md) - release notes per crate version.
+
+Working notes for automated contributors live under `docs/ai/`:
+
+- [`docs/ai/project-overview.md`](docs/ai/project-overview.md)
+- [`docs/ai/package-map.md`](docs/ai/package-map.md)
+- [`docs/ai/public-contracts.md`](docs/ai/public-contracts.md)
+- [`docs/ai/adapter-rules.md`](docs/ai/adapter-rules.md)
+- [`docs/ai/allowed-workflows.md`](docs/ai/allowed-workflows.md)
+- [`docs/ai/implementation-order.md`](docs/ai/implementation-order.md)
+- [`docs/ai/prohibited-patterns.md`](docs/ai/prohibited-patterns.md)
+- [`docs/ai/release-rules.md`](docs/ai/release-rules.md)
+- [`docs/ai/security-invariants.md`](docs/ai/security-invariants.md)
+- [`docs/ai/testing-requirements.md`](docs/ai/testing-requirements.md)
+
 ## Build
 
 ```sh

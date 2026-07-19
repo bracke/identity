@@ -1,4 +1,4 @@
-with Identity.Adapters.Repositories.Memory;
+with Identity.Adapters.Repositories.Stores;
 with Identity.Identifiers.Entities;
 with Identity.Results;
 with Identity.Secrets.Passwords;
@@ -14,7 +14,7 @@ package Identity.Operations.Passwords.Change is
    end record;
 
    function Execute
-     (Repository     : in out Identity.Adapters.Repositories.Memory.Store;
+     (Repository     : in out Identity.Adapters.Repositories.Stores.Store_Interface'Class;
       Principal      : Identity.Identifiers.Entities.Principal_Id;
       New_Credential : Identity.Identifiers.Entities.Credential_Id;
       Current        : Identity.Secrets.Passwords.Presented_Password;
@@ -22,7 +22,7 @@ package Identity.Operations.Passwords.Change is
       return Identity.Results.Operation_Status;
 
    function Execute
-     (Repository : in out Identity.Adapters.Repositories.Memory.Store;
+     (Repository : in out Identity.Adapters.Repositories.Stores.Store_Interface'Class;
       Request    : Change_Request)
       return Identity.Results.Operation_Status;
 end Identity.Operations.Passwords.Change;

@@ -3,19 +3,19 @@ with Identity.Crypto.Secret_Verifiers;
 
 package body Identity.Operations.Sessions.Create is
    function Execute
-     (Repository : in out Identity.Adapters.Repositories.Memory.Store;
+     (Repository : in out Identity.Adapters.Repositories.Stores.Store_Interface'Class;
       Session    : Identity.Sessions.Definitions.Session_Record)
-      return Identity.Adapters.Repositories.Memory.Command_Status is
+      return Identity.Adapters.Repositories.Stores.Command_Status is
    begin
-      return Identity.Adapters.Repositories.Memory.Create_Session (Repository, Session);
+      return Identity.Adapters.Repositories.Stores.Create_Session (Repository, Session);
    end Execute;
 
    function Execute
-     (Repository : in out Identity.Adapters.Repositories.Memory.Store;
+     (Repository : in out Identity.Adapters.Repositories.Stores.Store_Interface'Class;
       Request    : Create_Request)
-      return Identity.Adapters.Repositories.Memory.Command_Status is
+      return Identity.Adapters.Repositories.Stores.Command_Status is
    begin
-      return Identity.Adapters.Repositories.Memory.Create_Session
+      return Identity.Adapters.Repositories.Stores.Create_Session
         (Repository,
          (Id              => Request.Id,
           Family          => Request.Family,

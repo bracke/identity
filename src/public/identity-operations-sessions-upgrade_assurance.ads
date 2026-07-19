@@ -1,4 +1,4 @@
-with Identity.Adapters.Repositories.Memory;
+with Identity.Adapters.Repositories.Stores;
 with Identity.Assurance.Attributes;
 with Identity.Assurance.Levels;
 with Identity.Authentication.Transactions;
@@ -19,7 +19,7 @@ package Identity.Operations.Sessions.Upgrade_Assurance is
    end record;
 
    function Execute
-     (Repository  : in out Identity.Adapters.Repositories.Memory.Store;
+     (Repository  : in out Identity.Adapters.Repositories.Stores.Store_Interface'Class;
       Session     : Identity.Identifiers.Entities.Session_Id;
       Transaction : Identity.Identifiers.Entities.Authentication_Transaction_Id;
       Principal   : Identity.Identifiers.Entities.Principal_Id;
@@ -29,7 +29,7 @@ package Identity.Operations.Sessions.Upgrade_Assurance is
       return Identity.Authentication.Transactions.Authentication_Transaction_Status;
 
    function Execute
-     (Repository : in out Identity.Adapters.Repositories.Memory.Store;
+     (Repository : in out Identity.Adapters.Repositories.Stores.Store_Interface'Class;
       Request    : Staged_Upgrade_Request)
       return Identity.Authentication.Transactions.Authentication_Transaction_Status;
 end Identity.Operations.Sessions.Upgrade_Assurance;

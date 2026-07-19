@@ -2,6 +2,7 @@ with Ada.Text_IO;
 with Ada.Command_Line;
 with Identity_Tools_Architecture;
 with Identity_Tools_Crypto_Validation;
+with Identity_Tools_Documentation;
 with Identity_Tools_Events;
 with Identity_Tools_Evidence;
 with Identity_Tools_Invariants;
@@ -18,6 +19,7 @@ with Identity_Tools_Workflows;
 procedure Identity_Tools is
    Architecture_Report : Identity_Tools_Architecture.Validation_Report;
    Crypto_Report       : Identity_Tools_Crypto_Validation.Validation_Report;
+   Doc_Report          : Identity_Tools_Documentation.Validation_Report;
    Event_Report        : Identity_Tools_Events.Validation_Report;
    Invariant_Report    : Identity_Tools_Invariants.Validation_Report;
    Leak_Report         : Identity_Tools_Secret_Leaks.Scan_Report;
@@ -170,6 +172,32 @@ begin
       & Natural'Image (Event_Report.Missing_Public)
       & ":missing-registry:"
       & Natural'Image (Event_Report.Missing_Registry));
+   Identity_Tools_Documentation.Validate (Doc_Report);
+   Ada.Text_IO.Put_Line
+     ("identity_tools:documentation:"
+      & Natural'Image (Doc_Report.Documents_Checked)
+      & ":required:"
+      & Natural'Image (Doc_Report.Required_Documents)
+      & ":missing-required:"
+      & Natural'Image (Doc_Report.Missing_Required)
+      & ":empty-required:"
+      & Natural'Image (Doc_Report.Empty_Required)
+      & ":referenced:"
+      & Natural'Image (Doc_Report.Referenced_Documents)
+      & ":missing-referenced:"
+      & Natural'Image (Doc_Report.Missing_Referenced)
+      & ":artifact-documents:"
+      & Natural'Image (Doc_Report.Artifact_Documents)
+      & ":missing-artifact-documents:"
+      & Natural'Image (Doc_Report.Missing_Artifact_Docs)
+      & ":placeholders:"
+      & Natural'Image (Doc_Report.Placeholder_Hits)
+      & ":public-areas:"
+      & Natural'Image (Doc_Report.Public_Areas)
+      & ":unmapped-areas:"
+      & Natural'Image (Doc_Report.Unmapped_Areas)
+      & ":missing-changelog-section:"
+      & Natural'Image (Doc_Report.Missing_Changelog_Section));
    Identity_Tools_Architecture.Validate (Architecture_Report);
    Ada.Text_IO.Put_Line
      ("identity_tools:architecture:"
@@ -203,6 +231,7 @@ begin
      Identity_Tools_Evidence.Passed (Evidence_Report)
      and then Identity_Tools_Architecture.Passed (Architecture_Report)
      and then Identity_Tools_Crypto_Validation.Passed (Crypto_Report)
+     and then Identity_Tools_Documentation.Passed (Doc_Report)
      and then Identity_Tools_Events.Passed (Event_Report)
      and then Identity_Tools_Invariants.Passed (Invariant_Report)
      and then Identity_Tools_Persisted_Validation.Passed (Persisted_Report)

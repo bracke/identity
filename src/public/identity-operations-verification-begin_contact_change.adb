@@ -4,24 +4,24 @@ with Identity.Tokens.Purposes;
 
 package body Identity.Operations.Verification.Begin_Contact_Change is
    function Execute
-     (Repository : in out Identity.Adapters.Repositories.Memory.Store;
+     (Repository : in out Identity.Adapters.Repositories.Stores.Store_Interface'Class;
       Change     : Identity.Verification.Changes.Contact_Change_Record;
       Successor  : Identity.Contacts.Bindings.Contact_Binding_Record;
       Token      : Identity.Tokens.Definitions.Action_Token_Record)
-      return Identity.Adapters.Repositories.Memory.Command_Status is
+      return Identity.Adapters.Repositories.Stores.Command_Status is
    begin
-      return Identity.Adapters.Repositories.Memory.Begin_Contact_Change
+      return Identity.Adapters.Repositories.Stores.Begin_Contact_Change
         (Repository, Change, Successor, Token);
    end Execute;
 
    function Execute
-     (Repository : in out Identity.Adapters.Repositories.Memory.Store;
+     (Repository : in out Identity.Adapters.Repositories.Stores.Store_Interface'Class;
       Change     : Identity.Verification.Changes.Contact_Change_Record;
       Successor  : Identity.Contacts.Bindings.Contact_Binding_Record;
       Request    : Contact_Change_Token_Request)
-      return Identity.Adapters.Repositories.Memory.Command_Status is
+      return Identity.Adapters.Repositories.Stores.Command_Status is
    begin
-      return Identity.Adapters.Repositories.Memory.Begin_Contact_Change
+      return Identity.Adapters.Repositories.Stores.Begin_Contact_Change
         (Repository,
          Change,
          Successor,

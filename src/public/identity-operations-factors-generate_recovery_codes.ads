@@ -1,4 +1,4 @@
-with Identity.Adapters.Repositories.Memory;
+with Identity.Adapters.Repositories.Stores;
 with Identity.Identifiers.Entities;
 with Identity.Recovery_Codes.Sets;
 with Identity.Secrets.Recovery_Codes;
@@ -29,12 +29,12 @@ package Identity.Operations.Factors.Generate_Recovery_Codes is
       return Identity.Recovery_Codes.Sets.Recovery_Code_Set_Record;
 
    function Execute
-     (Repository : in out Identity.Adapters.Repositories.Memory.Store;
+     (Repository : in out Identity.Adapters.Repositories.Stores.Store_Interface'Class;
       Codes      : Identity.Recovery_Codes.Sets.Recovery_Code_Set_Record)
-      return Identity.Adapters.Repositories.Memory.Command_Status;
+      return Identity.Adapters.Repositories.Stores.Command_Status;
 
    function Execute
-     (Repository : in out Identity.Adapters.Repositories.Memory.Store;
+     (Repository : in out Identity.Adapters.Repositories.Stores.Store_Interface'Class;
       Request    : Generate_Request)
-      return Identity.Adapters.Repositories.Memory.Command_Status;
+      return Identity.Adapters.Repositories.Stores.Command_Status;
 end Identity.Operations.Factors.Generate_Recovery_Codes;

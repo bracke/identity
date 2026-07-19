@@ -6,6 +6,8 @@ authors = ["Bent Bracke"]
 maintainers = ["Bent Bracke <bent@bracke.dk>"]
 maintainers-logins = ["bracke"]
 licenses = "MIT OR Apache-2.0 WITH LLVM-exception"
+website = "https://github.com/bracke/identity"
+tags = ["identity", "tools"]
 
 executables = ["identity_tools"]
 project-files = ["identity_tools.gpr"]
@@ -18,3 +20,11 @@ identity = "*"
 
 [[pins]]
 identity = { path = "../.." }
+
+# Pins are root-only in Alire: this root builds identity, which depends on
+# cryptolib, so it must pin cryptolib too.
+[[pins]]
+cryptolib = { path = "../../../cryptolib" }
+
+[build-profiles]
+"*" = "development"

@@ -1,21 +1,21 @@
 package body Identity.Operations.Recovery.Continue is
    function Execute
-     (Repository  : in out Identity.Adapters.Repositories.Memory.Store;
+     (Repository  : in out Identity.Adapters.Repositories.Stores.Store_Interface'Class;
       Transaction : Identity.Identifiers.Entities.Authentication_Transaction_Id;
       Principal   : Identity.Identifiers.Entities.Principal_Id;
       Now         : Identity.Times.Instant)
       return Identity.Recovery.Transactions.Recovery_Transition_Status is
    begin
-      return Identity.Adapters.Repositories.Memory.Accept_Recovery_Evidence
+      return Identity.Adapters.Repositories.Stores.Accept_Recovery_Evidence
         (Repository, Transaction, Principal, Now);
    end Execute;
 
    function Execute
-     (Repository : in out Identity.Adapters.Repositories.Memory.Store;
+     (Repository : in out Identity.Adapters.Repositories.Stores.Store_Interface'Class;
       Request    : Staged_Continue_Request)
       return Identity.Recovery.Transactions.Recovery_Transition_Status is
    begin
-      return Identity.Adapters.Repositories.Memory.Accept_Recovery_Evidence
+      return Identity.Adapters.Repositories.Stores.Accept_Recovery_Evidence
         (Repository,
          Request.Transaction,
          Request.Principal,

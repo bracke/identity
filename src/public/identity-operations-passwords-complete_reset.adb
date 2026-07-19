@@ -5,7 +5,7 @@ with Identity.Tokens.Purposes;
 
 package body Identity.Operations.Passwords.Complete_Reset is
    function Execute
-      (Repository     : in out Identity.Adapters.Repositories.Memory.Store;
+      (Repository     : in out Identity.Adapters.Repositories.Stores.Store_Interface'Class;
       Token          : Identity.Identifiers.Entities.Token_Id;
       Principal      : Identity.Identifiers.Entities.Principal_Id;
       Secret         : Identity.Secrets.Tokens.Reset_Token_Secret;
@@ -17,14 +17,14 @@ package body Identity.Operations.Passwords.Complete_Reset is
       use type Identity.Tokens.Verification.Token_Verification_Outcome;
 
       Gate : constant Identity.Tokens.Verification.Token_Verification_Outcome :=
-        Identity.Adapters.Repositories.Memory.Verify_Token
+        Identity.Adapters.Repositories.Stores.Verify_Token
           (Repository, Token, Identity.Tokens.Purposes.Password_Reset, Secret, Now);
    begin
       if Gate /= Identity.Tokens.Verification.Valid then
          return Gate;
       end if;
 
-      return Identity.Adapters.Repositories.Memory.Complete_Password_Reset
+      return Identity.Adapters.Repositories.Stores.Complete_Password_Reset
         (Repository,
          Token,
          Identity.Tokens.Purposes.Password_Reset,
@@ -39,14 +39,14 @@ package body Identity.Operations.Passwords.Complete_Reset is
    end Execute;
 
    function Execute
-     (Repository : in out Identity.Adapters.Repositories.Memory.Store;
+     (Repository : in out Identity.Adapters.Repositories.Stores.Store_Interface'Class;
       Request    : Reset_Completion_Request)
       return Identity.Tokens.Verification.Token_Verification_Outcome
    is
       use type Identity.Tokens.Verification.Token_Verification_Outcome;
 
       Gate : constant Identity.Tokens.Verification.Token_Verification_Outcome :=
-        Identity.Adapters.Repositories.Memory.Verify_Token
+        Identity.Adapters.Repositories.Stores.Verify_Token
           (Repository,
            Request.Token,
            Identity.Tokens.Purposes.Password_Reset,
@@ -57,7 +57,7 @@ package body Identity.Operations.Passwords.Complete_Reset is
          return Gate;
       end if;
 
-      return Identity.Adapters.Repositories.Memory.Complete_Password_Reset
+      return Identity.Adapters.Repositories.Stores.Complete_Password_Reset
         (Repository,
          Request.Token,
          Request.Expected_Token_Version,

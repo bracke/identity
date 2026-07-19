@@ -2,7 +2,7 @@ with Identity.Operations.API_Keys.Authenticate;
 
 package body Identity.Operations.Authentication.API_Key is
    function Execute
-     (Repository    : in out Identity.Adapters.Repositories.Memory.Store;
+     (Repository    : in out Identity.Adapters.Repositories.Stores.Store_Interface'Class;
       Public_Key_Id : Identity.Text.Bounded.Bounded_Text;
       Secret        : Identity.Secrets.API_Keys.API_Key_Secret;
       Now           : Identity.Times.Instant)
@@ -13,7 +13,7 @@ package body Identity.Operations.Authentication.API_Key is
    end Execute;
 
    function Execute
-     (Repository : in out Identity.Adapters.Repositories.Memory.Store;
+     (Repository : in out Identity.Adapters.Repositories.Stores.Store_Interface'Class;
       Request    : Staged_Authentication_Request)
       return Identity.Authentication.Results.Password_Authentication_Result is
    begin

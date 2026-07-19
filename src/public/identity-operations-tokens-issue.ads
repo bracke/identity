@@ -1,4 +1,4 @@
-with Identity.Adapters.Repositories.Memory;
+with Identity.Adapters.Repositories.Stores;
 with Identity.Identifiers.Entities;
 with Identity.Identifiers.Registry;
 with Identity.Secrets.Bytes;
@@ -19,12 +19,12 @@ package Identity.Operations.Tokens.Issue is
    end record;
 
    function Execute
-     (Repository : in out Identity.Adapters.Repositories.Memory.Store;
+     (Repository : in out Identity.Adapters.Repositories.Stores.Store_Interface'Class;
       Token      : Identity.Tokens.Definitions.Action_Token_Record)
-      return Identity.Adapters.Repositories.Memory.Command_Status;
+      return Identity.Adapters.Repositories.Stores.Command_Status;
 
    function Execute
-     (Repository : in out Identity.Adapters.Repositories.Memory.Store;
+     (Repository : in out Identity.Adapters.Repositories.Stores.Store_Interface'Class;
       Request    : Issue_Request)
-      return Identity.Adapters.Repositories.Memory.Command_Status;
+      return Identity.Adapters.Repositories.Stores.Command_Status;
 end Identity.Operations.Tokens.Issue;

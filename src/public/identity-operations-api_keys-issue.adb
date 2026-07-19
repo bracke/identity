@@ -7,17 +7,17 @@ package body Identity.Operations.API_Keys.Issue is
    use type Identity.API_Keys.Policies.Issue_Lifetime_Status;
 
    function Execute
-     (Repository : in out Identity.Adapters.Repositories.Memory.Store;
+     (Repository : in out Identity.Adapters.Repositories.Stores.Store_Interface'Class;
       Credential : Identity.API_Keys.Credentials.API_Key_Credential_Record)
-      return Identity.Adapters.Repositories.Memory.Command_Status is
+      return Identity.Adapters.Repositories.Stores.Command_Status is
    begin
-      return Identity.Adapters.Repositories.Memory.Issue_API_Key (Repository, Credential);
+      return Identity.Adapters.Repositories.Stores.Issue_API_Key (Repository, Credential);
    end Execute;
 
    function Execute
-     (Repository : in out Identity.Adapters.Repositories.Memory.Store;
+     (Repository : in out Identity.Adapters.Repositories.Stores.Store_Interface'Class;
       Request    : Issue_Request)
-      return Identity.Adapters.Repositories.Memory.Command_Status is
+      return Identity.Adapters.Repositories.Stores.Command_Status is
    begin
       if Identity.API_Keys.Policies.Evaluate_Issue_Lifetime
         (Identity.API_Keys.Policies.API_Key_Policy'
@@ -28,10 +28,10 @@ package body Identity.Operations.API_Keys.Issue is
          Request.Expires_At)
         /= Identity.API_Keys.Policies.Issue_Lifetime_Allowed
       then
-         return Identity.Adapters.Repositories.Memory.State_Conflict;
+         return Identity.Adapters.Repositories.Stores.State_Conflict;
       end if;
 
-      return Identity.Adapters.Repositories.Memory.Issue_API_Key
+      return Identity.Adapters.Repositories.Stores.Issue_API_Key
         (Repository,
          (Id              => Request.Id,
           Principal       => Request.Principal,

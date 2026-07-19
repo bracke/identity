@@ -1,5 +1,4 @@
 with "config/identity_config.gpr";
-with "../cryptolib/cryptolib.gpr";
 
 project Identity is
    for Library_Name use "identity";

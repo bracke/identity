@@ -6,4 +6,9 @@ lib/
 
 crates/*/bin/
 crates/*/obj/
+crates/*/lib/
 generated/evidence/
+
+# Alire local build state (lockfiles, generated config projects)
+alire/
+crates/*/alire/

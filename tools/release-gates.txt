@@ -51,6 +51,23 @@ so a suite that never ran cannot be reported as satisfied.
     subtree, no authorization-boundary vocabulary
   - canary secret-leak scanning over docs, registries, fixtures, tools,
     examples and conformance output
+  - documentation checks (marker identity_tools:documentation). Five checks,
+    each of which fails the release check on its own:
+    1. every documentation artifact named with a .md path in
+       registries/release-artifacts.json exists and is non-empty
+       (documentation:missing-artifact-document:<path>)
+    2. the required documentation set exists and is non-empty: README.md,
+       CHANGELOG.md, SECURITY.md, CONTRIBUTING.md, CODE_OF_CONDUCT.md, LICENSE,
+       docs/architecture.md, docs/threat-model.md, plus every docs/ai/*.md
+       that another document links to
+       (documentation:missing-required:<path>, documentation:empty-required:
+       <path>, documentation:missing-referenced:<path>)
+    3. no documentation file carries an unresolved placeholder marker
+       (documentation:placeholder:<path>:<marker>)
+    4. every top-level Identity.<Area> family present under src/public is named
+       in docs/ai/package-map.md (documentation:unmapped-area:<area>)
+    5. CHANGELOG.md carries a section heading for the crate version declared in
+       alire.toml (documentation:missing-changelog-section:<version>)
 
 Known gaps
 ----------
@@ -64,7 +81,6 @@ implemented.
   only incidentally by the conformance harness.
 - Disclosure projection suite: no dedicated suite exists; disclosure behaviour
   is asserted piecemeal in the AUnit suite.
-- Documentation checks: not implemented.
 - Event registry coverage is structural, not behavioural: the registry and the
   public constants are checked against each other, but the AUnit suite exercises
   only a subset of the 16 event constants.

@@ -1,4 +1,4 @@
-with Identity.Adapters.Repositories.Memory;
+with Identity.Adapters.Repositories.Stores;
 with Identity.Identifiers.Entities;
 with Identity.Secrets.Tokens;
 with Identity.Times;
@@ -16,7 +16,7 @@ package Identity.Operations.Verification.Complete is
    end record;
 
    function Execute
-     (Repository : in out Identity.Adapters.Repositories.Memory.Store;
+     (Repository : in out Identity.Adapters.Repositories.Stores.Store_Interface'Class;
       Token      : Identity.Identifiers.Entities.Token_Id;
       Secret     : Identity.Secrets.Tokens.Verification_Token_Secret;
       Now        : Identity.Times.Instant;
@@ -24,7 +24,7 @@ package Identity.Operations.Verification.Complete is
       return Identity.Tokens.Verification.Token_Verification_Outcome;
 
    function Execute
-     (Repository : in out Identity.Adapters.Repositories.Memory.Store;
+     (Repository : in out Identity.Adapters.Repositories.Stores.Store_Interface'Class;
       Request    : Staged_Completion_Request)
       return Identity.Tokens.Verification.Token_Verification_Outcome;
 end Identity.Operations.Verification.Complete;

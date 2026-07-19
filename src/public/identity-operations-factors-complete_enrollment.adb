@@ -4,20 +4,20 @@ with Identity.Crypto.Secret_Verifiers;
 
 package body Identity.Operations.Factors.Complete_Enrollment is
    function Execute
-     (Repository : in out Identity.Adapters.Repositories.Memory.Store;
+     (Repository : in out Identity.Adapters.Repositories.Stores.Store_Interface'Class;
       Credential : Identity.One_Time_Passwords.Credentials.TOTP_Credential_Record)
-      return Identity.Adapters.Repositories.Memory.Command_Status is
+      return Identity.Adapters.Repositories.Stores.Command_Status is
    begin
-      return Identity.Adapters.Repositories.Memory.Complete_TOTP_Enrollment
+      return Identity.Adapters.Repositories.Stores.Complete_TOTP_Enrollment
         (Repository, Credential);
    end Execute;
 
    function Execute
-     (Repository : in out Identity.Adapters.Repositories.Memory.Store;
+     (Repository : in out Identity.Adapters.Repositories.Stores.Store_Interface'Class;
       Request    : TOTP_Completion_Request)
-      return Identity.Adapters.Repositories.Memory.Command_Status is
+      return Identity.Adapters.Repositories.Stores.Command_Status is
    begin
-      return Identity.Adapters.Repositories.Memory.Complete_TOTP_Enrollment
+      return Identity.Adapters.Repositories.Stores.Complete_TOTP_Enrollment
         (Repository,
          (Id              => Request.Id,
           Principal       => Request.Principal,
@@ -31,11 +31,11 @@ package body Identity.Operations.Factors.Complete_Enrollment is
    end Execute;
 
    function Execute
-     (Repository : in out Identity.Adapters.Repositories.Memory.Store;
+     (Repository : in out Identity.Adapters.Repositories.Stores.Store_Interface'Class;
       Request    : Staged_TOTP_Completion_Request)
-      return Identity.Adapters.Repositories.Memory.Command_Status is
+      return Identity.Adapters.Repositories.Stores.Command_Status is
    begin
-      return Identity.Adapters.Repositories.Memory.Complete_TOTP_Enrollment
+      return Identity.Adapters.Repositories.Stores.Complete_TOTP_Enrollment
         (Repository,
          (Id              => Request.Request.Id,
           Principal       => Request.Request.Principal,

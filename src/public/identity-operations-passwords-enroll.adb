@@ -4,15 +4,15 @@ with Identity.Text.Bounded;
 
 package body Identity.Operations.Passwords.Enroll is
    function Execute
-     (Repository : in out Identity.Adapters.Repositories.Memory.Store;
+     (Repository : in out Identity.Adapters.Repositories.Stores.Store_Interface'Class;
       Principal  : Identity.Identifiers.Entities.Principal_Id;
       Credential : Identity.Identifiers.Entities.Credential_Id;
       Password   : Identity.Secrets.Passwords.New_Password)
-      return Identity.Adapters.Repositories.Memory.Command_Status
+      return Identity.Adapters.Repositories.Stores.Command_Status
    is
       Envelope : constant String := Identity.Crypto.Password_Hashing.Create_Verifier (Password);
    begin
-      return Identity.Adapters.Repositories.Memory.Enroll_Password
+      return Identity.Adapters.Repositories.Stores.Enroll_Password
         (Repository,
          (Id        => Credential,
           Principal => Principal,

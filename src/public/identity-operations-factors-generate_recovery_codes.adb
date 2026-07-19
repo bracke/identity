@@ -27,19 +27,19 @@ package body Identity.Operations.Factors.Generate_Recovery_Codes is
    end To_Record;
 
    function Execute
-     (Repository : in out Identity.Adapters.Repositories.Memory.Store;
+     (Repository : in out Identity.Adapters.Repositories.Stores.Store_Interface'Class;
       Codes      : Identity.Recovery_Codes.Sets.Recovery_Code_Set_Record)
-      return Identity.Adapters.Repositories.Memory.Command_Status is
+      return Identity.Adapters.Repositories.Stores.Command_Status is
    begin
-      return Identity.Adapters.Repositories.Memory.Install_Recovery_Code_Set (Repository, Codes);
+      return Identity.Adapters.Repositories.Stores.Install_Recovery_Code_Set (Repository, Codes);
    end Execute;
 
    function Execute
-     (Repository : in out Identity.Adapters.Repositories.Memory.Store;
+     (Repository : in out Identity.Adapters.Repositories.Stores.Store_Interface'Class;
       Request    : Generate_Request)
-      return Identity.Adapters.Repositories.Memory.Command_Status is
+      return Identity.Adapters.Repositories.Stores.Command_Status is
    begin
-      return Identity.Adapters.Repositories.Memory.Install_Recovery_Code_Set
+      return Identity.Adapters.Repositories.Stores.Install_Recovery_Code_Set
         (Repository, To_Record (Request));
    end Execute;
 end Identity.Operations.Factors.Generate_Recovery_Codes;

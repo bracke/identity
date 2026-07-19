@@ -34,6 +34,21 @@ package body Identity.Adapters.Repositories.Memory is
    function Capabilities return Identity.Adapters.Repositories.Capabilities.Repository_Capabilities is
      (Identity.Adapters.Repositories.Capabilities.Full_Memory_Profile);
 
+   overriding procedure Reset (Repository : in out Store) is
+   begin
+      Initialize (Repository);
+   end Reset;
+
+   --  Dispatching form: lets callers ask a Store_Interface'Class what it
+   --  supports without knowing which adapter it is.
+   overriding function Capabilities (Repository : Store)
+      return Identity.Adapters.Repositories.Capabilities.Repository_Capabilities
+   is
+      pragma Unreferenced (Repository);
+   begin
+      return Capabilities;
+   end Capabilities;
+
    procedure Initialize (Repository : out Store) is
    begin
       Repository := (Principals => [others => (Present => False, Value => <>)],
@@ -175,7 +190,7 @@ package body Identity.Adapters.Repositories.Memory is
       return False;
    end Principal_Is_Active;
 
-   function Create_Principal
+   overriding function Create_Principal
      (Repository : in out Store;
       Principal  : Identity.Principals.Definitions.Principal_Record) return Command_Status
    is
@@ -194,7 +209,7 @@ package body Identity.Adapters.Repositories.Memory is
       return Capacity_Conflict;
    end Create_Principal;
 
-   function Retire_Principal
+   overriding function Retire_Principal
      (Repository : in out Store;
       Principal  : Identity.Identifiers.Entities.Principal_Id) return Command_Status
    is
@@ -214,7 +229,7 @@ package body Identity.Adapters.Repositories.Memory is
       return State_Conflict;
    end Retire_Principal;
 
-   function Retire_Principal
+   overriding function Retire_Principal
      (Repository       : in out Store;
       Principal        : Identity.Identifiers.Entities.Principal_Id;
       Expected_Version : Identity.Versions.Entity_Version) return Command_Status
@@ -239,7 +254,7 @@ package body Identity.Adapters.Repositories.Memory is
       return State_Conflict;
    end Retire_Principal;
 
-   function Create_Account
+   overriding function Create_Account
      (Repository : in out Store;
       Account    : Identity.Accounts.Definitions.Account_Record) return Command_Status
    is
@@ -264,7 +279,7 @@ package body Identity.Adapters.Repositories.Memory is
       return Capacity_Conflict;
    end Create_Account;
 
-   function Update_Account_State
+   overriding function Update_Account_State
      (Repository : in out Store;
       Account    : Identity.Identifiers.Entities.Account_Id;
       Principal  : Identity.Identifiers.Entities.Principal_Id;
@@ -287,7 +302,7 @@ package body Identity.Adapters.Repositories.Memory is
       return State_Conflict;
    end Update_Account_State;
 
-   function Add_Binding
+   overriding function Add_Binding
      (Repository : in out Store;
       Binding    : Identity.Identities.Bindings.Binding_Record) return Command_Status
    is
@@ -319,7 +334,7 @@ package body Identity.Adapters.Repositories.Memory is
       return Capacity_Conflict;
    end Add_Binding;
 
-   function Revoke_Binding
+   overriding function Revoke_Binding
      (Repository : in out Store;
       Binding    : Identity.Identifiers.Entities.Identity_Binding_Id;
       Principal  : Identity.Identifiers.Entities.Principal_Id) return Command_Status
@@ -334,7 +349,7 @@ package body Identity.Adapters.Repositories.Memory is
       return State_Conflict;
    end Revoke_Binding;
 
-   function Revoke_Binding
+   overriding function Revoke_Binding
      (Repository               : in out Store;
       Binding                  : Identity.Identifiers.Entities.Identity_Binding_Id;
       Principal                : Identity.Identifiers.Entities.Principal_Id;
@@ -361,7 +376,7 @@ package body Identity.Adapters.Repositories.Memory is
       return State_Conflict;
    end Revoke_Binding;
 
-   function Change_Binding
+   overriding function Change_Binding
      (Repository  : in out Store;
       Predecessor : Identity.Identifiers.Entities.Identity_Binding_Id;
       Successor   : Identity.Identities.Bindings.Binding_Record) return Command_Status
@@ -418,7 +433,7 @@ package body Identity.Adapters.Repositories.Memory is
       return Applied;
    end Change_Binding;
 
-   function Change_Binding
+   overriding function Change_Binding
      (Repository                   : in out Store;
       Predecessor                  : Identity.Identifiers.Entities.Identity_Binding_Id;
       Expected_Predecessor_Version : Identity.Versions.Entity_Version;
@@ -481,7 +496,7 @@ package body Identity.Adapters.Repositories.Memory is
       return Applied;
    end Change_Binding;
 
-   function Enroll_Password
+   overriding function Enroll_Password
      (Repository : in out Store;
       Credential : Identity.Passwords.Credentials.Password_Credential_Record) return Command_Status
    is
@@ -515,7 +530,7 @@ package body Identity.Adapters.Repositories.Memory is
       return Capacity_Conflict;
    end Enroll_Password;
 
-   function Replace_Password
+   overriding function Replace_Password
      (Repository  : in out Store;
       Predecessor : Identity.Identifiers.Entities.Credential_Id;
       Successor   : Identity.Passwords.Credentials.Password_Credential_Record)
@@ -574,7 +589,7 @@ package body Identity.Adapters.Repositories.Memory is
       return Applied;
    end Replace_Password;
 
-   function Replace_Password
+   overriding function Replace_Password
      (Repository                   : in out Store;
       Predecessor                  : Identity.Identifiers.Entities.Credential_Id;
       Expected_Predecessor_Version : Identity.Versions.Entity_Version;
@@ -639,7 +654,7 @@ package body Identity.Adapters.Repositories.Memory is
       return Applied;
    end Replace_Password;
 
-   function Create_Session
+   overriding function Create_Session
      (Repository : in out Store;
       Session    : Identity.Sessions.Definitions.Session_Record) return Command_Status
    is
@@ -670,7 +685,7 @@ package body Identity.Adapters.Repositories.Memory is
       return Capacity_Conflict;
    end Create_Session;
 
-   procedure Find_Session
+   overriding procedure Find_Session
      (Repository : Store;
       Session    : Identity.Identifiers.Entities.Session_Id;
       Found      : out Boolean;
@@ -687,7 +702,7 @@ package body Identity.Adapters.Repositories.Memory is
       end loop;
    end Find_Session;
 
-   function Revoke_Session
+   overriding function Revoke_Session
      (Repository : in out Store;
       Session    : Identity.Identifiers.Entities.Session_Id) return Command_Status
    is
@@ -702,7 +717,7 @@ package body Identity.Adapters.Repositories.Memory is
       return Revoke_Session (Repository, Session, Value.Version);
    end Revoke_Session;
 
-   function Revoke_Session
+   overriding function Revoke_Session
      (Repository               : in out Store;
       Session                  : Identity.Identifiers.Entities.Session_Id;
       Expected_Session_Version : Identity.Versions.Entity_Version) return Command_Status
@@ -726,7 +741,7 @@ package body Identity.Adapters.Repositories.Memory is
       return State_Conflict;
    end Revoke_Session;
 
-   function Rotate_Session
+   overriding function Rotate_Session
      (Repository  : in out Store;
       Predecessor : Identity.Identifiers.Entities.Session_Id;
       Successor   : Identity.Sessions.Definitions.Session_Record) return Command_Status
@@ -742,7 +757,7 @@ package body Identity.Adapters.Repositories.Memory is
       return Rotate_Session (Repository, Predecessor, Value.Version, Successor);
    end Rotate_Session;
 
-   function Rotate_Session
+   overriding function Rotate_Session
      (Repository                   : in out Store;
       Predecessor                  : Identity.Identifiers.Entities.Session_Id;
       Expected_Predecessor_Version : Identity.Versions.Entity_Version;
@@ -817,7 +832,7 @@ package body Identity.Adapters.Repositories.Memory is
       return Applied;
    end Rotate_Session;
 
-   function Revoke_Session_Family
+   overriding function Revoke_Session_Family
      (Repository : in out Store;
       Family     : Identity.Identifiers.Entities.Session_Family_Id) return Command_Status
    is
@@ -841,7 +856,7 @@ package body Identity.Adapters.Repositories.Memory is
       end if;
    end Revoke_Session_Family;
 
-   function Revoke_Session_Family
+   overriding function Revoke_Session_Family
      (Repository              : in out Store;
       Family                  : Identity.Identifiers.Entities.Session_Family_Id;
       Expected_Affected_Count : Natural) return Command_Status
@@ -866,7 +881,7 @@ package body Identity.Adapters.Repositories.Memory is
       return Revoke_Session_Family (Repository, Family);
    end Revoke_Session_Family;
 
-   function Revoke_Principal_Sessions
+   overriding function Revoke_Principal_Sessions
      (Repository : in out Store;
       Principal  : Identity.Identifiers.Entities.Principal_Id) return Command_Status
    is
@@ -890,7 +905,7 @@ package body Identity.Adapters.Repositories.Memory is
       end if;
    end Revoke_Principal_Sessions;
 
-   function Revoke_Principal_Sessions
+   overriding function Revoke_Principal_Sessions
      (Repository              : in out Store;
       Principal               : Identity.Identifiers.Entities.Principal_Id;
       Expected_Affected_Count : Natural) return Command_Status
@@ -915,7 +930,7 @@ package body Identity.Adapters.Repositories.Memory is
       return Revoke_Principal_Sessions (Repository, Principal);
    end Revoke_Principal_Sessions;
 
-   function Revoke_Credential_Sessions
+   overriding function Revoke_Credential_Sessions
      (Repository : in out Store;
       Credential : Identity.Identifiers.Entities.Credential_Id) return Command_Status
    is
@@ -940,7 +955,7 @@ package body Identity.Adapters.Repositories.Memory is
       end if;
    end Revoke_Credential_Sessions;
 
-   function Revoke_Credential_Sessions
+   overriding function Revoke_Credential_Sessions
      (Repository              : in out Store;
       Credential              : Identity.Identifiers.Entities.Credential_Id;
       Expected_Affected_Count : Natural) return Command_Status
@@ -966,7 +981,7 @@ package body Identity.Adapters.Repositories.Memory is
       return Revoke_Credential_Sessions (Repository, Credential);
    end Revoke_Credential_Sessions;
 
-   function Revoke_Provider_Sessions
+   overriding function Revoke_Provider_Sessions
      (Repository : in out Store;
       Provider   : Identity.Identifiers.Entities.External_Provider_Id) return Command_Status
    is
@@ -992,7 +1007,7 @@ package body Identity.Adapters.Repositories.Memory is
       end if;
    end Revoke_Provider_Sessions;
 
-   function Revoke_Provider_Sessions
+   overriding function Revoke_Provider_Sessions
      (Repository              : in out Store;
       Provider                : Identity.Identifiers.Entities.External_Provider_Id;
       Expected_Affected_Count : Natural) return Command_Status
@@ -1019,7 +1034,7 @@ package body Identity.Adapters.Repositories.Memory is
       return Revoke_Provider_Sessions (Repository, Provider);
    end Revoke_Provider_Sessions;
 
-   function Expire_Eligible_Sessions
+   overriding function Expire_Eligible_Sessions
      (Repository : in out Store;
       Now        : Identity.Times.Instant) return Natural
    is
@@ -1040,7 +1055,7 @@ package body Identity.Adapters.Repositories.Memory is
       return Count;
    end Expire_Eligible_Sessions;
 
-   function Purge_Retained_Sessions
+   overriding function Purge_Retained_Sessions
      (Repository : in out Store;
       Retain_After : Identity.Times.Instant) return Natural
    is
@@ -1059,7 +1074,7 @@ package body Identity.Adapters.Repositories.Memory is
       return Count;
    end Purge_Retained_Sessions;
 
-   function Enumerate_Principal_Sessions
+   overriding function Enumerate_Principal_Sessions
      (Repository : Store;
       Principal  : Identity.Identifiers.Entities.Principal_Id)
       return Identity.Projections.Sessions.Session_Summary_List
@@ -1080,7 +1095,7 @@ package body Identity.Adapters.Repositories.Memory is
       return Result;
    end Enumerate_Principal_Sessions;
 
-   function Issue_Token
+   overriding function Issue_Token
      (Repository : in out Store;
       Token      : Identity.Tokens.Definitions.Action_Token_Record) return Command_Status
    is
@@ -1129,7 +1144,7 @@ package body Identity.Adapters.Repositories.Memory is
       return Applied;
    end Issue_Token;
 
-   procedure Find_Token
+   overriding procedure Find_Token
      (Repository : Store;
       Token      : Identity.Identifiers.Entities.Token_Id;
       Found      : out Boolean;
@@ -1146,7 +1161,7 @@ package body Identity.Adapters.Repositories.Memory is
       end loop;
    end Find_Token;
 
-   function Begin_Authentication_Transaction
+   overriding function Begin_Authentication_Transaction
      (Repository  : in out Store;
       Transaction : Identity.Authentication.Transactions.Authentication_Transaction_Record)
       return Identity.Authentication.Transactions.Authentication_Transaction_Status
@@ -1186,7 +1201,7 @@ package body Identity.Adapters.Repositories.Memory is
       return Identity.Authentication.Transactions.Capacity_Conflict;
    end Begin_Authentication_Transaction;
 
-   function Issue_Challenge
+   overriding function Issue_Challenge
      (Repository : in out Store;
       Challenge  : Identity.Authentication.Challenges.Challenge_Record)
       return Identity.Authentication.Transactions.Authentication_Transaction_Status
@@ -1243,7 +1258,7 @@ package body Identity.Adapters.Repositories.Memory is
       return Identity.Authentication.Transactions.Capacity_Conflict;
    end Issue_Challenge;
 
-   function Issue_Challenge
+   overriding function Issue_Challenge
      (Repository                   : in out Store;
       Challenge                    : Identity.Authentication.Challenges.Challenge_Record;
       Expected_Transaction_Version : Identity.Versions.Entity_Version)
@@ -1306,7 +1321,7 @@ package body Identity.Adapters.Repositories.Memory is
       return Identity.Authentication.Transactions.Capacity_Conflict;
    end Issue_Challenge;
 
-   function Complete_Challenge
+   overriding function Complete_Challenge
      (Repository : in out Store;
       Challenge  : Identity.Identifiers.Entities.Challenge_Id;
       Principal  : Identity.Identifiers.Entities.Principal_Id;
@@ -1390,7 +1405,7 @@ package body Identity.Adapters.Repositories.Memory is
       return Identity.Authentication.Transactions.Applied;
    end Complete_Challenge;
 
-   function Complete_Challenge
+   overriding function Complete_Challenge
      (Repository                   : in out Store;
       Challenge                    : Identity.Identifiers.Entities.Challenge_Id;
       Principal                    : Identity.Identifiers.Entities.Principal_Id;
@@ -1486,7 +1501,7 @@ package body Identity.Adapters.Repositories.Memory is
       return Identity.Authentication.Transactions.Applied;
    end Complete_Challenge;
 
-   function Satisfy_Authentication_Transaction
+   overriding function Satisfy_Authentication_Transaction
      (Repository  : in out Store;
       Transaction : Identity.Identifiers.Entities.Authentication_Transaction_Id;
       Principal   : Identity.Identifiers.Entities.Principal_Id;
@@ -1516,7 +1531,7 @@ package body Identity.Adapters.Repositories.Memory is
       return Identity.Authentication.Transactions.Unknown;
    end Satisfy_Authentication_Transaction;
 
-   function Satisfy_Authentication_Transaction
+   overriding function Satisfy_Authentication_Transaction
      (Repository          : in out Store;
       Transaction         : Identity.Identifiers.Entities.Authentication_Transaction_Id;
       Principal           : Identity.Identifiers.Entities.Principal_Id;
@@ -1551,7 +1566,7 @@ package body Identity.Adapters.Repositories.Memory is
       return Identity.Authentication.Transactions.Unknown;
    end Satisfy_Authentication_Transaction;
 
-   function Upgrade_Session_Assurance
+   overriding function Upgrade_Session_Assurance
      (Repository  : in out Store;
       Session     : Identity.Identifiers.Entities.Session_Id;
       Transaction : Identity.Identifiers.Entities.Authentication_Transaction_Id;
@@ -1637,7 +1652,7 @@ package body Identity.Adapters.Repositories.Memory is
       return Identity.Authentication.Transactions.Applied;
    end Upgrade_Session_Assurance;
 
-   function Upgrade_Session_Assurance
+   overriding function Upgrade_Session_Assurance
      (Repository                   : in out Store;
       Session                      : Identity.Identifiers.Entities.Session_Id;
       Transaction                  : Identity.Identifiers.Entities.Authentication_Transaction_Id;
@@ -1735,7 +1750,7 @@ package body Identity.Adapters.Repositories.Memory is
       return Identity.Authentication.Transactions.Applied;
    end Upgrade_Session_Assurance;
 
-   procedure Find_Authentication_Transaction
+   overriding procedure Find_Authentication_Transaction
      (Repository  : Store;
       Transaction : Identity.Identifiers.Entities.Authentication_Transaction_Id;
       Found       : out Boolean;
@@ -1752,7 +1767,7 @@ package body Identity.Adapters.Repositories.Memory is
       end loop;
    end Find_Authentication_Transaction;
 
-   procedure Find_Challenge
+   overriding procedure Find_Challenge
      (Repository : Store;
       Challenge  : Identity.Identifiers.Entities.Challenge_Id;
       Found      : out Boolean;
@@ -1769,7 +1784,7 @@ package body Identity.Adapters.Repositories.Memory is
       end loop;
    end Find_Challenge;
 
-   function Issue_API_Key
+   overriding function Issue_API_Key
      (Repository : in out Store;
       Credential : Identity.API_Keys.Credentials.API_Key_Credential_Record) return Command_Status
    is
@@ -1800,7 +1815,7 @@ package body Identity.Adapters.Repositories.Memory is
       return Capacity_Conflict;
    end Issue_API_Key;
 
-   function Revoke_API_Key
+   overriding function Revoke_API_Key
      (Repository : in out Store;
       Credential : Identity.Identifiers.Entities.Credential_Id) return Command_Status
    is
@@ -1815,7 +1830,7 @@ package body Identity.Adapters.Repositories.Memory is
       return Revoke_API_Key (Repository, Credential, Value.Version);
    end Revoke_API_Key;
 
-   function Revoke_API_Key
+   overriding function Revoke_API_Key
      (Repository                  : in out Store;
       Credential                  : Identity.Identifiers.Entities.Credential_Id;
       Expected_Credential_Version : Identity.Versions.Entity_Version) return Command_Status
@@ -1838,7 +1853,7 @@ package body Identity.Adapters.Repositories.Memory is
       return State_Conflict;
    end Revoke_API_Key;
 
-   function Rotate_API_Key
+   overriding function Rotate_API_Key
      (Repository  : in out Store;
       Predecessor : Identity.Identifiers.Entities.Credential_Id;
       Successor   : Identity.API_Keys.Credentials.API_Key_Credential_Record)
@@ -1855,7 +1870,7 @@ package body Identity.Adapters.Repositories.Memory is
       return Rotate_API_Key (Repository, Predecessor, Value.Version, Successor);
    end Rotate_API_Key;
 
-   function Rotate_API_Key
+   overriding function Rotate_API_Key
      (Repository                   : in out Store;
       Predecessor                  : Identity.Identifiers.Entities.Credential_Id;
       Expected_Predecessor_Version : Identity.Versions.Entity_Version;
@@ -1923,7 +1938,7 @@ package body Identity.Adapters.Repositories.Memory is
       return Applied;
    end Rotate_API_Key;
 
-   procedure Find_API_Key
+   overriding procedure Find_API_Key
      (Repository : Store;
       Credential : Identity.Identifiers.Entities.Credential_Id;
       Found      : out Boolean;
@@ -1940,7 +1955,7 @@ package body Identity.Adapters.Repositories.Memory is
       end loop;
    end Find_API_Key;
 
-   function Append_Event
+   overriding function Append_Event
      (Repository : in out Store;
       Event      : Identity.Events.Envelopes.Event_Envelope) return Command_Status
    is
@@ -1961,7 +1976,7 @@ package body Identity.Adapters.Repositories.Memory is
       return Capacity_Conflict;
    end Append_Event;
 
-   function Record_Attempt
+   overriding function Record_Attempt
      (Repository : in out Store;
       Attempt    : Identity.Attempts.Definitions.Attempt_Record) return Command_Status
    is
@@ -1982,7 +1997,7 @@ package body Identity.Adapters.Repositories.Memory is
       return Capacity_Conflict;
    end Record_Attempt;
 
-   procedure Find_Attempt
+   overriding procedure Find_Attempt
      (Repository : Store;
       Attempt    : Identity.Identifiers.Entities.Attempt_Id;
       Found      : out Boolean;
@@ -1999,7 +2014,7 @@ package body Identity.Adapters.Repositories.Memory is
       end loop;
    end Find_Attempt;
 
-   function Request_Contact_Verification
+   overriding function Request_Contact_Verification
      (Repository : in out Store;
       Contact    : Identity.Contacts.Bindings.Contact_Binding_Record;
       Token      : Identity.Tokens.Definitions.Action_Token_Record) return Command_Status
@@ -2067,7 +2082,7 @@ package body Identity.Adapters.Repositories.Memory is
       return Applied;
    end Request_Contact_Verification;
 
-   function Complete_Contact_Verification
+   overriding function Complete_Contact_Verification
      (Repository : in out Store;
       Token      : Identity.Identifiers.Entities.Token_Id;
       Secret     : Identity.Secrets.Tokens.Verification_Token_Secret;
@@ -2100,7 +2115,7 @@ package body Identity.Adapters.Repositories.Memory is
          Contact);
    end Complete_Contact_Verification;
 
-   function Complete_Contact_Verification
+   overriding function Complete_Contact_Verification
      (Repository               : in out Store;
       Token                    : Identity.Identifiers.Entities.Token_Id;
       Expected_Token_Version   : Identity.Versions.Entity_Version;
@@ -2203,7 +2218,7 @@ package body Identity.Adapters.Repositories.Memory is
       return Identity.Tokens.Verification.Valid;
    end Complete_Contact_Verification;
 
-   function Begin_Contact_Change
+   overriding function Begin_Contact_Change
      (Repository : in out Store;
       Change     : Identity.Verification.Changes.Contact_Change_Record;
       Successor  : Identity.Contacts.Bindings.Contact_Binding_Record;
@@ -2311,7 +2326,7 @@ package body Identity.Adapters.Repositories.Memory is
       return Applied;
    end Begin_Contact_Change;
 
-   function Complete_Contact_Change
+   overriding function Complete_Contact_Change
      (Repository  : in out Store;
       Token       : Identity.Identifiers.Entities.Token_Id;
       Secret      : Identity.Secrets.Tokens.Verification_Token_Secret;
@@ -2359,7 +2374,7 @@ package body Identity.Adapters.Repositories.Memory is
          Successor);
    end Complete_Contact_Change;
 
-   function Complete_Contact_Change
+   overriding function Complete_Contact_Change
      (Repository                   : in out Store;
       Token                        : Identity.Identifiers.Entities.Token_Id;
       Expected_Token_Version       : Identity.Versions.Entity_Version;
@@ -2515,7 +2530,7 @@ package body Identity.Adapters.Repositories.Memory is
       return Identity.Tokens.Verification.Valid;
    end Complete_Contact_Change;
 
-   procedure Find_Contact_Binding
+   overriding procedure Find_Contact_Binding
      (Repository : Store;
       Contact    : Identity.Identifiers.Entities.Contact_Binding_Id;
       Found      : out Boolean;
@@ -2532,7 +2547,7 @@ package body Identity.Adapters.Repositories.Memory is
       end loop;
    end Find_Contact_Binding;
 
-   function Install_Recovery_Code_Set
+   overriding function Install_Recovery_Code_Set
      (Repository : in out Store;
       Codes      : Identity.Recovery_Codes.Sets.Recovery_Code_Set_Record) return Command_Status
    is
@@ -2559,7 +2574,7 @@ package body Identity.Adapters.Repositories.Memory is
       return Capacity_Conflict;
    end Install_Recovery_Code_Set;
 
-   function Regenerate_Recovery_Code_Set
+   overriding function Regenerate_Recovery_Code_Set
      (Repository : in out Store;
       Codes      : Identity.Recovery_Codes.Sets.Recovery_Code_Set_Record) return Command_Status
    is
@@ -2600,7 +2615,7 @@ package body Identity.Adapters.Repositories.Memory is
       return Applied;
    end Regenerate_Recovery_Code_Set;
 
-   function Regenerate_Recovery_Code_Set
+   overriding function Regenerate_Recovery_Code_Set
      (Repository              : in out Store;
       Codes                   : Identity.Recovery_Codes.Sets.Recovery_Code_Set_Record;
       Expected_Affected_Count : Natural) return Command_Status
@@ -2656,7 +2671,7 @@ package body Identity.Adapters.Repositories.Memory is
       return Applied;
    end Regenerate_Recovery_Code_Set;
 
-   procedure Find_Recovery_Code_Set
+   overriding procedure Find_Recovery_Code_Set
      (Repository : Store;
       Set_Id     : Identity.Identifiers.Entities.Credential_Set_Id;
       Found      : out Boolean;
@@ -2673,7 +2688,7 @@ package body Identity.Adapters.Repositories.Memory is
       end loop;
    end Find_Recovery_Code_Set;
 
-   function Begin_Recovery
+   overriding function Begin_Recovery
      (Repository  : in out Store;
       Transaction : Identity.Recovery.Transactions.Recovery_Transaction_Record)
       return Identity.Recovery.Transactions.Recovery_Transition_Status
@@ -2725,7 +2740,7 @@ package body Identity.Adapters.Repositories.Memory is
       return Identity.Recovery.Transactions.Capacity_Conflict;
    end Begin_Recovery;
 
-   function Accept_Recovery_Evidence
+   overriding function Accept_Recovery_Evidence
      (Repository  : in out Store;
       Transaction : Identity.Identifiers.Entities.Authentication_Transaction_Id;
       Principal   : Identity.Identifiers.Entities.Principal_Id;
@@ -2755,7 +2770,7 @@ package body Identity.Adapters.Repositories.Memory is
       return Identity.Recovery.Transactions.Unknown;
    end Accept_Recovery_Evidence;
 
-   function Accept_Recovery_Evidence
+   overriding function Accept_Recovery_Evidence
      (Repository       : in out Store;
       Transaction      : Identity.Identifiers.Entities.Authentication_Transaction_Id;
       Principal        : Identity.Identifiers.Entities.Principal_Id;
@@ -2790,7 +2805,7 @@ package body Identity.Adapters.Repositories.Memory is
       return Identity.Recovery.Transactions.Unknown;
    end Accept_Recovery_Evidence;
 
-   function Complete_Recovery
+   overriding function Complete_Recovery
      (Repository  : in out Store;
       Transaction : Identity.Identifiers.Entities.Authentication_Transaction_Id;
       Principal   : Identity.Identifiers.Entities.Principal_Id;
@@ -2845,7 +2860,7 @@ package body Identity.Adapters.Repositories.Memory is
       return Identity.Recovery.Transactions.Unknown;
    end Complete_Recovery;
 
-   function Complete_Recovery
+   overriding function Complete_Recovery
      (Repository                   : in out Store;
       Transaction                  : Identity.Identifiers.Entities.Authentication_Transaction_Id;
       Principal                    : Identity.Identifiers.Entities.Principal_Id;
@@ -2909,7 +2924,7 @@ package body Identity.Adapters.Repositories.Memory is
       return Identity.Recovery.Transactions.Unknown;
    end Complete_Recovery;
 
-   function Cancel_Recovery
+   overriding function Cancel_Recovery
      (Repository  : in out Store;
       Transaction : Identity.Identifiers.Entities.Authentication_Transaction_Id;
       Principal   : Identity.Identifiers.Entities.Principal_Id)
@@ -2933,7 +2948,7 @@ package body Identity.Adapters.Repositories.Memory is
       return Identity.Recovery.Transactions.Unknown;
    end Cancel_Recovery;
 
-   function Cancel_Recovery
+   overriding function Cancel_Recovery
      (Repository       : in out Store;
       Transaction      : Identity.Identifiers.Entities.Authentication_Transaction_Id;
       Principal        : Identity.Identifiers.Entities.Principal_Id;
@@ -2964,7 +2979,7 @@ package body Identity.Adapters.Repositories.Memory is
       return Identity.Recovery.Transactions.Unknown;
    end Cancel_Recovery;
 
-   procedure Find_Recovery_Transaction
+   overriding procedure Find_Recovery_Transaction
      (Repository  : Store;
       Transaction : Identity.Identifiers.Entities.Authentication_Transaction_Id;
       Found       : out Boolean;
@@ -2981,7 +2996,7 @@ package body Identity.Adapters.Repositories.Memory is
       end loop;
    end Find_Recovery_Transaction;
 
-   function Bind_External
+   overriding function Bind_External
      (Repository : in out Store;
       Binding    : Identity.External_Providers.Bindings.External_Binding_Record) return Command_Status
    is
@@ -3012,7 +3027,7 @@ package body Identity.Adapters.Repositories.Memory is
       return Capacity_Conflict;
    end Bind_External;
 
-   function Revoke_External
+   overriding function Revoke_External
      (Repository : in out Store;
       Binding    : Identity.Identifiers.Entities.External_Binding_Id;
       Principal  : Identity.Identifiers.Entities.Principal_Id) return Command_Status
@@ -3027,7 +3042,7 @@ package body Identity.Adapters.Repositories.Memory is
       return State_Conflict;
    end Revoke_External;
 
-   function Revoke_External
+   overriding function Revoke_External
      (Repository               : in out Store;
       Binding                  : Identity.Identifiers.Entities.External_Binding_Id;
       Principal                : Identity.Identifiers.Entities.Principal_Id;
@@ -3055,7 +3070,7 @@ package body Identity.Adapters.Repositories.Memory is
       return State_Conflict;
    end Revoke_External;
 
-   function Register_External_Replay
+   overriding function Register_External_Replay
      (Repository  : in out Store;
       Fingerprint : Identity.Text.Bounded.Bounded_Text) return Command_Status
    is
@@ -3089,7 +3104,7 @@ package body Identity.Adapters.Repositories.Memory is
        Completed => Completed,
        Version => Version));
 
-   function Reserve_Idempotency
+   overriding function Reserve_Idempotency
      (Repository : in out Store;
       Operation  : Identity.Operations.Idempotency.Idempotent_Operation_Kind;
       Key        : Identity.Operations.Idempotency.Idempotency_Key)
@@ -3149,7 +3164,7 @@ package body Identity.Adapters.Repositories.Memory is
          0);
    end Reserve_Idempotency;
 
-   function Complete_Idempotency
+   overriding function Complete_Idempotency
      (Repository : in out Store;
       Operation  : Identity.Operations.Idempotency.Idempotent_Operation_Kind;
       Key        : Identity.Operations.Idempotency.Idempotency_Key)
@@ -3195,7 +3210,7 @@ package body Identity.Adapters.Repositories.Memory is
          0);
    end Complete_Idempotency;
 
-   function Complete_Idempotency
+   overriding function Complete_Idempotency
      (Repository       : in out Store;
       Operation        : Identity.Operations.Idempotency.Idempotent_Operation_Kind;
       Key              : Identity.Operations.Idempotency.Idempotency_Key;
@@ -3251,7 +3266,7 @@ package body Identity.Adapters.Repositories.Memory is
          0);
    end Complete_Idempotency;
 
-   function Begin_TOTP_Enrollment
+   overriding function Begin_TOTP_Enrollment
      (Repository : in out Store;
       Credential : Identity.One_Time_Passwords.Credentials.TOTP_Credential_Record)
       return Command_Status
@@ -3279,7 +3294,7 @@ package body Identity.Adapters.Repositories.Memory is
       return Capacity_Conflict;
    end Begin_TOTP_Enrollment;
 
-   function Complete_TOTP_Enrollment
+   overriding function Complete_TOTP_Enrollment
      (Repository : in out Store;
       Credential : Identity.One_Time_Passwords.Credentials.TOTP_Credential_Record)
       return Command_Status
@@ -3295,7 +3310,7 @@ package body Identity.Adapters.Repositories.Memory is
       return Complete_TOTP_Enrollment (Repository, Credential, Value.Version);
    end Complete_TOTP_Enrollment;
 
-   function Complete_TOTP_Enrollment
+   overriding function Complete_TOTP_Enrollment
      (Repository                  : in out Store;
       Credential                  : Identity.One_Time_Passwords.Credentials.TOTP_Credential_Record;
       Expected_Credential_Version : Identity.Versions.Entity_Version)
@@ -3332,7 +3347,7 @@ package body Identity.Adapters.Repositories.Memory is
       return State_Conflict;
    end Complete_TOTP_Enrollment;
 
-   procedure Find_TOTP_Credential
+   overriding procedure Find_TOTP_Credential
      (Repository : Store;
       Credential : Identity.Identifiers.Entities.Credential_Id;
       Found      : out Boolean;
@@ -3349,7 +3364,7 @@ package body Identity.Adapters.Repositories.Memory is
       end loop;
    end Find_TOTP_Credential;
 
-   function Remove_TOTP
+   overriding function Remove_TOTP
      (Repository : in out Store;
       Credential : Identity.Identifiers.Entities.Credential_Id;
       Principal  : Identity.Identifiers.Entities.Principal_Id) return Command_Status
@@ -3365,7 +3380,7 @@ package body Identity.Adapters.Repositories.Memory is
       return Remove_TOTP (Repository, Credential, Principal, Value.Version);
    end Remove_TOTP;
 
-   function Remove_TOTP
+   overriding function Remove_TOTP
      (Repository                  : in out Store;
       Credential                  : Identity.Identifiers.Entities.Credential_Id;
       Principal                   : Identity.Identifiers.Entities.Principal_Id;
@@ -3392,7 +3407,7 @@ package body Identity.Adapters.Repositories.Memory is
       return State_Conflict;
    end Remove_TOTP;
 
-   function Resolve
+   overriding function Resolve
      (Repository : Store;
       Subject    : Identity.Identities.Subjects.Authentication_Subject)
       return Identity.Identities.Resolution.Resolution_Result
@@ -3421,7 +3436,7 @@ package body Identity.Adapters.Repositories.Memory is
       end if;
    end Resolve;
 
-   procedure Find_Active_Password
+   overriding procedure Find_Active_Password
      (Repository : Store;
       Principal  : Identity.Identifiers.Entities.Principal_Id;
       Found      : out Boolean;
@@ -3441,7 +3456,7 @@ package body Identity.Adapters.Repositories.Memory is
       end loop;
    end Find_Active_Password;
 
-   procedure Find_Principal
+   overriding procedure Find_Principal
      (Repository : Store;
       Principal  : Identity.Identifiers.Entities.Principal_Id;
       Found      : out Boolean;
@@ -3458,7 +3473,7 @@ package body Identity.Adapters.Repositories.Memory is
       end loop;
    end Find_Principal;
 
-   procedure Find_Account
+   overriding procedure Find_Account
      (Repository : Store;
       Principal  : Identity.Identifiers.Entities.Principal_Id;
       Found      : out Boolean;
@@ -3475,7 +3490,7 @@ package body Identity.Adapters.Repositories.Memory is
       end loop;
    end Find_Account;
 
-   function Lookup_Session
+   overriding function Lookup_Session
      (Repository       : Store;
       Public_Reference : Identity.Text.Bounded.Bounded_Text;
       Secret           : Identity.Secrets.Sessions.Session_Secret;
@@ -3528,7 +3543,7 @@ package body Identity.Adapters.Repositories.Memory is
       return (Status => Identity.Sessions.Handles.Unknown);
    end Lookup_Session;
 
-   function Renew_Session
+   overriding function Renew_Session
      (Repository       : in out Store;
       Public_Reference : Identity.Text.Bounded.Bounded_Text;
       Secret           : Identity.Secrets.Sessions.Session_Secret;
@@ -3592,7 +3607,7 @@ package body Identity.Adapters.Repositories.Memory is
       return (Status => Identity.Sessions.Handles.Unknown);
    end Renew_Session;
 
-   function Verify_Token
+   overriding function Verify_Token
      (Repository : Store;
       Token      : Identity.Identifiers.Entities.Token_Id;
       Purpose    : Identity.Identifiers.Registry.Registry_Id;
@@ -3630,7 +3645,7 @@ package body Identity.Adapters.Repositories.Memory is
       return Identity.Tokens.Verification.Unknown;
    end Verify_Token;
 
-   function Consume_Token
+   overriding function Consume_Token
      (Repository : in out Store;
       Token      : Identity.Identifiers.Entities.Token_Id;
       Purpose    : Identity.Identifiers.Registry.Registry_Id;
@@ -3649,7 +3664,7 @@ package body Identity.Adapters.Repositories.Memory is
       return Consume_Token (Repository, Token, Value.Version, Purpose, Secret, Now);
    end Consume_Token;
 
-   function Consume_Token
+   overriding function Consume_Token
      (Repository       : in out Store;
       Token            : Identity.Identifiers.Entities.Token_Id;
       Expected_Version : Identity.Versions.Entity_Version;
@@ -3692,7 +3707,7 @@ package body Identity.Adapters.Repositories.Memory is
       return Identity.Tokens.Verification.State_Conflict;
    end Consume_Token;
 
-   function Complete_Password_Reset
+   overriding function Complete_Password_Reset
      (Repository : in out Store;
       Token      : Identity.Identifiers.Entities.Token_Id;
       Purpose    : Identity.Identifiers.Registry.Registry_Id;
@@ -3797,7 +3812,7 @@ package body Identity.Adapters.Repositories.Memory is
       return Identity.Tokens.Verification.Valid;
    end Complete_Password_Reset;
 
-   function Complete_Password_Reset
+   overriding function Complete_Password_Reset
      (Repository                   : in out Store;
       Token                        : Identity.Identifiers.Entities.Token_Id;
       Expected_Token_Version       : Identity.Versions.Entity_Version;
@@ -3913,7 +3928,7 @@ package body Identity.Adapters.Repositories.Memory is
       return Identity.Tokens.Verification.Valid;
    end Complete_Password_Reset;
 
-   function Authenticate_API_Key
+   overriding function Authenticate_API_Key
      (Repository    : in out Store;
       Public_Key_Id : Identity.Text.Bounded.Bounded_Text;
       Secret        : Identity.Secrets.API_Keys.API_Key_Secret;
@@ -3949,7 +3964,7 @@ package body Identity.Adapters.Repositories.Memory is
       return (Status => Identity.Results.Rejected, Principal => (Present => False));
    end Authenticate_API_Key;
 
-   function Authenticate_API_Key
+   overriding function Authenticate_API_Key
      (Repository                  : in out Store;
       Public_Key_Id               : Identity.Text.Bounded.Bounded_Text;
       Secret                      : Identity.Secrets.API_Keys.API_Key_Secret;
@@ -3990,7 +4005,7 @@ package body Identity.Adapters.Repositories.Memory is
       return (Status => Identity.Results.Rejected, Principal => (Present => False));
    end Authenticate_API_Key;
 
-   function Failure_Count
+   overriding function Failure_Count
      (Repository : Store;
       Principal  : Identity.Identifiers.Entities.Principal_Id;
       Category   : Identity.Attempts.Outcomes.Failure_Category)
@@ -4015,7 +4030,7 @@ package body Identity.Adapters.Repositories.Memory is
       return Count;
    end Failure_Count;
 
-   function Consume_Recovery_Code
+   overriding function Consume_Recovery_Code
      (Repository : in out Store;
       Set_Id     : Identity.Identifiers.Entities.Credential_Set_Id;
       Code       : Identity.Secrets.Recovery_Codes.Recovery_Code)
@@ -4032,7 +4047,7 @@ package body Identity.Adapters.Repositories.Memory is
       return Consume_Recovery_Code (Repository, Set_Id, Set.Version, Code);
    end Consume_Recovery_Code;
 
-   function Consume_Recovery_Code
+   overriding function Consume_Recovery_Code
      (Repository       : in out Store;
       Set_Id           : Identity.Identifiers.Entities.Credential_Set_Id;
       Expected_Version : Identity.Versions.Entity_Version;
@@ -4082,7 +4097,7 @@ package body Identity.Adapters.Repositories.Memory is
       return Identity.Recovery_Codes.Sets.Unknown;
    end Consume_Recovery_Code;
 
-   function Authenticate_External
+   overriding function Authenticate_External
      (Repository : in out Store;
       Assertion  : Identity.External_Providers.Assertions.Normalized_Assertion;
       Now        : Identity.Times.Instant)
@@ -4130,7 +4145,7 @@ package body Identity.Adapters.Repositories.Memory is
       return (Status => Identity.Results.Recovery_Action_Required, Principal => (Present => False));
    end Authenticate_External;
 
-   function Authenticate_External
+   overriding function Authenticate_External
      (Repository               : in out Store;
       Assertion                : Identity.External_Providers.Assertions.Normalized_Assertion;
       Now                      : Identity.Times.Instant;
@@ -4162,7 +4177,7 @@ package body Identity.Adapters.Repositories.Memory is
       return (Status => Identity.Results.Conflict, Principal => (Present => False));
    end Authenticate_External;
 
-   function Accept_TOTP_Counter
+   overriding function Accept_TOTP_Counter
      (Repository : in out Store;
       Credential : Identity.Identifiers.Entities.Credential_Id;
       Counter    : Identity.One_Time_Passwords.Credentials.TOTP_Counter)
@@ -4179,7 +4194,7 @@ package body Identity.Adapters.Repositories.Memory is
       return Accept_TOTP_Counter (Repository, Credential, Value.Version, Counter);
    end Accept_TOTP_Counter;
 
-   function Accept_TOTP_Counter
+   overriding function Accept_TOTP_Counter
      (Repository       : in out Store;
       Credential       : Identity.Identifiers.Entities.Credential_Id;
       Expected_Version : Identity.Versions.Entity_Version;
@@ -4212,7 +4227,7 @@ package body Identity.Adapters.Repositories.Memory is
       return Identity.One_Time_Passwords.Credentials.Unknown;
    end Accept_TOTP_Counter;
 
-   function Principal_Count (Repository : Store) return Natural is
+   overriding function Principal_Count (Repository : Store) return Natural is
       Count : Natural := 0;
    begin
       for Slot of Repository.Principals loop
@@ -4223,7 +4238,7 @@ package body Identity.Adapters.Repositories.Memory is
       return Count;
    end Principal_Count;
 
-   function Account_Count (Repository : Store) return Natural is
+   overriding function Account_Count (Repository : Store) return Natural is
       Count : Natural := 0;
    begin
       for Slot of Repository.Accounts loop
@@ -4234,7 +4249,7 @@ package body Identity.Adapters.Repositories.Memory is
       return Count;
    end Account_Count;
 
-   function Binding_Count (Repository : Store) return Natural is
+   overriding function Binding_Count (Repository : Store) return Natural is
       Count : Natural := 0;
    begin
       for Slot of Repository.Bindings loop
@@ -4245,7 +4260,7 @@ package body Identity.Adapters.Repositories.Memory is
       return Count;
    end Binding_Count;
 
-   function Password_Credential_Count (Repository : Store) return Natural is
+   overriding function Password_Credential_Count (Repository : Store) return Natural is
       Count : Natural := 0;
    begin
       for Slot of Repository.Passwords loop
@@ -4256,7 +4271,7 @@ package body Identity.Adapters.Repositories.Memory is
       return Count;
    end Password_Credential_Count;
 
-   function Session_Count (Repository : Store) return Natural is
+   overriding function Session_Count (Repository : Store) return Natural is
       Count : Natural := 0;
    begin
       for Slot of Repository.Sessions loop
@@ -4267,7 +4282,7 @@ package body Identity.Adapters.Repositories.Memory is
       return Count;
    end Session_Count;
 
-   function Token_Count (Repository : Store) return Natural is
+   overriding function Token_Count (Repository : Store) return Natural is
       Count : Natural := 0;
    begin
       for Slot of Repository.Tokens loop
@@ -4278,7 +4293,7 @@ package body Identity.Adapters.Repositories.Memory is
       return Count;
    end Token_Count;
 
-   function Authentication_Transaction_Count (Repository : Store) return Natural is
+   overriding function Authentication_Transaction_Count (Repository : Store) return Natural is
       Count : Natural := 0;
    begin
       for Slot of Repository.Authentication_Transactions loop
@@ -4289,7 +4304,7 @@ package body Identity.Adapters.Repositories.Memory is
       return Count;
    end Authentication_Transaction_Count;
 
-   function Challenge_Count (Repository : Store) return Natural is
+   overriding function Challenge_Count (Repository : Store) return Natural is
       Count : Natural := 0;
    begin
       for Slot of Repository.Challenges loop
@@ -4300,7 +4315,7 @@ package body Identity.Adapters.Repositories.Memory is
       return Count;
    end Challenge_Count;
 
-   function API_Key_Count (Repository : Store) return Natural is
+   overriding function API_Key_Count (Repository : Store) return Natural is
       Count : Natural := 0;
    begin
       for Slot of Repository.API_Keys loop
@@ -4311,7 +4326,7 @@ package body Identity.Adapters.Repositories.Memory is
       return Count;
    end API_Key_Count;
 
-   function Event_Count (Repository : Store) return Natural is
+   overriding function Event_Count (Repository : Store) return Natural is
       Count : Natural := 0;
    begin
       for Slot of Repository.Events loop
@@ -4322,7 +4337,7 @@ package body Identity.Adapters.Repositories.Memory is
       return Count;
    end Event_Count;
 
-   function Attempt_Count (Repository : Store) return Natural is
+   overriding function Attempt_Count (Repository : Store) return Natural is
       Count : Natural := 0;
    begin
       for Slot of Repository.Attempts loop
@@ -4333,7 +4348,7 @@ package body Identity.Adapters.Repositories.Memory is
       return Count;
    end Attempt_Count;
 
-   function Contact_Binding_Count (Repository : Store) return Natural is
+   overriding function Contact_Binding_Count (Repository : Store) return Natural is
       Count : Natural := 0;
    begin
       for Slot of Repository.Contact_Bindings loop
@@ -4344,7 +4359,7 @@ package body Identity.Adapters.Repositories.Memory is
       return Count;
    end Contact_Binding_Count;
 
-   function Contact_Change_Count (Repository : Store) return Natural is
+   overriding function Contact_Change_Count (Repository : Store) return Natural is
       Count : Natural := 0;
    begin
       for Slot of Repository.Contact_Changes loop
@@ -4355,7 +4370,7 @@ package body Identity.Adapters.Repositories.Memory is
       return Count;
    end Contact_Change_Count;
 
-   function Recovery_Code_Set_Count (Repository : Store) return Natural is
+   overriding function Recovery_Code_Set_Count (Repository : Store) return Natural is
       Count : Natural := 0;
    begin
       for Slot of Repository.Recovery_Code_Sets loop
@@ -4366,7 +4381,7 @@ package body Identity.Adapters.Repositories.Memory is
       return Count;
    end Recovery_Code_Set_Count;
 
-   function Recovery_Transaction_Count (Repository : Store) return Natural is
+   overriding function Recovery_Transaction_Count (Repository : Store) return Natural is
       Count : Natural := 0;
    begin
       for Slot of Repository.Recovery_Transactions loop
@@ -4377,7 +4392,7 @@ package body Identity.Adapters.Repositories.Memory is
       return Count;
    end Recovery_Transaction_Count;
 
-   function External_Binding_Count (Repository : Store) return Natural is
+   overriding function External_Binding_Count (Repository : Store) return Natural is
       Count : Natural := 0;
    begin
       for Slot of Repository.External_Bindings loop
@@ -4388,7 +4403,7 @@ package body Identity.Adapters.Repositories.Memory is
       return Count;
    end External_Binding_Count;
 
-   function External_Replay_Count (Repository : Store) return Natural is
+   overriding function External_Replay_Count (Repository : Store) return Natural is
       Count : Natural := 0;
    begin
       for Slot of Repository.External_Replays loop
@@ -4399,7 +4414,7 @@ package body Identity.Adapters.Repositories.Memory is
       return Count;
    end External_Replay_Count;
 
-   function TOTP_Credential_Count (Repository : Store) return Natural is
+   overriding function TOTP_Credential_Count (Repository : Store) return Natural is
       Count : Natural := 0;
    begin
       for Slot of Repository.TOTP_Credentials loop

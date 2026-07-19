@@ -1,5 +1,5 @@
 with Identity.API_Keys.Credentials;
-with Identity.Adapters.Repositories.Memory;
+with Identity.Adapters.Repositories.Stores;
 with Identity.Identifiers.Entities;
 with Identity.Identifiers.Registry;
 with Identity.Secrets.API_Keys;
@@ -26,18 +26,18 @@ package Identity.Operations.API_Keys.Rotate is
    end record;
 
    function Execute
-     (Repository  : in out Identity.Adapters.Repositories.Memory.Store;
+     (Repository  : in out Identity.Adapters.Repositories.Stores.Store_Interface'Class;
       Predecessor : Identity.Identifiers.Entities.Credential_Id;
       Successor   : Identity.API_Keys.Credentials.API_Key_Credential_Record)
-      return Identity.Adapters.Repositories.Memory.Command_Status;
+      return Identity.Adapters.Repositories.Stores.Command_Status;
 
    function Execute
-     (Repository : in out Identity.Adapters.Repositories.Memory.Store;
+     (Repository : in out Identity.Adapters.Repositories.Stores.Store_Interface'Class;
       Request    : Rotate_Request)
-      return Identity.Adapters.Repositories.Memory.Command_Status;
+      return Identity.Adapters.Repositories.Stores.Command_Status;
 
    function Execute
-     (Repository : in out Identity.Adapters.Repositories.Memory.Store;
+     (Repository : in out Identity.Adapters.Repositories.Stores.Store_Interface'Class;
       Request    : Staged_Rotate_Request)
-      return Identity.Adapters.Repositories.Memory.Command_Status;
+      return Identity.Adapters.Repositories.Stores.Command_Status;
 end Identity.Operations.API_Keys.Rotate;

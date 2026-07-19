@@ -96,6 +96,72 @@ reserved word. Treat it as the package-map equivalent of
 `Identity.Operations.Recovery.Begin`; do not attempt to add a child package
 named `Begin`.
 
+## Public package families
+
+Every top-level family present under `src/public`. The documentation gate
+(`identity_tools:documentation`) fails if a family exists in `src/public` but is
+not named here.
+
+- `Identity.Accounts` - account lifecycle, state dimensions, security locks,
+  administrative transitions, and account projections.
+- `Identity.API_Keys` - API-key credential material, key policies, and rotation.
+- `Identity.Assurance` - assurance levels, attributes, profiles, dependencies,
+  and structured evaluation.
+- `Identity.Attempts` - attempt buckets, fingerprints, outcomes, and policies.
+- `Identity.Audit` - audit records, integrity marks, and audit policies.
+- `Identity.Authentication` - requests, contexts, challenges, evidence,
+  revisions, results, security contexts, and authentication transactions.
+- `Identity.Clocks` - the abstract clock interface used to inject time.
+- `Identity.Codecs` - canonical and persisted encoding, including
+  `Identity.Codecs.Persisted` admission.
+- `Identity.Collections` - bounded maps, sets, and vectors.
+- `Identity.Contacts` - contact points and their verification state.
+- `Identity.Contracts` - the `Contract_Status` vocabulary for condition results.
+- `Identity.Correlation` - correlation and causation links.
+- `Identity.Credentials` - credential state, kinds, and credential requirements.
+- `Identity.Crypto` - domain separation and key handling, including the
+  `Identity.Crypto.Cryptolib` isolation subtree.
+- `Identity.Diagnostics` - structured diagnostic records for failures.
+- `Identity.Errors` - the structured error vocabulary and the safe public
+  projection in `Identity.Errors.Public`.
+- `Identity.Events` - event types, attributes, schemas, and staging.
+- `Identity.External_Providers` - assertion normalization, provider policies,
+  and `Identity.External_Providers.Trust` admission.
+- `Identity.Identifiers` - strongly typed identifiers.
+- `Identity.Identities` - identity records and their projections.
+- `Identity.Limits` - the bounded sizes shared by the public contracts.
+- `Identity.Lockout` - lockout state and cleanup-independent evaluation.
+- `Identity.Multi_Factor` - factor kinds, enrollment state, and challenges.
+- `Identity.One_Time_Passwords` - one-time password material and replay state.
+- `Identity.Operations` - the transport-neutral operation families
+  (authentication, sessions, accounts, API keys, recovery, disclosure, budgets,
+  idempotency, and post-commit admission).
+- `Identity.Optionals` - the generic `Optional` container.
+- `Identity.Passwords` - password policy, verifier state, and change/reset
+  contracts.
+- `Identity.Policies` - shared policy value types.
+- `Identity.Principals` - principal records and projections.
+- `Identity.Projections` - the shared read-only projection types.
+- `Identity.Recovery` - recovery requests, state, and completion contracts.
+- `Identity.Recovery_Codes` - recovery-code material and consumption state.
+- `Identity.Redaction` - the predicates that decide what is safe for public
+  output.
+- `Identity.Results` - `Operation_Status` and the shared result vocabulary.
+- `Identity.Secrets` - bounded, redacted secret containers.
+- `Identity.Service_Credentials` - service credential records and projections.
+- `Identity.Service_Principals` - service principal records.
+- `Identity.Services` - service definitions and their state.
+- `Identity.Sessions` - session records, state, and verifier-free projections.
+- `Identity.System_Actors` - system actor records and projections.
+- `Identity.Testing` - deterministic test profiles and injection seams.
+- `Identity.Text` - the bounded text types.
+- `Identity.Throttling` - non-sleeping delay and reject boundaries.
+- `Identity.Times` - instants, durations, and time arithmetic.
+- `Identity.Tokens` - action-token material, state, and verification.
+- `Identity.Verification` - verification state for contacts and credentials.
+- `Identity.Version` - the crate version constants.
+- `Identity.Versions` - entity and persisted format version types.
+
 Companion crates:
 
 - `crates/identity_tests` contains AUnit and invariant smoke coverage.

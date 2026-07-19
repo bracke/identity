@@ -5,23 +5,22 @@ with Identity.Text.Bounded;
 
 package body Identity.Operations.Passwords.Change is
    function Execute
-     (Repository     : in out Identity.Adapters.Repositories.Memory.Store;
+     (Repository     : in out Identity.Adapters.Repositories.Stores.Store_Interface'Class;
       Principal      : Identity.Identifiers.Entities.Principal_Id;
       New_Credential : Identity.Identifiers.Entities.Credential_Id;
       Current        : Identity.Secrets.Passwords.Presented_Password;
       Replacement    : Identity.Secrets.Passwords.New_Password)
       return Identity.Results.Operation_Status
    is
-      use type Identity.Adapters.Repositories.Memory.Command_Status;
       use type Identity.Credentials.States.Credential_State;
       use type Identity.Crypto.Password_Hashing.Verification_Outcome;
 
       Found      : Boolean;
       Existing   : Identity.Passwords.Credentials.Password_Credential_Record;
       Verification : Identity.Crypto.Password_Hashing.Verification_Result;
-      Status     : Identity.Adapters.Repositories.Memory.Command_Status;
+      Status     : Identity.Adapters.Repositories.Stores.Command_Status;
    begin
-      Identity.Adapters.Repositories.Memory.Find_Active_Password
+      Identity.Adapters.Repositories.Stores.Find_Active_Password
         (Repository, Principal, Found, Existing);
 
       if not Found or else Existing.State /= Identity.Credentials.States.Active then
@@ -35,7 +34,7 @@ package body Identity.Operations.Passwords.Change is
          return Identity.Results.Rejected;
       end if;
 
-      Status := Identity.Adapters.Repositories.Memory.Replace_Password
+      Status := Identity.Adapters.Repositories.Stores.Replace_Password
         (Repository,
          Existing.Id,
          Existing.Version,
@@ -47,32 +46,31 @@ package body Identity.Operations.Passwords.Change is
           Version   => 0));
 
       case Status is
-         when Identity.Adapters.Repositories.Memory.Applied =>
+         when Identity.Adapters.Repositories.Stores.Applied =>
             return Identity.Results.Succeeded;
-         when Identity.Adapters.Repositories.Memory.Version_Conflict
-            | Identity.Adapters.Repositories.Memory.State_Conflict
-            | Identity.Adapters.Repositories.Memory.Uniqueness_Conflict =>
+         when Identity.Adapters.Repositories.Stores.Version_Conflict
+            | Identity.Adapters.Repositories.Stores.State_Conflict
+            | Identity.Adapters.Repositories.Stores.Uniqueness_Conflict =>
             return Identity.Results.Conflict;
-         when Identity.Adapters.Repositories.Memory.Capacity_Conflict =>
+         when Identity.Adapters.Repositories.Stores.Capacity_Conflict =>
             return Identity.Results.Operational_Failure;
       end case;
    end Execute;
 
    function Execute
-     (Repository : in out Identity.Adapters.Repositories.Memory.Store;
+     (Repository : in out Identity.Adapters.Repositories.Stores.Store_Interface'Class;
       Request    : Change_Request)
       return Identity.Results.Operation_Status
    is
-      use type Identity.Adapters.Repositories.Memory.Command_Status;
       use type Identity.Credentials.States.Credential_State;
       use type Identity.Crypto.Password_Hashing.Verification_Outcome;
 
       Found        : Boolean;
       Existing     : Identity.Passwords.Credentials.Password_Credential_Record;
       Verification : Identity.Crypto.Password_Hashing.Verification_Result;
-      Status       : Identity.Adapters.Repositories.Memory.Command_Status;
+      Status       : Identity.Adapters.Repositories.Stores.Command_Status;
    begin
-      Identity.Adapters.Repositories.Memory.Find_Active_Password
+      Identity.Adapters.Repositories.Stores.Find_Active_Password
         (Repository, Request.Principal, Found, Existing);
 
       if not Found or else Existing.State /= Identity.Credentials.States.Active then
@@ -86,7 +84,7 @@ package body Identity.Operations.Passwords.Change is
          return Identity.Results.Rejected;
       end if;
 
-      Status := Identity.Adapters.Repositories.Memory.Replace_Password
+      Status := Identity.Adapters.Repositories.Stores.Replace_Password
         (Repository,
          Existing.Id,
          Request.Expected_Current_Version,
@@ -98,13 +96,13 @@ package body Identity.Operations.Passwords.Change is
           Version   => 0));
 
       case Status is
-         when Identity.Adapters.Repositories.Memory.Applied =>
+         when Identity.Adapters.Repositories.Stores.Applied =>
             return Identity.Results.Succeeded;
-         when Identity.Adapters.Repositories.Memory.Version_Conflict
-            | Identity.Adapters.Repositories.Memory.State_Conflict
-            | Identity.Adapters.Repositories.Memory.Uniqueness_Conflict =>
+         when Identity.Adapters.Repositories.Stores.Version_Conflict
+            | Identity.Adapters.Repositories.Stores.State_Conflict
+            | Identity.Adapters.Repositories.Stores.Uniqueness_Conflict =>
             return Identity.Results.Conflict;
-         when Identity.Adapters.Repositories.Memory.Capacity_Conflict =>
+         when Identity.Adapters.Repositories.Stores.Capacity_Conflict =>
             return Identity.Results.Operational_Failure;
       end case;
    end Execute;

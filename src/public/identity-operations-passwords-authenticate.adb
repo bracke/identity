@@ -31,7 +31,7 @@ package body Identity.Operations.Passwords.Authenticate is
    end Perform_Synthetic_Verification;
 
    function Execute
-     (Repository : Identity.Adapters.Repositories.Memory.Store;
+     (Repository : Identity.Adapters.Repositories.Stores.Store_Interface'Class;
       Subject    : Identity.Identities.Subjects.Authentication_Subject;
       Password   : Identity.Secrets.Passwords.Presented_Password)
       return Identity.Authentication.Results.Password_Authentication_Result
@@ -43,7 +43,7 @@ package body Identity.Operations.Passwords.Authenticate is
       use type Identity.Principals.Definitions.Principal_Lifecycle;
 
       Resolution : constant Identity.Identities.Resolution.Resolution_Result :=
-        Identity.Adapters.Repositories.Memory.Resolve (Repository, Subject);
+        Identity.Adapters.Repositories.Stores.Resolve (Repository, Subject);
       Credential : Identity.Passwords.Credentials.Password_Credential_Record;
       Account    : Identity.Accounts.Definitions.Account_Record;
       Principal_Record : Identity.Principals.Definitions.Principal_Record;
@@ -57,7 +57,7 @@ package body Identity.Operations.Passwords.Authenticate is
          return (Status => Identity.Results.Rejected, Principal => (Present => False));
       end if;
 
-      Identity.Adapters.Repositories.Memory.Find_Principal
+      Identity.Adapters.Repositories.Stores.Find_Principal
         (Repository, Resolution.Principal, Found_Principal, Principal_Record);
       if not Found_Principal
         or else Principal_Record.State /= Identity.Principals.Definitions.Active
@@ -66,7 +66,7 @@ package body Identity.Operations.Passwords.Authenticate is
          return (Status => Identity.Results.Rejected, Principal => (Present => False));
       end if;
 
-      Identity.Adapters.Repositories.Memory.Find_Active_Password
+      Identity.Adapters.Repositories.Stores.Find_Active_Password
         (Repository, Resolution.Principal, Found_Credential, Credential);
       if not Found_Credential
         or else Credential.State /= Identity.Credentials.States.Active
@@ -75,7 +75,7 @@ package body Identity.Operations.Passwords.Authenticate is
          return (Status => Identity.Results.Rejected, Principal => (Present => False));
       end if;
 
-      Identity.Adapters.Repositories.Memory.Find_Account
+      Identity.Adapters.Repositories.Stores.Find_Account
         (Repository, Resolution.Principal, Found_Account, Account);
       if not Found_Account then
          return (Status => Identity.Results.Conflict, Principal => (Present => False));
@@ -111,11 +111,11 @@ package body Identity.Operations.Passwords.Authenticate is
    end Execute;
 
    function Execute
-     (Repository : in out Identity.Adapters.Repositories.Memory.Store;
+     (Repository : in out Identity.Adapters.Repositories.Stores.Store_Interface'Class;
       Request    : Attempted_Request)
       return Identity.Authentication.Results.Password_Authentication_Result
    is
-      use type Identity.Adapters.Repositories.Memory.Command_Status;
+      use type Identity.Adapters.Repositories.Stores.Command_Status;
       use type Identity.Results.Operation_Status;
       use type Identity.Versions.Attempt_Count;
       use type Identity.Identities.Resolution.Resolution_Status;
@@ -125,8 +125,8 @@ package body Identity.Operations.Passwords.Authenticate is
       Result : constant Identity.Authentication.Results.Password_Authentication_Result :=
         Execute (Repository, Request.Subject, Request.Password);
       Resolution : constant Identity.Identities.Resolution.Resolution_Result :=
-        Identity.Adapters.Repositories.Memory.Resolve (Repository, Request.Subject);
-      Attempt_Status : Identity.Adapters.Repositories.Memory.Command_Status;
+        Identity.Adapters.Repositories.Stores.Resolve (Repository, Request.Subject);
+      Attempt_Status : Identity.Adapters.Repositories.Stores.Command_Status;
       Attempt_Outcome : Identity.Attempts.Outcomes.Attempt_Outcome :=
         Identity.Attempts.Outcomes.Failed;
       Failure : Identity.Attempts.Outcomes.Failure_Category :=
@@ -134,7 +134,7 @@ package body Identity.Operations.Passwords.Authenticate is
       Principal : Identity.Attempts.Definitions.Optional_Principal := (Present => False);
       Account_Found : Boolean := False;
       Account : Identity.Accounts.Definitions.Account_Record;
-      Lock_Status : Identity.Adapters.Repositories.Memory.Command_Status;
+      Lock_Status : Identity.Adapters.Repositories.Stores.Command_Status;
    begin
       if Result.Status = Identity.Results.Succeeded then
          Attempt_Outcome := Identity.Attempts.Outcomes.Succeeded;
@@ -153,7 +153,7 @@ package body Identity.Operations.Passwords.Authenticate is
          Principal := (Present => True, Value => Resolution.Principal);
       end if;
 
-      Attempt_Status := Identity.Adapters.Repositories.Memory.Record_Attempt
+      Attempt_Status := Identity.Adapters.Repositories.Stores.Record_Attempt
         (Repository,
          (Id                  => Request.Attempt,
           Correlation         => Request.Correlation,
@@ -167,22 +167,22 @@ package body Identity.Operations.Passwords.Authenticate is
           Disclosure          => Identity.Attempts.Outcomes.Generic_Rejection,
           Version             => 0));
 
-      if Attempt_Status = Identity.Adapters.Repositories.Memory.Applied then
+      if Attempt_Status = Identity.Adapters.Repositories.Stores.Applied then
          if Attempt_Outcome = Identity.Attempts.Outcomes.Failed
            and then Failure = Identity.Attempts.Outcomes.Password_Failure
            and then Request.Lockout_Threshold > 0
            and then Principal.Present
-           and then Identity.Adapters.Repositories.Memory.Failure_Count
+           and then Identity.Adapters.Repositories.Stores.Failure_Count
              (Repository, Principal.Value, Identity.Attempts.Outcomes.Password_Failure)
              >= Request.Lockout_Threshold
          then
-            Identity.Adapters.Repositories.Memory.Find_Account
+            Identity.Adapters.Repositories.Stores.Find_Account
               (Repository, Principal.Value, Account_Found, Account);
             if Account_Found then
                Account.State.Lock_State := Identity.Accounts.States.Temporarily_Locked;
-               Lock_Status := Identity.Adapters.Repositories.Memory.Update_Account_State
+               Lock_Status := Identity.Adapters.Repositories.Stores.Update_Account_State
                  (Repository, Account.Id, Principal.Value, Account.State);
-               if Lock_Status /= Identity.Adapters.Repositories.Memory.Applied then
+               if Lock_Status /= Identity.Adapters.Repositories.Stores.Applied then
                   return
                     (Status => Identity.Results.Operational_Failure,
                      Principal => (Present => False));

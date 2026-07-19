@@ -1,4 +1,4 @@
-with Identity.Adapters.Repositories.Memory;
+with Identity.Adapters.Repositories.Stores;
 with Identity.Authentication.Results;
 with Identity.Identifiers.Entities;
 with Identity.Identifiers.Operations;
@@ -21,13 +21,13 @@ package Identity.Operations.Passwords.Authenticate is
    end record;
 
    function Execute
-     (Repository : Identity.Adapters.Repositories.Memory.Store;
+     (Repository : Identity.Adapters.Repositories.Stores.Store_Interface'Class;
       Subject    : Identity.Identities.Subjects.Authentication_Subject;
       Password   : Identity.Secrets.Passwords.Presented_Password)
       return Identity.Authentication.Results.Password_Authentication_Result;
 
    function Execute
-     (Repository : in out Identity.Adapters.Repositories.Memory.Store;
+     (Repository : in out Identity.Adapters.Repositories.Stores.Store_Interface'Class;
       Request    : Attempted_Request)
       return Identity.Authentication.Results.Password_Authentication_Result;
 end Identity.Operations.Passwords.Authenticate;

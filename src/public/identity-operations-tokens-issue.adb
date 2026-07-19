@@ -2,19 +2,19 @@ with Identity.Crypto.Secret_Verifiers;
 
 package body Identity.Operations.Tokens.Issue is
    function Execute
-     (Repository : in out Identity.Adapters.Repositories.Memory.Store;
+     (Repository : in out Identity.Adapters.Repositories.Stores.Store_Interface'Class;
       Token      : Identity.Tokens.Definitions.Action_Token_Record)
-      return Identity.Adapters.Repositories.Memory.Command_Status is
+      return Identity.Adapters.Repositories.Stores.Command_Status is
    begin
-      return Identity.Adapters.Repositories.Memory.Issue_Token (Repository, Token);
+      return Identity.Adapters.Repositories.Stores.Issue_Token (Repository, Token);
    end Execute;
 
    function Execute
-     (Repository : in out Identity.Adapters.Repositories.Memory.Store;
+     (Repository : in out Identity.Adapters.Repositories.Stores.Store_Interface'Class;
       Request    : Issue_Request)
-      return Identity.Adapters.Repositories.Memory.Command_Status is
+      return Identity.Adapters.Repositories.Stores.Command_Status is
    begin
-      return Identity.Adapters.Repositories.Memory.Issue_Token
+      return Identity.Adapters.Repositories.Stores.Issue_Token
         (Repository,
          (Id              => Request.Id,
           Purpose         => Request.Purpose,

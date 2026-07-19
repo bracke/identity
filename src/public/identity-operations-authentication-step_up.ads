@@ -1,4 +1,4 @@
-with Identity.Adapters.Repositories.Memory;
+with Identity.Adapters.Repositories.Stores;
 with Identity.Assurance.Attributes;
 with Identity.Assurance.Levels;
 with Identity.Authentication.Transactions;
@@ -7,7 +7,7 @@ with Identity.Times;
 
 package Identity.Operations.Authentication.Step_Up is
    function Execute
-     (Repository  : in out Identity.Adapters.Repositories.Memory.Store;
+     (Repository  : in out Identity.Adapters.Repositories.Stores.Store_Interface'Class;
       Session     : Identity.Identifiers.Entities.Session_Id;
       Transaction : Identity.Identifiers.Entities.Authentication_Transaction_Id;
       Principal   : Identity.Identifiers.Entities.Principal_Id;

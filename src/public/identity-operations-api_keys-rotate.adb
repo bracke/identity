@@ -7,19 +7,19 @@ package body Identity.Operations.API_Keys.Rotate is
    use type Identity.API_Keys.Policies.Issue_Lifetime_Status;
 
    function Execute
-     (Repository  : in out Identity.Adapters.Repositories.Memory.Store;
+     (Repository  : in out Identity.Adapters.Repositories.Stores.Store_Interface'Class;
       Predecessor : Identity.Identifiers.Entities.Credential_Id;
       Successor   : Identity.API_Keys.Credentials.API_Key_Credential_Record)
-      return Identity.Adapters.Repositories.Memory.Command_Status is
+      return Identity.Adapters.Repositories.Stores.Command_Status is
    begin
-      return Identity.Adapters.Repositories.Memory.Rotate_API_Key
+      return Identity.Adapters.Repositories.Stores.Rotate_API_Key
         (Repository, Predecessor, Successor);
    end Execute;
 
    function Execute
-     (Repository : in out Identity.Adapters.Repositories.Memory.Store;
+     (Repository : in out Identity.Adapters.Repositories.Stores.Store_Interface'Class;
       Request    : Rotate_Request)
-      return Identity.Adapters.Repositories.Memory.Command_Status is
+      return Identity.Adapters.Repositories.Stores.Command_Status is
    begin
       if Identity.API_Keys.Policies.Evaluate_Issue_Lifetime
         (Identity.API_Keys.Policies.API_Key_Policy'
@@ -30,10 +30,10 @@ package body Identity.Operations.API_Keys.Rotate is
          Request.Expires_At)
         /= Identity.API_Keys.Policies.Issue_Lifetime_Allowed
       then
-         return Identity.Adapters.Repositories.Memory.State_Conflict;
+         return Identity.Adapters.Repositories.Stores.State_Conflict;
       end if;
 
-      return Identity.Adapters.Repositories.Memory.Rotate_API_Key
+      return Identity.Adapters.Repositories.Stores.Rotate_API_Key
         (Repository,
          Request.Predecessor,
          (Id              => Request.Id,
@@ -51,9 +51,9 @@ package body Identity.Operations.API_Keys.Rotate is
    end Execute;
 
    function Execute
-     (Repository : in out Identity.Adapters.Repositories.Memory.Store;
+     (Repository : in out Identity.Adapters.Repositories.Stores.Store_Interface'Class;
       Request    : Staged_Rotate_Request)
-      return Identity.Adapters.Repositories.Memory.Command_Status is
+      return Identity.Adapters.Repositories.Stores.Command_Status is
    begin
       if Identity.API_Keys.Policies.Evaluate_Issue_Lifetime
         (Identity.API_Keys.Policies.API_Key_Policy'
@@ -64,10 +64,10 @@ package body Identity.Operations.API_Keys.Rotate is
          Request.Request.Expires_At)
         /= Identity.API_Keys.Policies.Issue_Lifetime_Allowed
       then
-         return Identity.Adapters.Repositories.Memory.State_Conflict;
+         return Identity.Adapters.Repositories.Stores.State_Conflict;
       end if;
 
-      return Identity.Adapters.Repositories.Memory.Rotate_API_Key
+      return Identity.Adapters.Repositories.Stores.Rotate_API_Key
         (Repository,
          Request.Request.Predecessor,
          Request.Expected_Predecessor_Version,

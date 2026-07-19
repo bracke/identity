@@ -1,4 +1,4 @@
-with Identity.Adapters.Repositories.Memory;
+with Identity.Adapters.Repositories.Stores;
 with Identity.Authentication.Results;
 with Identity.External_Providers.Assertions;
 with Identity.Times;
@@ -11,13 +11,13 @@ package Identity.Operations.Authentication.External is
    end record;
 
    function Execute
-     (Repository : in out Identity.Adapters.Repositories.Memory.Store;
+     (Repository : in out Identity.Adapters.Repositories.Stores.Store_Interface'Class;
       Assertion  : Identity.External_Providers.Assertions.Normalized_Assertion;
       Now        : Identity.Times.Instant)
       return Identity.Authentication.Results.Password_Authentication_Result;
 
    function Execute
-     (Repository : in out Identity.Adapters.Repositories.Memory.Store;
+     (Repository : in out Identity.Adapters.Repositories.Stores.Store_Interface'Class;
       Request    : Staged_Authentication_Request;
       Now        : Identity.Times.Instant)
       return Identity.Authentication.Results.Password_Authentication_Result;

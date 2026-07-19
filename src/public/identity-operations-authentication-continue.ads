@@ -1,4 +1,4 @@
-with Identity.Adapters.Repositories.Memory;
+with Identity.Adapters.Repositories.Stores;
 with Identity.Identifiers.Entities;
 with Identity.Authentication.Transactions;
 with Identity.Times;
@@ -21,26 +21,26 @@ package Identity.Operations.Authentication.Continue is
    end record;
 
    function Complete_Challenge
-     (Repository : in out Identity.Adapters.Repositories.Memory.Store;
+     (Repository : in out Identity.Adapters.Repositories.Stores.Store_Interface'Class;
       Challenge  : Identity.Identifiers.Entities.Challenge_Id;
       Principal  : Identity.Identifiers.Entities.Principal_Id;
       Now        : Identity.Times.Instant)
       return Identity.Authentication.Transactions.Authentication_Transaction_Status;
 
    function Complete_Challenge
-     (Repository : in out Identity.Adapters.Repositories.Memory.Store;
+     (Repository : in out Identity.Adapters.Repositories.Stores.Store_Interface'Class;
       Request    : Staged_Challenge_Completion_Request)
       return Identity.Authentication.Transactions.Authentication_Transaction_Status;
 
    function Satisfy
-     (Repository  : in out Identity.Adapters.Repositories.Memory.Store;
+     (Repository  : in out Identity.Adapters.Repositories.Stores.Store_Interface'Class;
       Transaction : Identity.Identifiers.Entities.Authentication_Transaction_Id;
       Principal   : Identity.Identifiers.Entities.Principal_Id;
       Now         : Identity.Times.Instant)
       return Identity.Authentication.Transactions.Authentication_Transaction_Status;
 
    function Satisfy
-     (Repository : in out Identity.Adapters.Repositories.Memory.Store;
+     (Repository : in out Identity.Adapters.Repositories.Stores.Store_Interface'Class;
       Request    : Staged_Satisfaction_Request)
       return Identity.Authentication.Transactions.Authentication_Transaction_Status;
 end Identity.Operations.Authentication.Continue;

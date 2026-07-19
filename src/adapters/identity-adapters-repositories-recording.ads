@@ -1,35 +1,43 @@
-with Identity.Adapters.Repositories.Capabilities;
-with Identity.Adapters.Repositories.Stores;
-with Identity.Adapters.Repositories.Idempotency;
+--  A repository adapter that wraps any other adapter, counts the calls that
+--  pass through it, and delegates every operation unchanged.
+--
+--  Its purpose is to prove the SPI is genuinely pluggable: it is a second,
+--  independent implementation of Store_Interface, written without reference to
+--  the memory adapter's internals, and the conformance harness certifies it
+--  through exactly the same profiles.
+
+with Identity.API_Keys.Credentials;
 with Identity.Accounts.Definitions;
 with Identity.Accounts.States;
+with Identity.Adapters.Repositories.Capabilities;
+with Identity.Adapters.Repositories.Idempotency;
+with Identity.Adapters.Repositories.Stores;
 with Identity.Assurance.Attributes;
 with Identity.Assurance.Levels;
-with Identity.API_Keys.Credentials;
-with Identity.Authentication.Results;
-with Identity.Authentication.Transactions;
-with Identity.Authentication.Challenges;
 with Identity.Attempts.Definitions;
 with Identity.Attempts.Outcomes;
+with Identity.Authentication.Challenges;
+with Identity.Authentication.Results;
+with Identity.Authentication.Transactions;
 with Identity.Contacts.Bindings;
 with Identity.Events.Envelopes;
 with Identity.External_Providers.Assertions;
 with Identity.External_Providers.Bindings;
+with Identity.Identifiers.Entities;
+with Identity.Identifiers.Registry;
 with Identity.Identities.Bindings;
 with Identity.Identities.Resolution;
 with Identity.Identities.Subjects;
-with Identity.Identifiers.Entities;
-with Identity.Identifiers.Registry;
 with Identity.One_Time_Passwords.Credentials;
 with Identity.Operations.Idempotency;
 with Identity.Passwords.Credentials;
-with Identity.Projections.Sessions;
 with Identity.Principals.Definitions;
+with Identity.Projections.Sessions;
 with Identity.Recovery.Transactions;
 with Identity.Recovery_Codes.Sets;
+with Identity.Secrets.API_Keys;
 with Identity.Secrets.Recovery_Codes;
 with Identity.Secrets.Sessions;
-with Identity.Secrets.API_Keys;
 with Identity.Secrets.Tokens;
 with Identity.Sessions.Definitions;
 with Identity.Sessions.Handles;
@@ -40,125 +48,94 @@ with Identity.Tokens.Verification;
 with Identity.Verification.Changes;
 with Identity.Versions;
 
-package Identity.Adapters.Repositories.Memory is
-   Max_Principals : constant Natural := 64;
-   Max_Accounts   : constant Natural := 64;
-   Max_Bindings   : constant Natural := 128;
-   Max_Password_Credentials : constant Natural := 128;
-   Max_Sessions : constant Natural := 128;
-   Max_Tokens   : constant Natural := 128;
-   Max_Authentication_Transactions : constant Natural := 128;
-   Max_Challenges : constant Natural := 128;
-   Max_API_Keys : constant Natural := 128;
-   Max_Events   : constant Natural := 512;
-   Max_Attempts : constant Natural := 512;
-   Max_Contact_Bindings : constant Natural := 128;
-   Max_Contact_Verification_Links : constant Natural := 128;
-   Max_Contact_Changes : constant Natural := 64;
-   Max_Recovery_Code_Sets : constant Natural := 64;
-   Max_Recovery_Transactions : constant Natural := 64;
-   Max_External_Bindings : constant Natural := 128;
-   Max_External_Replay_Markers : constant Natural := 512;
-   Max_TOTP_Credentials : constant Natural := 128;
-   Max_Idempotency_Records : constant Natural := 256;
+package Identity.Adapters.Repositories.Recording is
+   --  Inner is the wrapped adapter; every primitive delegates to it.
+   type Store (Inner : access Stores.Store_Interface'Class) is
+     new Stores.Store_Interface with private;
 
-   --  The command outcome type now belongs to the SPI. These renamings keep
-   --  Memory.Applied and friends valid for existing callers.
-   subtype Command_Status is Identity.Adapters.Repositories.Stores.Command_Status;
+   --  Mutating SPI calls delegated since the last Reset.
+   function Call_Count (Repository : Store) return Natural;
 
-   Applied : Command_Status renames Identity.Adapters.Repositories.Stores.Applied;
-   Version_Conflict : Command_Status
-     renames Identity.Adapters.Repositories.Stores.Version_Conflict;
-   State_Conflict : Command_Status
-     renames Identity.Adapters.Repositories.Stores.State_Conflict;
-   Uniqueness_Conflict : Command_Status
-     renames Identity.Adapters.Repositories.Stores.Uniqueness_Conflict;
-   Capacity_Conflict : Command_Status
-     renames Identity.Adapters.Repositories.Stores.Capacity_Conflict;
-
-   --  One implementation of the repository SPI.
-   type Store is new Identity.Adapters.Repositories.Stores.Store_Interface
-     with private;
+   --  Mutating SPI calls delegated over this decorator's whole lifetime.
+   --  Reset does not clear it, so it is usable as evidence that traffic
+   --  really passed through the decorator across a multi-phase run.
+   function Total_Call_Count (Repository : Store) return Natural;
 
    overriding procedure Reset (Repository : in out Store);
 
    overriding function Capabilities (Repository : Store)
       return Identity.Adapters.Repositories.Capabilities.Repository_Capabilities;
 
-   function Capabilities return Identity.Adapters.Repositories.Capabilities.Repository_Capabilities;
-
-   procedure Initialize (Repository : out Store);
-
    overriding function Create_Principal
      (Repository : in out Store;
-      Principal  : Identity.Principals.Definitions.Principal_Record) return Command_Status;
+      Principal  : Identity.Principals.Definitions.Principal_Record) return Stores.Command_Status;
 
    overriding function Retire_Principal
      (Repository : in out Store;
-      Principal  : Identity.Identifiers.Entities.Principal_Id) return Command_Status;
+      Principal  : Identity.Identifiers.Entities.Principal_Id) return Stores.Command_Status;
 
    overriding function Retire_Principal
      (Repository       : in out Store;
       Principal        : Identity.Identifiers.Entities.Principal_Id;
-      Expected_Version : Identity.Versions.Entity_Version) return Command_Status;
+      Expected_Version : Identity.Versions.Entity_Version) return Stores.Command_Status;
 
    overriding function Create_Account
      (Repository : in out Store;
-      Account    : Identity.Accounts.Definitions.Account_Record) return Command_Status;
+      Account    : Identity.Accounts.Definitions.Account_Record) return Stores.Command_Status;
 
    overriding function Update_Account_State
      (Repository : in out Store;
       Account    : Identity.Identifiers.Entities.Account_Id;
       Principal  : Identity.Identifiers.Entities.Principal_Id;
       State      : Identity.Accounts.States.Account_State_View)
-      return Command_Status;
+      return Stores.Command_Status;
 
    overriding function Add_Binding
      (Repository : in out Store;
-      Binding    : Identity.Identities.Bindings.Binding_Record) return Command_Status;
+      Binding    : Identity.Identities.Bindings.Binding_Record) return Stores.Command_Status;
 
    overriding function Revoke_Binding
      (Repository : in out Store;
       Binding    : Identity.Identifiers.Entities.Identity_Binding_Id;
-      Principal  : Identity.Identifiers.Entities.Principal_Id) return Command_Status;
+      Principal  : Identity.Identifiers.Entities.Principal_Id) return Stores.Command_Status;
 
    overriding function Revoke_Binding
      (Repository               : in out Store;
       Binding                  : Identity.Identifiers.Entities.Identity_Binding_Id;
       Principal                : Identity.Identifiers.Entities.Principal_Id;
-      Expected_Binding_Version : Identity.Versions.Entity_Version) return Command_Status;
+      Expected_Binding_Version : Identity.Versions.Entity_Version) return Stores.Command_Status;
 
    overriding function Change_Binding
      (Repository  : in out Store;
       Predecessor : Identity.Identifiers.Entities.Identity_Binding_Id;
-      Successor   : Identity.Identities.Bindings.Binding_Record) return Command_Status;
+      Successor   : Identity.Identities.Bindings.Binding_Record) return Stores.Command_Status;
 
    overriding function Change_Binding
      (Repository                   : in out Store;
       Predecessor                  : Identity.Identifiers.Entities.Identity_Binding_Id;
       Expected_Predecessor_Version : Identity.Versions.Entity_Version;
-      Successor                    : Identity.Identities.Bindings.Binding_Record) return Command_Status;
+      Successor                    : Identity.Identities.Bindings.Binding_Record) return Stores.Command_Status;
 
    overriding function Enroll_Password
      (Repository : in out Store;
-      Credential : Identity.Passwords.Credentials.Password_Credential_Record) return Command_Status;
+      Credential : Identity.Passwords.Credentials.Password_Credential_Record) return Stores.Command_Status;
 
    overriding function Replace_Password
      (Repository  : in out Store;
       Predecessor : Identity.Identifiers.Entities.Credential_Id;
       Successor   : Identity.Passwords.Credentials.Password_Credential_Record)
-      return Command_Status;
+      return Stores.Command_Status;
 
    overriding function Replace_Password
      (Repository                   : in out Store;
       Predecessor                  : Identity.Identifiers.Entities.Credential_Id;
       Expected_Predecessor_Version : Identity.Versions.Entity_Version;
       Successor                    : Identity.Passwords.Credentials.Password_Credential_Record)
-      return Command_Status;
+      return Stores.Command_Status;
 
    overriding function Create_Session
      (Repository : in out Store;
-      Session    : Identity.Sessions.Definitions.Session_Record) return Command_Status;
+      Session    : Identity.Sessions.Definitions.Session_Record) return Stores.Command_Status;
 
    overriding procedure Find_Session
      (Repository : Store;
@@ -168,59 +145,59 @@ package Identity.Adapters.Repositories.Memory is
 
    overriding function Revoke_Session
      (Repository : in out Store;
-      Session    : Identity.Identifiers.Entities.Session_Id) return Command_Status;
+      Session    : Identity.Identifiers.Entities.Session_Id) return Stores.Command_Status;
 
    overriding function Revoke_Session
      (Repository               : in out Store;
       Session                  : Identity.Identifiers.Entities.Session_Id;
-      Expected_Session_Version : Identity.Versions.Entity_Version) return Command_Status;
+      Expected_Session_Version : Identity.Versions.Entity_Version) return Stores.Command_Status;
 
    overriding function Rotate_Session
      (Repository  : in out Store;
       Predecessor : Identity.Identifiers.Entities.Session_Id;
-      Successor   : Identity.Sessions.Definitions.Session_Record) return Command_Status;
+      Successor   : Identity.Sessions.Definitions.Session_Record) return Stores.Command_Status;
 
    overriding function Rotate_Session
      (Repository                   : in out Store;
       Predecessor                  : Identity.Identifiers.Entities.Session_Id;
       Expected_Predecessor_Version : Identity.Versions.Entity_Version;
-      Successor                    : Identity.Sessions.Definitions.Session_Record) return Command_Status;
+      Successor                    : Identity.Sessions.Definitions.Session_Record) return Stores.Command_Status;
 
    overriding function Revoke_Session_Family
      (Repository : in out Store;
-      Family     : Identity.Identifiers.Entities.Session_Family_Id) return Command_Status;
+      Family     : Identity.Identifiers.Entities.Session_Family_Id) return Stores.Command_Status;
 
    overriding function Revoke_Session_Family
      (Repository              : in out Store;
       Family                  : Identity.Identifiers.Entities.Session_Family_Id;
-      Expected_Affected_Count : Natural) return Command_Status;
+      Expected_Affected_Count : Natural) return Stores.Command_Status;
 
    overriding function Revoke_Principal_Sessions
      (Repository : in out Store;
-      Principal  : Identity.Identifiers.Entities.Principal_Id) return Command_Status;
+      Principal  : Identity.Identifiers.Entities.Principal_Id) return Stores.Command_Status;
 
    overriding function Revoke_Principal_Sessions
      (Repository              : in out Store;
       Principal               : Identity.Identifiers.Entities.Principal_Id;
-      Expected_Affected_Count : Natural) return Command_Status;
+      Expected_Affected_Count : Natural) return Stores.Command_Status;
 
    overriding function Revoke_Credential_Sessions
      (Repository : in out Store;
-      Credential : Identity.Identifiers.Entities.Credential_Id) return Command_Status;
+      Credential : Identity.Identifiers.Entities.Credential_Id) return Stores.Command_Status;
 
    overriding function Revoke_Credential_Sessions
      (Repository              : in out Store;
       Credential              : Identity.Identifiers.Entities.Credential_Id;
-      Expected_Affected_Count : Natural) return Command_Status;
+      Expected_Affected_Count : Natural) return Stores.Command_Status;
 
    overriding function Revoke_Provider_Sessions
      (Repository : in out Store;
-      Provider   : Identity.Identifiers.Entities.External_Provider_Id) return Command_Status;
+      Provider   : Identity.Identifiers.Entities.External_Provider_Id) return Stores.Command_Status;
 
    overriding function Revoke_Provider_Sessions
      (Repository              : in out Store;
       Provider                : Identity.Identifiers.Entities.External_Provider_Id;
-      Expected_Affected_Count : Natural) return Command_Status;
+      Expected_Affected_Count : Natural) return Stores.Command_Status;
 
    overriding function Expire_Eligible_Sessions
      (Repository : in out Store;
@@ -237,7 +214,7 @@ package Identity.Adapters.Repositories.Memory is
 
    overriding function Issue_Token
      (Repository : in out Store;
-      Token      : Identity.Tokens.Definitions.Action_Token_Record) return Command_Status;
+      Token      : Identity.Tokens.Definitions.Action_Token_Record) return Stores.Command_Status;
 
    overriding procedure Find_Token
      (Repository : Store;
@@ -328,29 +305,29 @@ package Identity.Adapters.Repositories.Memory is
 
    overriding function Issue_API_Key
      (Repository : in out Store;
-      Credential : Identity.API_Keys.Credentials.API_Key_Credential_Record) return Command_Status;
+      Credential : Identity.API_Keys.Credentials.API_Key_Credential_Record) return Stores.Command_Status;
 
    overriding function Revoke_API_Key
      (Repository : in out Store;
-      Credential : Identity.Identifiers.Entities.Credential_Id) return Command_Status;
+      Credential : Identity.Identifiers.Entities.Credential_Id) return Stores.Command_Status;
 
    overriding function Revoke_API_Key
      (Repository                  : in out Store;
       Credential                  : Identity.Identifiers.Entities.Credential_Id;
-      Expected_Credential_Version : Identity.Versions.Entity_Version) return Command_Status;
+      Expected_Credential_Version : Identity.Versions.Entity_Version) return Stores.Command_Status;
 
    overriding function Rotate_API_Key
      (Repository  : in out Store;
       Predecessor : Identity.Identifiers.Entities.Credential_Id;
       Successor   : Identity.API_Keys.Credentials.API_Key_Credential_Record)
-      return Command_Status;
+      return Stores.Command_Status;
 
    overriding function Rotate_API_Key
      (Repository                   : in out Store;
       Predecessor                  : Identity.Identifiers.Entities.Credential_Id;
       Expected_Predecessor_Version : Identity.Versions.Entity_Version;
       Successor                    : Identity.API_Keys.Credentials.API_Key_Credential_Record)
-      return Command_Status;
+      return Stores.Command_Status;
 
    overriding procedure Find_API_Key
      (Repository : Store;
@@ -360,11 +337,11 @@ package Identity.Adapters.Repositories.Memory is
 
    overriding function Append_Event
      (Repository : in out Store;
-      Event      : Identity.Events.Envelopes.Event_Envelope) return Command_Status;
+      Event      : Identity.Events.Envelopes.Event_Envelope) return Stores.Command_Status;
 
    overriding function Record_Attempt
      (Repository : in out Store;
-      Attempt    : Identity.Attempts.Definitions.Attempt_Record) return Command_Status;
+      Attempt    : Identity.Attempts.Definitions.Attempt_Record) return Stores.Command_Status;
 
    overriding procedure Find_Attempt
      (Repository : Store;
@@ -375,7 +352,7 @@ package Identity.Adapters.Repositories.Memory is
    overriding function Request_Contact_Verification
      (Repository : in out Store;
       Contact    : Identity.Contacts.Bindings.Contact_Binding_Record;
-      Token      : Identity.Tokens.Definitions.Action_Token_Record) return Command_Status;
+      Token      : Identity.Tokens.Definitions.Action_Token_Record) return Stores.Command_Status;
 
    overriding function Complete_Contact_Verification
      (Repository : in out Store;
@@ -399,7 +376,7 @@ package Identity.Adapters.Repositories.Memory is
      (Repository : in out Store;
       Change     : Identity.Verification.Changes.Contact_Change_Record;
       Successor  : Identity.Contacts.Bindings.Contact_Binding_Record;
-      Token      : Identity.Tokens.Definitions.Action_Token_Record) return Command_Status;
+      Token      : Identity.Tokens.Definitions.Action_Token_Record) return Stores.Command_Status;
 
    overriding function Complete_Contact_Change
      (Repository  : in out Store;
@@ -431,16 +408,16 @@ package Identity.Adapters.Repositories.Memory is
 
    overriding function Install_Recovery_Code_Set
      (Repository : in out Store;
-      Codes      : Identity.Recovery_Codes.Sets.Recovery_Code_Set_Record) return Command_Status;
+      Codes      : Identity.Recovery_Codes.Sets.Recovery_Code_Set_Record) return Stores.Command_Status;
 
    overriding function Regenerate_Recovery_Code_Set
      (Repository : in out Store;
-      Codes      : Identity.Recovery_Codes.Sets.Recovery_Code_Set_Record) return Command_Status;
+      Codes      : Identity.Recovery_Codes.Sets.Recovery_Code_Set_Record) return Stores.Command_Status;
 
    overriding function Regenerate_Recovery_Code_Set
      (Repository              : in out Store;
       Codes                   : Identity.Recovery_Codes.Sets.Recovery_Code_Set_Record;
-      Expected_Affected_Count : Natural) return Command_Status;
+      Expected_Affected_Count : Natural) return Stores.Command_Status;
 
    overriding procedure Find_Recovery_Code_Set
      (Repository : Store;
@@ -505,22 +482,22 @@ package Identity.Adapters.Repositories.Memory is
 
    overriding function Bind_External
      (Repository : in out Store;
-      Binding    : Identity.External_Providers.Bindings.External_Binding_Record) return Command_Status;
+      Binding    : Identity.External_Providers.Bindings.External_Binding_Record) return Stores.Command_Status;
 
    overriding function Revoke_External
      (Repository : in out Store;
       Binding    : Identity.Identifiers.Entities.External_Binding_Id;
-      Principal  : Identity.Identifiers.Entities.Principal_Id) return Command_Status;
+      Principal  : Identity.Identifiers.Entities.Principal_Id) return Stores.Command_Status;
 
    overriding function Revoke_External
      (Repository               : in out Store;
       Binding                  : Identity.Identifiers.Entities.External_Binding_Id;
       Principal                : Identity.Identifiers.Entities.Principal_Id;
-      Expected_Binding_Version : Identity.Versions.Entity_Version) return Command_Status;
+      Expected_Binding_Version : Identity.Versions.Entity_Version) return Stores.Command_Status;
 
    overriding function Register_External_Replay
      (Repository  : in out Store;
-      Fingerprint : Identity.Text.Bounded.Bounded_Text) return Command_Status;
+      Fingerprint : Identity.Text.Bounded.Bounded_Text) return Stores.Command_Status;
 
    overriding function Reserve_Idempotency
      (Repository : in out Store;
@@ -544,18 +521,18 @@ package Identity.Adapters.Repositories.Memory is
    overriding function Begin_TOTP_Enrollment
      (Repository : in out Store;
       Credential : Identity.One_Time_Passwords.Credentials.TOTP_Credential_Record)
-      return Command_Status;
+      return Stores.Command_Status;
 
    overriding function Complete_TOTP_Enrollment
      (Repository : in out Store;
       Credential : Identity.One_Time_Passwords.Credentials.TOTP_Credential_Record)
-      return Command_Status;
+      return Stores.Command_Status;
 
    overriding function Complete_TOTP_Enrollment
      (Repository                  : in out Store;
       Credential                  : Identity.One_Time_Passwords.Credentials.TOTP_Credential_Record;
       Expected_Credential_Version : Identity.Versions.Entity_Version)
-      return Command_Status;
+      return Stores.Command_Status;
 
    overriding procedure Find_TOTP_Credential
      (Repository : Store;
@@ -566,13 +543,13 @@ package Identity.Adapters.Repositories.Memory is
    overriding function Remove_TOTP
      (Repository : in out Store;
       Credential : Identity.Identifiers.Entities.Credential_Id;
-      Principal  : Identity.Identifiers.Entities.Principal_Id) return Command_Status;
+      Principal  : Identity.Identifiers.Entities.Principal_Id) return Stores.Command_Status;
 
    overriding function Remove_TOTP
      (Repository                  : in out Store;
       Credential                  : Identity.Identifiers.Entities.Credential_Id;
       Principal                   : Identity.Identifiers.Entities.Principal_Id;
-      Expected_Credential_Version : Identity.Versions.Entity_Version) return Command_Status;
+      Expected_Credential_Version : Identity.Versions.Entity_Version) return Stores.Command_Status;
 
    overriding function Resolve
      (Repository : Store;
@@ -718,184 +695,45 @@ package Identity.Adapters.Repositories.Memory is
       return Identity.One_Time_Passwords.Credentials.TOTP_Accept_Status;
 
    overriding function Principal_Count (Repository : Store) return Natural;
+
    overriding function Account_Count (Repository : Store) return Natural;
+
    overriding function Binding_Count (Repository : Store) return Natural;
+
    overriding function Password_Credential_Count (Repository : Store) return Natural;
+
    overriding function Session_Count (Repository : Store) return Natural;
+
    overriding function Token_Count (Repository : Store) return Natural;
+
    overriding function Authentication_Transaction_Count (Repository : Store) return Natural;
+
    overriding function Challenge_Count (Repository : Store) return Natural;
+
    overriding function API_Key_Count (Repository : Store) return Natural;
+
    overriding function Event_Count (Repository : Store) return Natural;
+
    overriding function Attempt_Count (Repository : Store) return Natural;
+
    overriding function Contact_Binding_Count (Repository : Store) return Natural;
+
    overriding function Contact_Change_Count (Repository : Store) return Natural;
+
    overriding function Recovery_Code_Set_Count (Repository : Store) return Natural;
+
    overriding function Recovery_Transaction_Count (Repository : Store) return Natural;
+
    overriding function External_Binding_Count (Repository : Store) return Natural;
+
    overriding function External_Replay_Count (Repository : Store) return Natural;
+
    overriding function TOTP_Credential_Count (Repository : Store) return Natural;
 
 private
-   type Principal_Slot is record
-      Present : Boolean := False;
-      Value   : Identity.Principals.Definitions.Principal_Record;
+   type Store (Inner : access Stores.Store_Interface'Class) is
+     new Stores.Store_Interface with record
+      Calls : Natural := 0;
+      Total : Natural := 0;
    end record;
-
-   type Account_Slot is record
-      Present : Boolean := False;
-      Value   : Identity.Accounts.Definitions.Account_Record;
-   end record;
-
-   type Binding_Slot is record
-      Present : Boolean := False;
-      Value   : Identity.Identities.Bindings.Binding_Record;
-   end record;
-
-   type Password_Credential_Slot is record
-      Present : Boolean := False;
-      Value   : Identity.Passwords.Credentials.Password_Credential_Record;
-   end record;
-
-   type Session_Slot is record
-      Present : Boolean := False;
-      Value   : Identity.Sessions.Definitions.Session_Record;
-   end record;
-
-   type Token_Slot is record
-      Present : Boolean := False;
-      Value   : Identity.Tokens.Definitions.Action_Token_Record;
-   end record;
-
-   type Authentication_Transaction_Slot is record
-      Present : Boolean := False;
-      Value   : Identity.Authentication.Transactions.Authentication_Transaction_Record;
-   end record;
-
-   type Challenge_Slot is record
-      Present : Boolean := False;
-      Value   : Identity.Authentication.Challenges.Challenge_Record;
-   end record;
-
-   type API_Key_Slot is record
-      Present : Boolean := False;
-      Value   : Identity.API_Keys.Credentials.API_Key_Credential_Record;
-   end record;
-
-   type Event_Slot is record
-      Present : Boolean := False;
-      Value   : Identity.Events.Envelopes.Event_Envelope;
-   end record;
-
-   type Attempt_Slot is record
-      Present : Boolean := False;
-      Value   : Identity.Attempts.Definitions.Attempt_Record;
-   end record;
-
-   type Contact_Binding_Slot is record
-      Present : Boolean := False;
-      Value   : Identity.Contacts.Bindings.Contact_Binding_Record;
-   end record;
-
-   type Contact_Verification_Link_Slot is record
-      Present : Boolean := False;
-      Token   : Identity.Identifiers.Entities.Token_Id;
-      Contact : Identity.Identifiers.Entities.Contact_Binding_Id;
-   end record;
-
-   type Contact_Change_Slot is record
-      Present : Boolean := False;
-      Value   : Identity.Verification.Changes.Contact_Change_Record;
-   end record;
-
-   type Recovery_Code_Set_Slot is record
-      Present : Boolean := False;
-      Value   : Identity.Recovery_Codes.Sets.Recovery_Code_Set_Record;
-   end record;
-
-   type Recovery_Transaction_Slot is record
-      Present : Boolean := False;
-      Value   : Identity.Recovery.Transactions.Recovery_Transaction_Record;
-   end record;
-
-   type External_Binding_Slot is record
-      Present : Boolean := False;
-      Value   : Identity.External_Providers.Bindings.External_Binding_Record;
-   end record;
-
-   type External_Replay_Slot is record
-      Present : Boolean := False;
-      Fingerprint : Identity.Text.Bounded.Bounded_Text;
-   end record;
-
-   type TOTP_Credential_Slot is record
-      Present : Boolean := False;
-      Value   : Identity.One_Time_Passwords.Credentials.TOTP_Credential_Record;
-   end record;
-
-   type Idempotency_Slot is record
-      Present   : Boolean := False;
-      Operation : Identity.Operations.Idempotency.Idempotent_Operation_Kind :=
-        Identity.Operations.Idempotency.Password_Reset_Request;
-      Key       : Identity.Operations.Idempotency.Idempotency_Key :=
-        Identity.Operations.Idempotency.From_String ("");
-      Completed : Boolean := False;
-      Version   : Identity.Versions.Entity_Version := 0;
-   end record;
-
-   type Principal_Array is array (Positive range 1 .. Max_Principals) of Principal_Slot;
-   type Account_Array is array (Positive range 1 .. Max_Accounts) of Account_Slot;
-   type Binding_Array is array (Positive range 1 .. Max_Bindings) of Binding_Slot;
-   type Password_Credential_Array is
-     array (Positive range 1 .. Max_Password_Credentials) of Password_Credential_Slot;
-   type Session_Array is array (Positive range 1 .. Max_Sessions) of Session_Slot;
-   type Token_Array is array (Positive range 1 .. Max_Tokens) of Token_Slot;
-   type Authentication_Transaction_Array is
-     array (Positive range 1 .. Max_Authentication_Transactions) of Authentication_Transaction_Slot;
-   type Challenge_Array is array (Positive range 1 .. Max_Challenges) of Challenge_Slot;
-   type API_Key_Array is array (Positive range 1 .. Max_API_Keys) of API_Key_Slot;
-   type Event_Array is array (Positive range 1 .. Max_Events) of Event_Slot;
-   type Attempt_Array is array (Positive range 1 .. Max_Attempts) of Attempt_Slot;
-   type Contact_Binding_Array is
-     array (Positive range 1 .. Max_Contact_Bindings) of Contact_Binding_Slot;
-   type Contact_Verification_Link_Array is
-     array (Positive range 1 .. Max_Contact_Verification_Links) of Contact_Verification_Link_Slot;
-   type Contact_Change_Array is
-     array (Positive range 1 .. Max_Contact_Changes) of Contact_Change_Slot;
-   type Recovery_Code_Set_Array is
-     array (Positive range 1 .. Max_Recovery_Code_Sets) of Recovery_Code_Set_Slot;
-   type Recovery_Transaction_Array is
-     array (Positive range 1 .. Max_Recovery_Transactions) of Recovery_Transaction_Slot;
-   type External_Binding_Array is
-     array (Positive range 1 .. Max_External_Bindings) of External_Binding_Slot;
-   type External_Replay_Array is
-     array (Positive range 1 .. Max_External_Replay_Markers) of External_Replay_Slot;
-   type TOTP_Credential_Array is
-     array (Positive range 1 .. Max_TOTP_Credentials) of TOTP_Credential_Slot;
-   type Idempotency_Array is
-     array (Positive range 1 .. Max_Idempotency_Records) of Idempotency_Slot;
-
-   type Store is new Identity.Adapters.Repositories.Stores.Store_Interface
-   with record
-      Principals : Principal_Array;
-      Accounts   : Account_Array;
-      Bindings   : Binding_Array;
-      Passwords   : Password_Credential_Array;
-      Sessions    : Session_Array;
-      Tokens      : Token_Array;
-      Authentication_Transactions : Authentication_Transaction_Array;
-      Challenges  : Challenge_Array;
-      API_Keys    : API_Key_Array;
-      Events      : Event_Array;
-      Attempts    : Attempt_Array;
-      Contact_Bindings : Contact_Binding_Array;
-      Contact_Verification_Links : Contact_Verification_Link_Array;
-      Contact_Changes : Contact_Change_Array;
-      Recovery_Code_Sets : Recovery_Code_Set_Array;
-      Recovery_Transactions : Recovery_Transaction_Array;
-      External_Bindings : External_Binding_Array;
-      External_Replays  : External_Replay_Array;
-      TOTP_Credentials  : TOTP_Credential_Array;
-      Idempotency       : Idempotency_Array;
-   end record;
-end Identity.Adapters.Repositories.Memory;
+end Identity.Adapters.Repositories.Recording;

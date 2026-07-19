@@ -1,29 +1,29 @@
 package body Identity.Operations.Factors.Regenerate_Recovery_Codes is
    function Execute
-     (Repository : in out Identity.Adapters.Repositories.Memory.Store;
+     (Repository : in out Identity.Adapters.Repositories.Stores.Store_Interface'Class;
       Codes      : Identity.Recovery_Codes.Sets.Recovery_Code_Set_Record)
-      return Identity.Adapters.Repositories.Memory.Command_Status is
+      return Identity.Adapters.Repositories.Stores.Command_Status is
    begin
-      return Identity.Adapters.Repositories.Memory.Regenerate_Recovery_Code_Set
+      return Identity.Adapters.Repositories.Stores.Regenerate_Recovery_Code_Set
         (Repository, Codes);
    end Execute;
 
    function Execute
-     (Repository : in out Identity.Adapters.Repositories.Memory.Store;
+     (Repository : in out Identity.Adapters.Repositories.Stores.Store_Interface'Class;
       Request    : Regenerate_Request)
-      return Identity.Adapters.Repositories.Memory.Command_Status is
+      return Identity.Adapters.Repositories.Stores.Command_Status is
    begin
-      return Identity.Adapters.Repositories.Memory.Regenerate_Recovery_Code_Set
+      return Identity.Adapters.Repositories.Stores.Regenerate_Recovery_Code_Set
         (Repository,
          Identity.Operations.Factors.Generate_Recovery_Codes.To_Record (Request));
    end Execute;
 
    function Execute
-     (Repository : in out Identity.Adapters.Repositories.Memory.Store;
+     (Repository : in out Identity.Adapters.Repositories.Stores.Store_Interface'Class;
       Request    : Staged_Regenerate_Request)
-      return Identity.Adapters.Repositories.Memory.Command_Status is
+      return Identity.Adapters.Repositories.Stores.Command_Status is
    begin
-      return Identity.Adapters.Repositories.Memory.Regenerate_Recovery_Code_Set
+      return Identity.Adapters.Repositories.Stores.Regenerate_Recovery_Code_Set
         (Repository,
          Identity.Operations.Factors.Generate_Recovery_Codes.To_Record (Request.Request),
          Request.Expected_Affected_Count);
