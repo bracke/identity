@@ -49,35 +49,42 @@ package body Identity.Adapters.Repositories.Memory is
       return Capabilities;
    end Capabilities;
 
+   --  Cleared component by component rather than by whole-record aggregate.
+   --  A Store is a large fixed-capacity record, and an aggregate assignment
+   --  builds a full-size temporary on the stack -- enough, with two stores
+   --  live, to overflow the default stack before anything useful happens.
    procedure Initialize (Repository : out Store) is
    begin
-      Repository := (Principals => [others => (Present => False, Value => <>)],
-                     Accounts   => [others => (Present => False, Value => <>)],
-                     Bindings   => [others => (Present => False, Value => <>)],
-                     Passwords  => [others => (Present => False, Value => <>)],
-                     Sessions   => [others => (Present => False, Value => <>)],
-                     Tokens     => [others => (Present => False, Value => <>)],
-                     Authentication_Transactions => [others => (Present => False, Value => <>)],
-                     Challenges => [others => (Present => False, Value => <>)],
-                     API_Keys   => [others => (Present => False, Value => <>)],
-                     Events     => [others => (Present => False, Value => <>)],
-                     Attempts   => [others => (Present => False, Value => <>)],
-                     Contact_Bindings => [others => (Present => False, Value => <>)],
-                     Contact_Verification_Links =>
-                       [others => (Present => False, Token => <>, Contact => <>)],
-                     Contact_Changes => [others => (Present => False, Value => <>)],
-                     Recovery_Code_Sets => [others => (Present => False, Value => <>)],
-                     Recovery_Transactions => [others => (Present => False, Value => <>)],
-                     External_Bindings  => [others => (Present => False, Value => <>)],
-                     External_Replays   => [others => (Present => False, Fingerprint => <>)],
-                     TOTP_Credentials   => [others => (Present => False, Value => <>)],
-                     Idempotency        =>
-                       [others =>
-                          (Present => False,
-                           Operation => Identity.Operations.Idempotency.Password_Reset_Request,
-                           Key => Identity.Operations.Idempotency.From_String (""),
-                           Completed => False,
-                           Version => 0)]);
+      Repository.Principals := [others => (Present => False, Value => <>)];
+      Repository.Accounts   := [others => (Present => False, Value => <>)];
+      Repository.Bindings   := [others => (Present => False, Value => <>)];
+      Repository.Passwords  := [others => (Present => False, Value => <>)];
+      Repository.Sessions   := [others => (Present => False, Value => <>)];
+      Repository.Tokens     := [others => (Present => False, Value => <>)];
+      Repository.Authentication_Transactions :=
+        [others => (Present => False, Value => <>)];
+      Repository.Challenges := [others => (Present => False, Value => <>)];
+      Repository.API_Keys   := [others => (Present => False, Value => <>)];
+      Repository.Events     := [others => (Present => False, Value => <>)];
+      Repository.Attempts   := [others => (Present => False, Value => <>)];
+      Repository.Contact_Bindings := [others => (Present => False, Value => <>)];
+      Repository.Contact_Verification_Links :=
+        [others => (Present => False, Token => <>, Contact => <>)];
+      Repository.Contact_Changes := [others => (Present => False, Value => <>)];
+      Repository.Recovery_Code_Sets := [others => (Present => False, Value => <>)];
+      Repository.Recovery_Transactions :=
+        [others => (Present => False, Value => <>)];
+      Repository.External_Bindings := [others => (Present => False, Value => <>)];
+      Repository.External_Replays :=
+        [others => (Present => False, Fingerprint => <>)];
+      Repository.TOTP_Credentials := [others => (Present => False, Value => <>)];
+      Repository.Idempotency :=
+        [others =>
+           (Present => False,
+            Operation => Identity.Operations.Idempotency.Password_Reset_Request,
+            Key => Identity.Operations.Idempotency.From_String (""),
+            Completed => False,
+            Version => 0)];
    end Initialize;
 
    function Same_Principal

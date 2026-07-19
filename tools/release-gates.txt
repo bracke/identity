@@ -134,6 +134,11 @@ implemented.
 - Event registry coverage is structural, not behavioural: the registry and the
   public constants are checked against each other, but the AUnit suite exercises
   only a subset of the 16 event constants.
+- A Memory.Store is 3.3 MB (fixed-capacity arrays sized for 512 events, 128
+  sessions and so on), so two of them will not fit on a default 8 MB stack.
+  Harnesses that need isolated stores must allocate them on the heap, as the
+  conformance and concurrency harnesses do; the AUnit suite instead shares one
+  store and uses distinct identifier prefixes, which is weaker isolation.
 - The conformance profiles are certified against the two adapters shipped here
   (memory, and the recording decorator over it). No persistent adapter exists
   yet, so the SPI has not been exercised against a store with real I/O,
