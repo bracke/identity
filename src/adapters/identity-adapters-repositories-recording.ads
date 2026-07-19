@@ -499,6 +499,10 @@ package Identity.Adapters.Repositories.Recording is
       Principal                : Identity.Identifiers.Entities.Principal_Id;
       Expected_Binding_Version : Identity.Versions.Entity_Version) return Stores.Command_Status;
 
+   overriding function External_Replay_Registered
+     (Repository  : Store;
+      Fingerprint : Identity.Text.Bounded.Bounded_Text) return Boolean;
+
    overriding function Register_External_Replay
      (Repository  : in out Store;
       Fingerprint : Identity.Text.Bounded.Bounded_Text) return Stores.Command_Status;

@@ -31,13 +31,25 @@ package Identity.Operations.Authentication.External is
    --  before the fingerprint is registered, so a detected replay can always
    --  be recorded.
    --
-   --  Only the unstaged form is audited: in the staged form a conflict may
-   --  equally mean the binding lost its version check, which is not a replay
-   --  and must not be reported as one.
+   --  The staged form is audited the same way. A conflict there may equally
+   --  mean the binding lost its version check, so the fingerprint is checked
+   --  before the call: the store registers it before matching any binding, so
+   --  a fingerprint that was already present is the only case that is a real
+   --  replay.
    function Execute
      (Repository  : in out
         Identity.Adapters.Repositories.Stores.Store_Interface'Class;
       Assertion   : Identity.External_Providers.Assertions.Normalized_Assertion;
+      Now         : Identity.Times.Instant;
+      Context     : Identity.Operations.Contexts.Operation_Context;
+      Event       : Identity.Identifiers.Entities.Event_Id;
+      Recorded_At : Identity.Times.Instant)
+      return Identity.Authentication.Results.Password_Authentication_Result;
+
+   function Execute
+     (Repository  : in out
+        Identity.Adapters.Repositories.Stores.Store_Interface'Class;
+      Request     : Staged_Authentication_Request;
       Now         : Identity.Times.Instant;
       Context     : Identity.Operations.Contexts.Operation_Context;
       Event       : Identity.Identifiers.Entities.Event_Id;

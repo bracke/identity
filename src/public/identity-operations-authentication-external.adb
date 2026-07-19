@@ -83,4 +83,63 @@ package body Identity.Operations.Authentication.External is
 
       return Result;
    end Execute;
+
+   function Execute
+     (Repository  : in out
+        Identity.Adapters.Repositories.Stores.Store_Interface'Class;
+      Request     : Staged_Authentication_Request;
+      Now         : Identity.Times.Instant;
+      Context     : Identity.Operations.Contexts.Operation_Context;
+      Event       : Identity.Identifiers.Entities.Event_Id;
+      Recorded_At : Identity.Times.Instant)
+      return Identity.Authentication.Results.Password_Authentication_Result
+   is
+      use type Identity.Adapters.Repositories.Stores.Command_Status;
+      use type Identity.Results.Operation_Status;
+
+      Result : Identity.Authentication.Results.Password_Authentication_Result;
+
+      --  Captured before the call: Authenticate_External registers the
+      --  fingerprint before it matches any binding, so a fingerprint already
+      --  present here is the only thing that makes a later conflict a replay
+      --  rather than a lost version check.
+      Seen_Before : constant Boolean :=
+        Identity.Adapters.Repositories.Stores.External_Replay_Registered
+          (Repository, Request.Assertion.Assertion_Fingerprint);
+   begin
+      if not Identity.Operations.Audit.Capacity_Reserved (Repository) then
+         return
+           (Status    => Identity.Results.Operational_Failure,
+            Principal => (Present => False));
+      end if;
+
+      Result := Execute (Repository, Request, Now);
+
+      if Result.Status /= Identity.Results.Conflict or else not Seen_Before then
+         --  Ordinary traffic, or a version conflict on a first-seen assertion.
+         return Result;
+      end if;
+
+      declare
+         Emitted : constant Identity.Adapters.Repositories.Stores.Command_Status :=
+           Identity.Operations.Audit.Emit
+             (Repository  => Repository,
+              Context     => Context,
+              Event       => Event,
+              Type_Id     =>
+                Identity.Events.Types.External_Assertion_Replay_Detected,
+              Subject     => Identity.Operations.Audit.No_Subject,
+              Target      => Request.Assertion.Assertion_Fingerprint,
+              Outcome     => Identity.Events.Envelopes.Conflict,
+              Recorded_At => Recorded_At);
+      begin
+         if Emitted /= Identity.Adapters.Repositories.Stores.Applied then
+            return
+              (Status    => Identity.Results.Operational_Failure,
+               Principal => (Present => False));
+         end if;
+      end;
+
+      return Result;
+   end Execute;
 end Identity.Operations.Authentication.External;

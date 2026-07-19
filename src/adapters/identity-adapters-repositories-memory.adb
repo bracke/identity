@@ -3084,6 +3084,21 @@ package body Identity.Adapters.Repositories.Memory is
       return State_Conflict;
    end Revoke_External;
 
+   overriding function External_Replay_Registered
+     (Repository  : Store;
+      Fingerprint : Identity.Text.Bounded.Bounded_Text) return Boolean
+   is
+   begin
+      for Slot of Repository.External_Replays loop
+         if Slot.Present
+           and then Identity.Text.Bounded.Equal (Slot.Fingerprint, Fingerprint)
+         then
+            return True;
+         end if;
+      end loop;
+      return False;
+   end External_Replay_Registered;
+
    overriding function Register_External_Replay
      (Repository  : in out Store;
       Fingerprint : Identity.Text.Bounded.Bounded_Text) return Command_Status

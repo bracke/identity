@@ -1,4 +1,3 @@
-with Identity.Events.Envelopes;
 with Identity.Events.Types;
 with Identity.Operations.Audit;
 with Identity.Text.Bounded;
@@ -7,19 +6,6 @@ package body Identity.Operations.Authentication.Continue is
    --  A transaction verdict is not a store command status: an unknown or
    --  wrongly-staged transaction is a conflict, and nothing here is a plain
    --  credential rejection.
-   function Outcome_Of
-     (Status : Identity.Authentication.Transactions
-        .Authentication_Transaction_Status)
-      return Identity.Events.Envelopes.Event_Outcome is
-     (case Status is
-        when Identity.Authentication.Transactions.Applied =>
-          Identity.Events.Envelopes.Succeeded,
-        when Identity.Authentication.Transactions.Unknown
-           | Identity.Authentication.Transactions.State_Conflict
-           | Identity.Authentication.Transactions.Version_Conflict =>
-          Identity.Events.Envelopes.Conflict,
-        when Identity.Authentication.Transactions.Capacity_Conflict =>
-          Identity.Events.Envelopes.Failed);
 
    function Complete_Challenge
      (Repository : in out Identity.Adapters.Repositories.Stores.Store_Interface'Class;
@@ -78,7 +64,7 @@ package body Identity.Operations.Authentication.Continue is
                 Identity.Operations.Audit.Subject_Of (Request.Principal),
               Target      => Identity.Text.Bounded.From_String
                 (Identity.Identifiers.Entities.To_String (Request.Challenge)),
-              Outcome     => Outcome_Of (Status),
+              Outcome     => Identity.Operations.Audit.Outcome_Of (Status),
               Recorded_At => Recorded_At);
       begin
          if Emitted /= Identity.Adapters.Repositories.Stores.Applied then

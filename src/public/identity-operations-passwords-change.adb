@@ -1,6 +1,5 @@
 with Identity.Credentials.States;
 with Identity.Crypto.Password_Hashing;
-with Identity.Events.Envelopes;
 with Identity.Events.Types;
 with Identity.Operations.Audit;
 with Identity.Passwords.Credentials;
@@ -114,17 +113,6 @@ package body Identity.Operations.Passwords.Change is
    --  status, so the event outcome is derived from it directly: a wrong
    --  current password is a rejection, a losing version check is a conflict,
    --  and anything operational is a failure.
-   function Outcome_Of
-     (Status : Identity.Results.Operation_Status)
-      return Identity.Events.Envelopes.Event_Outcome is
-     (case Status is
-        when Identity.Results.Succeeded => Identity.Events.Envelopes.Succeeded,
-        when Identity.Results.Conflict  => Identity.Events.Envelopes.Conflict,
-        when Identity.Results.Operational_Failure
-           | Identity.Results.Resource_Limit
-           | Identity.Results.Internal_Invariant_Failure =>
-          Identity.Events.Envelopes.Failed,
-        when others => Identity.Events.Envelopes.Rejected);
 
    function Execute
      (Repository  : in out
@@ -157,7 +145,7 @@ package body Identity.Operations.Passwords.Change is
               Target      => Identity.Text.Bounded.From_String
                 (Identity.Identifiers.Entities.To_String
                    (Request.New_Credential)),
-              Outcome     => Outcome_Of (Status),
+              Outcome     => Identity.Operations.Audit.Outcome_Of (Status),
               Recorded_At => Recorded_At);
       begin
          --  Capacity was reserved above, so a failure here is a real fault in

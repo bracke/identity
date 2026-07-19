@@ -503,6 +503,15 @@ package Identity.Adapters.Repositories.Stores is
       Principal                : Identity.Identifiers.Entities.Principal_Id;
       Expected_Binding_Version : Identity.Versions.Entity_Version) return Command_Status is abstract;
 
+   --  True when this assertion fingerprint has already been registered.
+   --  Authenticate_External registers the fingerprint before it matches any
+   --  binding, so checking beforehand is what lets a caller tell a genuine
+   --  replay apart from an ordinary version conflict -- both of which the
+   --  authentication result reports only as Conflict.
+   function External_Replay_Registered
+     (Repository  : Store_Interface;
+      Fingerprint : Identity.Text.Bounded.Bounded_Text) return Boolean is abstract;
+
    function Register_External_Replay
      (Repository  : in out Store_Interface;
       Fingerprint : Identity.Text.Bounded.Bounded_Text) return Command_Status is abstract;

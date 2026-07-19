@@ -1,8 +1,12 @@
 with Identity.Adapters.Repositories.Stores;
+with Identity.Authentication.Transactions;
 with Identity.Events.Envelopes;
 with Identity.Identifiers.Entities;
 with Identity.Identifiers.Registry;
 with Identity.Operations.Contexts;
+with Identity.Recovery.Transactions;
+with Identity.Results;
+with Identity.Tokens.Verification;
 with Identity.Text.Bounded;
 with Identity.Times;
 
@@ -18,6 +22,29 @@ package Identity.Operations.Audit is
    --  Map a repository command outcome onto the outcome recorded in the event.
    function Outcome_Of
      (Status : Identity.Adapters.Repositories.Stores.Command_Status)
+      return Identity.Events.Envelopes.Event_Outcome;
+
+   --  Operations report their verdict in domain-specific types rather than in
+   --  Command_Status. Each maps onto an event outcome the same way: the
+   --  applied case succeeds, a lost version or state check is a conflict,
+   --  an infrastructure fault is a failure, and everything else -- a wrong
+   --  password, an expired token, an unmatched key -- is a rejection, not a
+   --  conflict. Keeping the mappings here stops them drifting apart across
+   --  the operations that need them.
+   function Outcome_Of
+     (Status : Identity.Results.Operation_Status)
+      return Identity.Events.Envelopes.Event_Outcome;
+
+   function Outcome_Of
+     (Outcome : Identity.Tokens.Verification.Token_Verification_Outcome)
+      return Identity.Events.Envelopes.Event_Outcome;
+
+   function Outcome_Of
+     (Status : Identity.Recovery.Transactions.Recovery_Transition_Status)
+      return Identity.Events.Envelopes.Event_Outcome;
+
+   function Outcome_Of
+     (Status : Identity.Authentication.Transactions.Authentication_Transaction_Status)
       return Identity.Events.Envelopes.Event_Outcome;
 
    --  Severity follows the outcome unless the caller states otherwise;

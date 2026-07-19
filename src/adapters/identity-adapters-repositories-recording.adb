@@ -928,6 +928,14 @@ package body Identity.Adapters.Repositories.Recording is
       return Stores.Revoke_External (Repository.Inner.all, Binding, Principal, Expected_Binding_Version);
    end Revoke_External;
 
+   overriding function External_Replay_Registered
+     (Repository  : Store;
+      Fingerprint : Identity.Text.Bounded.Bounded_Text) return Boolean
+   is
+   begin
+      return Stores.External_Replay_Registered (Repository.Inner.all, Fingerprint);
+   end External_Replay_Registered;
+
    overriding function Register_External_Replay
      (Repository  : in out Store;
       Fingerprint : Identity.Text.Bounded.Bounded_Text) return Stores.Command_Status

@@ -1,4 +1,3 @@
-with Identity.Events.Envelopes;
 with Identity.Events.Types;
 with Identity.Operations.Audit;
 with Identity.Text.Bounded;
@@ -32,18 +31,6 @@ package body Identity.Operations.Recovery.Complete is
    --  A recovery verdict is not a store command status: an unknown or
    --  wrongly-staged transaction is a conflict, and nothing here is a plain
    --  credential rejection.
-   function Outcome_Of
-     (Status : Identity.Recovery.Transactions.Recovery_Transition_Status)
-      return Identity.Events.Envelopes.Event_Outcome is
-     (case Status is
-        when Identity.Recovery.Transactions.Applied =>
-          Identity.Events.Envelopes.Succeeded,
-        when Identity.Recovery.Transactions.Unknown
-           | Identity.Recovery.Transactions.State_Conflict
-           | Identity.Recovery.Transactions.Version_Conflict =>
-          Identity.Events.Envelopes.Conflict,
-        when Identity.Recovery.Transactions.Capacity_Conflict =>
-          Identity.Events.Envelopes.Failed);
 
    function Execute
      (Repository  : in out
@@ -76,7 +63,7 @@ package body Identity.Operations.Recovery.Complete is
                 Identity.Operations.Audit.Subject_Of (Request.Principal),
               Target      => Identity.Text.Bounded.From_String
                 (Identity.Identifiers.Entities.To_String (Request.Transaction)),
-              Outcome     => Outcome_Of (Status),
+              Outcome     => Identity.Operations.Audit.Outcome_Of (Status),
               Recorded_At => Recorded_At);
       begin
          if Emitted /= Identity.Adapters.Repositories.Stores.Applied then

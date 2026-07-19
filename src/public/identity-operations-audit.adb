@@ -13,6 +13,51 @@ package body Identity.Operations.Audit is
            | Stores.Uniqueness_Conflict => Envelopes.Conflict,
         when Stores.Capacity_Conflict => Envelopes.Failed);
 
+   function Outcome_Of
+     (Status : Identity.Results.Operation_Status)
+      return Envelopes.Event_Outcome is
+     (case Status is
+        when Identity.Results.Succeeded => Envelopes.Succeeded,
+        when Identity.Results.Conflict  => Envelopes.Conflict,
+        when Identity.Results.Operational_Failure
+           | Identity.Results.Resource_Limit
+           | Identity.Results.Internal_Invariant_Failure => Envelopes.Failed,
+        when others => Envelopes.Rejected);
+
+   function Outcome_Of
+     (Outcome : Identity.Tokens.Verification.Token_Verification_Outcome)
+      return Envelopes.Event_Outcome is
+     (case Outcome is
+        when Identity.Tokens.Verification.Valid => Envelopes.Succeeded,
+        when Identity.Tokens.Verification.State_Conflict => Envelopes.Conflict,
+        when Identity.Tokens.Verification.Infrastructure_Failure =>
+          Envelopes.Failed,
+        when others => Envelopes.Rejected);
+
+   function Outcome_Of
+     (Status : Identity.Recovery.Transactions.Recovery_Transition_Status)
+      return Envelopes.Event_Outcome is
+     (case Status is
+        when Identity.Recovery.Transactions.Applied => Envelopes.Succeeded,
+        when Identity.Recovery.Transactions.Unknown
+           | Identity.Recovery.Transactions.State_Conflict
+           | Identity.Recovery.Transactions.Version_Conflict =>
+          Envelopes.Conflict,
+        when Identity.Recovery.Transactions.Capacity_Conflict =>
+          Envelopes.Failed);
+
+   function Outcome_Of
+     (Status : Identity.Authentication.Transactions.Authentication_Transaction_Status)
+      return Envelopes.Event_Outcome is
+     (case Status is
+        when Identity.Authentication.Transactions.Applied => Envelopes.Succeeded,
+        when Identity.Authentication.Transactions.Unknown
+           | Identity.Authentication.Transactions.State_Conflict
+           | Identity.Authentication.Transactions.Version_Conflict =>
+          Envelopes.Conflict,
+        when Identity.Authentication.Transactions.Capacity_Conflict =>
+          Envelopes.Failed);
+
    function Severity_Of
      (Outcome : Envelopes.Event_Outcome) return Envelopes.Event_Severity is
      (case Outcome is

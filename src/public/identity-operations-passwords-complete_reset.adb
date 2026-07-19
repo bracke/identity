@@ -1,6 +1,5 @@
 with Identity.Credentials.States;
 with Identity.Crypto.Password_Hashing;
-with Identity.Events.Envelopes;
 with Identity.Events.Types;
 with Identity.Operations.Audit;
 with Identity.Text.Bounded;
@@ -79,17 +78,6 @@ package body Identity.Operations.Passwords.Complete_Reset is
    --  A token verdict is not a store command status: an unusable token is a
    --  rejection, a losing version check is a conflict, and only broken
    --  infrastructure is a failure.
-   function Outcome_Of
-     (Outcome : Identity.Tokens.Verification.Token_Verification_Outcome)
-      return Identity.Events.Envelopes.Event_Outcome is
-     (case Outcome is
-        when Identity.Tokens.Verification.Valid =>
-          Identity.Events.Envelopes.Succeeded,
-        when Identity.Tokens.Verification.State_Conflict =>
-          Identity.Events.Envelopes.Conflict,
-        when Identity.Tokens.Verification.Infrastructure_Failure =>
-          Identity.Events.Envelopes.Failed,
-        when others => Identity.Events.Envelopes.Rejected);
 
    function Execute
      (Repository  : in out
@@ -122,7 +110,7 @@ package body Identity.Operations.Passwords.Complete_Reset is
                 Identity.Operations.Audit.Subject_Of (Request.Principal),
               Target      => Identity.Text.Bounded.From_String
                 (Identity.Identifiers.Entities.To_String (Request.Token)),
-              Outcome     => Outcome_Of (Outcome),
+              Outcome     => Identity.Operations.Audit.Outcome_Of (Outcome),
               Recorded_At => Recorded_At);
       begin
          if Emitted /= Identity.Adapters.Repositories.Stores.Applied then

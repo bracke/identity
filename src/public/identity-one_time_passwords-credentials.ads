@@ -16,7 +16,12 @@ package Identity.One_Time_Passwords.Credentials is
       Unknown,
       Credential_Unusable,
       Counter_Too_Old,
-      State_Conflict);
+      State_Conflict,
+      --  The store could not record the mandatory audit event, so the
+      --  presentation was refused without advancing the counter. Distinct
+      --  from State_Conflict, which means the credential itself was not in a
+      --  state that admits a counter.
+      Capacity_Conflict);
 
    type TOTP_Credential_Record is record
       Id              : Identity.Identifiers.Entities.Credential_Id;
@@ -111,8 +116,14 @@ package Identity.One_Time_Passwords.Credentials is
      (Status : TOTP_Accept_Status) return Boolean is
      (Status = State_Conflict);
 
+   --  Refused because the mandatory audit event could not be recorded; the
+   --  counter did not advance and the presentation may be retried.
+   function Audit_Capacity_Rejected
+     (Status : TOTP_Accept_Status) return Boolean is
+     (Status = Capacity_Conflict);
+
    function No_Replay_State_Mutation
      (Status : TOTP_Accept_Status) return Boolean is
      (Status in Not_Verified | Replayed | Unknown | Credential_Unusable
-              | Counter_Too_Old | State_Conflict);
+              | Counter_Too_Old | State_Conflict | Capacity_Conflict);
 end Identity.One_Time_Passwords.Credentials;

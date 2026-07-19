@@ -1783,6 +1783,25 @@ package body Identity.Adapters.Repositories.Serialized is
          raise;
    end Revoke_External;
 
+   overriding function External_Replay_Registered
+     (Repository  : Store;
+      Fingerprint : Identity.Text.Bounded.Bounded_Text) return Boolean
+   is
+   begin
+      Repository.Guard.Seize;
+      declare
+         Result : constant Boolean :=
+           Stores.External_Replay_Registered (Repository.Inner.all, Fingerprint);
+      begin
+         Repository.Guard.Release;
+         return Result;
+      end;
+   exception
+      when others =>
+         Repository.Guard.Release;
+         raise;
+   end External_Replay_Registered;
+
    overriding function Register_External_Replay
      (Repository  : in out Store;
       Fingerprint : Identity.Text.Bounded.Bounded_Text) return Stores.Command_Status

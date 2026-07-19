@@ -44,7 +44,7 @@ package body Identity.Operations.Factors.Accept_TOTP_Counter is
       --  turns out to be a replay is only known afterwards, so the capacity
       --  for that event has to be held from the start.
       if not Identity.Operations.Audit.Capacity_Reserved (Repository) then
-         return Identity.One_Time_Passwords.Credentials.State_Conflict;
+         return Identity.One_Time_Passwords.Credentials.Capacity_Conflict;
       end if;
 
       Status := Execute (Repository, Request);
@@ -71,7 +71,7 @@ package body Identity.Operations.Factors.Accept_TOTP_Counter is
          --  Capacity was reserved above, so a failure here is a real fault in
          --  the store; a detected replay must never go unrecorded.
          if Emitted /= Identity.Adapters.Repositories.Stores.Applied then
-            return Identity.One_Time_Passwords.Credentials.State_Conflict;
+            return Identity.One_Time_Passwords.Credentials.Capacity_Conflict;
          end if;
       end;
 
