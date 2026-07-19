@@ -1,4 +1,6 @@
-package body Identity.Recovery_Codes.Sets is
+package body Identity.Recovery_Codes.Sets
+  with SPARK_Mode => On
+is
    function Summary
      (Codes : Recovery_Code_Set_Record) return Recovery_Code_Set_Projection
    is

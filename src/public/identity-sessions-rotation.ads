@@ -1,7 +1,9 @@
 with Identity.Sessions.Definitions;
 with Identity.Versions;
 
-package Identity.Sessions.Rotation is
+package Identity.Sessions.Rotation
+  with SPARK_Mode => On
+is
    pragma Pure;
 
    type Rotation_Status is (Allowed, Not_Active, Generation_Exhausted);

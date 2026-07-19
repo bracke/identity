@@ -1,4 +1,6 @@
-package Identity.Collections is
+package Identity.Collections
+  with SPARK_Mode => On
+is
    pragma Pure;
 
    type Collection_Status is

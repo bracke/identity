@@ -1,7 +1,9 @@
 with Identity.Text.Bounded;
 with Identity.Versions;
 
-package Identity.Codecs.Canonical is
+package Identity.Codecs.Canonical
+  with SPARK_Mode => On
+is
    pragma Pure;
 
    function Frame

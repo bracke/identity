@@ -1,4 +1,6 @@
-package body Identity.Text.Bounded is
+package body Identity.Text.Bounded
+  with SPARK_Mode => On
+is
    function From_String (Value : String) return Bounded_Text is
       Result : Bounded_Text;
    begin

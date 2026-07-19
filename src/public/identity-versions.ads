@@ -1,4 +1,6 @@
-package Identity.Versions is
+package Identity.Versions
+  with SPARK_Mode => On
+is
    pragma Pure;
 
    type Entity_Version is range 0 .. 2**63 - 1;

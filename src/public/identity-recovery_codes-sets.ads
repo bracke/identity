@@ -3,7 +3,9 @@ with Identity.Text.Bounded;
 with Identity.Times;
 with Identity.Versions;
 
-package Identity.Recovery_Codes.Sets is
+package Identity.Recovery_Codes.Sets
+  with SPARK_Mode => On
+is
    pragma Pure;
 
    Max_Codes_Per_Set : constant Natural := 16;

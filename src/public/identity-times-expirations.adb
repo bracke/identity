@@ -1,4 +1,6 @@
-package body Identity.Times.Expirations is
+package body Identity.Times.Expirations
+  with SPARK_Mode => On
+is
    function After
      (Base : Identity.Times.Instant;
       Span : Identity.Times.Duration_Seconds) return Expiration_Construction

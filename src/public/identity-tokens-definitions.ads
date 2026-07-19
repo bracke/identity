@@ -4,7 +4,9 @@ with Identity.Text.Bounded;
 with Identity.Times;
 with Identity.Versions;
 
-package Identity.Tokens.Definitions is
+package Identity.Tokens.Definitions
+  with SPARK_Mode => On
+is
    pragma Pure;
    use type Identity.Identifiers.Entities.Principal_Id;
 

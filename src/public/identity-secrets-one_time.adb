@@ -1,4 +1,6 @@
-package body Identity.Secrets.One_Time is
+package body Identity.Secrets.One_Time
+  with SPARK_Mode => On
+is
    function Create (Value : Identity.Secrets.Bytes.Secret_Bytes) return One_Time_Secret is
      ((Consumed => False, Secret => Value));
 

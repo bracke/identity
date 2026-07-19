@@ -1,4 +1,6 @@
-package body Identity.Operations.Contexts is
+package body Identity.Operations.Contexts
+  with SPARK_Mode => On
+is
    use type Identity.Times.Instant;
 
    function Evaluate_Deadline

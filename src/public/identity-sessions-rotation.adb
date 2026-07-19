@@ -1,6 +1,8 @@
 with Identity.Identifiers.Entities;
 
-package body Identity.Sessions.Rotation is
+package body Identity.Sessions.Rotation
+  with SPARK_Mode => On
+is
    use type Identity.Identifiers.Entities.Principal_Id;
    use type Identity.Identifiers.Entities.Session_Family_Id;
    use type Identity.Versions.Rotation_Generation;

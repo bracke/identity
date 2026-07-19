@@ -87,6 +87,7 @@ with Identity.Crypto.Registries;
 with Identity.Crypto.Secret_Verifiers;
 with Identity.Crypto.CryptoLib.Entropy;
 with Identity.Crypto.CryptoLib.Event_Integrity;
+with Identity.Crypto.CryptoLib.Capabilities;
 with Identity.Crypto.CryptoLib.MACs;
 with Identity.Crypto.CryptoLib.One_Time_Passwords;
 with Identity.Diagnostics;
@@ -2216,6 +2217,7 @@ begin
       "noncanonical persisted values are rejected");
 
    declare
+      use type Ada.Streams.Stream_Element_Array;
       Core_Capabilities : constant Identity.Crypto.Capabilities.Crypto_Capability_Set :=
         (Entropy => Identity.Crypto.Capabilities.Available,
          Password_Hashing => Identity.Crypto.Capabilities.Available,
@@ -2262,9 +2264,25 @@ begin
       CryptoLib_Entropy : Identity.Crypto.CryptoLib.Entropy.Unavailable_Source;
       Entropy_Buffer : Ada.Streams.Stream_Element_Array (1 .. 4);
       Entropy_Available : Boolean;
+      OS_Entropy : Identity.Crypto.CryptoLib.Entropy.OS_Source;
+      OS_Entropy_Buffer : Ada.Streams.Stream_Element_Array (1 .. 32);
+      OS_Entropy_Available : Boolean;
+      OS_Entropy_Repeat : Ada.Streams.Stream_Element_Array (1 .. 32);
+      OS_Entropy_Repeated : Boolean;
       CryptoLib_MAC : constant Identity.Crypto.MACs.MAC_Result :=
         Identity.Crypto.CryptoLib.MACs.Unsupported
           (Identity.Crypto.Domains.Event_Integrity);
+      MAC_Key : constant Ada.Streams.Stream_Element_Array (1 .. 8) :=
+        [others => 16#4B#];
+      MAC_Data : constant Ada.Streams.Stream_Element_Array (1 .. 8) :=
+        [others => 16#4D#];
+      CryptoLib_HMAC : constant Identity.Crypto.MACs.MAC_Result :=
+        Identity.Crypto.CryptoLib.MACs.Compute
+          (Identity.Crypto.CryptoLib.MACs.HMAC_SHA256_Algorithm,
+           MAC_Key,
+           MAC_Data);
+      Probed_Capabilities : constant Identity.Crypto.Capabilities.Crypto_Capability_Set :=
+        Identity.Crypto.CryptoLib.Capabilities.Current;
       CryptoLib_OTP : constant Identity.Crypto.One_Time_Passwords.OTP_Capability :=
         Identity.Crypto.CryptoLib.One_Time_Passwords.Capability
           (Identity.Crypto.Domains.TOTP_Secret);
@@ -2275,6 +2293,12 @@ begin
       Entropy_Available :=
         Identity.Crypto.CryptoLib.Entropy.Fill
           (CryptoLib_Entropy, Entropy_Buffer);
+      OS_Entropy_Available :=
+        Identity.Crypto.CryptoLib.Entropy.Fill
+          (OS_Entropy, OS_Entropy_Buffer);
+      OS_Entropy_Repeated :=
+        Identity.Crypto.CryptoLib.Entropy.Fill
+          (OS_Entropy, OS_Entropy_Repeat);
 
       Assert
         (Identity.Crypto.Capabilities.Supports_Core_V1 (Core_Capabilities)
@@ -2323,12 +2347,40 @@ begin
 
       Assert
         (not Entropy_Available
-         and then Identity.Crypto.CryptoLib.Entropy.Capability
-           = Identity.Crypto.Capabilities.Missing
+         and then Entropy_Buffer = [Entropy_Buffer'Range => 0]
          and then CryptoLib_MAC.Capability = Identity.Crypto.Capabilities.Missing
-         and then not Identity.Crypto.One_Time_Passwords.Available (CryptoLib_OTP)
-         and then not Identity.Crypto.Event_Integrity.Configured (CryptoLib_Event),
-         "IDENTITY-CRYPTO-003 cryptolib child packages report unavailable primitives explicitly");
+         and then Identity.Text.Bounded.Length (CryptoLib_MAC.Output) = 0,
+         "IDENTITY-CRYPTO-003 unavailable cryptolib primitives fail closed and disclose no output");
+
+      Assert
+        (OS_Entropy_Available
+         and then OS_Entropy_Buffer /= [OS_Entropy_Buffer'Range => 0]
+         and then OS_Entropy_Repeated
+         and then OS_Entropy_Buffer /= OS_Entropy_Repeat
+         and then Identity.Crypto.CryptoLib.Entropy.Capability
+           = Identity.Crypto.Capabilities.Available,
+         "IDENTITY-CRYPTO-004 OS entropy source yields non-repeating unpredictable bytes");
+
+      Assert
+        (CryptoLib_HMAC.Capability = Identity.Crypto.Capabilities.Available
+         and then Identity.Text.Bounded.Length (CryptoLib_HMAC.Output) = 64
+         and then Identity.Crypto.One_Time_Passwords.Available (CryptoLib_OTP)
+         and then Identity.Crypto.Event_Integrity.Configured (CryptoLib_Event),
+         "IDENTITY-CRYPTO-004 bound cryptolib primitives report available capabilities");
+
+      Assert
+        (Identity.Crypto.Capabilities.Supports_Core_V1 (Probed_Capabilities)
+         and then Probed_Capabilities.Entropy = Identity.Crypto.Capabilities.Available
+         and then Probed_Capabilities.Password_Hashing
+           = Identity.Crypto.Capabilities.Available
+         and then Probed_Capabilities.Secret_Verifiers
+           = Identity.Crypto.Capabilities.Available
+         and then Probed_Capabilities.Constant_Time
+           = Identity.Crypto.Capabilities.Available
+         and then Probed_Capabilities.TOTP_HMAC = Identity.Crypto.Capabilities.Available
+         and then Probed_Capabilities.Event_Integrity
+           = Identity.Crypto.Capabilities.Available,
+         "IDENTITY-CRYPTO-004 probed capability set is established by exercising each primitive");
 
       Assert
         (Identity.Crypto.Keys.Can_Create (Creation_Key)
@@ -4302,6 +4354,481 @@ begin
          and then Identity.Lockout.Evaluation.Overflowed_To_Indefinite
            (Overflow_Lock),
          "IDENTITY-ATTEMPT-002 lockout time overflow is explicit");
+
+      Assert
+        (Identity.Sessions.Policies.Valid (Session_Policy)
+         and then Identity.Sessions.Policies.Validate (Zero_Idle_Session_Policy)
+           = Identity.Sessions.Policies.Idle_Timeout_Non_Positive
+         and then Identity.Sessions.Policies.Validate (Zero_Absolute_Session_Policy)
+           = Identity.Sessions.Policies.Absolute_Lifetime_Non_Positive
+         and then Identity.Sessions.Policies.Validate (Zero_Remember_Session_Policy)
+           = Identity.Sessions.Policies.Remember_Me_Lifetime_Non_Positive
+         and then Identity.Sessions.Policies.Validate (Idle_Exceeds_Session_Policy)
+           = Identity.Sessions.Policies.Idle_Exceeds_Absolute_Lifetime
+         and then Identity.Sessions.Policies.Validate (Absolute_Exceeds_Session_Policy)
+           = Identity.Sessions.Policies.Absolute_Exceeds_Remember_Me_Lifetime,
+         "session policy rejects zero durations and invalid duration ordering");
+
+      Assert
+        (not Identity.Sessions.Policies.Valid (Zero_Idle_Session_Policy)
+         and then not Identity.Sessions.Policies.Valid (Zero_Absolute_Session_Policy)
+         and then not Identity.Sessions.Policies.Valid (Zero_Remember_Session_Policy)
+         and then Identity.Sessions.Definitions.Is_Active
+           (Identity.Sessions.Definitions.Active)
+         and then not Identity.Sessions.Definitions.Is_Active
+           (Identity.Sessions.Definitions.Rotated)
+         and then Identity.Sessions.Definitions.Is_Unusable
+           (Identity.Sessions.Definitions.Expired)
+         and then not Identity.Sessions.Definitions.Is_Unusable
+           (Identity.Sessions.Definitions.Active)
+         and then Identity.Sessions.Definitions.Can_Revoke
+           (Identity.Sessions.Definitions.Active)
+         and then not Identity.Sessions.Definitions.Can_Revoke
+           (Identity.Sessions.Definitions.Expired),
+         "session policy rejects zero durations and keeps state helpers bounded");
+
+      Assert
+        (Identity.Sessions.Policies.Duration_Rejected
+           (Identity.Sessions.Policies.Validate (Zero_Idle_Session_Policy))
+         and then Identity.Sessions.Policies.Duration_Rejected
+           (Identity.Sessions.Policies.Validate (Zero_Absolute_Session_Policy))
+         and then Identity.Sessions.Policies.Duration_Rejected
+           (Identity.Sessions.Policies.Validate (Zero_Remember_Session_Policy))
+         and then not Identity.Sessions.Policies.Ordering_Rejected
+           (Identity.Sessions.Policies.Validate (Zero_Idle_Session_Policy))
+         and then Identity.Sessions.Policies.Ordering_Rejected
+           (Identity.Sessions.Policies.Validate (Idle_Exceeds_Session_Policy))
+         and then Identity.Sessions.Policies.Ordering_Rejected
+           (Identity.Sessions.Policies.Validate (Absolute_Exceeds_Session_Policy))
+         and then not Identity.Sessions.Policies.Duration_Rejected
+           (Identity.Sessions.Policies.Validate (Idle_Exceeds_Session_Policy))
+         and then not Identity.Sessions.Policies.Duration_Rejected
+           (Identity.Sessions.Policies.Validate (Session_Policy))
+         and then not Identity.Sessions.Policies.Ordering_Rejected
+           (Identity.Sessions.Policies.Validate (Session_Policy)),
+         "session policy validation classifiers distinguish duration and ordering rejection causes");
+
+      Assert
+        (Identity.Sessions.Expiration.Evaluate_Detail (Session_Record, 250).Idle_Expired
+         and then Identity.Sessions.Expiration.Evaluate_Detail
+           (Session_Record, 250).Absolute_Expired
+         and then not Identity.Sessions.Expiration.Evaluate_Detail
+           (Session_Record, 250).Revoked
+         and then Identity.Sessions.Expiration.Evaluate_Detail (Session_Record, 250).Status
+           = Identity.Sessions.Expiration.Absolute_Expired
+         and then Identity.Sessions.Expiration.Evaluate_Detail
+           ((Session_Record with delta State => Identity.Sessions.Definitions.Revoked),
+            30).Revoked
+         and then not Identity.Sessions.Expiration.Evaluate_Detail
+           ((Session_Record with delta State => Identity.Sessions.Definitions.Revoked),
+            30).Idle_Expired
+         and then not Identity.Sessions.Expiration.Evaluate_Detail
+           ((Session_Record with delta State => Identity.Sessions.Definitions.Revoked),
+            30).Absolute_Expired
+         and then not Identity.Sessions.Expiration.Evaluate_Detail
+           (Session_Record, 30).Idle_Expired,
+         "session expiration detail projection reports independent blockers");
+
+      Assert
+        (Identity.Sessions.Activity.Admit_Update
+           (Session_Record, 30, (Present => True, Time_Point => 100))
+           = Identity.Sessions.Activity.Admitted
+         and then Identity.Sessions.Activity.Activity_Update_Admitted
+           (Identity.Sessions.Activity.Admit_Update
+              (Session_Record, 30, (Present => True, Time_Point => 100)))
+         and then Identity.Sessions.Activity.Admit_Update
+           (Session_Record, 90, (Present => True, Time_Point => 150))
+           = Identity.Sessions.Activity.Idle_Expired
+         and then Identity.Sessions.Activity.Idle_Expiration_Rejected
+           (Identity.Sessions.Activity.Admit_Update
+              (Session_Record, 90, (Present => True, Time_Point => 150)))
+         and then Identity.Sessions.Activity.Admit_Update
+           (Absolute_Expired_Session_Record, 201, (Present => True, Time_Point => 250))
+           = Identity.Sessions.Activity.Absolute_Expired
+         and then Identity.Sessions.Activity.Absolute_Expiration_Rejected
+           (Identity.Sessions.Activity.Admit_Update
+              (Absolute_Expired_Session_Record, 201, (Present => True, Time_Point => 250)))
+         and then Identity.Sessions.Activity.Admit_Update
+           ((Session_Record with delta State => Identity.Sessions.Definitions.Revoked),
+            30,
+            (Present => True, Time_Point => 100))
+           = Identity.Sessions.Activity.Revoked
+         and then Identity.Sessions.Activity.Admit_Update
+           (Session_Record, 30, (Present => True, Time_Point => 250))
+           = Identity.Sessions.Activity.Invalid_Idle_Extension
+         and then Identity.Sessions.Activity.Invalid_Extension_Rejected
+           (Identity.Sessions.Activity.Admit_Update
+              (Session_Record, 30, (Present => True, Time_Point => 250)))
+         and then Identity.Sessions.Activity.No_Activity_Mutation
+           (Identity.Sessions.Activity.Admit_Update
+              (Session_Record, 30, (Present => True, Time_Point => 250)))
+         and then not Identity.Sessions.Activity.No_Activity_Mutation
+           (Identity.Sessions.Activity.Admit_Update
+              (Session_Record, 30, (Present => True, Time_Point => 100))),
+         "session activity admission classifiers distinguish idle absolute mutation "
+         & "and rejection causes");
+
+      Assert
+        (Identity.Sessions.Rotation.Same_Rotation_Lineage
+           (Session_Record,
+            (Session_Record with delta
+               Id => S2,
+               Public_Reference => Rotated_Session_Reference,
+               Generation => 3))
+         and then not Identity.Sessions.Rotation.Same_Rotation_Lineage
+           (Session_Record,
+            (Session_Record with delta
+               Id => S2,
+               Family => F2,
+               Public_Reference => Rotated_Session_Reference,
+               Generation => 3))
+         and then not Identity.Sessions.Rotation.Same_Rotation_Lineage
+           (Session_Record,
+            (Session_Record with delta
+               Id => S2,
+               Principal => P2,
+               Public_Reference => Rotated_Session_Reference,
+               Generation => 3)),
+         "session rotation lineage predicate rejects family or principal mismatch");
+
+      Assert
+        (Identity.Tokens.Policies.Valid (Token_Policy)
+         and then Identity.Tokens.Policies.Validate (Zero_Lifetime_Token_Policy)
+           = Identity.Tokens.Policies.Token_Lifetime_Non_Positive
+         and then Identity.Tokens.Policies.Lifetime_Rejected
+           (Identity.Tokens.Policies.Validate (Zero_Lifetime_Token_Policy))
+         and then not Identity.Tokens.Policies.Attempt_Limit_Rejected
+           (Identity.Tokens.Policies.Validate (Zero_Lifetime_Token_Policy))
+         and then Identity.Tokens.Policies.Validate (Zero_Attempt_Token_Policy)
+           = Identity.Tokens.Policies.Token_Attempt_Limit_Non_Positive
+         and then Identity.Tokens.Policies.Attempt_Limit_Rejected
+           (Identity.Tokens.Policies.Validate (Zero_Attempt_Token_Policy))
+         and then not Identity.Tokens.Policies.Lifetime_Rejected
+           (Identity.Tokens.Policies.Validate (Zero_Attempt_Token_Policy))
+         and then not Identity.Tokens.Policies.Lifetime_Rejected
+           (Identity.Tokens.Policies.Validate (Token_Policy)),
+         "token policy validation classifiers distinguish lifetime and attempt-limit rejection causes");
+
+      Assert
+        (Identity.Tokens.Generation.Parse ("no-separator-here").Status
+           = Identity.Tokens.Generation.Missing_Separator
+         and then Identity.Tokens.Generation.Parse ("public.secret.extra").Status
+           = Identity.Tokens.Generation.Multiple_Separators
+         and then Identity.Tokens.Generation.Parse (".secret-only").Status
+           = Identity.Tokens.Generation.Missing_Public_Part
+         and then Identity.Tokens.Generation.Parse ("public-only.").Status
+           = Identity.Tokens.Generation.Missing_Secret_Part
+         and then Identity.Tokens.Generation.Parse ("").Status
+           = Identity.Tokens.Generation.Empty_Input
+         and then Identity.Tokens.Generation.Structural_Rejection
+           (Identity.Tokens.Generation.Parse ("no-separator-here").Status)
+         and then Identity.Tokens.Generation.Structural_Rejection
+           (Identity.Tokens.Generation.Parse ("public.secret.extra").Status)
+         and then Identity.Tokens.Generation.Public_Part_Rejection
+           (Identity.Tokens.Generation.Parse (".secret-only").Status)
+         and then Identity.Tokens.Generation.Secret_Part_Rejection
+           (Identity.Tokens.Generation.Parse ("public-only.").Status)
+         and then Identity.Tokens.Generation.Empty_Rejection
+           (Identity.Tokens.Generation.Parse ("").Status)
+         and then not Identity.Tokens.Generation.Structural_Rejection
+           (Identity.Tokens.Generation.Parse ("").Status)
+         and then Identity.Tokens.Generation.Rejected_Input
+           (Identity.Tokens.Generation.Parse ("no-separator-here").Status)
+         and then Identity.Tokens.Generation.Accepted_Input (Parsed_Token.Status),
+         "split-token parser rejects malformed presentation structure before verifier work");
+
+      Assert
+        (not Identity.Tokens.Definitions.Is_Terminal (Token_Record.State)
+         and then Identity.Tokens.Definitions.Is_Terminal (Consumed_Token_Record.State)
+         and then Identity.Tokens.Definitions.Is_Terminal (Revoked_Token_Record.State)
+         and then Identity.Tokens.Definitions.Is_Consumed_State
+           (Consumed_Token_Record.State)
+         and then not Identity.Tokens.Definitions.Is_Consumed_State
+           (Revoked_Token_Record.State)
+         and then not Identity.Tokens.Definitions.Expired_At (Token_Record, 50)
+         and then Identity.Tokens.Definitions.Expired_At (Token_Record, 150)
+         and then Identity.Tokens.Definitions.Purpose_Matches
+           (Token_Record, Identity.Tokens.Purposes.Password_Reset)
+         and then not Identity.Tokens.Definitions.Purpose_Matches
+           (Token_Record, Identity.Tokens.Purposes.Contact_Verification)
+         and then Identity.Tokens.Definitions.Bound_To_Principal (Token_Record, P1)
+         and then not Identity.Tokens.Definitions.Bound_To_Principal (Token_Record, P2)
+         and then Identity.Tokens.Definitions.Verifiable_For
+           (Token_Record, Identity.Tokens.Purposes.Password_Reset, P1, 50)
+         and then Identity.Tokens.Definitions.Verifiability
+           (Token_Record, Identity.Tokens.Purposes.Password_Reset, P1, 150)
+           = Identity.Tokens.Definitions.Token_Expired
+         and then Identity.Tokens.Definitions.Expiration_Rejected
+           (Identity.Tokens.Definitions.Verifiability
+              (Token_Record, Identity.Tokens.Purposes.Password_Reset, P1, 150))
+         and then Identity.Tokens.Definitions.Verifiability
+           (Token_Record, Identity.Tokens.Purposes.Contact_Verification, P1, 50)
+           = Identity.Tokens.Definitions.Purpose_Different
+         and then Identity.Tokens.Definitions.Purpose_Rejected
+           (Identity.Tokens.Definitions.Verifiability
+              (Token_Record, Identity.Tokens.Purposes.Contact_Verification, P1, 50))
+         and then Identity.Tokens.Definitions.Verifiability
+           (Token_Record, Identity.Tokens.Purposes.Password_Reset, P2, 50)
+           = Identity.Tokens.Definitions.Principal_Different
+         and then Identity.Tokens.Definitions.Principal_Rejected
+           (Identity.Tokens.Definitions.Verifiability
+              (Token_Record, Identity.Tokens.Purposes.Password_Reset, P2, 50))
+         and then Identity.Tokens.Definitions.Verifiability
+           (Consumed_Token_Record, Identity.Tokens.Purposes.Password_Reset, P1, 50)
+           = Identity.Tokens.Definitions.State_Not_Verifiable
+         and then Identity.Tokens.Definitions.State_Rejected
+           (Identity.Tokens.Definitions.Verifiability
+              (Consumed_Token_Record, Identity.Tokens.Purposes.Password_Reset, P1, 50))
+         and then Identity.Tokens.Projections.Terminal
+           (Identity.Tokens.Projections.Summary (Consumed_Token_Record))
+         and then not Identity.Tokens.Projections.Terminal (Token_View)
+         and then Identity.Tokens.Projections.Can_Verify (Token_View, 50)
+         and then not Identity.Tokens.Projections.Can_Verify (Token_View, 150),
+         "token lifecycle helpers classify state expiry purpose and principal verifiability");
+
+      Assert
+        (Identity.Tokens.Verification.Evaluate
+           (Token_Record, Identity.Tokens.Purposes.Password_Reset, True, True, 50)
+           = Identity.Tokens.Verification.Valid
+         and then Identity.Tokens.Verification.Is_Valid
+           (Identity.Tokens.Verification.Evaluate
+              (Token_Record, Identity.Tokens.Purposes.Password_Reset, True, True, 50))
+         and then not Identity.Tokens.Verification.Disclosure_Collapsed_Invalid
+           (Identity.Tokens.Verification.Evaluate
+              (Token_Record, Identity.Tokens.Purposes.Password_Reset, True, True, 50))
+         and then Identity.Tokens.Verification.Evaluate
+           (Token_Record, Identity.Tokens.Purposes.Password_Reset, False, True, 50)
+           = Identity.Tokens.Verification.Not_Verified
+         and then Identity.Tokens.Verification.Retryable
+           (Identity.Tokens.Verification.Evaluate
+              (Token_Record, Identity.Tokens.Purposes.Password_Reset, False, True, 50))
+         and then Identity.Tokens.Verification.Disclosure_Collapsed_Invalid
+           (Identity.Tokens.Verification.Evaluate
+              (Token_Record, Identity.Tokens.Purposes.Password_Reset, False, True, 50))
+         and then Identity.Tokens.Verification.Evaluate
+           (Token_Record, Identity.Tokens.Purposes.Password_Reset, True, False, 50)
+           = Identity.Tokens.Verification.Binding_Mismatch
+         and then Identity.Tokens.Verification.Disclosure_Collapsed_Invalid
+           (Identity.Tokens.Verification.Evaluate
+              (Token_Record, Identity.Tokens.Purposes.Password_Reset, True, False, 50))
+         and then not Identity.Tokens.Verification.Retryable
+           (Identity.Tokens.Verification.Evaluate
+              (Token_Record, Identity.Tokens.Purposes.Password_Reset, True, False, 50))
+         and then Identity.Tokens.Verification.Evaluate
+           (Consumed_Token_Record, Identity.Tokens.Purposes.Password_Reset, True, True, 50)
+           = Identity.Tokens.Verification.Already_Consumed
+         and then Identity.Tokens.Verification.Terminal_Invalid
+           (Identity.Tokens.Verification.Evaluate
+              (Consumed_Token_Record,
+               Identity.Tokens.Purposes.Password_Reset,
+               True,
+               True,
+               50))
+         and then Identity.Tokens.Verification.Evaluate
+           (Revoked_Token_Record, Identity.Tokens.Purposes.Password_Reset, True, True, 50)
+           = Identity.Tokens.Verification.Revoked
+         and then Identity.Tokens.Verification.Terminal_Invalid
+           (Identity.Tokens.Verification.Evaluate
+              (Revoked_Token_Record, Identity.Tokens.Purposes.Password_Reset, True, True, 50))
+         and then Identity.Tokens.Verification.Retryable
+           (Identity.Tokens.Verification.Infrastructure_Failure)
+         and then Identity.Tokens.Verification.Infrastructure
+           (Identity.Tokens.Verification.Infrastructure_Failure)
+         and then not Identity.Tokens.Verification.Disclosure_Collapsed_Invalid
+           (Identity.Tokens.Verification.Infrastructure_Failure),
+         "token verification outcome predicates classify disclosure and retry behavior");
+
+      Assert
+        (Identity.Attempts.Buckets.Valid (Bucket)
+         and then Identity.Attempts.Buckets.Validate (Zero_Window_Bucket)
+           = Identity.Attempts.Buckets.Failure_Bucket_Window_Non_Positive
+         and then Identity.Attempts.Buckets.Window_Rejected
+           (Identity.Attempts.Buckets.Validate (Zero_Window_Bucket))
+         and then Identity.Attempts.Buckets.Validate (Zero_Threshold_Bucket)
+           = Identity.Attempts.Buckets.Failure_Bucket_Threshold_Zero
+         and then Identity.Attempts.Buckets.Threshold_Rejected
+           (Identity.Attempts.Buckets.Validate (Zero_Threshold_Bucket))
+         and then Identity.Attempts.Buckets.Validate (Low_Saturation_Bucket)
+           = Identity.Attempts.Buckets.Failure_Bucket_Saturation_Below_Threshold
+         and then Identity.Attempts.Buckets.Saturation_Rejected
+           (Identity.Attempts.Buckets.Validate (Low_Saturation_Bucket))
+         and then not Identity.Attempts.Buckets.Window_Rejected
+           (Identity.Attempts.Buckets.Validate (Low_Saturation_Bucket))
+         and then not Identity.Attempts.Buckets.Valid (Zero_Window_Bucket)
+         and then not Identity.Attempts.Buckets.Valid (Zero_Threshold_Bucket)
+         and then not Identity.Attempts.Buckets.Valid (Low_Saturation_Bucket),
+         "failure bucket policy validation rejects zero windows zero thresholds and "
+         & "saturation below threshold");
+
+      Assert
+        (Identity.Attempts.Policies.Valid (Attempt_Policy)
+         and then Identity.Attempts.Policies.Validate (Invalid_Password_Attempt_Policy)
+           = Identity.Attempts.Policies.Attempt_Password_Bucket_Invalid
+         and then Identity.Attempts.Policies.Password_Bucket_Rejected
+           (Identity.Attempts.Policies.Validate (Invalid_Password_Attempt_Policy))
+         and then Identity.Attempts.Policies.Validate (Invalid_TOTP_Attempt_Policy)
+           = Identity.Attempts.Policies.Attempt_TOTP_Bucket_Invalid
+         and then Identity.Attempts.Policies.TOTP_Bucket_Rejected
+           (Identity.Attempts.Policies.Validate (Invalid_TOTP_Attempt_Policy))
+         and then Identity.Attempts.Policies.Validate (Invalid_Token_Attempt_Policy)
+           = Identity.Attempts.Policies.Attempt_Token_Bucket_Invalid
+         and then Identity.Attempts.Policies.Token_Bucket_Rejected
+           (Identity.Attempts.Policies.Validate (Invalid_Token_Attempt_Policy))
+         and then not Identity.Attempts.Policies.Password_Bucket_Rejected
+           (Identity.Attempts.Policies.Validate (Invalid_Token_Attempt_Policy)),
+         "aggregate attempt policy validation identifies invalid password totp and token buckets");
+
+      Assert
+        (Identity.Attempts.Outcomes.Counts_As_Credential_Failure
+           (Failed_Attempt.Outcome, Failed_Attempt.Failure)
+         and then not Identity.Attempts.Outcomes.Counts_As_Credential_Failure
+           (Operational_Attempt.Outcome, Operational_Attempt.Failure)
+         and then not Identity.Attempts.Outcomes.Counts_In_Failure_Bucket
+           (Operational_Attempt.Outcome, Operational_Attempt.Failure)
+         and then not Identity.Attempts.Outcomes.Counts_As_Credential_Failure
+           (Identity.Attempts.Outcomes.Operational_Failure,
+            Identity.Attempts.Outcomes.Password_Failure)
+         and then not Identity.Attempts.Outcomes.Counts_As_Credential_Failure
+           (Successful_Attempt.Outcome, Successful_Attempt.Failure)
+         and then Identity.Attempts.Outcomes.Operational
+           (Operational_Attempt.Outcome)
+         and then Identity.Attempts.Outcomes.No_Failure (Operational_Attempt.Failure)
+         and then Identity.Attempts.Outcomes.Hidden_Operational_Failure
+           (Operational_Attempt.Disclosure)
+         and then Identity.Attempts.Outcomes.Generic_Public_Rejection
+           (Failed_Attempt.Disclosure),
+         "attempt predicates keep operational failures out of credential failure counts");
+
+      Assert
+        (Identity.Throttling.Policies.Valid (Throttle_Policy)
+         and then Identity.Throttling.Policies.Validate (Invalid_Throttle_Order_Policy)
+           = Identity.Throttling.Policies.Throttling_Reject_Not_After_Delay
+         and then Identity.Throttling.Policies.Threshold_Rejected
+           (Identity.Throttling.Policies.Validate (Invalid_Throttle_Order_Policy))
+         and then Identity.Throttling.Policies.Validate (Invalid_Throttle_Duration_Policy)
+           = Identity.Throttling.Policies.Throttling_Delay_Duration_Non_Positive
+         and then Identity.Throttling.Policies.Duration_Rejected
+           (Identity.Throttling.Policies.Validate (Invalid_Throttle_Duration_Policy))
+         and then not Identity.Throttling.Policies.Threshold_Rejected
+           (Identity.Throttling.Policies.Validate (Invalid_Throttle_Duration_Policy))
+         and then not Identity.Throttling.Policies.Valid (Invalid_Throttle_Order_Policy)
+         and then not Identity.Throttling.Policies.Valid (Invalid_Throttle_Duration_Policy),
+         "throttling policy validation rejects unordered thresholds and zero delay duration");
+
+      Assert
+        (Identity.Lockout.Policies.Valid (Lockout_Policy)
+         and then Identity.Lockout.Policies.Validate (Zero_Threshold_Lockout_Policy)
+           = Identity.Lockout.Policies.Lockout_Temporary_Threshold_Zero
+         and then Identity.Lockout.Policies.Threshold_Rejected
+           (Identity.Lockout.Policies.Validate (Zero_Threshold_Lockout_Policy))
+         and then Identity.Lockout.Policies.Validate (Unordered_Lockout_Policy)
+           = Identity.Lockout.Policies.Lockout_Indefinite_Not_After_Temporary
+         and then Identity.Lockout.Policies.Threshold_Rejected
+           (Identity.Lockout.Policies.Validate (Unordered_Lockout_Policy))
+         and then Identity.Lockout.Policies.Validate (Zero_Duration_Lockout_Policy)
+           = Identity.Lockout.Policies.Lockout_Temporary_Duration_Non_Positive
+         and then Identity.Lockout.Policies.Duration_Rejected
+           (Identity.Lockout.Policies.Validate (Zero_Duration_Lockout_Policy))
+         and then Identity.Lockout.Policies.Validate (Permanent_Disablement_Lockout_Policy)
+           = Identity.Lockout.Policies.Lockout_Permanent_Remote_Login_Disablement
+         and then Identity.Lockout.Policies.Permanent_Remote_Disablement_Rejected
+           (Identity.Lockout.Policies.Validate (Permanent_Disablement_Lockout_Policy))
+         and then not Identity.Lockout.Policies.Threshold_Rejected
+           (Identity.Lockout.Policies.Validate (Zero_Duration_Lockout_Policy)),
+         "lockout policy validation rejects zero thresholds unordered thresholds zero "
+         & "duration and permanent remote-login disablement");
+
+      Assert
+        (Identity.Recovery.Policies.Valid (Recovery_Policy)
+         and then Identity.Recovery.Policies.Validate (Zero_Lifetime_Recovery_Policy)
+           = Identity.Recovery.Policies.Recovery_Authority_Lifetime_Non_Positive
+         and then Identity.Recovery.Policies.Authority_Lifetime_Rejected
+           (Identity.Recovery.Policies.Validate (Zero_Lifetime_Recovery_Policy))
+         and then Identity.Recovery.Policies.Validate (No_Credential_Recovery_Policy)
+           = Identity.Recovery.Policies.Credential_Reestablishment_Not_Required
+         and then Identity.Recovery.Policies.Credential_Reestablishment_Rejected
+           (Identity.Recovery.Policies.Validate (No_Credential_Recovery_Policy))
+         and then Identity.Recovery.Policies.Validate
+           (No_Session_Consequence_Recovery_Policy)
+           = Identity.Recovery.Policies.Existing_Session_Consequence_Not_Required
+         and then Identity.Recovery.Policies.Existing_Session_Consequence_Rejected
+           (Identity.Recovery.Policies.Validate (No_Session_Consequence_Recovery_Policy))
+         and then not Identity.Recovery.Policies.Authority_Lifetime_Rejected
+           (Identity.Recovery.Policies.Validate (No_Credential_Recovery_Policy)),
+         "recovery policy validation classifiers distinguish authority lifetime credential "
+         & "reestablishment and session consequence rejection causes");
+
+      Assert
+        (Identity.Recovery.Authority.Issuance
+           (Identity.Recovery.Authority.Summary (Authority, 50),
+            Restrictions,
+            Identity.Sessions.Policies.Interactive_Session)
+           = Identity.Recovery.Authority.Restricted_Authentication_Issuable
+         and then Identity.Recovery.Authority.Issuance
+           (Identity.Recovery.Authority.Summary (Authority, 150),
+            Restrictions,
+            Identity.Sessions.Policies.Interactive_Session)
+           = Identity.Recovery.Authority.Recovery_Authority_Unusable
+         and then Identity.Recovery.Authority.Issuance_Authority_Rejected
+           (Identity.Recovery.Authority.Issuance
+              (Identity.Recovery.Authority.Summary (Authority, 150),
+               Restrictions,
+               Identity.Sessions.Policies.Interactive_Session))
+         and then Identity.Recovery.Authority.Issuance
+           (Identity.Recovery.Authority.Summary (Authority, 50),
+            Weak_Recovery_Restrictions,
+            Identity.Sessions.Policies.Interactive_Session)
+           = Identity.Recovery.Authority.Recovery_Restrictions_Insufficient
+         and then Identity.Recovery.Authority.Issuance_Restrictions_Rejected
+           (Identity.Recovery.Authority.Issuance
+              (Identity.Recovery.Authority.Summary (Authority, 50),
+               Weak_Recovery_Restrictions,
+               Identity.Sessions.Policies.Interactive_Session))
+         and then Identity.Recovery.Authority.Issuance
+           (Identity.Recovery.Authority.Summary (Authority, 50),
+            Restrictions,
+            Identity.Sessions.Policies.Persistent_Session)
+           = Identity.Recovery.Authority.Recovery_Session_Request_Rejected
+         and then Identity.Recovery.Authority.Issuance_Session_Request_Rejected
+           (Identity.Recovery.Authority.Issuance
+              (Identity.Recovery.Authority.Summary (Authority, 50),
+               Restrictions,
+               Identity.Sessions.Policies.Persistent_Session))
+         and then Identity.Recovery.Authority.Can_Issue_Restricted_Authentication
+           (Identity.Recovery.Authority.Summary (Authority, 50),
+            Restrictions,
+            Identity.Sessions.Policies.Interactive_Session)
+         and then not Identity.Recovery.Authority.Can_Issue_Restricted_Authentication
+           (Identity.Recovery.Authority.Summary (Authority, 150),
+            Restrictions,
+            Identity.Sessions.Policies.Interactive_Session),
+         "recovery authority issuance classifier rejects expired insufficient-restriction "
+         & "or prohibited session requests");
+
+      Assert
+        (Identity.Recovery.Results.Restricted
+           (Identity.Recovery.Results.Restricted_Authentication_Established)
+         and then not Identity.Recovery.Results.Restricted
+           (Identity.Recovery.Results.Completed)
+         and then Identity.Recovery.Results.May_Issue_Restricted_Authentication
+           (Identity.Recovery.Results.Restricted_Authentication_Established)
+         and then not Identity.Recovery.Results.May_Issue_Restricted_Authentication
+           (Identity.Recovery.Results.Completed)
+         and then Identity.Recovery.Results.Final_Completion
+           (Identity.Recovery.Results.Completed)
+         and then not Identity.Recovery.Results.Final_Completion
+           (Identity.Recovery.Results.Restricted_Authentication_Established)
+         and then Identity.Recovery.Results.Successful
+           (Identity.Recovery.Results.Restricted_Authentication_Established)
+         and then Identity.Recovery.Results.Successful
+           (Identity.Recovery.Results.Completed)
+         and then not Identity.Recovery.Results.Successful
+           (Identity.Recovery.Results.Rejected)
+         and then Identity.Recovery.Results.In_Progress
+           (Identity.Recovery.Results.Evidence_Required)
+         and then not Identity.Recovery.Results.In_Progress
+           (Identity.Recovery.Results.Completed),
+         "recovery result classifiers separate restricted authentication from final completion");
    end;
 
    declare

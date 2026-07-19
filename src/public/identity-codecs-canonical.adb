@@ -1,9 +1,50 @@
-package body Identity.Codecs.Canonical is
+with Identity.Limits;
+
+package body Identity.Codecs.Canonical
+  with SPARK_Mode => On
+is
+   --  Decimal conversion is written out rather than delegated to 'Image so the
+   --  digit count is provable: Frame's concatenation only fits inside the
+   --  bounded-text limit because these lengths are bounded.
+
+   --  Any Natural renders in at most 10 digits.
+   function Decimal_Image (Value : Natural) return String
+     with Post => Decimal_Image'Result'Length in 1 .. 10;
+
+   --  Lengths embedded in a frame are always below 1000.
+   function Small_Decimal_Image (Value : Natural) return String
+     with Pre  => Value <= 999,
+          Post => Small_Decimal_Image'Result'Length in 1 .. 3;
+
    function Decimal_Image (Value : Natural) return String is
-      Raw : constant String := Natural'Image (Value);
+      Buffer : String (1 .. 10) := [others => '0'];
+      Rest   : Natural := Value;
+      First  : Positive := Buffer'Last;
    begin
-      return Raw (Raw'First + 1 .. Raw'Last);
+      for Pos in reverse Buffer'Range loop
+         Buffer (Pos) := Character'Val (Character'Pos ('0') + Rest mod 10);
+         if Rest > 0 then
+            First := Pos;
+         end if;
+         Rest := Rest / 10;
+      end loop;
+      return Buffer (First .. Buffer'Last);
    end Decimal_Image;
+
+   function Small_Decimal_Image (Value : Natural) return String is
+      Buffer : String (1 .. 3) := [others => '0'];
+      Rest   : Natural := Value;
+      First  : Positive := Buffer'Last;
+   begin
+      for Pos in reverse Buffer'Range loop
+         Buffer (Pos) := Character'Val (Character'Pos ('0') + Rest mod 10);
+         if Rest > 0 then
+            First := Pos;
+         end if;
+         Rest := Rest / 10;
+      end loop;
+      return Buffer (First .. Buffer'Last);
+   end Small_Decimal_Image;
 
    function Frame
      (Version : Identity.Versions.Format_Version;
@@ -16,33 +57,59 @@ package body Identity.Codecs.Canonical is
    begin
       return Identity.Text.Bounded.From_String
         ("IF" & Version_Text
-         & "#" & Decimal_Image (Label_Text'Length)
+         & "#" & Small_Decimal_Image (Label_Text'Length)
          & ":" & Label_Text
-         & "#" & Decimal_Image (Payload_Text'Length)
+         & "#" & Small_Decimal_Image (Payload_Text'Length)
          & ":" & Payload_Text);
    end Frame;
 
    function Is_Digit (Value : Character) return Boolean is
      (Value in '0' .. '9');
 
+   --  Upper bound for any number a canonical frame may carry. Every legal
+   --  field (format version, label length, payload length) is far below this,
+   --  so capping here costs nothing and keeps the accumulator inside Natural
+   --  no matter what a malformed frame contains.
+   Max_Number : constant := 100_000;
+
    procedure Read_Number
      (Text  : String;
       Index : in out Positive;
       Value : out Natural;
       Ok    : out Boolean)
+     with Pre  => Text'First = 1
+                  and then Text'Last <= Identity.Limits.Max_Public_Text_Bytes
+                  and then Index <= Text'Last + 1,
+          Post => Index <= Text'Last + 1
+                  and then Index >= Index'Old
+                  and then Value <= Max_Number
    is
       First : constant Positive := Index;
    begin
       Value := 0;
       Ok := Index <= Text'Last and then Is_Digit (Text (Index));
 
+      --  A digit run that would carry the accumulator past Max_Number is
+      --  rejected outright rather than allowed to overflow.
       while Ok and then Index <= Text'Last and then Is_Digit (Text (Index)) loop
+         if Value > (Max_Number - 9) / 10 then
+            Ok := False;
+            exit;
+         end if;
+
          Value := Value * 10 + Character'Pos (Text (Index)) - Character'Pos ('0');
          Index := Index + 1;
+
+         pragma Loop_Invariant (Index >= First and then Index <= Text'Last + 1);
+         pragma Loop_Invariant (Value <= Max_Number);
+         pragma Loop_Variant (Increases => Index);
       end loop;
 
-      if Ok and then Index - First > 1 and then Text (First) = '0' then
+      if not Ok then
+         Value := 0;
+      elsif Index - First > 1 and then Text (First) = '0' then
          Ok := False;
+         Value := 0;
       end if;
    end Read_Number;
 

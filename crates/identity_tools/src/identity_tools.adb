@@ -23,6 +23,7 @@ procedure Identity_Tools is
    Persisted_Report    : Identity_Tools_Persisted_Validation.Validation_Report;
    Proof_Report        : Identity_Tools_Proof_Validation.Validation_Report;
    Generated_Report    : Identity_Tools_Release_Reports.Generation_Report;
+   Gates_Passed        : Boolean;
    Release_Report      : Identity_Tools_Release_Validation.Validation_Report;
    Workflow_Report     : Identity_Tools_Workflows.Validation_Report;
 begin
@@ -146,7 +147,13 @@ begin
       & ":empty-required-tests:"
       & Natural'Image (Invariant_Report.Empty_Required_Test_Blocks)
       & ":severity:"
-      & Natural'Image (Invariant_Report.Failure_Severity_Count));
+      & Natural'Image (Invariant_Report.Failure_Severity_Count)
+      & ":test-names:"
+      & Natural'Image (Invariant_Report.Required_Test_Names)
+      & ":traced:"
+      & Natural'Image (Invariant_Report.Traced_Required_Tests)
+      & ":untraced:"
+      & Natural'Image (Invariant_Report.Untraced_Required_Tests));
    Identity_Tools_Events.Validate (Event_Report);
    Ada.Text_IO.Put_Line
      ("identity_tools:events:"
@@ -175,7 +182,8 @@ begin
       & Natural'Image (Leak_Report.Files_Checked)
       & ":canary-hits:"
       & Natural'Image (Leak_Report.Canary_Hits));
-   if Identity_Tools_Architecture.Passed (Architecture_Report)
+   Gates_Passed :=
+     Identity_Tools_Architecture.Passed (Architecture_Report)
      and then Identity_Tools_Crypto_Validation.Passed (Crypto_Report)
      and then Identity_Tools_Events.Passed (Event_Report)
      and then Identity_Tools_Invariants.Passed (Invariant_Report)
@@ -183,8 +191,9 @@ begin
      and then Identity_Tools_Proof_Validation.Passed (Proof_Report)
      and then Identity_Tools_Release_Validation.Passed (Release_Report)
      and then Identity_Tools_Secret_Leaks.Passed (Leak_Report)
-     and then Identity_Tools_Workflows.Passed (Workflow_Report)
-   then
+     and then Identity_Tools_Workflows.Passed (Workflow_Report);
+
+   if Gates_Passed then
       Identity_Tools_Release_Reports.Generate (Generated_Report);
    else
       Generated_Report := (Output_Count => 0, Write_Failures => 0, Skipped => 1);
@@ -197,7 +206,13 @@ begin
       & ":skipped:"
       & Natural'Image (Generated_Report.Skipped));
 
-   if not Identity_Tools_Release_Reports.Passed (Generated_Report) then
+   --  A failing gate must fail the run, not merely suppress report generation.
+   if not Gates_Passed
+     or else not Identity_Tools_Release_Reports.Passed (Generated_Report)
+   then
+      Ada.Text_IO.Put_Line ("identity_tools:result:failed");
       Ada.Command_Line.Set_Exit_Status (Ada.Command_Line.Failure);
+   else
+      Ada.Text_IO.Put_Line ("identity_tools:result:passed");
    end if;
 end Identity_Tools;

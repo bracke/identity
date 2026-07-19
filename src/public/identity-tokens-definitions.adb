@@ -1,4 +1,6 @@
-package body Identity.Tokens.Definitions is
+package body Identity.Tokens.Definitions
+  with SPARK_Mode => On
+is
    function Admission
      (State    : Token_State;
       Action   : Token_Action;

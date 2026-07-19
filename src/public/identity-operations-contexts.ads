@@ -4,7 +4,9 @@ with Identity.Operations.Cancellation;
 with Identity.Operations.Disclosure;
 with Identity.Times;
 
-package Identity.Operations.Contexts is
+package Identity.Operations.Contexts
+  with SPARK_Mode => On
+is
    pragma Pure;
 
    type Optional_Causation (Present : Boolean := False) is record

@@ -1,4 +1,6 @@
-package Identity.Times.Expirations is
+package Identity.Times.Expirations
+  with SPARK_Mode => On
+is
    subtype Expiration is Identity.Times.Expiration;
 
    type Expiration_Construction_Status is (Constructed, Time_Overflow);
