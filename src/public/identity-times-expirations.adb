@@ -5,13 +5,13 @@ is
      (Base : Identity.Times.Instant;
       Span : Identity.Times.Duration_Seconds) return Expiration_Construction
    is
-      Ok : Boolean := False;
-      Boundary : constant Identity.Times.Instant := Identity.Times.Add (Base, Span, Ok);
+      Boundary : constant Identity.Times.Instant_Sum :=
+        Identity.Times.Sum (Base, Span);
    begin
-      if Ok then
+      if Boundary.Ok then
          return
            (Status => Constructed,
-            Value => (Present => True, Time_Point => Boundary));
+            Value => (Present => True, Time_Point => Boundary.Value));
       else
          return
            (Status => Time_Overflow,

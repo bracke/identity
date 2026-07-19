@@ -1312,6 +1312,86 @@ begin
          and then not Identity.Authentication.Security_Contexts.Step_Up_Recent
            (Authenticated_Context, 16, Recent_Window),
          "IDENTITY-SECCTX-001 authentication age checks distinguish original primary MFA and step-up instants");
+
+      Assert
+        (Identity.Assurance.Evaluation.Requirements_Known (Admin_Requirements)
+         and then not Identity.Assurance.Evaluation.Requirements_Unknown
+           (Admin_Requirements)
+         and then Identity.Assurance.Evaluation.Requirements_Unknown
+           (Unknown_Requirements)
+         and then not Identity.Assurance.Evaluation.Requirements_Known
+           (Unknown_Requirements)
+         and then Identity.Assurance.Evaluation.Evaluation_Satisfied (Evaluation)
+         and then not Identity.Assurance.Evaluation.Evaluation_Rejected (Evaluation)
+         and then Identity.Assurance.Evaluation.Evaluation_Rejected
+           (Inconsistent_Evaluation)
+         and then not Identity.Assurance.Evaluation.Evaluation_Satisfied
+           (Inconsistent_Evaluation)
+         and then Identity.Assurance.Evaluation.Evaluation_Rejected
+           (Identity.Assurance.Evaluation.Evaluate
+              (Identity.Identifiers.Registry.From_String ("identity.assurance.unknown"),
+               Attributes))
+         and then Identity.Assurance.Evaluation.Evaluation_Rejected
+           (Sensitive_With_Recovery)
+         and then Identity.Assurance.Evaluation.Evaluation_Recovery_Restricted
+           (Sensitive_With_Recovery)
+         and then Identity.Assurance.Evaluation.Evaluation_Satisfied
+           (Recovery_Profile_Result)
+         and then Identity.Assurance.Evaluation.Evaluation_Recovery_Restricted
+           (Recovery_Profile_Result)
+         and then not Identity.Assurance.Evaluation.Evaluation_Recovery_Restricted
+           (Evaluation),
+         "assurance profile requirement and evaluation result predicates classify accepted "
+         & "rejected unknown and recovery-restricted outcomes");
+
+      Assert
+        (Identity.Authentication.Security_Contexts.Admission_Status
+           (Authenticated_Context, Baseline, 7)
+           = Identity.Authentication.Security_Contexts.Context_Usable
+         and then Identity.Authentication.Security_Contexts.Admission_Accepted
+           (Identity.Authentication.Security_Contexts.Admission_Status
+              (Authenticated_Context, Baseline, 7))
+         and then Identity.Authentication.Security_Contexts.Admission_Status
+           (Authenticated_Context, Changed_Authentication, 7)
+           = Identity.Authentication.Security_Contexts.Stale_Revisions
+         and then Identity.Authentication.Security_Contexts.Stale_Revisions_Rejected
+           (Identity.Authentication.Security_Contexts.Admission_Status
+              (Authenticated_Context, Changed_Session, 7))
+         and then Identity.Authentication.Security_Contexts.Admission_Status
+           (Expiring_Anonymous,
+            Identity.Authentication.Security_Contexts.Current_Revisions
+              (Expiring_Anonymous),
+            10)
+           = Identity.Authentication.Security_Contexts.Anonymous_Expired
+         and then Identity.Authentication.Security_Contexts.Anonymous_Expiration_Rejected
+           (Identity.Authentication.Security_Contexts.Admission_Status
+              (Expiring_Anonymous,
+               Identity.Authentication.Security_Contexts.Current_Revisions
+                 (Expiring_Anonymous),
+               10))
+         and then Identity.Authentication.Security_Contexts.Admission_Status
+           (Ineligible_Context, Baseline, 7)
+           = Identity.Authentication.Security_Contexts.Authenticated_Ineligible
+         and then Identity.Authentication.Security_Contexts
+           .Authenticated_Eligibility_Rejected
+           (Identity.Authentication.Security_Contexts.Admission_Status
+              (Ineligible_Context, Baseline, 7))
+         and then Identity.Authentication.Security_Contexts.Admission_Status
+           (Expired_Authenticated, Baseline, 7)
+           = Identity.Authentication.Security_Contexts.Authenticated_Expired
+         and then Identity.Authentication.Security_Contexts
+           .Authenticated_Expiration_Rejected
+           (Identity.Authentication.Security_Contexts.Admission_Status
+              (Expired_Authenticated, Baseline, 7))
+         and then not Identity.Authentication.Security_Contexts
+           .Authenticated_Expiration_Rejected
+           (Identity.Authentication.Security_Contexts.Admission_Status
+              (Ineligible_Context, Baseline, 7))
+         and then not Identity.Authentication.Security_Contexts.Admission_Rejected
+           (Identity.Authentication.Security_Contexts.Admission_Status
+              (Authenticated_Context, Baseline, 7)),
+         "downstream security context admission cause predicates cover accepted stale "
+         & "anonymous expired ineligible and authenticated expired states");
    end;
 
    Assert
@@ -2970,6 +3050,202 @@ begin
            (Identity.Recovery_Codes.Policies.Validate
               (Full_Assurance_Recovery_Code_Policy)),
          "IDENTITY-CREDENTIAL-POLICY-001 API key TOTP and recovery-code policies are bounded");
+
+      Assert
+        (Identity.API_Keys.Policies.Valid (API_Key_Policy)
+         and then Identity.API_Keys.Policies.Validate (Zero_Capacity_API_Key_Policy)
+           = Identity.API_Keys.Policies.API_Key_Active_Key_Capacity_Zero
+         and then Identity.API_Keys.Policies.Capacity_Rejected
+           (Identity.API_Keys.Policies.Validate (Zero_Capacity_API_Key_Policy))
+         and then not Identity.API_Keys.Policies.Overlap_Rejected
+           (Identity.API_Keys.Policies.Validate (Zero_Capacity_API_Key_Policy))
+         and then Identity.API_Keys.Policies.Validate (Zero_Overlap_API_Key_Policy)
+           = Identity.API_Keys.Policies.API_Key_Overlap_Non_Positive
+         and then Identity.API_Keys.Policies.Overlap_Rejected
+           (Identity.API_Keys.Policies.Validate (Zero_Overlap_API_Key_Policy))
+         and then Identity.API_Keys.Policies.Validate (No_Expiration_API_Key_Policy)
+           = Identity.API_Keys.Policies.API_Key_Expiration_Not_Required
+         and then Identity.API_Keys.Policies.Expiration_Policy_Rejected
+           (Identity.API_Keys.Policies.Validate (No_Expiration_API_Key_Policy))
+         and then not Identity.API_Keys.Policies.Capacity_Rejected
+           (Identity.API_Keys.Policies.Validate (No_Expiration_API_Key_Policy))
+         and then Identity.API_Keys.Policies.Evaluate_Issue_Lifetime
+           (Invalid_API_Key_Policy, 100, (Present => True, Time_Point => 200))
+           = Identity.API_Keys.Policies.Policy_Invalid
+         and then Identity.API_Keys.Policies.Policy_Rejected
+           (Identity.API_Keys.Policies.Evaluate_Issue_Lifetime
+              (Invalid_API_Key_Policy, 100, (Present => True, Time_Point => 200)))
+         and then Identity.API_Keys.Policies.Evaluate_Issue_Lifetime
+           (API_Key_Policy, 100, (Present => False, Time_Point => 0))
+           = Identity.API_Keys.Policies.Expiration_Missing
+         and then Identity.API_Keys.Policies.Expiration_Rejected
+           (Identity.API_Keys.Policies.Evaluate_Issue_Lifetime
+              (API_Key_Policy, 100, (Present => False, Time_Point => 0)))
+         and then Identity.API_Keys.Policies.Evaluate_Issue_Lifetime
+           (API_Key_Policy, 100, (Present => True, Time_Point => 100))
+           = Identity.API_Keys.Policies.Expiration_Not_After_Creation
+         and then Identity.API_Keys.Policies.Verifier_Derivation_Allowed
+           (Identity.API_Keys.Policies.Evaluate_Issue_Lifetime
+              (API_Key_Policy, 100, (Present => True, Time_Point => 200))),
+         "API-key policy validation classifiers distinguish capacity overlap and "
+         & "expiration-policy rejection causes");
+
+      Assert
+        (Identity.API_Keys.Rotation.Can_Rotate (Rotation_Window)
+           = Identity.API_Keys.Rotation.Allowed
+         and then Identity.API_Keys.Rotation.Can_Rotate (Exhausted_Rotation_Window)
+           = Identity.API_Keys.Rotation.Generation_Exhausted
+         and then Identity.API_Keys.Rotation.Generation_Rejected
+           (Identity.API_Keys.Rotation.Can_Rotate (Exhausted_Rotation_Window))
+         and then Identity.API_Keys.Rotation.Admission (Rotation_Window)
+           = Identity.API_Keys.Rotation.Rotation_Admitted
+         and then Identity.API_Keys.Rotation.Admission (Exhausted_Rotation_Window)
+           = Identity.API_Keys.Rotation.Rotation_Generation_Exhausted
+         and then Identity.API_Keys.Rotation.Admission
+           (2, Identity.API_Keys.Rotation.Overlap_Expired)
+           = Identity.API_Keys.Rotation.Rotation_Overlap_Expired
+         and then Identity.API_Keys.Rotation.Admission_Overlap_Rejected
+           (Identity.API_Keys.Rotation.Admission
+              (2, Identity.API_Keys.Rotation.Overlap_Expired))
+         and then Identity.API_Keys.Rotation.Successor_Generation (Rotation_Window) = 3
+         and then Identity.API_Keys.Rotation.Successor_Generation
+           (Exhausted_Rotation_Window) = Identity.Versions.Rotation_Generation'Last
+         and then Identity.One_Time_Passwords.Policies.Valid (TOTP_Policy)
+         and then Identity.One_Time_Passwords.Policies.Valid
+           ((TOTP_Policy with delta
+               Maximum_Attempts => Identity.Limits.Max_Factor_Challenges))
+         and then not Identity.One_Time_Passwords.Policies.Valid
+           (Zero_Attempt_TOTP_Policy)
+         and then Identity.One_Time_Passwords.Policies.Attempt_Limit_Rejected
+           (Identity.One_Time_Passwords.Policies.Validate (Zero_Attempt_TOTP_Policy)),
+         "API key rotation and TOTP attempts are bounded");
+
+      Assert
+        (Identity.API_Keys.Rotation.Successor_Admission (2, 3)
+           = Identity.API_Keys.Rotation.Successor_Generation_Admitted
+         and then Identity.API_Keys.Rotation.Successor_Admission_Accepted
+           (Identity.API_Keys.Rotation.Successor_Admission (2, 3))
+         and then Identity.API_Keys.Rotation.Matches_Successor_Generation (2, 3)
+         and then Identity.API_Keys.Rotation.Successor_Admission (2, 4)
+           = Identity.API_Keys.Rotation.Successor_Generation_Mismatched
+         and then Identity.API_Keys.Rotation.Successor_Mismatch_Rejected
+           (Identity.API_Keys.Rotation.Successor_Admission (2, 4))
+         and then not Identity.API_Keys.Rotation.Matches_Successor_Generation (2, 4)
+         and then Identity.API_Keys.Rotation.Successor_Admission (2, 2)
+           = Identity.API_Keys.Rotation.Successor_Generation_Mismatched
+         and then Identity.API_Keys.Rotation.Successor_Admission
+           (Identity.Versions.Rotation_Generation'Last,
+            Identity.Versions.Rotation_Generation'Last)
+           = Identity.API_Keys.Rotation.Successor_Predecessor_Generation_Exhausted
+         and then Identity.API_Keys.Rotation.Successor_Predecessor_Rejected
+           (Identity.API_Keys.Rotation.Successor_Admission
+              (Identity.Versions.Rotation_Generation'Last,
+               Identity.Versions.Rotation_Generation'Last))
+         and then Identity.API_Keys.Rotation.Successor_Admission_Rejected
+           (Identity.API_Keys.Rotation.Successor_Admission
+              (Identity.Versions.Rotation_Generation'Last,
+               Identity.Versions.Rotation_Generation'Last)),
+         "API key successor generation classifier rejects mismatched or exhausted predecessors");
+
+      Assert
+        (Identity.One_Time_Passwords.Policies.Validate (Zero_Attempt_TOTP_Policy)
+           = Identity.One_Time_Passwords.Policies.TOTP_Attempt_Limit_Non_Positive
+         and then Identity.One_Time_Passwords.Policies.Attempt_Limit_Rejected
+           (Identity.One_Time_Passwords.Policies.Validate (Zero_Attempt_TOTP_Policy))
+         and then not Identity.One_Time_Passwords.Policies.Replay_Prevention_Rejected
+           (Identity.One_Time_Passwords.Policies.Validate (Zero_Attempt_TOTP_Policy))
+         and then Identity.One_Time_Passwords.Policies.Validate (No_Replay_TOTP_Policy)
+           = Identity.One_Time_Passwords.Policies.TOTP_Replay_Prevention_Not_Required
+         and then Identity.One_Time_Passwords.Policies.Replay_Prevention_Rejected
+           (Identity.One_Time_Passwords.Policies.Validate (No_Replay_TOTP_Policy))
+         and then not Identity.One_Time_Passwords.Policies.Attempt_Limit_Rejected
+           (Identity.One_Time_Passwords.Policies.Validate (No_Replay_TOTP_Policy))
+         and then Identity.One_Time_Passwords.Policies.Validation_Accepted
+           (Identity.One_Time_Passwords.Policies.Validate (TOTP_Policy)),
+         "TOTP policy validation classifiers distinguish retry budget and replay "
+         & "prevention rejection causes");
+
+      Assert
+        (Identity.Recovery_Codes.Policies.Display_Rejected
+           (Identity.Recovery_Codes.Policies.Validate
+              (Repeat_Display_Recovery_Code_Policy))
+         and then not Identity.Recovery_Codes.Policies.Regeneration_Rejected
+           (Identity.Recovery_Codes.Policies.Validate
+              (Repeat_Display_Recovery_Code_Policy))
+         and then Identity.Recovery_Codes.Policies.Regeneration_Rejected
+           (Identity.Recovery_Codes.Policies.Validate (Keep_Set_Recovery_Code_Policy))
+         and then not Identity.Recovery_Codes.Policies.Assurance_Rejected
+           (Identity.Recovery_Codes.Policies.Validate (Keep_Set_Recovery_Code_Policy))
+         and then Identity.Recovery_Codes.Policies.Assurance_Rejected
+           (Identity.Recovery_Codes.Policies.Validate
+              (Full_Assurance_Recovery_Code_Policy))
+         and then not Identity.Recovery_Codes.Policies.Display_Rejected
+           (Identity.Recovery_Codes.Policies.Validate
+              (Full_Assurance_Recovery_Code_Policy))
+         and then Identity.Recovery_Codes.Policies.Validation_Accepted
+           (Identity.Recovery_Codes.Policies.Validate (Recovery_Code_Policy)),
+         "recovery-code policy validation classifiers distinguish display regeneration "
+         & "and assurance rejection causes");
+
+      Assert
+        (Identity.Passwords.Policies.Validate (Zero_Minimum_Acceptance)
+           = Identity.Passwords.Policies.Password_Minimum_Length_Zero
+         and then Identity.Passwords.Policies.Acceptance_Length_Rejected
+           (Identity.Passwords.Policies.Validate (Zero_Minimum_Acceptance))
+         and then Identity.Passwords.Policies.Validate (Unordered_Acceptance)
+           = Identity.Passwords.Policies.Password_Maximum_Length_Below_Minimum
+         and then Identity.Passwords.Policies.Acceptance_Length_Rejected
+           (Identity.Passwords.Policies.Validate (Unordered_Acceptance))
+         and then not Identity.Passwords.Policies.Acceptance_Length_Rejected
+           (Identity.Passwords.Policies.Validate (Acceptance))
+         and then Identity.Passwords.Policies.Validate (Zero_Verifier_Hashing)
+           = Identity.Passwords.Policies.Password_Maximum_Verifier_Bytes_Zero
+         and then Identity.Passwords.Policies.Verifier_Length_Rejected
+           (Identity.Passwords.Policies.Validate (Zero_Verifier_Hashing))
+         and then not Identity.Passwords.Policies.Verifier_Length_Rejected
+           (Identity.Passwords.Policies.Validate (Hashing))
+         and then Identity.Passwords.History.Verification_Budget_Rejected
+           (Identity.Passwords.History.Validate (Invalid_History_Policy))
+         and then not Identity.Passwords.History.Verification_Budget_Rejected
+           (Identity.Passwords.History.Validate (History_Policy))
+         and then not Identity.Passwords.History.Valid (Invalid_History_Policy)
+         and then Identity.Passwords.History.Valid (History_Policy),
+         "password policy validation classifiers distinguish acceptance hashing and "
+         & "history work-bound rejection causes");
+
+      Assert
+        (Identity.Passwords.Migrations.Decide
+           (Identity.Crypto.Password_Hashing.Upgrade_Required,
+            Identity.Passwords.Migrations.Restrict_Session_Issuance)
+           = Identity.Passwords.Migrations.Authentication_Restricted
+         and then Identity.Passwords.Migrations.Decide
+           (Identity.Crypto.Password_Hashing.Current,
+            Identity.Passwords.Migrations.Require)
+           = Identity.Passwords.Migrations.No_Migration
+         and then Identity.Passwords.Changes.Admission_Rejected
+           (Identity.Passwords.Changes.Admission
+              ((Change_Authority with delta Recovery_Restricted => True),
+               Identity.Assurance.Levels.Interactive))
+         and then Identity.Passwords.Changes.Recovery_Restriction_Rejection
+           (Identity.Passwords.Changes.Admission
+              ((Change_Authority with delta Recovery_Restricted => True),
+               Identity.Assurance.Levels.Interactive))
+         and then Identity.Passwords.Resets.Valid (Reset_Policy)
+         and then Identity.Passwords.Resets.Revokes_Sessions (Reset_Policy.Sessions)
+         and then Identity.Passwords.Resets.Validate (Keep_Sessions_Reset_Policy)
+           = Identity.Passwords.Resets.Reset_Session_Consequence_Missing
+         and then Identity.Passwords.Resets.Session_Consequence_Rejected
+           (Identity.Passwords.Resets.Validate (Keep_Sessions_Reset_Policy))
+         and then not Identity.Passwords.Resets.Revokes_Sessions
+           (Keep_Sessions_Reset_Policy.Sessions)
+         and then Identity.Passwords.Resets.Validate (Invalid_Reset_Policy)
+           = Identity.Passwords.Resets.Reset_Clears_Administrative_Restrictions
+         and then Identity.Passwords.Resets.Administrative_Clear_Rejected
+           (Identity.Passwords.Resets.Validate (Invalid_Reset_Policy))
+         and then not Identity.Passwords.Resets.Session_Consequence_Rejected
+           (Identity.Passwords.Resets.Validate (Invalid_Reset_Policy)),
+         "password migration change and reset authority require reset session consequences "
+         & "and structured reset rejection causes");
    end;
 
    declare
@@ -6243,6 +6519,123 @@ begin
          and then Identity.Projections.Events.High_Severity
            (Unauthenticated_Event_View),
          "IDENTITY-PROJECTION-001 projections exclude secret verifier fields through session domain projections");
+
+      Assert
+        (Identity.Identifiers.Entities.To_String (General_Credential_Summary.Id)
+           = Identity.Identifiers.Entities.To_String (Credential_Record_View.Id)
+         and then Identity.Identifiers.Entities.To_String
+           (General_Credential_Summary.Principal)
+           = Identity.Identifiers.Entities.To_String (Credential_Record_View.Principal)
+         and then Identity.Identifiers.Registry.Image (General_Credential_Summary.Kind)
+           = Identity.Identifiers.Registry.Image (Credential_Record_View.Kind)
+         and then General_Credential_Summary.State = Credential_Record_View.State
+         and then General_Credential_Summary.Version = Credential_Record_View.Version
+         and then Identity.Projections.Credentials.Terminal
+           (General_Credential_Summary)
+         and then not Identity.Projections.Credentials.Can_Authenticate
+           (General_Credential_Summary)
+         and then Identity.Projections.Credentials.Can_Authenticate
+           (Identity.Projections.Credentials.Summary
+              ((Credential_Record_View with delta
+                  State => Identity.Credentials.States.Active)))
+         and then not Identity.Projections.Credentials.Terminal
+           (Identity.Projections.Credentials.Summary
+              ((Credential_Record_View with delta
+                  State => Identity.Credentials.States.Active)))
+         and then Identity.Projections.Credentials.Terminal
+           (Identity.Projections.Credentials.Summary
+              ((Credential_Record_View with delta
+                  State => Identity.Credentials.States.Revoked))),
+         "credential projection summary conversion exposes lifecycle facts only");
+
+      Assert
+        (Identity.Identifiers.Entities.To_String (Retired_Principal_View.Id)
+           = Identity.Identifiers.Entities.To_String (P2)
+         and then not Identity.Principals.Lifecycle.Active
+           (Retired_Principal_View.State)
+         and then Retired_Principal_View.Version = 4
+         and then Identity.Projections.Principals.Retired (Retired_Principal_View)
+         and then not Identity.Projections.Principals.Active (Retired_Principal_View)
+         and then Identity.Projections.Principals.Active (Principal_View)
+         and then Identity.Identifiers.Entities.To_String
+           (General_Account_Summary.Account)
+           = Identity.Identifiers.Entities.To_String (Account_Record_View.Id)
+         and then Identity.Identifiers.Entities.To_String
+           (General_Account_Summary.Principal)
+           = Identity.Identifiers.Entities.To_String (Account_Record_View.Principal)
+         and then General_Account_Summary.Version = Account_Record_View.Version
+         and then Identity.Projections.Accounts.Evaluate (General_Account_Summary)
+           = Identity.Accounts.States.Eligible
+         and then Identity.Projections.Accounts.Eligible (General_Account_Summary)
+         and then Identity.Projections.Accounts.Administratively_Restricted
+           (Identity.Projections.Accounts.Summary
+              ((Account_Record_View with delta
+                  State => (Account_Record_View.State with delta
+                              Administrative =>
+                                Identity.Accounts.States.Suspended))))
+         and then Identity.Projections.Accounts.Lock_Restricted
+           (Identity.Projections.Accounts.Summary
+              ((Account_Record_View with delta
+                  State => (Account_Record_View.State with delta
+                              Lock_State =>
+                                Identity.Accounts.States.Temporarily_Locked)))),
+         "principal and account projection summary conversions expose lifecycle and "
+         & "eligibility facts only");
+
+      Assert
+        (Identity.Projections.Events.Actor_Is_Authenticated (Event_View)
+         and then not Identity.Projections.Events.Actor_Is_Unauthenticated (Event_View)
+         and then Identity.Projections.Events.Has_Subject_Principal (Event_View)
+         and then Identity.Projections.Events.Successful (Event_View)
+         and then not Identity.Projections.Events.High_Severity (Event_View)
+         and then Identity.Projections.Events.Actor_Is_Unauthenticated
+           (Unauthenticated_Event_View)
+         and then not Identity.Projections.Events.Actor_Is_Authenticated
+           (Unauthenticated_Event_View)
+         and then not Identity.Projections.Events.Has_Subject_Principal
+           (Unauthenticated_Event_View)
+         and then not Identity.Projections.Events.Successful
+           (Unauthenticated_Event_View)
+         and then Identity.Projections.Events.High_Severity
+           (Unauthenticated_Event_View)
+         and then Identity.Projections.Events.High_Severity
+           (Identity.Projections.Events.Event_Projection'
+              (Event_View with delta
+                 Severity => Identity.Events.Envelopes.Critical))
+         and then not Identity.Projections.Events.Successful
+           (Identity.Projections.Events.Event_Projection'
+              (Event_View with delta
+                 Outcome => Identity.Events.Envelopes.Failed)),
+         "event projection predicates classify actor subject outcome and severity");
+
+      Assert
+        (Identity.Projections.Events.Rejected (Unauthenticated_Event_View)
+         and then not Identity.Projections.Events.Rejected (Event_View)
+         and then Identity.Projections.Events.Failed
+           (Identity.Projections.Events.Event_Projection'
+              (Event_View with delta
+                 Outcome => Identity.Events.Envelopes.Failed))
+         and then not Identity.Projections.Events.Failed (Unauthenticated_Event_View)
+         and then Identity.Projections.Events.Actor_Matches_Subject (Event_View)
+         and then not Identity.Projections.Events.Actor_Matches_Subject
+           (Identity.Projections.Events.Event_Projection'
+              (Event_View with delta Subject => (Present => True, Value => P2)))
+         and then not Identity.Projections.Events.Actor_Matches_Subject
+           (Unauthenticated_Event_View)
+         and then Identity.Projections.Events.Requires_Operational_Attention
+           (Identity.Projections.Events.Event_Projection'
+              (Event_View with delta
+                 Outcome => Identity.Events.Envelopes.Failed))
+         and then Identity.Projections.Events.Requires_Operational_Attention
+           (Identity.Projections.Events.Event_Projection'
+              (Event_View with delta
+                 Outcome => Identity.Events.Envelopes.Conflict))
+         and then Identity.Projections.Events.Requires_Operational_Attention
+           (Unauthenticated_Event_View)
+         and then not Identity.Projections.Events.Requires_Operational_Attention
+           (Event_View),
+         "event projection predicates classify rejected failed actor-subject and "
+         & "attention outcomes");
    end;
 
    declare
@@ -7100,6 +7493,270 @@ begin
          and then Invalid_Public_Report.Findings (18).Code
            = Identity.Policies.Findings.Invalid_Audit_Policy,
          "IDENTITY-POLICY-001 policy validation rejects invalid public policy aggregates");
+
+      Assert
+        (Invalid_Public_Report.Findings (1).Code
+           = Identity.Policies.Findings.Invalid_Password_Acceptance_Policy
+         and then Invalid_Public_Report.Findings (2).Code
+           = Identity.Policies.Findings.Invalid_Password_Hashing_Policy
+         and then Invalid_Public_Report.Findings (3).Code
+           = Identity.Policies.Findings.Invalid_Password_History_Policy
+         and then Invalid_Public_Report.Findings (4).Code
+           = Identity.Policies.Findings.Invalid_Password_Reset_Policy
+         and then Identity.Policies.Findings.Error_Severity
+           (Invalid_Public_Report.Findings (1).Severity)
+         and then Identity.Policies.Findings.Error_Severity
+           (Invalid_Public_Report.Findings (4).Severity)
+         and then not Identity.Passwords.Policies.Valid
+           (Invalid_Public_Policy.Password_Acceptance)
+         and then not Identity.Passwords.Policies.Valid
+           (Invalid_Public_Policy.Password_Hashing)
+         and then not Identity.Passwords.History.Valid
+           (Invalid_Public_Policy.Password_History)
+         and then not Identity.Passwords.Resets.Valid
+           (Invalid_Public_Policy.Password_Reset),
+         "policy validation reports password-family invalid public policies with "
+         & "specific finding codes");
+
+      Assert
+        (Invalid_Public_Report.Findings (5).Code
+           = Identity.Policies.Findings.Invalid_Attempt_Policy
+         and then Invalid_Public_Report.Findings (6).Code
+           = Identity.Policies.Findings.Invalid_Throttling_Policy
+         and then Invalid_Public_Report.Findings (7).Code
+           = Identity.Policies.Findings.Invalid_Lockout_Policy
+         and then Identity.Policies.Findings.Error_Severity
+           (Invalid_Public_Report.Findings (5).Severity)
+         and then not Identity.Attempts.Policies.Valid (Invalid_Public_Policy.Attempts)
+         and then not Identity.Throttling.Policies.Valid
+           (Invalid_Public_Policy.Throttling)
+         and then not Identity.Lockout.Policies.Valid (Invalid_Public_Policy.Lockout),
+         "policy validation reports attempts-family invalid public policies with "
+         & "specific finding codes");
+
+      Assert
+        (Invalid_Public_Report.Findings (10).Code
+           = Identity.Policies.Findings.Invalid_Session_Policy
+         and then Invalid_Public_Report.Findings (11).Code
+           = Identity.Policies.Findings.Invalid_Token_Policy
+         and then Invalid_Public_Report.Findings (12).Code
+           = Identity.Policies.Findings.Invalid_Verification_Policy
+         and then Identity.Policies.Findings.Error_Severity
+           (Invalid_Public_Report.Findings (10).Severity)
+         and then not Identity.Sessions.Policies.Valid
+           (Invalid_Public_Policy.Sessions_Core)
+         and then not Identity.Tokens.Policies.Valid (Invalid_Public_Policy.Tokens_Core)
+         and then not Identity.Verification.Policies.Valid
+           (Invalid_Public_Policy.Verification),
+         "policy validation reports continuity and authority-token invalid public "
+         & "policies with specific finding codes");
+
+      Assert
+        (Invalid_Public_Report.Findings (8).Code
+           = Identity.Policies.Findings.Invalid_MFA_Policy
+         and then Invalid_Public_Report.Findings (9).Code
+           = Identity.Policies.Findings.Invalid_TOTP_Policy
+         and then Invalid_Public_Report.Findings (13).Code
+           = Identity.Policies.Findings.Invalid_Recovery_Policy
+         and then Invalid_Public_Report.Findings (14).Code
+           = Identity.Policies.Findings.Invalid_Recovery_Code_Policy
+         and then Invalid_Public_Report.Findings (15).Code
+           = Identity.Policies.Findings.Invalid_API_Key_Policy
+         and then Invalid_Public_Report.Findings (16).Code
+           = Identity.Policies.Findings.Invalid_External_Provider_Policy
+         and then Invalid_Public_Report.Findings (17).Code
+           = Identity.Policies.Findings.Invalid_Event_Policy
+         and then Invalid_Public_Report.Findings (18).Code
+           = Identity.Policies.Findings.Invalid_Audit_Policy
+         and then not Identity.Multi_Factor.Policies.Valid
+           (Invalid_Public_Policy.Assurance_MFA)
+         and then not Identity.Recovery.Policies.Valid (Invalid_Public_Policy.Recovery)
+         and then not Identity.API_Keys.Policies.Valid (Invalid_Public_Policy.API_Keys)
+         and then not Identity.External_Providers.Policies.Valid
+           (Invalid_Public_Policy.External_Providers)
+         and then not Identity.Events.Policies.Valid (Invalid_Public_Policy.Events_Core)
+         and then not Identity.Audit.Policies.Valid (Invalid_Public_Policy.Audit),
+         "policy validation reports MFA, recovery, service credential, federation, event, "
+         & "and audit invalid public policies with specific finding codes");
+
+      Assert
+        (Identity.Times.Durations.To_Base (Default_Policy.Sessions_Core.Idle_Timeout)
+           = 3_600
+         and then Identity.Times.Durations.To_Base
+           (Default_Policy.Sessions_Core.Absolute_Lifetime) = 86_400
+         and then Identity.Times.Durations.To_Base
+           (Default_Policy.Sessions_Core.Remember_Me_Lifetime) = 2_592_000
+         and then Identity.Times.Durations.To_Base (Default_Policy.Tokens_Core.Lifetime)
+           = 3_600
+         and then Identity.Times.Durations.To_Base
+           (Default_Policy.Lockout.Temporary_Duration) = 900
+         and then Identity.Times.Durations.To_Base
+           (Default_Policy.Throttling.Delay_Duration) = 30
+         and then Identity.Times.Durations.To_Base
+           (Default_Policy.Recovery.Authority_Lifetime) = 900
+         and then Identity.Times.Durations.To_Base
+           (Default_Policy.Verification.Token_Lifetime) = 3_600
+         and then Identity.Times.Durations.To_Base
+           (Default_Policy.API_Keys.Maximum_Overlap) = 86_400
+         and then Identity.Times.Durations.Seconds (900) = 900,
+         "policy records expose semantic duration wrappers");
+
+      Assert
+        (Identity.Multi_Factor.Policies.Valid (Default_Policy.Assurance_MFA)
+         and then Identity.Multi_Factor.Policies.Validate
+           ((Default_Policy.Assurance_MFA with delta Maximum_Challenges => 0))
+           = Identity.Multi_Factor.Policies.MFA_Challenge_Limit_Non_Positive
+         and then Identity.Multi_Factor.Policies.Challenge_Limit_Rejected
+           (Identity.Multi_Factor.Policies.Validate
+              ((Default_Policy.Assurance_MFA with delta Maximum_Challenges => 0)))
+         and then not Identity.Multi_Factor.Policies.Attempt_Limit_Rejected
+           (Identity.Multi_Factor.Policies.Validate
+              ((Default_Policy.Assurance_MFA with delta Maximum_Challenges => 0)))
+         and then Identity.Multi_Factor.Policies.Validate
+           ((Default_Policy.Assurance_MFA with delta Maximum_Attempts => 0))
+           = Identity.Multi_Factor.Policies.MFA_Attempt_Limit_Non_Positive
+         and then Identity.Multi_Factor.Policies.Attempt_Limit_Rejected
+           (Identity.Multi_Factor.Policies.Validate
+              ((Default_Policy.Assurance_MFA with delta Maximum_Attempts => 0)))
+         and then not Identity.Multi_Factor.Policies.Challenge_Limit_Rejected
+           (Identity.Multi_Factor.Policies.Validate
+              ((Default_Policy.Assurance_MFA with delta Maximum_Attempts => 0))),
+         "MFA policy validation classifiers distinguish challenge and attempt limit "
+         & "rejection causes");
+
+      Assert
+        (Identity.Audit.Policies.Valid (Default_Policy.Audit)
+         and then Identity.Audit.Policies.Validate
+           ((Default_Policy.Audit with delta
+               Sensitive_Events => Identity.Audit.Policies.Optional))
+           = Identity.Audit.Policies.Audit_Sensitive_Events_Not_Required
+         and then Identity.Audit.Policies.Requirement_Rejected
+           (Identity.Audit.Policies.Validate
+              ((Default_Policy.Audit with delta
+                  Sensitive_Events => Identity.Audit.Policies.Optional)))
+         and then Identity.Audit.Policies.Validate
+           ((Default_Policy.Audit with delta
+               Personal_Events => Identity.Audit.Policies.Optional))
+           = Identity.Audit.Policies.Audit_Personal_Events_Not_Required
+         and then Identity.Audit.Policies.Requirement_Rejected
+           (Identity.Audit.Policies.Validate
+              ((Default_Policy.Audit with delta
+                  Personal_Events => Identity.Audit.Policies.Optional)))
+         and then Identity.Audit.Policies.Validate
+           ((Default_Policy.Audit with delta Integrity_Required => False))
+           = Identity.Audit.Policies.Audit_Integrity_Not_Required
+         and then Identity.Audit.Policies.Integrity_Rejected
+           (Identity.Audit.Policies.Validate
+              ((Default_Policy.Audit with delta Integrity_Required => False)))
+         and then not Identity.Audit.Policies.Requirement_Rejected
+           (Identity.Audit.Policies.Validate
+              ((Default_Policy.Audit with delta Integrity_Required => False))),
+         "audit policy validation classifiers distinguish required event material and "
+         & "integrity rejection causes");
+
+      Assert
+        (Identity.Events.Policies.Valid (Default_Policy.Events_Core)
+         and then Identity.Events.Policies.Validate
+           ((Default_Policy.Events_Core with delta
+               Maximum_Attributes => Identity.Limits.Max_Event_Attributes + 1))
+           = Identity.Events.Policies.Event_Maximum_Attributes_Too_High
+         and then Identity.Events.Policies.Attribute_Capacity_Rejected
+           (Identity.Events.Policies.Validate
+              ((Default_Policy.Events_Core with delta
+                  Maximum_Attributes => Identity.Limits.Max_Event_Attributes + 1)))
+         and then Identity.Events.Policies.Validate
+           ((Default_Policy.Events_Core with delta
+               Secret_Event_Attributes_Allowed => True))
+           = Identity.Events.Policies.Event_Secret_Attributes_Allowed
+         and then Identity.Events.Policies.Secret_Attribute_Rejected
+           (Identity.Events.Policies.Validate
+              ((Default_Policy.Events_Core with delta
+                  Secret_Event_Attributes_Allowed => True)))
+         and then Identity.Events.Policies.Secret_Attribute_Rejected
+           (Identity.Events.Policies.Validate
+              ((Default_Policy.Events_Core with delta
+                  Derived_Event_Attributes_Allowed => True)))
+         and then Identity.Events.Policies.Validate
+           ((Default_Policy.Events_Core with delta
+               Post_Commit_Publication_Only => False))
+           = Identity.Events.Policies.Event_Publication_Before_Commit_Allowed
+         and then Identity.Events.Policies.Publication_Timing_Rejected
+           (Identity.Events.Policies.Validate
+              ((Default_Policy.Events_Core with delta
+                  Post_Commit_Publication_Only => False)))
+         and then not Identity.Events.Policies.Secret_Attribute_Rejected
+           (Identity.Events.Policies.Validate
+              ((Default_Policy.Events_Core with delta
+                  Post_Commit_Publication_Only => False))),
+         "event policy validation classifiers distinguish capacity secret-class and "
+         & "publication-timing rejection causes");
+
+      Assert
+        (Identity.Verification.Policies.Valid (Default_Policy.Verification)
+         and then Identity.Verification.Policies.Validate
+           ((Default_Policy.Verification with delta Token_Lifetime => 0))
+           = Identity.Verification.Policies.Contact_Verification_Token_Lifetime_Non_Positive
+         and then Identity.Verification.Policies.Token_Lifetime_Rejected
+           (Identity.Verification.Policies.Validate
+              ((Default_Policy.Verification with delta Token_Lifetime => 0)))
+         and then Identity.Verification.Policies.Validate
+           ((Default_Policy.Verification with delta Maximum_Attempts => 0))
+           = Identity.Verification.Policies.Contact_Verification_Attempt_Limit_Non_Positive
+         and then Identity.Verification.Policies.Attempt_Limit_Rejected
+           (Identity.Verification.Policies.Validate
+              ((Default_Policy.Verification with delta Maximum_Attempts => 0)))
+         and then not Identity.Verification.Policies.Token_Lifetime_Rejected
+           (Identity.Verification.Policies.Validate
+              ((Default_Policy.Verification with delta Maximum_Attempts => 0)))
+         and then Identity.Verification.Policies.Validate
+           ((Default_Policy.Verification with delta Supersede_Open_Tokens => False))
+           = Identity.Verification.Policies.Contact_Verification_Supersession_Not_Required
+         and then Identity.Verification.Policies.Supersession_Rejected
+           (Identity.Verification.Policies.Validate
+              ((Default_Policy.Verification with delta Supersede_Open_Tokens => False))),
+         "contact verification policy validation classifiers distinguish token lifetime "
+         & "attempt limit and supersession rejection causes");
+
+      Assert
+        (Identity.External_Providers.Policies.Valid (Default_Policy.External_Providers)
+         and then Identity.External_Providers.Policies.Validate
+           ((Default_Policy.External_Providers with delta
+               Require_Trusted_Provider => False))
+           = Identity.External_Providers.Policies.Trusted_Provider_Not_Required
+         and then Identity.External_Providers.Policies.Trust_Rejected
+           (Identity.External_Providers.Policies.Validate
+              ((Default_Policy.External_Providers with delta
+                  Require_Trusted_Provider => False)))
+         and then Identity.External_Providers.Policies.Validate
+           ((Default_Policy.External_Providers with delta
+               Replay_Registration_Required => False))
+           = Identity.External_Providers.Policies.Replay_Registration_Not_Required
+         and then Identity.External_Providers.Policies.Replay_Rejected
+           (Identity.External_Providers.Policies.Validate
+              ((Default_Policy.External_Providers with delta
+                  Replay_Registration_Required => False)))
+         and then Identity.External_Providers.Policies.Validate
+           ((Default_Policy.External_Providers with delta
+               Email_Auto_Link_Allowed => True))
+           = Identity.External_Providers.Policies.Email_Auto_Link_Allowed_By_Policy
+         and then Identity.External_Providers.Policies.Email_Link_Rejected
+           (Identity.External_Providers.Policies.Validate
+              ((Default_Policy.External_Providers with delta
+                  Email_Auto_Link_Allowed => True)))
+         and then Identity.External_Providers.Policies.Validate
+           ((Default_Policy.External_Providers with delta
+               Explicit_JIT_Required => False))
+           = Identity.External_Providers.Policies.Explicit_JIT_Not_Required
+         and then Identity.External_Providers.Policies.JIT_Rejected
+           (Identity.External_Providers.Policies.Validate
+              ((Default_Policy.External_Providers with delta
+                  Explicit_JIT_Required => False)))
+         and then not Identity.External_Providers.Policies.Trust_Rejected
+           (Identity.External_Providers.Policies.Validate
+              ((Default_Policy.External_Providers with delta
+                  Explicit_JIT_Required => False))),
+         "external provider policy validation classifiers distinguish trust replay "
+         & "email-link and JIT rejection causes");
 
       Assert
         (Retention_Ok and then Retention_Boundary = 2_224_000,
@@ -12928,6 +13585,114 @@ begin
       and then not Identity.Authentication.Transactions.No_Mutation
         (Identity.Authentication.Transactions.Applied),
       "authentication transaction command status classification is explicit");
+
+   Assert
+     (Identity.Authentication.Transactions.Admission
+        (Identity.Authentication.Transactions.Started,
+         Identity.Authentication.Transactions.Begin_Transaction)
+        = Identity.Authentication.Transactions.Transaction_Admitted
+      and then Identity.Authentication.Transactions.Admission_Accepted
+        (Identity.Authentication.Transactions.Admission
+           (Identity.Authentication.Transactions.Started,
+            Identity.Authentication.Transactions.Begin_Transaction))
+      and then Identity.Authentication.Transactions.Admission
+        (Identity.Authentication.Transactions.Started,
+         Identity.Authentication.Transactions.Begin_Transaction,
+         Is_Expired => True)
+        = Identity.Authentication.Transactions.Transaction_Expired
+      and then Identity.Authentication.Transactions.Expired_Rejected
+        (Identity.Authentication.Transactions.Admission
+           (Identity.Authentication.Transactions.Started,
+            Identity.Authentication.Transactions.Begin_Transaction,
+            Is_Expired => True))
+      and then Identity.Authentication.Transactions.Admission
+        (Identity.Authentication.Transactions.Satisfied,
+         Identity.Authentication.Transactions.Issue_Challenge)
+        = Identity.Authentication.Transactions.Transaction_State_Rejected
+      and then Identity.Authentication.Transactions.State_Rejected
+        (Identity.Authentication.Transactions.Admission
+           (Identity.Authentication.Transactions.Satisfied,
+            Identity.Authentication.Transactions.Issue_Challenge))
+      and then Identity.Authentication.Transactions.Admission
+        (Identity.Authentication.Transactions.Challenge_Completed,
+         Identity.Authentication.Transactions.Satisfy_Transaction,
+         Is_Expired => False,
+         Evidence_Count => 0)
+        = Identity.Authentication.Transactions.Transaction_Evidence_Required
+      and then Identity.Authentication.Transactions.Evidence_Required
+        (Identity.Authentication.Transactions.Admission
+           (Identity.Authentication.Transactions.Challenge_Completed,
+            Identity.Authentication.Transactions.Satisfy_Transaction,
+            Is_Expired => False,
+            Evidence_Count => 0))
+      and then Identity.Authentication.Transactions.Admission
+        (Identity.Authentication.Transactions.Challenge_Completed,
+         Identity.Authentication.Transactions.Satisfy_Transaction,
+         Is_Expired => False,
+         Evidence_Count => 1)
+        = Identity.Authentication.Transactions.Transaction_Admitted
+      and then not Identity.Authentication.Transactions.Evidence_Required
+        (Identity.Authentication.Transactions.Admission
+           (Identity.Authentication.Transactions.Challenge_Completed,
+            Identity.Authentication.Transactions.Satisfy_Transaction,
+            Is_Expired => False,
+            Evidence_Count => 1))
+      and then Identity.Authentication.Transactions.Admission_Rejected
+        (Identity.Authentication.Transactions.Admission
+           (Identity.Authentication.Transactions.Satisfied,
+            Identity.Authentication.Transactions.Issue_Challenge)),
+      "authentication transaction admission cause predicates classify accepted expired "
+      & "state rejected and evidence-required outcomes");
+
+   Assert
+     (Identity.Authentication.Challenges.Admission
+        (Identity.Authentication.Challenges.Issued,
+         Identity.Authentication.Challenges.Issue_Action)
+        = Identity.Authentication.Challenges.Challenge_Action_Admitted
+      and then Identity.Authentication.Challenges.Action_Admission_Accepted
+        (Identity.Authentication.Challenges.Admission
+           (Identity.Authentication.Challenges.Issued,
+            Identity.Authentication.Challenges.Issue_Action))
+      and then Identity.Authentication.Challenges.Admission
+        (Identity.Authentication.Challenges.Issued,
+         Identity.Authentication.Challenges.Retry_Action,
+         Is_Expired => True)
+        = Identity.Authentication.Challenges.Challenge_Expired_By_Time
+      and then Identity.Authentication.Challenges.Action_Expired_Rejected
+        (Identity.Authentication.Challenges.Admission
+           (Identity.Authentication.Challenges.Issued,
+            Identity.Authentication.Challenges.Retry_Action,
+            Is_Expired => True))
+      and then Identity.Authentication.Challenges.Admission
+        (Identity.Authentication.Challenges.Completed,
+         Identity.Authentication.Challenges.Retry_Action)
+        = Identity.Authentication.Challenges.Challenge_Terminal_Rejected
+      and then Identity.Authentication.Challenges.Action_Terminal_Rejected
+        (Identity.Authentication.Challenges.Admission
+           (Identity.Authentication.Challenges.Completed,
+            Identity.Authentication.Challenges.Retry_Action))
+      and then Identity.Authentication.Challenges.Admission
+        (Identity.Authentication.Challenges.Cancelled,
+         Identity.Authentication.Challenges.Cancel_Action)
+        = Identity.Authentication.Challenges.Challenge_Terminal_Rejected
+      and then Identity.Authentication.Challenges.Admission
+        (Identity.Authentication.Challenges.Failed,
+         Identity.Authentication.Challenges.Cancel_Action)
+        = Identity.Authentication.Challenges.Challenge_Action_Admitted
+      and then Identity.Authentication.Challenges.Action_State_Rejected
+        (Identity.Authentication.Challenges.Challenge_State_Rejected)
+      and then not Identity.Authentication.Challenges.Action_State_Rejected
+        (Identity.Authentication.Challenges.Challenge_Terminal_Rejected)
+      and then Identity.Authentication.Challenges.Action_Admission_Rejected
+        (Identity.Authentication.Challenges.Admission
+           (Identity.Authentication.Challenges.Completed,
+            Identity.Authentication.Challenges.Retry_Action))
+      and then not Identity.Authentication.Challenges.Action_Admission_Rejected
+        (Identity.Authentication.Challenges.Admission
+           (Identity.Authentication.Challenges.Issued,
+            Identity.Authentication.Challenges.Issue_Action)),
+      "authentication challenge action admission cause predicates classify accepted "
+      & "expired state rejected and terminal outcomes");
 
    Assert
      (Identity.Operations.Authentication.Continue.Satisfy (Repository, MT1, P1, 132)

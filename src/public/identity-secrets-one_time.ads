@@ -1,7 +1,6 @@
 with Identity.Secrets.Bytes;
 
 package Identity.Secrets.One_Time
-  with SPARK_Mode => On
 is
    type One_Time_Secret is private;
    function Create (Value : Identity.Secrets.Bytes.Secret_Bytes) return One_Time_Secret;

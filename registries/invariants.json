@@ -5,11 +5,32 @@
       "id": "IDENTITY-SECRET-001",
       "title": "No plaintext password persistence",
       "statement": "Password material is accepted only through bounded UTF-8-validated secret containers with explicit accepted, rejected, invalid-UTF-8, and size-rejected classifiers, and persisted only as verifier envelopes.",
-      "affected_packages": ["Identity.Secrets.Passwords", "Identity.Secrets.Text", "Identity.Crypto.Password_Hashing"],
-      "threats_mitigated": ["offline-cracking", "diagnostic-leakage"],
-      "enforcement": ["bounded secret type", "secret-text UTF-8 admission", "secret-text admission classification predicates", "explicit secret presence metadata", "redacted image", "verifier-only crypto contract", "password hashing verification outcome classifiers", "password hashing migration status classifiers"],
-      "required_tests": ["foundation_secret_redaction", "secret text validates UTF-8 and bounded length before construction"],
-      "adapter_obligations": ["persist verifier envelopes only"],
+      "affected_packages": [
+        "Identity.Secrets.Passwords",
+        "Identity.Secrets.Text",
+        "Identity.Crypto.Password_Hashing"
+      ],
+      "threats_mitigated": [
+        "offline-cracking",
+        "diagnostic-leakage"
+      ],
+      "enforcement": [
+        "bounded secret type",
+        "secret-text UTF-8 admission",
+        "secret-text admission classification predicates",
+        "explicit secret presence metadata",
+        "redacted image",
+        "verifier-only crypto contract",
+        "password hashing verification outcome classifiers",
+        "password hashing migration status classifiers"
+      ],
+      "required_tests": [
+        "foundation_secret_redaction",
+        "secret text validates UTF-8 and bounded length before construction"
+      ],
+      "adapter_obligations": [
+        "persist verifier envelopes only"
+      ],
       "failure_severity": "critical",
       "introduced_version": "1.0.0-dev",
       "last_reviewed_version": "1.0.0-dev"
@@ -18,11 +39,24 @@
       "id": "IDENTITY-TOKEN-001",
       "title": "Purpose-separated bearer verifiers",
       "statement": "A verifier derived for one cryptographic domain must not verify in another domain.",
-      "affected_packages": ["Identity.Crypto.Domains", "Identity.Crypto.Secret_Verifiers"],
-      "threats_mitigated": ["cross-purpose-substitution", "token-theft"],
-      "enforcement": ["framed domain-separated verifier derivation", "secret verifier verification outcome classifiers"],
-      "required_tests": ["secret_verifier_domain_separation"],
-      "adapter_obligations": ["store non-secret key ids only for keyed verifiers"],
+      "affected_packages": [
+        "Identity.Crypto.Domains",
+        "Identity.Crypto.Secret_Verifiers"
+      ],
+      "threats_mitigated": [
+        "cross-purpose-substitution",
+        "token-theft"
+      ],
+      "enforcement": [
+        "framed domain-separated verifier derivation",
+        "secret verifier verification outcome classifiers"
+      ],
+      "required_tests": [
+        "secret_verifier_domain_separation"
+      ],
+      "adapter_obligations": [
+        "store non-secret key ids only for keyed verifiers"
+      ],
       "failure_severity": "critical",
       "introduced_version": "1.0.0-dev",
       "last_reviewed_version": "1.0.0-dev"
@@ -31,9 +65,25 @@
       "id": "IDENTITY-DISCLOSURE-001",
       "title": "Generic untrusted authentication rejection",
       "statement": "Untrusted disclosure profiles collapse credential, account, and invalid-token causes into generic public rejection states while preserving resource-limit, operational, unsupported, and invariant failures as non-rejection operational failures. Disclosure profile detail ordering is explicit so less trusted projections cannot reveal more detail than more trusted projections.",
-      "affected_packages": ["Identity.Results", "Identity.Operations.Disclosure"],
-      "threats_mitigated": ["user-enumeration", "factor-enrollment-disclosure", "token-state-disclosure", "diagnostic-leakage"],
-      "enforcement": ["explicit operation status classification predicates", "explicit disclosure status classification predicates", "explicit disclosure conversion", "bounded disclosure profile rules", "disclosure detail monotonicity helper", "structured conflict disclosure only for profiles with conflict detail", "resource-limit and invariant statuses are not mapped to authentication rejection"],
+      "affected_packages": [
+        "Identity.Results",
+        "Identity.Operations.Disclosure"
+      ],
+      "threats_mitigated": [
+        "user-enumeration",
+        "factor-enrollment-disclosure",
+        "token-state-disclosure",
+        "diagnostic-leakage"
+      ],
+      "enforcement": [
+        "explicit operation status classification predicates",
+        "explicit disclosure status classification predicates",
+        "explicit disclosure conversion",
+        "bounded disclosure profile rules",
+        "disclosure detail monotonicity helper",
+        "structured conflict disclosure only for profiles with conflict detail",
+        "resource-limit and invariant statuses are not mapped to authentication rejection"
+      ],
       "required_tests": [
         "disclosure_generic_rejection_and_non_rejection_failures",
         "disclosure profile rules expose bounded detail controls",
@@ -41,7 +91,13 @@
         "trusted token conflict disclosure remains structured",
         "operation conflicts collapse for untrusted disclosure and remain structured for trusted disclosure"
       ],
-      "adapter_obligations": ["use Identity.Results classification predicates for trusted status branching", "use disclosure projection for public responses", "use disclosure status classification predicates for public response branching", "use Identity.Operations.Disclosure.Reveals_No_More_Than for profile ordering checks", "do not duplicate disclosure-profile policy in transport adapters"],
+      "adapter_obligations": [
+        "use Identity.Results classification predicates for trusted status branching",
+        "use disclosure projection for public responses",
+        "use disclosure status classification predicates for public response branching",
+        "use Identity.Operations.Disclosure.Reveals_No_More_Than for profile ordering checks",
+        "do not duplicate disclosure-profile policy in transport adapters"
+      ],
       "failure_severity": "critical",
       "introduced_version": "1.0.0-dev",
       "last_reviewed_version": "1.0.0-dev"
@@ -58,7 +114,10 @@
         "Identity.Operations.Identities.Revoke",
         "Identity.Adapters.Repositories.Memory"
       ],
-      "threats_mitigated": ["external-identity-misbinding", "subject-ambiguity"],
+      "threats_mitigated": [
+        "external-identity-misbinding",
+        "subject-ambiguity"
+      ],
       "enforcement": [
         "identity binding lifecycle admission helpers",
         "identity binding use enum",
@@ -125,7 +184,11 @@
         "Identity.Passwords.Credentials",
         "Identity.Adapters.Repositories.Memory"
       ],
-      "threats_mitigated": ["user-enumeration", "credential-stuffing", "diagnostic-leakage"],
+      "threats_mitigated": [
+        "user-enumeration",
+        "credential-stuffing",
+        "diagnostic-leakage"
+      ],
       "enforcement": [
         "operation result variants",
         "disclosure conversion",
@@ -200,7 +263,12 @@
         "Identity.Operations.Sessions.Purge_Retained",
         "Identity.Adapters.Repositories.Memory"
       ],
-      "threats_mitigated": ["session-theft", "database-read-compromise", "rotated-token-replay", "stale-context-use"],
+      "threats_mitigated": [
+        "session-theft",
+        "database-read-compromise",
+        "rotated-token-replay",
+        "stale-context-use"
+      ],
       "enforcement": [
         "split public reference and secret",
         "public reference equality predicate",
@@ -312,7 +380,11 @@
         "Identity.Operations.Passwords.Complete_Reset",
         "Identity.Adapters.Repositories.Memory"
       ],
-      "threats_mitigated": ["cross-purpose-substitution", "reset-token-theft", "replay"],
+      "threats_mitigated": [
+        "cross-purpose-substitution",
+        "reset-token-theft",
+        "replay"
+      ],
       "enforcement": [
         "purpose match predicate",
         "domain-separated verifier",
@@ -382,7 +454,11 @@
         "Identity.Operations.API_Keys.Revoke",
         "Identity.Adapters.Repositories.Memory"
       ],
-      "threats_mitigated": ["api-key-theft", "database-read-compromise", "diagnostic-leakage"],
+      "threats_mitigated": [
+        "api-key-theft",
+        "database-read-compromise",
+        "diagnostic-leakage"
+      ],
       "enforcement": [
         "public key id",
         "bounded credential class id",
@@ -493,8 +569,18 @@
         "Identity.Events.Canonical",
         "Identity.Adapters.Repositories.Memory"
       ],
-      "threats_mitigated": ["event-injection", "diagnostic-leakage", "secret-leak-attempts"],
-      "enforcement": ["typed event classification", "event envelope severity outcome and actor classifiers", "registered event schema lookup", "bounded framed canonical encoding", "append-only event ids"],
+      "threats_mitigated": [
+        "event-injection",
+        "diagnostic-leakage",
+        "secret-leak-attempts"
+      ],
+      "enforcement": [
+        "typed event classification",
+        "event envelope severity outcome and actor classifiers",
+        "registered event schema lookup",
+        "bounded framed canonical encoding",
+        "append-only event ids"
+      ],
       "required_tests": [
         "secret data class rejected for ordinary events",
         "event schema registry distinguishes known V1 events",
@@ -504,7 +590,10 @@
         "canonical event encoding includes stable envelope fields",
         "canonical event encoding is bounded"
       ],
-      "adapter_obligations": ["persist mandatory events atomically with security transitions", "deduplicate by stable Event_Id"],
+      "adapter_obligations": [
+        "persist mandatory events atomically with security transitions",
+        "deduplicate by stable Event_Id"
+      ],
       "failure_severity": "critical",
       "introduced_version": "1.0.0-dev",
       "last_reviewed_version": "1.0.0-dev"
@@ -520,8 +609,19 @@
         "Identity.Throttling.Decisions",
         "Identity.Adapters.Repositories.Memory"
       ],
-      "threats_mitigated": ["credential-stuffing", "online-guessing", "resource-exhaustion"],
-      "enforcement": ["bounded attempt store", "typed failure buckets", "attempt failure-bucket classifiers", "attempt outcome predicates", "attempt disclosure predicates", "threshold evaluator"],
+      "threats_mitigated": [
+        "credential-stuffing",
+        "online-guessing",
+        "resource-exhaustion"
+      ],
+      "enforcement": [
+        "bounded attempt store",
+        "typed failure buckets",
+        "attempt failure-bucket classifiers",
+        "attempt outcome predicates",
+        "attempt disclosure predicates",
+        "threshold evaluator"
+      ],
       "required_tests": [
         "password authentication request records successful attempt",
         "successful password attempt records principal and no failure",
@@ -533,7 +633,11 @@
         "password failure count is deterministic",
         "password failure threshold locks account deterministically"
       ],
-      "adapter_obligations": ["record attempts atomically with lock-state transitions", "use Identity.Attempts.Outcomes predicates for attempt branching", "do not count operational failures as credential failures"],
+      "adapter_obligations": [
+        "record attempts atomically with lock-state transitions",
+        "use Identity.Attempts.Outcomes predicates for attempt branching",
+        "do not count operational failures as credential failures"
+      ],
       "failure_severity": "critical",
       "introduced_version": "1.0.0-dev",
       "last_reviewed_version": "1.0.0-dev"
@@ -548,8 +652,30 @@
         "Identity.Operations.Factors.Consume_Recovery_Code",
         "Identity.Adapters.Repositories.Memory"
       ],
-      "threats_mitigated": ["recovery-abuse", "database-read-compromise", "replay"],
-      "enforcement": ["verifier-only code set", "verifier-free recovery-code set projection", "recovery-code projection count predicates", "recovery-code revoked projection predicates", "consumed state", "recovery-code lifecycle state predicates", "recovery-code state admission classifier", "recovery-code admission rejection predicate", "matched-code state admission helper", "presentation outcome classifier", "recovery-code status predicates", "recovery-code retry conflict and unknown classifiers", "expected set-version consume request", "expected affected-count regeneration request", "regeneration revocation predicate", "saturated public entity-version advancement", "single-use consume command"],
+      "threats_mitigated": [
+        "recovery-abuse",
+        "database-read-compromise",
+        "replay"
+      ],
+      "enforcement": [
+        "verifier-only code set",
+        "verifier-free recovery-code set projection",
+        "recovery-code projection count predicates",
+        "recovery-code revoked projection predicates",
+        "consumed state",
+        "recovery-code lifecycle state predicates",
+        "recovery-code state admission classifier",
+        "recovery-code admission rejection predicate",
+        "matched-code state admission helper",
+        "presentation outcome classifier",
+        "recovery-code status predicates",
+        "recovery-code retry conflict and unknown classifiers",
+        "expected set-version consume request",
+        "expected affected-count regeneration request",
+        "regeneration revocation predicate",
+        "saturated public entity-version advancement",
+        "single-use consume command"
+      ],
       "required_tests": [
         "recovery code set stores verifier only",
         "recovery code state admission is explicit",
@@ -695,7 +821,11 @@
         "Identity.Operations.Factors.Accept_TOTP_Counter",
         "Identity.Adapters.Repositories.Memory"
       ],
-      "threats_mitigated": ["totp-replay", "mfa-bypass", "concurrency-races"],
+      "threats_mitigated": [
+        "totp-replay",
+        "mfa-bypass",
+        "concurrency-races"
+      ],
       "enforcement": [
         "credential-bound replay counter",
         "pending enrollment state",
@@ -2048,7 +2178,10 @@
       ],
       "required_tests": [
         "crypto integrations report missing capabilities explicitly",
-        "cryptolib child packages report unavailable primitives explicitly"
+        "unavailable cryptolib primitives fail closed and disclose no output",
+        "OS entropy source yields non-repeating unpredictable bytes",
+        "bound cryptolib primitives report available capabilities",
+        "probed capability set is established by exercising each primitive"
       ],
       "adapter_obligations": [
         "do not silently substitute weak primitives",

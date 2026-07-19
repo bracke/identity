@@ -2,6 +2,7 @@ with Ada.Directories;
 with Ada.Text_IO;
 
 with Identity.Version;
+with Identity_Tools_Evidence;
 with Identity_Tools_Persisted_Formats;
 with Identity_Tools_Release_Artifacts;
 
@@ -58,14 +59,29 @@ package body Identity_Tools_Release_Reports is
               & Natural'Image (Identity_Tools_Release_Artifacts.Provenance_Field_Count));
             Ada.Text_IO.Put_Line (File, "sensitive-artifacts: 0");
          when Test_Summary =>
-            Ada.Text_IO.Put_Line (File, "suite:aunit:required");
-            Ada.Text_IO.Put_Line (File, "suite:repository-conformance:required");
-            Ada.Text_IO.Put_Line (File, "suite:secret-leak:required");
-            Ada.Text_IO.Put_Line (File, "suite:atomicity:required");
-            Ada.Text_IO.Put_Line (File, "suite:concurrency:required");
-            Ada.Text_IO.Put_Line (File, "suite:disclosure:required");
+            --  Outcomes of the runs that actually happened, not a list of
+            --  suites that were supposed to happen.
+            Ada.Text_IO.Put_Line (File, "suite:aunit:"
+              & Identity_Tools_Evidence.State_Image
+                  (Identity_Tools_Evidence.State (Identity_Tools_Evidence.AUnit_Suite))
+              & ":" & Identity_Tools_Evidence.Detail (Identity_Tools_Evidence.AUnit_Suite));
+            Ada.Text_IO.Put_Line (File, "suite:repository-conformance:"
+              & Identity_Tools_Evidence.State_Image
+                  (Identity_Tools_Evidence.State (Identity_Tools_Evidence.Conformance))
+              & ":" & Identity_Tools_Evidence.Detail (Identity_Tools_Evidence.Conformance));
+            Ada.Text_IO.Put_Line (File, "suite:gate-selftests:"
+              & Identity_Tools_Evidence.State_Image
+                  (Identity_Tools_Evidence.State (Identity_Tools_Evidence.Gate_Self_Tests))
+              & ":" & Identity_Tools_Evidence.Detail (Identity_Tools_Evidence.Gate_Self_Tests));
+            Ada.Text_IO.Put_Line (File, "suite:examples:"
+              & Identity_Tools_Evidence.State_Image
+                  (Identity_Tools_Evidence.State (Identity_Tools_Evidence.Examples))
+              & ":" & Identity_Tools_Evidence.Detail (Identity_Tools_Evidence.Examples));
          when Proof_Summary =>
-            Ada.Text_IO.Put_Line (File, "gate:gnatprove:required");
+            Ada.Text_IO.Put_Line (File, "gate:gnatprove:"
+              & Identity_Tools_Evidence.State_Image
+                  (Identity_Tools_Evidence.State (Identity_Tools_Evidence.Proof))
+              & ":" & Identity_Tools_Evidence.Detail (Identity_Tools_Evidence.Proof));
             Ada.Text_IO.Put_Line (File, "orchestrator:project_tools");
             Ada.Text_IO.Put_Line (File, "baseline-rule:no-silent-lowering");
          when Crypto_Inventory =>

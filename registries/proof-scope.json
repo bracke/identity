@@ -10,73 +10,124 @@
   "packages": [
     {
       "name": "Identity.Collections",
-      "properties": ["collection-bounds", "capacity-status-safety"],
+      "properties": [
+        "collection-bounds",
+        "capacity-status-safety"
+      ],
       "security_critical": true,
       "excluded": false,
-      "compensating_tests": ["collection status predicates classify success and no-mutation failures"]
+      "compensating_tests": [
+        "collection status predicates classify success and no-mutation failures"
+      ]
     },
     {
       "name": "Identity.Text.Bounded",
-      "properties": ["identifier-and-text-length-invariants", "bounded-text-construction"],
+      "properties": [
+        "identifier-and-text-length-invariants",
+        "bounded-text-construction"
+      ],
       "security_critical": true,
       "excluded": false,
-      "compensating_tests": ["UTF-8 validation and redacted text helpers are bounded"]
+      "compensating_tests": [
+        "UTF-8 validation and redacted text helpers are bounded"
+      ]
     },
     {
       "name": "Identity.Times.Expirations",
-      "properties": ["time-arithmetic-overflow", "expiration-construction-safety"],
+      "properties": [
+        "time-arithmetic-overflow",
+        "expiration-construction-safety"
+      ],
       "security_critical": true,
       "excluded": false,
-      "compensating_tests": ["expiration construction reports overflow explicitly"]
+      "compensating_tests": [
+        "expiration construction reports overflow explicitly"
+      ]
     },
     {
       "name": "Identity.Versions",
-      "properties": ["counter-saturation", "entity-version-monotonicity"],
+      "properties": [
+        "counter-saturation",
+        "entity-version-monotonicity"
+      ],
       "security_critical": true,
       "excluded": false,
-      "compensating_tests": ["entity version comparison and saturated advance are explicit"]
+      "compensating_tests": [
+        "entity version comparison and saturated advance are explicit"
+      ]
     },
     {
       "name": "Identity.Codecs.Canonical",
-      "properties": ["canonical-encoding-bounds", "deterministic-framing"],
+      "properties": [
+        "canonical-encoding-bounds",
+        "deterministic-framing"
+      ],
       "security_critical": true,
       "excluded": false,
-      "compensating_tests": ["canonical codec frames are deterministic and bounded"]
+      "compensating_tests": [
+        "canonical codec frames are deterministic and bounded"
+      ]
     },
     {
       "name": "Identity.Tokens.Definitions",
-      "properties": ["token-state-transitions", "consumed-state-never-reactivates"],
+      "properties": [
+        "token-state-transitions",
+        "consumed-state-never-reactivates"
+      ],
       "security_critical": true,
       "excluded": false,
-      "compensating_tests": ["token state terminal and consumed predicates are explicit"]
+      "compensating_tests": [
+        "token state terminal and consumed predicates are explicit"
+      ]
     },
     {
       "name": "Identity.Sessions.Rotation",
-      "properties": ["session-rotation-generation", "rotation-admission-safety"],
+      "properties": [
+        "session-rotation-generation",
+        "rotation-admission-safety"
+      ],
       "security_critical": true,
       "excluded": false,
-      "compensating_tests": ["session policy rejects zero durations and exhausted rotation"]
+      "compensating_tests": [
+        "session policy rejects zero durations and exhausted rotation"
+      ]
     },
     {
       "name": "Identity.Secrets.One_Time",
-      "properties": ["one-time-secret-state", "single-extraction-safety"],
+      "properties": [
+        "one-time-secret-state",
+        "single-extraction-safety"
+      ],
       "security_critical": true,
-      "excluded": false,
-      "compensating_tests": ["one-time secret extraction pepper material and presence are bounded"]
+      "excluded": true,
+      "compensating_tests": [
+        "one-time secret extraction pepper material and presence are bounded"
+      ],
+      "exclusion_reason": "uses controlled types for guaranteed secret zeroization on finalization, which SPARK does not permit; covered by the compensating tests below"
     },
     {
       "name": "Identity.Operations.Contexts",
-      "properties": ["option-and-result-variant-safety", "deadline-checkpoint-safety"],
+      "properties": [
+        "option-and-result-variant-safety",
+        "deadline-checkpoint-safety"
+      ],
       "security_critical": true,
       "excluded": false,
-      "compensating_tests": ["operation deadline evaluation classifies boundary states"]
+      "compensating_tests": [
+        "operation deadline evaluation classifies boundary states"
+      ]
     },
     {
       "name": "Identity.Recovery_Codes.Sets",
-      "properties": ["selected-state-machine-invariants", "single-use-recovery-code-state"],
+      "properties": [
+        "selected-state-machine-invariants",
+        "single-use-recovery-code-state"
+      ],
       "security_critical": true,
       "excluded": false,
-      "compensating_tests": ["recovery code status predicates classify single-use and no-mutation outcomes"]
+      "compensating_tests": [
+        "recovery code status predicates classify single-use and no-mutation outcomes"
+      ]
     }
   ],
   "required_properties": [

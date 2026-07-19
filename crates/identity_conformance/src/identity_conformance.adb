@@ -280,7 +280,7 @@ procedure Identity_Conformance is
       Wrong_Key_Secret : constant Identity.Secrets.Text.Secret_Text :=
         Identity.Secrets.Text.From_UTF_8 ("wrong api key bearer secret");
       Password_Secret : constant Identity.Secrets.Text.Secret_Text :=
-        Identity.Secrets.Text.From_UTF_8 ("correct horse battery staple");
+        Identity.Secrets.Text.From_UTF_8 ("conformance principal passphrase alpha");
 
       Key_Record : constant Identity.API_Keys.Credentials.API_Key_Credential_Record :=
         (Id                  => Credential_Of ("02"),
@@ -371,11 +371,11 @@ procedure Identity_Conformance is
       Family : constant Identity.Identifiers.Entities.Session_Family_Id := Family_Of ("01");
 
       Secret_One : constant Identity.Secrets.Text.Secret_Text :=
-        Identity.Secrets.Text.From_UTF_8 ("session bearer secret one");
+        Identity.Secrets.Text.From_UTF_8 ("conformance session bearer alpha");
       Secret_Two : constant Identity.Secrets.Text.Secret_Text :=
-        Identity.Secrets.Text.From_UTF_8 ("session bearer secret two");
+        Identity.Secrets.Text.From_UTF_8 ("conformance session bearer beta");
       Secret_Bad : constant Identity.Secrets.Text.Secret_Text :=
-        Identity.Secrets.Text.From_UTF_8 ("not the session bearer secret");
+        Identity.Secrets.Text.From_UTF_8 ("conformance session bearer mismatch");
 
       Reference_One : constant Identity.Text.Bounded.Bounded_Text :=
         Identity.Text.Bounded.From_String ("session-public-reference-1");

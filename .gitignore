@@ -6,3 +6,4 @@ lib/
 
 crates/*/bin/
 crates/*/obj/
+generated/evidence/
