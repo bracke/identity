@@ -1,6 +1,7 @@
 with Identity.Adapters.Repositories.Stores;
 with Identity.Identifiers.Entities;
 with Identity.Authentication.Transactions;
+with Identity.Operations.Contexts;
 with Identity.Times;
 with Identity.Versions;
 
@@ -30,6 +31,18 @@ package Identity.Operations.Authentication.Continue is
    function Complete_Challenge
      (Repository : in out Identity.Adapters.Repositories.Stores.Store_Interface'Class;
       Request    : Staged_Challenge_Completion_Request)
+      return Identity.Authentication.Transactions.Authentication_Transaction_Status;
+
+   --  Audited form. Emits identity.mfa.challenge.completed for the
+   --  transition, and refuses the operation if the store cannot accept that
+   --  event, so a challenge is never completed without its audit record.
+   function Complete_Challenge
+     (Repository  : in out
+        Identity.Adapters.Repositories.Stores.Store_Interface'Class;
+      Request     : Staged_Challenge_Completion_Request;
+      Context     : Identity.Operations.Contexts.Operation_Context;
+      Event       : Identity.Identifiers.Entities.Event_Id;
+      Recorded_At : Identity.Times.Instant)
       return Identity.Authentication.Transactions.Authentication_Transaction_Status;
 
    function Satisfy

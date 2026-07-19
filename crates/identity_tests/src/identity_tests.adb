@@ -15807,7 +15807,7 @@ begin
       end loop;
 
       Assert
-        (not Untrusted_Collapses,
+        (Untrusted_Collapses,
          "disclosure: every rejection-class internal status collapses to a public rejection");
 
       Assert

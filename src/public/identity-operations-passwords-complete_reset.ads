@@ -1,5 +1,6 @@
 with Identity.Adapters.Repositories.Stores;
 with Identity.Identifiers.Entities;
+with Identity.Operations.Contexts;
 with Identity.Secrets.Passwords;
 with Identity.Secrets.Tokens;
 with Identity.Times;
@@ -31,5 +32,18 @@ package Identity.Operations.Passwords.Complete_Reset is
    function Execute
      (Repository : in out Identity.Adapters.Repositories.Stores.Store_Interface'Class;
       Request    : Reset_Completion_Request)
+      return Identity.Tokens.Verification.Token_Verification_Outcome;
+
+   --  Audited form. Emits identity.password.reset.completed for the
+   --  transition, and refuses the operation if the store cannot accept that
+   --  event, so a reset is never completed without its audit record. An
+   --  invalid token is audited as a rejection.
+   function Execute
+     (Repository  : in out
+        Identity.Adapters.Repositories.Stores.Store_Interface'Class;
+      Request     : Reset_Completion_Request;
+      Context     : Identity.Operations.Contexts.Operation_Context;
+      Event       : Identity.Identifiers.Entities.Event_Id;
+      Recorded_At : Identity.Times.Instant)
       return Identity.Tokens.Verification.Token_Verification_Outcome;
 end Identity.Operations.Passwords.Complete_Reset;

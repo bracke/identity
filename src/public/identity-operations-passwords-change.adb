@@ -1,5 +1,8 @@
 with Identity.Credentials.States;
 with Identity.Crypto.Password_Hashing;
+with Identity.Events.Envelopes;
+with Identity.Events.Types;
+with Identity.Operations.Audit;
 with Identity.Passwords.Credentials;
 with Identity.Text.Bounded;
 
@@ -105,5 +108,65 @@ package body Identity.Operations.Passwords.Change is
          when Identity.Adapters.Repositories.Stores.Capacity_Conflict =>
             return Identity.Results.Operational_Failure;
       end case;
+   end Execute;
+
+   --  The plain form reports an operation status rather than a store command
+   --  status, so the event outcome is derived from it directly: a wrong
+   --  current password is a rejection, a losing version check is a conflict,
+   --  and anything operational is a failure.
+   function Outcome_Of
+     (Status : Identity.Results.Operation_Status)
+      return Identity.Events.Envelopes.Event_Outcome is
+     (case Status is
+        when Identity.Results.Succeeded => Identity.Events.Envelopes.Succeeded,
+        when Identity.Results.Conflict  => Identity.Events.Envelopes.Conflict,
+        when Identity.Results.Operational_Failure
+           | Identity.Results.Resource_Limit
+           | Identity.Results.Internal_Invariant_Failure =>
+          Identity.Events.Envelopes.Failed,
+        when others => Identity.Events.Envelopes.Rejected);
+
+   function Execute
+     (Repository  : in out
+        Identity.Adapters.Repositories.Stores.Store_Interface'Class;
+      Request     : Change_Request;
+      Context     : Identity.Operations.Contexts.Operation_Context;
+      Event       : Identity.Identifiers.Entities.Event_Id;
+      Recorded_At : Identity.Times.Instant)
+      return Identity.Results.Operation_Status
+   is
+      use type Identity.Adapters.Repositories.Stores.Command_Status;
+      Status : Identity.Results.Operation_Status;
+   begin
+      --  Reserve first: refusing here leaves the stored password untouched.
+      if not Identity.Operations.Audit.Capacity_Reserved (Repository) then
+         return Identity.Results.Operational_Failure;
+      end if;
+
+      Status := Execute (Repository, Request);
+
+      declare
+         Emitted : constant Identity.Adapters.Repositories.Stores.Command_Status :=
+           Identity.Operations.Audit.Emit
+             (Repository  => Repository,
+              Context     => Context,
+              Event       => Event,
+              Type_Id     => Identity.Events.Types.Password_Changed,
+              Subject     =>
+                Identity.Operations.Audit.Subject_Of (Request.Principal),
+              Target      => Identity.Text.Bounded.From_String
+                (Identity.Identifiers.Entities.To_String
+                   (Request.New_Credential)),
+              Outcome     => Outcome_Of (Status),
+              Recorded_At => Recorded_At);
+      begin
+         --  Capacity was reserved above, so a failure here is a real fault in
+         --  the store and must not be hidden behind a successful change.
+         if Emitted /= Identity.Adapters.Repositories.Stores.Applied then
+            return Identity.Results.Operational_Failure;
+         end if;
+      end;
+
+      return Status;
    end Execute;
 end Identity.Operations.Passwords.Change;

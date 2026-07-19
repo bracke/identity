@@ -1,5 +1,6 @@
 with Identity.Adapters.Repositories.Stores;
 with Identity.Identifiers.Entities;
+with Identity.Operations.Contexts;
 with Identity.Secrets.Tokens;
 with Identity.Times;
 with Identity.Tokens.Verification;
@@ -26,5 +27,17 @@ package Identity.Operations.Verification.Complete is
    function Execute
      (Repository : in out Identity.Adapters.Repositories.Stores.Store_Interface'Class;
       Request    : Staged_Completion_Request)
+      return Identity.Tokens.Verification.Token_Verification_Outcome;
+
+   --  Audited form. Emits identity.contact.verified for the transition, and
+   --  refuses the operation if the store cannot accept that event, so a
+   --  contact is never marked verified without its audit record.
+   function Execute
+     (Repository  : in out
+        Identity.Adapters.Repositories.Stores.Store_Interface'Class;
+      Request     : Staged_Completion_Request;
+      Context     : Identity.Operations.Contexts.Operation_Context;
+      Event       : Identity.Identifiers.Entities.Event_Id;
+      Recorded_At : Identity.Times.Instant)
       return Identity.Tokens.Verification.Token_Verification_Outcome;
 end Identity.Operations.Verification.Complete;

@@ -1,4 +1,26 @@
+with Identity.Events.Envelopes;
+with Identity.Events.Types;
+with Identity.Operations.Audit;
+with Identity.Text.Bounded;
+
 package body Identity.Operations.Authentication.Continue is
+   --  A transaction verdict is not a store command status: an unknown or
+   --  wrongly-staged transaction is a conflict, and nothing here is a plain
+   --  credential rejection.
+   function Outcome_Of
+     (Status : Identity.Authentication.Transactions
+        .Authentication_Transaction_Status)
+      return Identity.Events.Envelopes.Event_Outcome is
+     (case Status is
+        when Identity.Authentication.Transactions.Applied =>
+          Identity.Events.Envelopes.Succeeded,
+        when Identity.Authentication.Transactions.Unknown
+           | Identity.Authentication.Transactions.State_Conflict
+           | Identity.Authentication.Transactions.Version_Conflict =>
+          Identity.Events.Envelopes.Conflict,
+        when Identity.Authentication.Transactions.Capacity_Conflict =>
+          Identity.Events.Envelopes.Failed);
+
    function Complete_Challenge
      (Repository : in out Identity.Adapters.Repositories.Stores.Store_Interface'Class;
       Challenge  : Identity.Identifiers.Entities.Challenge_Id;
@@ -22,6 +44,49 @@ package body Identity.Operations.Authentication.Continue is
          Request.Now,
          Request.Expected_Challenge_Version,
          Request.Expected_Transaction_Version);
+   end Complete_Challenge;
+
+   function Complete_Challenge
+     (Repository  : in out
+        Identity.Adapters.Repositories.Stores.Store_Interface'Class;
+      Request     : Staged_Challenge_Completion_Request;
+      Context     : Identity.Operations.Contexts.Operation_Context;
+      Event       : Identity.Identifiers.Entities.Event_Id;
+      Recorded_At : Identity.Times.Instant)
+      return Identity.Authentication.Transactions.Authentication_Transaction_Status
+   is
+      use type Identity.Adapters.Repositories.Stores.Command_Status;
+      Status : Identity.Authentication.Transactions
+        .Authentication_Transaction_Status;
+   begin
+      --  Reserve first: refusing here leaves the challenge and its
+      --  transaction untouched.
+      if not Identity.Operations.Audit.Capacity_Reserved (Repository) then
+         return Identity.Authentication.Transactions.Capacity_Conflict;
+      end if;
+
+      Status := Complete_Challenge (Repository, Request);
+
+      declare
+         Emitted : constant Identity.Adapters.Repositories.Stores.Command_Status :=
+           Identity.Operations.Audit.Emit
+             (Repository  => Repository,
+              Context     => Context,
+              Event       => Event,
+              Type_Id     => Identity.Events.Types.MFA_Challenge_Completed,
+              Subject     =>
+                Identity.Operations.Audit.Subject_Of (Request.Principal),
+              Target      => Identity.Text.Bounded.From_String
+                (Identity.Identifiers.Entities.To_String (Request.Challenge)),
+              Outcome     => Outcome_Of (Status),
+              Recorded_At => Recorded_At);
+      begin
+         if Emitted /= Identity.Adapters.Repositories.Stores.Applied then
+            return Identity.Authentication.Transactions.Capacity_Conflict;
+         end if;
+      end;
+
+      return Status;
    end Complete_Challenge;
 
    function Satisfy

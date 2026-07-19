@@ -4,8 +4,11 @@ with Identity.Attempts.Definitions;
 with Identity.Attempts.Outcomes;
 with Identity.Credentials.States;
 with Identity.Crypto.Password_Hashing;
+with Identity.Events.Envelopes;
+with Identity.Events.Types;
 with Identity.Identifiers.Registry;
 with Identity.Identities.Resolution;
+with Identity.Operations.Audit;
 with Identity.Passwords.Credentials;
 with Identity.Principals.Definitions;
 with Identity.Results;
@@ -193,5 +196,74 @@ package body Identity.Operations.Passwords.Authenticate is
       else
          return (Status => Identity.Results.Operational_Failure, Principal => (Present => False));
       end if;
+   end Execute;
+
+   function Execute
+     (Repository  : in out
+        Identity.Adapters.Repositories.Stores.Store_Interface'Class;
+      Request     : Attempted_Request;
+      Context     : Identity.Operations.Contexts.Operation_Context;
+      Event       : Identity.Identifiers.Entities.Event_Id;
+      Recorded_At : Identity.Times.Instant)
+      return Identity.Authentication.Results.Password_Authentication_Result
+   is
+      use type Identity.Adapters.Repositories.Stores.Command_Status;
+      use type Identity.Results.Operation_Status;
+
+      Result : Identity.Authentication.Results.Password_Authentication_Result;
+   begin
+      --  Reserve first: refusing here records no attempt and locks no
+      --  account, whereas a full event log found afterwards would leave both
+      --  changes without their audit record.
+      if not Identity.Operations.Audit.Capacity_Reserved (Repository) then
+         return
+           (Status    => Identity.Results.Operational_Failure,
+            Principal => (Present => False));
+      end if;
+
+      Result := Execute (Repository, Request);
+
+      declare
+         Succeeded : constant Boolean :=
+           Result.Status = Identity.Results.Succeeded;
+
+         --  A wrong password is a rejection, not a store conflict, so the
+         --  outcome is stated rather than derived from a command status.
+         Outcome : constant Identity.Events.Envelopes.Event_Outcome :=
+           (if Succeeded then Identity.Events.Envelopes.Succeeded
+            elsif Result.Status = Identity.Results.Conflict
+            then Identity.Events.Envelopes.Conflict
+            elsif Identity.Results.Operational (Result.Status)
+            then Identity.Events.Envelopes.Failed
+            else Identity.Events.Envelopes.Rejected);
+
+         Emitted : constant Identity.Adapters.Repositories.Stores.Command_Status :=
+           Identity.Operations.Audit.Emit
+             (Repository  => Repository,
+              Context     => Context,
+              Event       => Event,
+              Type_Id     =>
+                (if Succeeded
+                 then Identity.Events.Types.Authentication_Succeeded
+                 else Identity.Events.Types.Authentication_Rejected),
+              Subject     =>
+                (if Result.Principal.Present
+                 then Identity.Operations.Audit.Subject_Of
+                        (Result.Principal.Value)
+                 else Identity.Operations.Audit.No_Subject),
+              Target      => Request.Subject_Fingerprint,
+              Outcome     => Outcome,
+              Recorded_At => Recorded_At);
+      begin
+         --  Capacity was reserved above, so a failure here is a real fault in
+         --  the store and must not be hidden behind a successful login.
+         if Emitted /= Identity.Adapters.Repositories.Stores.Applied then
+            return
+              (Status    => Identity.Results.Operational_Failure,
+               Principal => (Present => False));
+         end if;
+      end;
+
+      return Result;
    end Execute;
 end Identity.Operations.Passwords.Authenticate;

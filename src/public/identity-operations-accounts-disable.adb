@@ -1,9 +1,12 @@
 with Identity.Accounts.Definitions;
 with Identity.Accounts.States;
 with Identity.Events.Envelopes;
+with Identity.Events.Types;
 with Identity.Identifiers;
 with Identity.Identifiers.Operations;
 with Identity.Identifiers.Registry;
+with Identity.Operations.Audit;
+with Identity.Text.Bounded;
 with Identity.Versions;
 
 package body Identity.Operations.Accounts.Disable is
@@ -81,5 +84,45 @@ package body Identity.Operations.Accounts.Disable is
              Previous_State => Current.State.Administrative,
              New_State => Identity.Accounts.States.Disabled,
              Mandatory_Audit => True)));
+   end Execute;
+
+   function Execute
+     (Repository  : in out
+        Identity.Adapters.Repositories.Stores.Store_Interface'Class;
+      Request     : Disable_Request;
+      Context     : Identity.Operations.Contexts.Operation_Context;
+      Event       : Identity.Identifiers.Entities.Event_Id;
+      Recorded_At : Identity.Times.Instant)
+      return Identity.Adapters.Repositories.Stores.Command_Status
+   is
+      use type Identity.Adapters.Repositories.Stores.Command_Status;
+      Status : Identity.Adapters.Repositories.Stores.Command_Status;
+   begin
+      if not Identity.Operations.Audit.Capacity_Reserved (Repository) then
+         return Identity.Adapters.Repositories.Stores.Capacity_Conflict;
+      end if;
+
+      Status := Execute (Repository, Request);
+
+      declare
+         Emitted : constant Identity.Adapters.Repositories.Stores.Command_Status :=
+           Identity.Operations.Audit.Emit
+             (Repository  => Repository,
+              Context     => Context,
+              Event       => Event,
+              Type_Id     => Identity.Events.Types.Account_Disabled,
+              Subject     =>
+                Identity.Operations.Audit.Subject_Of (Request.Principal),
+              Target      => Identity.Text.Bounded.From_String
+                (Identity.Identifiers.Entities.To_String (Request.Account)),
+              Outcome     => Identity.Operations.Audit.Outcome_Of (Status),
+              Recorded_At => Recorded_At);
+      begin
+         if Emitted /= Identity.Adapters.Repositories.Stores.Applied then
+            return Emitted;
+         end if;
+      end;
+
+      return Status;
    end Execute;
 end Identity.Operations.Accounts.Disable;

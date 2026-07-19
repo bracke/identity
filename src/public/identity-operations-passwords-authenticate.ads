@@ -3,6 +3,7 @@ with Identity.Authentication.Results;
 with Identity.Identifiers.Entities;
 with Identity.Identifiers.Operations;
 with Identity.Identities.Subjects;
+with Identity.Operations.Contexts;
 with Identity.Secrets.Passwords;
 with Identity.Text.Bounded;
 with Identity.Times;
@@ -29,5 +30,18 @@ package Identity.Operations.Passwords.Authenticate is
    function Execute
      (Repository : in out Identity.Adapters.Repositories.Stores.Store_Interface'Class;
       Request    : Attempted_Request)
+      return Identity.Authentication.Results.Password_Authentication_Result;
+
+   --  Audited form. Emits identity.authentication.succeeded when the
+   --  credential check passes and identity.authentication.rejected when it
+   --  does not, and refuses the operation if the store cannot accept that
+   --  event, so an attempt is never recorded without its audit record.
+   function Execute
+     (Repository  : in out
+        Identity.Adapters.Repositories.Stores.Store_Interface'Class;
+      Request     : Attempted_Request;
+      Context     : Identity.Operations.Contexts.Operation_Context;
+      Event       : Identity.Identifiers.Entities.Event_Id;
+      Recorded_At : Identity.Times.Instant)
       return Identity.Authentication.Results.Password_Authentication_Result;
 end Identity.Operations.Passwords.Authenticate;
