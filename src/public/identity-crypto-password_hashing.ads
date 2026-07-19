@@ -1,6 +1,19 @@
 with Identity.Secrets.Passwords;
 
 package Identity.Crypto.Password_Hashing is
+   --  PBKDF2-HMAC-SHA256 cost parameters. Default_Iterations follows the OWASP
+   --  guidance for this PRF; envelopes below Minimum_Iterations are treated as
+   --  requiring migration, and Maximum_Iterations bounds attacker-supplied
+   --  envelopes so verification cannot be turned into a denial-of-service.
+   Default_Iterations : constant := 600_000;
+   Minimum_Iterations : constant := 100_000;
+   Maximum_Iterations : constant := 10_000_000;
+
+   --  Raised by Create_Verifier when the OS CSPRNG cannot supply a salt.
+   --  Creating a verifier without unpredictable salt would silently weaken
+   --  every stored password, so verifier creation fails closed instead.
+   Entropy_Unavailable : exception;
+
    type Verification_Outcome is
      (Verified, Not_Verified, Malformed_Verifier, Unsupported_Format, Unsupported_Algorithm,
       Parameters_Outside_Limits, Cryptographic_Failure);

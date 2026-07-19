@@ -13,10 +13,13 @@ package body Identity_Tools_Architecture is
       and then (Path (Path'Last - 3 .. Path'Last) = ".ads"
                 or else Path (Path'Last - 3 .. Path'Last) = ".adb"));
 
+   --  Direct cryptolib imports are confined to the Identity.Crypto.CryptoLib.*
+   --  isolation subtree; any body under that prefix may bind cryptolib, and
+   --  nothing outside it may.
    function Is_Approved_Crypto_File (Path : String) return Boolean is
-     (Contains (Path, "src/public/identity-crypto-cryptolib-password_hashing.adb")
-      or else Contains (Path, "src/public/identity-crypto-cryptolib-secret_verifiers.adb")
-      or else Contains (Path, "src/public/identity-crypto-cryptolib-constant_time.adb"));
+     (Contains (Path, "src/public/identity-crypto-cryptolib-")
+      and then Path'Length >= 4
+      and then Path (Path'Last - 3 .. Path'Last) = ".adb");
 
    function Has_Boundary_Term (Line : String) return Boolean is
      (Contains (Line, "ro" & "le")

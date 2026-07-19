@@ -2,7 +2,6 @@ with Identity.Crypto.Event_Integrity;
 with Identity.Identifiers.Registry;
 
 package Identity.Crypto.CryptoLib.Event_Integrity is
-   pragma Pure;
 
    function Service
      (Algorithm : Identity.Identifiers.Registry.Registry_Id)
