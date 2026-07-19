@@ -1,6 +1,4 @@
-suite:aunit:required
-suite:repository-conformance:required
-suite:secret-leak:required
-suite:atomicity:required
-suite:concurrency:required
-suite:disclosure:required
+suite:aunit:passed:exit 0
+suite:repository-conformance:passed:exit 0
+suite:gate-selftests:passed:gate-selftest:total:48:passed:48:failed:0
+suite:examples:passed:exit 0

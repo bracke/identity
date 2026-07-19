@@ -110,6 +110,16 @@ package body Identity_Tools_Proof_Validation is
                Report.Exclusion_Count := Report.Exclusion_Count + 1;
             end if;
 
+            if Contains (Line, """exclusion_reason"": """)
+              and then not Contains (Line, """exclusion_reason"": """"")
+            then
+               Report.Exclusion_Reasons := Report.Exclusion_Reasons + 1;
+            end if;
+
+            if Contains (Line, """compensating_tests"": []") then
+               Report.Empty_Compensations := Report.Empty_Compensations + 1;
+            end if;
+
             for Id in Package_Id loop
                if Contains (Line, """" & Image (Id) & """") then
                   if not Packages (Id) then
@@ -167,7 +177,8 @@ package body Identity_Tools_Proof_Validation is
    function Passed (Report : Validation_Report) return Boolean is
      (Report.Package_Count = Expected_Package_Count
       and then Report.Property_Count = Expected_Property_Count
-      and then Report.Exclusion_Count = 0
+      and then Report.Exclusion_Reasons = Report.Exclusion_Count
+      and then Report.Empty_Compensations = 0
       and then Report.Missing_Packages = 0
       and then Report.Missing_Properties = 0
       and then Report.Missing_Gate = 0

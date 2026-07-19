@@ -9869,6 +9869,21 @@ begin
       and then Session_Summaries.Items (1).Revision = 2,
       "session enumeration returns bounded safe summaries for a principal");
 
+   Renewed_Handle := Identity.Operations.Sessions.Update_Activity.Execute
+     (Repository,
+      Session_Reference,
+      Session_Secret,
+      23,
+      (Present => True, Time_Point => 140));
+   Assert
+     (Renewed_Handle.Status = Identity.Sessions.Handles.Found
+      and then Renewed_Handle.Last_Seen_At = 23
+      and then Renewed_Handle.Revision = 3
+      and then Renewed_Handle.Revision > Session_Summaries.Items (1).Revision
+      and then Renewed_Handle.Original_Authenticated_At = 10
+      and then Renewed_Handle.Primary_Authenticated_At = 10,
+      "session update activity operation advances activity and revision");
+
    Assert
      (Identity.Operations.Sessions.Renew.Execute
         (Repository,
@@ -11496,6 +11511,84 @@ begin
       = Identity.Adapters.Repositories.Memory.Applied,
       "IDENTITY-APIKEY-001 api key issued through public operation with verifier-only storage");
 
+   declare
+      Unset_Credential_Class : Identity.Identifiers.Registry.Registry_Id;
+      Admissible_API_Key : constant
+        Identity.API_Keys.Credentials.API_Key_Credential_Record :=
+        (Id => C3,
+         Principal => P2,
+         Public_Key_Id => API_Key_Id,
+         Credential_Class_Id =>
+           Identity.Identifiers.Registry.From_String ("identity.service.api-key"),
+         Secret_Verifier => Identity.Crypto.Secret_Verifiers.Derive_Text
+           (Identity.Crypto.Domains.API_Key, API_Key_Secret),
+         State => Identity.Credentials.States.Active,
+         Created_At => 50,
+         Expires_At => (Present => True, Time_Point => 500),
+         Last_Used_At => (Present => False, Time_Point => 0),
+         Rotation_Generation => 0,
+         Version => 0);
+   begin
+      Assert
+        (Identity.API_Keys.Credentials.Authentication_Admission
+           (Admissible_API_Key, 60)
+           = Identity.API_Keys.Credentials.Authentication_Allowed
+         and then Identity.API_Keys.Credentials.Can_Authenticate
+           (Admissible_API_Key, 60)
+         and then Identity.API_Keys.Credentials.Authentication_Admission
+           ((Admissible_API_Key with delta
+               State => Identity.Credentials.States.Revoked),
+            60)
+           = Identity.API_Keys.Credentials.Credential_Unusable
+         and then Identity.API_Keys.Credentials.State_Rejected
+           (Identity.API_Keys.Credentials.Authentication_Admission
+              ((Admissible_API_Key with delta
+                  State => Identity.Credentials.States.Revoked),
+               60))
+         and then Identity.API_Keys.Credentials.Authentication_Admission
+           ((Admissible_API_Key with delta
+               Secret_Verifier => Identity.Text.Bounded.From_String ("")),
+            60)
+           = Identity.API_Keys.Credentials.Verifier_Missing
+         and then Identity.API_Keys.Credentials.Verifier_Rejected
+           (Identity.API_Keys.Credentials.Authentication_Admission
+              ((Admissible_API_Key with delta
+                  Secret_Verifier => Identity.Text.Bounded.From_String ("")),
+               60))
+         and then Identity.API_Keys.Credentials.Authentication_Admission
+           (Admissible_API_Key, 600)
+           = Identity.API_Keys.Credentials.Credential_Expired
+         and then Identity.API_Keys.Credentials.Expiration_Rejected
+           (Identity.API_Keys.Credentials.Authentication_Admission
+              (Admissible_API_Key, 600))
+         and then Identity.API_Keys.Credentials.Authentication_Admission
+           (Identity.API_Keys.Credentials.Summary (Admissible_API_Key), 60)
+           = Identity.API_Keys.Credentials.Authentication_Allowed
+         and then Identity.API_Keys.Credentials.Has_Verifier
+           (Identity.API_Keys.Credentials.Summary (Admissible_API_Key))
+         and then not Identity.API_Keys.Credentials.Has_Verifier
+           (Identity.API_Keys.Credentials.Summary
+              ((Admissible_API_Key with delta
+                  Secret_Verifier => Identity.Text.Bounded.From_String (""))))
+         and then Identity.API_Keys.Credentials.Has_Credential_Class
+           (Admissible_API_Key)
+         and then Identity.API_Keys.Credentials.Has_Credential_Class
+           (Identity.API_Keys.Credentials.Summary (Admissible_API_Key))
+         and then not Identity.API_Keys.Credentials.Has_Credential_Class
+           ((Admissible_API_Key with delta
+               Credential_Class_Id => Unset_Credential_Class))
+         and then Identity.API_Keys.Credentials.Matches_Public_Key_Id
+           (Admissible_API_Key, API_Key_Id)
+         and then Identity.API_Keys.Credentials.No_Mutation
+           (Identity.API_Keys.Credentials.Authentication_Admission
+              (Admissible_API_Key, 600))
+         and then not Identity.API_Keys.Credentials.No_Mutation
+           (Identity.API_Keys.Credentials.Authentication_Admission
+              (Admissible_API_Key, 60)),
+         "API key credential authentication admission checks lifecycle expiry verifier "
+         & "presence and credential class");
+   end;
+
    Assert
      (Identity.API_Keys.Credentials.Can_Authenticate
         (Identity.API_Keys.Credentials.API_Key_Credential_Record'
@@ -12627,6 +12720,92 @@ begin
       = Identity.Recovery_Codes.Sets.Already_Consumed,
       "recovery code cannot be consumed twice");
 
+   declare
+      Active_Code : constant Identity.Recovery_Codes.Sets.Recovery_Code_Verifier :=
+        (Code_Id => Identity.Text.Bounded.From_String ("classifier-code"),
+         Secret_Verifier => Identity.Text.Bounded.From_String ("classifier-verifier"),
+         State => Identity.Recovery_Codes.Sets.Active);
+      Consumed_Code : constant Identity.Recovery_Codes.Sets.Recovery_Code_Verifier :=
+        (Active_Code with delta State => Identity.Recovery_Codes.Sets.Consumed);
+      Revoked_Code : constant Identity.Recovery_Codes.Sets.Recovery_Code_Verifier :=
+        (Active_Code with delta State => Identity.Recovery_Codes.Sets.Revoked);
+   begin
+      Assert
+        (Identity.Recovery_Codes.Sets.Evaluate_Presentation (False, False, Active_Code)
+           = Identity.Recovery_Codes.Sets.Unknown
+         and then Identity.Recovery_Codes.Sets.Unknown_Code
+           (Identity.Recovery_Codes.Sets.Evaluate_Presentation
+              (False, False, Active_Code))
+         and then Identity.Recovery_Codes.Sets.Evaluate_Presentation
+           (True, False, Active_Code)
+           = Identity.Recovery_Codes.Sets.Not_Verified
+         and then Identity.Recovery_Codes.Sets.Retryable_By_Presentation
+           (Identity.Recovery_Codes.Sets.Evaluate_Presentation
+              (True, False, Active_Code))
+         and then Identity.Recovery_Codes.Sets.Evaluate_Presentation
+           (True, True, Active_Code)
+           = Identity.Recovery_Codes.Sets.Consumed
+         and then Identity.Recovery_Codes.Sets.Consumption_Succeeded
+           (Identity.Recovery_Codes.Sets.Evaluate_Presentation
+              (True, True, Active_Code))
+         and then Identity.Recovery_Codes.Sets.Evaluate_Presentation
+           (True, True, Consumed_Code)
+           = Identity.Recovery_Codes.Sets.Already_Consumed
+         and then Identity.Recovery_Codes.Sets.Reuse_Rejected
+           (Identity.Recovery_Codes.Sets.Evaluate_Presentation
+              (True, True, Consumed_Code))
+         and then Identity.Recovery_Codes.Sets.Evaluate_Presentation
+           (True, True, Revoked_Code)
+           = Identity.Recovery_Codes.Sets.State_Conflict
+         and then Identity.Recovery_Codes.Sets.Conflict
+           (Identity.Recovery_Codes.Sets.Evaluate_Presentation
+              (True, True, Revoked_Code)),
+         "recovery code presentation classifier distinguishes missing wrong and reused "
+         & "code paths");
+
+      Assert
+        (Identity.Recovery_Codes.Sets.Usable (Identity.Recovery_Codes.Sets.Active)
+         and then not Identity.Recovery_Codes.Sets.Usable
+           (Identity.Recovery_Codes.Sets.Consumed)
+         and then not Identity.Recovery_Codes.Sets.Usable
+           (Identity.Recovery_Codes.Sets.Revoked)
+         and then Identity.Recovery_Codes.Sets.Admission
+           (Identity.Recovery_Codes.Sets.Consumed,
+            Identity.Recovery_Codes.Sets.Consume_Code)
+           = Identity.Recovery_Codes.Sets.Recovery_Code_Consumed_Rejected
+         and then Identity.Recovery_Codes.Sets.Consumed_Rejected
+           (Identity.Recovery_Codes.Sets.Admission
+              (Identity.Recovery_Codes.Sets.Consumed,
+               Identity.Recovery_Codes.Sets.Consume_Code))
+         and then Identity.Recovery_Codes.Sets.Revoked_Rejected
+           (Identity.Recovery_Codes.Sets.Admission
+              (Identity.Recovery_Codes.Sets.Revoked,
+               Identity.Recovery_Codes.Sets.Consume_Code))
+         and then Identity.Recovery_Codes.Sets.Can_Revoke_During_Regeneration
+           (Identity.Recovery_Codes.Sets.Active)
+         and then not Identity.Recovery_Codes.Sets.Can_Revoke_During_Regeneration
+           (Identity.Recovery_Codes.Sets.Revoked)
+         and then Identity.Recovery_Codes.Sets.No_State_Mutation
+           (Identity.Recovery_Codes.Sets.Already_Consumed)
+         and then Identity.Recovery_Codes.Sets.No_State_Mutation
+           (Identity.Recovery_Codes.Sets.Not_Verified)
+         and then Identity.Recovery_Codes.Sets.No_State_Mutation
+           (Identity.Recovery_Codes.Sets.Unknown)
+         and then Identity.Recovery_Codes.Sets.No_State_Mutation
+           (Identity.Recovery_Codes.Sets.State_Conflict)
+         and then not Identity.Recovery_Codes.Sets.No_State_Mutation
+           (Identity.Recovery_Codes.Sets.Recovery_Code_Consume_Status'
+              (Identity.Recovery_Codes.Sets.Consumed))
+         and then Identity.Recovery_Codes.Sets.Active_State
+           (Identity.Recovery_Codes.Sets.Active)
+         and then Identity.Recovery_Codes.Sets.Consumed_State
+           (Identity.Recovery_Codes.Sets.Recovery_Code_State'
+              (Identity.Recovery_Codes.Sets.Consumed))
+         and then Identity.Recovery_Codes.Sets.Revoked_State
+           (Identity.Recovery_Codes.Sets.Revoked),
+         "recovery code status predicates classify single-use and no-mutation outcomes");
+   end;
+
    Assert
      (Identity.Operations.Factors.Regenerate_Recovery_Codes.Execute
         (Repository,
@@ -12755,6 +12934,49 @@ begin
    Assert
      (Identity.Adapters.Repositories.Memory.Recovery_Transaction_Count (Repository) = 1,
       "recovery transaction count projection is bounded");
+
+   Assert
+     (Identity.Recovery.Transactions.Admission
+        (Identity.Recovery.Transactions.Started,
+         Identity.Recovery.Transactions.Begin_Recovery)
+        = Identity.Recovery.Transactions.Recovery_Transaction_Admitted
+      and then not Identity.Recovery.Transactions.Admission_Rejected
+        (Identity.Recovery.Transactions.Admission
+           (Identity.Recovery.Transactions.Started,
+            Identity.Recovery.Transactions.Begin_Recovery))
+      and then Identity.Recovery.Transactions.Admission_Rejected
+        (Identity.Recovery.Transactions.Admission
+           (Identity.Recovery.Transactions.Evidence_Required,
+            Identity.Recovery.Transactions.Begin_Recovery))
+      and then Identity.Recovery.Transactions.Admission_State_Rejected
+        (Identity.Recovery.Transactions.Admission
+           (Identity.Recovery.Transactions.Evidence_Required,
+            Identity.Recovery.Transactions.Begin_Recovery))
+      and then Identity.Recovery.Transactions.Admission_Rejected
+        (Identity.Recovery.Transactions.Admission
+           (Identity.Recovery.Transactions.Completed,
+            Identity.Recovery.Transactions.Accept_Recovery_Evidence))
+      and then Identity.Recovery.Transactions.Admission_Terminal_Rejected
+        (Identity.Recovery.Transactions.Admission
+           (Identity.Recovery.Transactions.Completed,
+            Identity.Recovery.Transactions.Accept_Recovery_Evidence))
+      and then not Identity.Recovery.Transactions.Admission_State_Rejected
+        (Identity.Recovery.Transactions.Admission
+           (Identity.Recovery.Transactions.Completed,
+            Identity.Recovery.Transactions.Accept_Recovery_Evidence))
+      and then Identity.Recovery.Transactions.Admission_Rejected
+        (Identity.Recovery.Transactions.Admission
+           (Identity.Recovery.Transactions.Cancelled,
+            Identity.Recovery.Transactions.Cancel_Recovery))
+      and then Identity.Recovery.Transactions.Admission_Rejected
+        (Identity.Recovery.Transactions.Admission
+           (Identity.Recovery.Transactions.Started,
+            Identity.Recovery.Transactions.Complete_Recovery))
+      and then not Identity.Recovery.Transactions.Admission_Rejected
+        (Identity.Recovery.Transactions.Admission
+           (Identity.Recovery.Transactions.Approved,
+            Identity.Recovery.Transactions.Complete_Recovery)),
+      "recovery transaction aggregate admission rejection predicate");
 
    Identity.Adapters.Repositories.Memory.Find_Recovery_Transaction
      (Repository, RT1, Found_Recovery_Check, Recovery_Check);
@@ -14931,6 +15153,101 @@ begin
       and then Identity.One_Time_Passwords.Credentials.Summary
         (TOTP_Check).Version = 2,
       "TOTP projection reports committed replay counter and version");
+
+   declare
+      Live_TOTP : constant
+        Identity.One_Time_Passwords.Credentials.TOTP_Credential_Record :=
+        (Id => C4,
+         Principal => P1,
+         Algorithm => TOTP_Algorithm,
+         Secret_Verifier =>
+           Identity.Text.Bounded.From_String ("classifier-totp-verifier"),
+         State => Identity.Credentials.States.Active,
+         Created_At => 100,
+         Highest_Accepted_Counter => 5,
+         Version => 0);
+      Revoked_TOTP : constant
+        Identity.One_Time_Passwords.Credentials.TOTP_Credential_Record :=
+        (Live_TOTP with delta State => Identity.Credentials.States.Revoked);
+   begin
+      Assert
+        (Identity.One_Time_Passwords.Credentials.Evaluate_Presentation
+           (False, False, Live_TOTP, 6)
+           = Identity.One_Time_Passwords.Credentials.Unknown
+         and then Identity.One_Time_Passwords.Credentials.Evaluate_Presentation
+           (True, False, Live_TOTP, 6)
+           = Identity.One_Time_Passwords.Credentials.Not_Verified
+         and then Identity.One_Time_Passwords.Credentials.Evaluate_Presentation
+           (True, True, Live_TOTP, 5)
+           = Identity.One_Time_Passwords.Credentials.Replayed
+         and then Identity.One_Time_Passwords.Credentials.Evaluate_Presentation
+           (True, True, Live_TOTP, 4)
+           = Identity.One_Time_Passwords.Credentials.Replayed
+         and then Identity.One_Time_Passwords.Credentials.Evaluate_Presentation
+           (True, True, Live_TOTP, 6)
+           = Identity.One_Time_Passwords.Credentials.Accepted
+         and then Identity.One_Time_Passwords.Credentials.Evaluate_Presentation
+           (True, True, Revoked_TOTP, 6)
+           = Identity.One_Time_Passwords.Credentials.Credential_Unusable
+         and then Identity.One_Time_Passwords.Credentials.Admit_Counter
+           (Live_TOTP, 6)
+           = Identity.One_Time_Passwords.Credentials.Accepted
+         and then Identity.One_Time_Passwords.Credentials.Admit_Counter
+           (Live_TOTP, 5)
+           = Identity.One_Time_Passwords.Credentials.Replayed,
+         "TOTP presentation classifier distinguishes missing wrong and replayed code paths");
+
+      Assert
+        (Identity.One_Time_Passwords.Credentials.Verification_Rejected
+           (Identity.One_Time_Passwords.Credentials.Evaluate_Presentation
+              (True, False, Live_TOTP, 6))
+         and then not Identity.One_Time_Passwords.Credentials.Replay_Rejected
+           (Identity.One_Time_Passwords.Credentials.Evaluate_Presentation
+              (True, False, Live_TOTP, 6))
+         and then Identity.One_Time_Passwords.Credentials.Replay_Rejected
+           (Identity.One_Time_Passwords.Credentials.Evaluate_Presentation
+              (True, True, Live_TOTP, 5))
+         and then Identity.One_Time_Passwords.Credentials.Replay_Rejected
+           (Identity.One_Time_Passwords.Credentials.Counter_Too_Old)
+         and then Identity.One_Time_Passwords.Credentials.Retryable_By_Presentation
+           (Identity.One_Time_Passwords.Credentials.Not_Verified)
+         and then Identity.One_Time_Passwords.Credentials.Retryable_By_Presentation
+           (Identity.One_Time_Passwords.Credentials.Replayed)
+         and then Identity.One_Time_Passwords.Credentials.Retryable_By_Presentation
+           (Identity.One_Time_Passwords.Credentials.Counter_Too_Old)
+         and then not Identity.One_Time_Passwords.Credentials.Retryable_By_Presentation
+           (Identity.One_Time_Passwords.Credentials.Unknown)
+         and then Identity.One_Time_Passwords.Credentials.Unknown_Credential
+           (Identity.One_Time_Passwords.Credentials.Evaluate_Presentation
+              (False, False, Live_TOTP, 6))
+         and then Identity.One_Time_Passwords.Credentials.Unusable_Credential
+           (Identity.One_Time_Passwords.Credentials.Evaluate_Presentation
+              (True, True, Revoked_TOTP, 6))
+         and then Identity.One_Time_Passwords.Credentials.Conflict
+           (Identity.One_Time_Passwords.Credentials.State_Conflict)
+         and then not Identity.One_Time_Passwords.Credentials.Conflict
+           (Identity.One_Time_Passwords.Credentials.Unknown)
+         and then Identity.One_Time_Passwords.Credentials.Counter_Accepted
+           (Identity.One_Time_Passwords.Credentials.Evaluate_Presentation
+              (True, True, Live_TOTP, 6))
+         and then Identity.One_Time_Passwords.Credentials.No_Replay_State_Mutation
+           (Identity.One_Time_Passwords.Credentials.Not_Verified)
+         and then Identity.One_Time_Passwords.Credentials.No_Replay_State_Mutation
+           (Identity.One_Time_Passwords.Credentials.Replayed)
+         and then Identity.One_Time_Passwords.Credentials.No_Replay_State_Mutation
+           (Identity.One_Time_Passwords.Credentials.Unknown)
+         and then Identity.One_Time_Passwords.Credentials.No_Replay_State_Mutation
+           (Identity.One_Time_Passwords.Credentials.Credential_Unusable)
+         and then Identity.One_Time_Passwords.Credentials.No_Replay_State_Mutation
+           (Identity.One_Time_Passwords.Credentials.Counter_Too_Old)
+         and then Identity.One_Time_Passwords.Credentials.No_Replay_State_Mutation
+           (Identity.One_Time_Passwords.Credentials.State_Conflict)
+         and then not Identity.One_Time_Passwords.Credentials.No_Replay_State_Mutation
+           (Identity.One_Time_Passwords.Credentials.Accepted),
+         "TOTP accept-status predicates classify wrong-code verification, replay, "
+         & "retryable presentation, unknown credential, unusable credential, conflict, "
+         & "and no-mutation outcomes");
+   end;
 
    Assert
      (Identity.Operations.Factors.Accept_TOTP_Counter.Execute

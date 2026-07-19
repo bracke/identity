@@ -130,6 +130,10 @@ begin
       & Natural'Image (Proof_Report.Property_Count)
       & ":exclusions:"
       & Natural'Image (Proof_Report.Exclusion_Count)
+      & ":justified-exclusions:"
+      & Natural'Image (Proof_Report.Exclusion_Reasons)
+      & ":empty-compensations:"
+      & Natural'Image (Proof_Report.Empty_Compensations)
       & ":missing-packages:"
       & Natural'Image (Proof_Report.Missing_Packages)
       & ":missing-properties:"
