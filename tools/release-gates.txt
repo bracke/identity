@@ -115,6 +115,12 @@ Emission is added as an overload on each operation, so callers that do not pass
 an operation context keep working unchanged -- and produce no audit trail. Code
 that needs an audit trail must use the context-taking entry points.
 
+All 16 declared event types are driven through their audited operation in the
+suite, each asserting the audited overload appends exactly one event while the
+plain overload of the same operation appends none. The store exposes no event
+read-back primitive, so type and outcome are pinned by arranging exactly one
+emitting branch to be reachable per case rather than by inspecting the record.
+
 Known gaps
 ----------
 
@@ -131,9 +137,6 @@ implemented.
   honest: flipping it to True without wiring a caller fails the release check.
 - Disclosure projection suite: no dedicated suite exists; disclosure behaviour
   is asserted piecemeal in the AUnit suite.
-- Event registry coverage is structural, not behavioural: the registry and the
-  public constants are checked against each other, but the AUnit suite exercises
-  only a subset of the 16 event constants.
 - A Memory.Store is 3.3 MB (fixed-capacity arrays sized for 512 events, 128
   sessions and so on), so two of them will not fit on a default 8 MB stack.
   Harnesses that need isolated stores must allocate them on the heap, as the

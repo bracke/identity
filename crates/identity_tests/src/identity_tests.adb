@@ -16124,5 +16124,1142 @@ begin
          "events: an identifier outside the registry is neither known nor audit-mandatory");
    end;
 
+   --  ------------------------------------------------------------------
+   --  audited emission coverage: every one of the sixteen event types is
+   --  produced by calling the AUDITED overload of the operation that emits
+   --  it, rather than by appending the event to the store directly. Each
+   --  case reads the event count before the call, asserts the audited
+   --  overload adds exactly one event, and asserts the plain overload of
+   --  the same operation adds none.
+   --
+   --  The store exposes no event read-back primitive: Store_Interface
+   --  offers Event_Capacity_Available, Append_Event and Event_Count and
+   --  nothing else. The recorded type and outcome are therefore pinned
+   --  indirectly -- every call below is arranged so that exactly one
+   --  emitting branch is reachable, and that branch names one event type
+   --  and one outcome -- and the count is measured around it.
+   --
+   --  ORDERING: the capacity cases at the end of this block fill the
+   --  shared event log to Max_Events and never release it. No assertion
+   --  that needs to append an event may follow them.
+   --  ------------------------------------------------------------------
+   declare
+      function EM_Principal (Suffix : String)
+        return Identity.Identifiers.Entities.Principal_Id is
+        (Identity.Identifiers.Entities.Principal
+           (Identity.Identifiers.From_String
+              ("f3000000-0000-0000-0000-0000000000" & Suffix)));
+
+      function EM_Event (Suffix : String)
+        return Identity.Identifiers.Entities.Event_Id is
+        (Identity.Identifiers.Entities.Event
+           (Identity.Identifiers.From_String
+              ("f3000001-0000-0000-0000-0000000000" & Suffix)));
+
+      EM_P1 : constant Identity.Identifiers.Entities.Principal_Id := EM_Principal ("01");
+      EM_P2 : constant Identity.Identifiers.Entities.Principal_Id := EM_Principal ("02");
+      EM_P3 : constant Identity.Identifiers.Entities.Principal_Id := EM_Principal ("03");
+      EM_P4 : constant Identity.Identifiers.Entities.Principal_Id := EM_Principal ("04");
+      EM_P5 : constant Identity.Identifiers.Entities.Principal_Id := EM_Principal ("05");
+
+      EM_A1 : constant Identity.Identifiers.Entities.Account_Id :=
+        Identity.Identifiers.Entities.Account
+          (Identity.Identifiers.From_String ("f3000000-0000-0000-0000-000000000011"));
+      EM_A3 : constant Identity.Identifiers.Entities.Account_Id :=
+        Identity.Identifiers.Entities.Account
+          (Identity.Identifiers.From_String ("f3000000-0000-0000-0000-000000000013"));
+      EM_A5 : constant Identity.Identifiers.Entities.Account_Id :=
+        Identity.Identifiers.Entities.Account
+          (Identity.Identifiers.From_String ("f3000000-0000-0000-0000-000000000015"));
+
+      EM_B1 : constant Identity.Identifiers.Entities.Identity_Binding_Id :=
+        Identity.Identifiers.Entities.Identity_Binding
+          (Identity.Identifiers.From_String ("f3000000-0000-0000-0000-000000000021"));
+
+      EM_F1 : constant Identity.Identifiers.Entities.Session_Family_Id :=
+        Identity.Identifiers.Entities.Session_Family
+          (Identity.Identifiers.From_String ("f3000000-0000-0000-0000-000000000031"));
+
+      function EM_Session (Suffix : String)
+        return Identity.Identifiers.Entities.Session_Id is
+        (Identity.Identifiers.Entities.Session
+           (Identity.Identifiers.From_String
+              ("f3000000-0000-0000-0000-0000000000" & Suffix)));
+
+      EM_S1 : constant Identity.Identifiers.Entities.Session_Id := EM_Session ("32");
+      EM_S2 : constant Identity.Identifiers.Entities.Session_Id := EM_Session ("33");
+      EM_S3 : constant Identity.Identifiers.Entities.Session_Id := EM_Session ("34");
+      EM_S4 : constant Identity.Identifiers.Entities.Session_Id := EM_Session ("35");
+      EM_S5 : constant Identity.Identifiers.Entities.Session_Id := EM_Session ("36");
+
+      function EM_Credential (Suffix : String)
+        return Identity.Identifiers.Entities.Credential_Id is
+        (Identity.Identifiers.Entities.Credential
+           (Identity.Identifiers.From_String
+              ("f3000000-0000-0000-0000-0000000000" & Suffix)));
+
+      EM_C1 : constant Identity.Identifiers.Entities.Credential_Id := EM_Credential ("41");
+      EM_C2 : constant Identity.Identifiers.Entities.Credential_Id := EM_Credential ("42");
+      EM_C3 : constant Identity.Identifiers.Entities.Credential_Id := EM_Credential ("43");
+      EM_C4 : constant Identity.Identifiers.Entities.Credential_Id := EM_Credential ("44");
+      EM_C5 : constant Identity.Identifiers.Entities.Credential_Id := EM_Credential ("45");
+      EM_C6 : constant Identity.Identifiers.Entities.Credential_Id := EM_Credential ("46");
+
+      function EM_Token (Suffix : String)
+        return Identity.Identifiers.Entities.Token_Id is
+        (Identity.Identifiers.Entities.Token
+           (Identity.Identifiers.From_String
+              ("f3000000-0000-0000-0000-0000000000" & Suffix)));
+
+      EM_T1 : constant Identity.Identifiers.Entities.Token_Id := EM_Token ("51");
+      EM_T2 : constant Identity.Identifiers.Entities.Token_Id := EM_Token ("52");
+      EM_T3 : constant Identity.Identifiers.Entities.Token_Id := EM_Token ("53");
+
+      EM_CB1 : constant Identity.Identifiers.Entities.Contact_Binding_Id :=
+        Identity.Identifiers.Entities.Contact_Binding
+          (Identity.Identifiers.From_String ("f3000000-0000-0000-0000-000000000061"));
+
+      EM_MT1 : constant Identity.Identifiers.Entities.Authentication_Transaction_Id :=
+        Identity.Identifiers.Entities.Authentication_Transaction
+          (Identity.Identifiers.From_String ("f3000000-0000-0000-0000-000000000071"));
+      EM_CH1 : constant Identity.Identifiers.Entities.Challenge_Id :=
+        Identity.Identifiers.Entities.Challenge
+          (Identity.Identifiers.From_String ("f3000000-0000-0000-0000-000000000072"));
+      EM_RT1 : constant Identity.Identifiers.Entities.Authentication_Transaction_Id :=
+        Identity.Identifiers.Entities.Authentication_Transaction
+          (Identity.Identifiers.From_String ("f3000000-0000-0000-0000-000000000073"));
+
+      EM_EB1 : constant Identity.Identifiers.Entities.External_Binding_Id :=
+        Identity.Identifiers.Entities.External_Binding
+          (Identity.Identifiers.From_String ("f3000000-0000-0000-0000-000000000081"));
+
+      function EM_Attempt (Suffix : String)
+        return Identity.Identifiers.Entities.Attempt_Id is
+        (Identity.Identifiers.Entities.Attempt
+           (Identity.Identifiers.From_String
+              ("f3000000-0000-0000-0000-0000000000" & Suffix)));
+
+      EM_AT1 : constant Identity.Identifiers.Entities.Attempt_Id := EM_Attempt ("91");
+      EM_AT2 : constant Identity.Identifiers.Entities.Attempt_Id := EM_Attempt ("92");
+      EM_AT3 : constant Identity.Identifiers.Entities.Attempt_Id := EM_Attempt ("93");
+
+      EM_Login : constant Identity.Text.Bounded.Bounded_Text :=
+        Identity.Text.Bounded.From_String ("emission.user@example.test");
+      EM_Contact : constant Identity.Text.Bounded.Bounded_Text :=
+        Identity.Text.Bounded.From_String ("emission.contact@example.test");
+      EM_Key_Id : constant Identity.Text.Bounded.Bounded_Text :=
+        Identity.Text.Bounded.From_String ("emission-api-key-public-id");
+      EM_Ext_Subject : constant Identity.Text.Bounded.Bounded_Text :=
+        Identity.Text.Bounded.From_String ("emission-provider-subject");
+      EM_FP1 : constant Identity.Text.Bounded.Bounded_Text :=
+        Identity.Text.Bounded.From_String ("emission-assertion-fingerprint-1");
+      EM_FP2 : constant Identity.Text.Bounded.Bounded_Text :=
+        Identity.Text.Bounded.From_String ("emission-assertion-fingerprint-2");
+      EM_Fingerprint : constant Identity.Text.Bounded.Bounded_Text :=
+        Identity.Text.Bounded.From_String ("emission-subject-fingerprint");
+
+      EM_Ctx : constant Identity.Operations.Contexts.Operation_Context :=
+        (Operation => O1,
+         Correlation => R1,
+         Causation => (Present => False),
+         Request => (Present => False),
+         Actor =>
+           (Kind => Identity.Events.Envelopes.Authenticated_Principal,
+            Principal => (Present => True, Value => EM_P1)),
+         Requested_At => 200,
+         Deadline => Identity.Operations.Deadlines.None,
+         Cancellation =>
+           (State => Identity.Operations.Cancellation.Not_Cancelled),
+         Disclosure => Identity.Operations.Disclosure.Untrusted_API,
+         Diagnostic_Mode => False);
+
+      EM_Enabled_State : constant Identity.Accounts.States.Account_State_View :=
+        (Administrative => Identity.Accounts.States.Enabled,
+         Lifecycle => Identity.Accounts.States.Active,
+         Verification => Identity.Accounts.States.No_Verification_Required,
+         Lock_State => Identity.Accounts.States.Not_Locked,
+         Requirements => (others => False),
+         Recovery => (others => False));
+
+      function EM_Assertion (Fingerprint : Identity.Text.Bounded.Bounded_Text)
+        return Identity.External_Providers.Assertions.Normalized_Assertion is
+        ((Provider => EP1,
+          Protocol => OIDC_Protocol,
+          Issuer => External_Issuer,
+          External_Subject => EM_Ext_Subject,
+          Issued_At => 270,
+          Authentication_Time => 269,
+          Expires_At => (Present => True, Time_Point => 900),
+          Nonce => Identity.External_Providers.Assertions.Validated,
+          Assertion_Fingerprint => Fingerprint,
+          Validation_Profile => Adapter_Profile));
+
+      function EM_Create_Request
+        (Session   : Identity.Identifiers.Entities.Session_Id;
+         Reference : String)
+         return Identity.Operations.Sessions.Create.Create_Request is
+        ((Id => Session,
+          Family => EM_F1,
+          Principal => EM_P1,
+          Credential => (Present => False),
+          External_Provider => (Present => False),
+          Public_Reference => Identity.Text.Bounded.From_String (Reference),
+          Secret => Identity.Secrets.Text.From_UTF_8 ("emission-session-material"),
+          Assurance => Identity.Assurance.Levels.Basic,
+          Attributes => (others => <>),
+          Created_At => 200,
+          Original_Authenticated_At => 200,
+          Primary_Authenticated_At => 200,
+          MFA_Completed_At => (Present => False),
+          Step_Up_At => (Present => False),
+          Last_Seen_At => 200,
+          Idle_Expires_At => (Present => True, Time_Point => 800),
+          Absolute_Expires_At => (Present => True, Time_Point => 9000),
+          Remembered => False,
+          Generation => 0));
+
+      function EM_Rotate_Request
+        (Predecessor : Identity.Identifiers.Entities.Session_Id;
+         Successor   : Identity.Identifiers.Entities.Session_Id;
+         Reference   : String;
+         Generation  : Identity.Versions.Rotation_Generation)
+         return Identity.Operations.Sessions.Rotate.Rotate_Request is
+        ((Predecessor => Predecessor,
+          Id => Successor,
+          Family => EM_F1,
+          Principal => EM_P1,
+          Credential => (Present => False),
+          External_Provider => (Present => False),
+          Public_Reference => Identity.Text.Bounded.From_String (Reference),
+          Secret => Identity.Secrets.Text.From_UTF_8 ("emission-rotated-material"),
+          Assurance => Identity.Assurance.Levels.Basic,
+          Attributes => (others => <>),
+          Created_At => 205,
+          Original_Authenticated_At => 200,
+          Primary_Authenticated_At => 205,
+          MFA_Completed_At => (Present => False),
+          Step_Up_At => (Present => False),
+          Last_Seen_At => 205,
+          Idle_Expires_At => (Present => True, Time_Point => 800),
+          Absolute_Expires_At => (Present => True, Time_Point => 9000),
+          Remembered => False,
+          Generation => Generation));
+
+      function EM_Hex (Value : Natural; Width : Positive) return String is
+         Hex_Digits : constant String := "0123456789abcdef";
+         Result     : String (1 .. Width) := [others => '0'];
+         Rest       : Natural := Value;
+      begin
+         for Index in reverse Result'Range loop
+            Result (Index) := Hex_Digits (Hex_Digits'First + Rest mod 16);
+            Rest := Rest / 16;
+         end loop;
+         return Result;
+      end EM_Hex;
+
+      function EM_Filler (Index : Positive)
+        return Identity.Events.Envelopes.Event_Envelope is
+        ((Id => Identity.Identifiers.Entities.Event
+            (Identity.Identifiers.From_String
+               ("f3000002-0000-0000-0000-" & EM_Hex (Index, 12))),
+          Type_Id => Identity.Events.Types.Session_Created,
+          Schema => 1,
+          Occurred_At => 400,
+          Recorded_At => 401,
+          Severity => Identity.Events.Envelopes.Informational,
+          Correlation => R1,
+          Operation => O1,
+          Actor =>
+            (Kind => Identity.Events.Envelopes.Authenticated_Principal,
+             Principal => (Present => True, Value => EM_P1)),
+          Subject => (Present => True, Value => EM_P1),
+          Target => Identity.Text.Bounded.From_String ("emission-filler"),
+          Outcome => Identity.Events.Envelopes.Succeeded));
+
+      EM_Before        : Natural := 0;
+      EM_Before_Sessions : Natural := 0;
+      EM_Filled        : Natural := 0;
+      EM_Fill_Status   : Identity.Adapters.Repositories.Memory.Command_Status :=
+        Identity.Adapters.Repositories.Memory.Applied;
+      EM_Version       : Identity.Versions.Entity_Version := 0;
+      EM_Token_Version : Identity.Versions.Entity_Version := 0;
+      EM_Counter       : Identity.One_Time_Passwords.Credentials.TOTP_Counter := 0;
+      EM_TOTP_Status   : Identity.One_Time_Passwords.Credentials.TOTP_Accept_Status :=
+        Identity.One_Time_Passwords.Credentials.Accepted;
+      EM_Found         : Boolean := False;
+      EM_Replays       : Natural := 0;
+   begin
+      --  Fixtures. None of these operations emit events, so the event count
+      --  is asserted to be unchanged across the whole installation.
+      EM_Before := Identity.Adapters.Repositories.Memory.Event_Count (Repository);
+
+      Assert
+        (Identity.Operations.Principals.Create.Execute
+           (Repository,
+            (Id => EM_P1,
+             Kind => Identity.Principals.Kinds.Human,
+             State => Identity.Principals.Definitions.Active,
+             Version => 0))
+         = Identity.Adapters.Repositories.Memory.Applied
+         and then Identity.Operations.Principals.Create.Execute
+           (Repository,
+            (Id => EM_P2,
+             Kind => Identity.Principals.Kinds.Service,
+             State => Identity.Principals.Definitions.Active,
+             Version => 0))
+           = Identity.Adapters.Repositories.Memory.Applied
+         and then Identity.Operations.Principals.Create.Execute
+           (Repository,
+            (Id => EM_P3,
+             Kind => Identity.Principals.Kinds.Human,
+             State => Identity.Principals.Definitions.Active,
+             Version => 0))
+           = Identity.Adapters.Repositories.Memory.Applied
+         and then Identity.Operations.Principals.Create.Execute
+           (Repository,
+            (Id => EM_P4,
+             Kind => Identity.Principals.Kinds.Human,
+             State => Identity.Principals.Definitions.Active,
+             Version => 0))
+           = Identity.Adapters.Repositories.Memory.Applied
+         and then Identity.Operations.Principals.Create.Execute
+           (Repository,
+            (Id => EM_P5,
+             Kind => Identity.Principals.Kinds.Human,
+             State => Identity.Principals.Definitions.Active,
+             Version => 0))
+           = Identity.Adapters.Repositories.Memory.Applied,
+         "emission: fixture principals created");
+
+      Assert
+        (Identity.Operations.Accounts.Create.Execute
+           (Repository,
+            (Id => EM_A1, Principal => EM_P1, State => EM_Enabled_State, Version => 0))
+         = Identity.Adapters.Repositories.Memory.Applied
+         and then Identity.Operations.Accounts.Create.Execute
+           (Repository,
+            (Id => EM_A3, Principal => EM_P3, State => EM_Enabled_State, Version => 0))
+           = Identity.Adapters.Repositories.Memory.Applied
+         and then Identity.Operations.Accounts.Create.Execute
+           (Repository,
+            (Id => EM_A5, Principal => EM_P5, State => EM_Enabled_State, Version => 0))
+           = Identity.Adapters.Repositories.Memory.Applied
+         and then Identity.Operations.Identities.Add.Execute
+           (Repository,
+            (Id => EM_B1,
+             Principal => EM_P1,
+             Kind => Login_Kind,
+             Normalized => EM_Login,
+             State => Identity.Identities.Bindings.Active,
+             Version => 0))
+           = Identity.Adapters.Repositories.Memory.Applied
+         and then Identity.Operations.Passwords.Enroll.Execute
+           (Repository, EM_P1, EM_C1, New_Password)
+           = Identity.Adapters.Repositories.Memory.Applied,
+         "emission: fixture accounts, login binding and password credential installed");
+
+      Assert
+        (Identity.Adapters.Repositories.Memory.Event_Count (Repository) = EM_Before,
+         "emission: unaudited fixture operations record no events");
+
+      --  identity.session.created -----------------------------------------
+      EM_Before := Identity.Adapters.Repositories.Memory.Event_Count (Repository);
+      Assert
+        (Identity.Operations.Sessions.Create.Execute
+           (Repository,
+            EM_Create_Request (EM_S1, "emission-session-1"),
+            EM_Ctx,
+            EM_Event ("a1"),
+            200)
+         = Identity.Adapters.Repositories.Memory.Applied
+         and then Identity.Adapters.Repositories.Memory.Event_Count (Repository)
+           = EM_Before + 1,
+         "emission: audited session creation records exactly one identity.session.created");
+
+      EM_Before := Identity.Adapters.Repositories.Memory.Event_Count (Repository);
+      Assert
+        (Identity.Operations.Sessions.Create.Execute
+           (Repository, EM_Create_Request (EM_S2, "emission-session-2"))
+         = Identity.Adapters.Repositories.Memory.Applied
+         and then Identity.Adapters.Repositories.Memory.Event_Count (Repository)
+           = EM_Before,
+         "emission: the plain session creation overload records no event");
+
+      --  identity.session.rotated -----------------------------------------
+      EM_Before := Identity.Adapters.Repositories.Memory.Event_Count (Repository);
+      Assert
+        (Identity.Operations.Sessions.Rotate.Execute
+           (Repository,
+            EM_Rotate_Request (EM_S1, EM_S3, "emission-session-3", 1),
+            EM_Ctx,
+            EM_Event ("a2"),
+            205)
+         = Identity.Adapters.Repositories.Memory.Applied
+         and then Identity.Adapters.Repositories.Memory.Event_Count (Repository)
+           = EM_Before + 1,
+         "emission: audited session rotation records exactly one identity.session.rotated");
+
+      EM_Before := Identity.Adapters.Repositories.Memory.Event_Count (Repository);
+      Assert
+        (Identity.Operations.Sessions.Rotate.Execute
+           (Repository, EM_Rotate_Request (EM_S3, EM_S4, "emission-session-4", 2))
+         = Identity.Adapters.Repositories.Memory.Applied
+         and then Identity.Adapters.Repositories.Memory.Event_Count (Repository)
+           = EM_Before,
+         "emission: the plain session rotation overload records no event");
+
+      --  identity.session.revoked -----------------------------------------
+      Identity.Adapters.Repositories.Memory.Find_Session
+        (Repository, EM_S4, EM_Found, Session_Check);
+      EM_Before := Identity.Adapters.Repositories.Memory.Event_Count (Repository);
+      Assert
+        (EM_Found
+         and then Identity.Operations.Sessions.Revoke.Execute
+           (Repository,
+            Identity.Operations.Sessions.Revoke.Staged_Revoke_Request'
+              (Session => EM_S4,
+               Expected_Session_Version => Session_Check.Version),
+            EM_Ctx,
+            EM_Event ("a3"),
+            210)
+           = Identity.Adapters.Repositories.Memory.Applied
+         and then Identity.Adapters.Repositories.Memory.Event_Count (Repository)
+           = EM_Before + 1,
+         "emission: audited session revocation records exactly one identity.session.revoked");
+
+      EM_Before := Identity.Adapters.Repositories.Memory.Event_Count (Repository);
+      Assert
+        (Identity.Operations.Sessions.Revoke.Execute (Repository, EM_S2)
+         = Identity.Adapters.Repositories.Memory.Applied
+         and then Identity.Adapters.Repositories.Memory.Event_Count (Repository)
+           = EM_Before,
+         "emission: the plain session revocation overload records no event");
+
+      --  identity.authentication.succeeded --------------------------------
+      EM_Before := Identity.Adapters.Repositories.Memory.Event_Count (Repository);
+      Assert
+        (Identity.Operations.Passwords.Authenticate.Execute
+           (Repository,
+            Identity.Operations.Passwords.Authenticate.Attempted_Request'
+              (Subject => (Kind => Login_Kind, Value => EM_Login),
+               Password => Presented_Password,
+               Attempt => EM_AT1,
+               Correlation => R1,
+               Subject_Fingerprint => EM_Fingerprint,
+               Started_At => 211,
+               Completed_At => 212,
+               Lockout_Threshold => 0),
+            EM_Ctx,
+            EM_Event ("a4"),
+            212).Status = Identity.Results.Succeeded
+         and then Identity.Adapters.Repositories.Memory.Event_Count (Repository)
+           = EM_Before + 1,
+         "emission: audited password authentication records one "
+         & "identity.authentication.succeeded on a passing credential check");
+
+      --  identity.authentication.rejected ---------------------------------
+      EM_Before := Identity.Adapters.Repositories.Memory.Event_Count (Repository);
+      Assert
+        (Identity.Operations.Passwords.Authenticate.Execute
+           (Repository,
+            Identity.Operations.Passwords.Authenticate.Attempted_Request'
+              (Subject => (Kind => Login_Kind, Value => EM_Login),
+               Password => Wrong_Password,
+               Attempt => EM_AT2,
+               Correlation => R1,
+               Subject_Fingerprint => EM_Fingerprint,
+               Started_At => 213,
+               Completed_At => 214,
+               Lockout_Threshold => 0),
+            EM_Ctx,
+            EM_Event ("a5"),
+            214).Status = Identity.Results.Rejected
+         and then Identity.Adapters.Repositories.Memory.Event_Count (Repository)
+           = EM_Before + 1,
+         "emission: audited password authentication records one "
+         & "identity.authentication.rejected on a failing credential check");
+
+      EM_Before := Identity.Adapters.Repositories.Memory.Event_Count (Repository);
+      Assert
+        (Identity.Operations.Passwords.Authenticate.Execute
+           (Repository,
+            Identity.Operations.Passwords.Authenticate.Attempted_Request'
+              (Subject => (Kind => Login_Kind, Value => EM_Login),
+               Password => Presented_Password,
+               Attempt => EM_AT3,
+               Correlation => R1,
+               Subject_Fingerprint => EM_Fingerprint,
+               Started_At => 215,
+               Completed_At => 216,
+               Lockout_Threshold => 0)).Status = Identity.Results.Succeeded
+         and then Identity.Adapters.Repositories.Memory.Event_Count (Repository)
+           = EM_Before,
+         "emission: the plain password authentication overload records no event");
+
+      --  identity.password.changed ----------------------------------------
+      Identity.Adapters.Repositories.Memory.Find_Active_Password
+        (Repository, EM_P1, EM_Found, Password_Check);
+      EM_Before := Identity.Adapters.Repositories.Memory.Event_Count (Repository);
+      Assert
+        (EM_Found
+         and then Identity.Operations.Passwords.Change.Execute
+           (Repository,
+            Identity.Operations.Passwords.Change.Change_Request'
+              (Principal => EM_P1,
+               New_Credential => EM_C2,
+               Expected_Current_Version => Password_Check.Version,
+               Current => Presented_Password,
+               Replacement => Changed_Password),
+            EM_Ctx,
+            EM_Event ("a6"),
+            220)
+           = Identity.Results.Succeeded
+         and then Identity.Adapters.Repositories.Memory.Event_Count (Repository)
+           = EM_Before + 1,
+         "emission: audited password change records exactly one identity.password.changed");
+
+      EM_Before := Identity.Adapters.Repositories.Memory.Event_Count (Repository);
+      Assert
+        (Identity.Operations.Passwords.Change.Execute
+           (Repository, EM_P1, EM_C6, Wrong_Password, Reset_Password)
+         = Identity.Results.Rejected
+         and then Identity.Adapters.Repositories.Memory.Event_Count (Repository)
+           = EM_Before,
+         "emission: the plain password change overload records no event");
+
+      --  identity.password.reset.requested --------------------------------
+      EM_Before := Identity.Adapters.Repositories.Memory.Event_Count (Repository);
+      Assert
+        (Identity.Operations.Passwords.Request_Reset.Execute
+           (Repository,
+            Identity.Operations.Passwords.Request_Reset.Reset_Request'
+              (Id => EM_T2,
+               Principal => EM_P1,
+               Secret => Reset_Token_Secret,
+               Issued_At => 225,
+               Expires_At => (Present => True, Time_Point => 900)))
+         = Identity.Adapters.Repositories.Memory.Applied
+         and then Identity.Adapters.Repositories.Memory.Event_Count (Repository)
+           = EM_Before,
+         "emission: the plain password reset request overload records no event");
+
+      EM_Before := Identity.Adapters.Repositories.Memory.Event_Count (Repository);
+      Assert
+        (Identity.Operations.Passwords.Request_Reset.Execute
+           (Repository,
+            Identity.Operations.Passwords.Request_Reset.Reset_Request'
+              (Id => EM_T1,
+               Principal => EM_P1,
+               Secret => Reset_Token_Secret,
+               Issued_At => 226,
+               Expires_At => (Present => True, Time_Point => 900)),
+            EM_Ctx,
+            EM_Event ("a7"),
+            226)
+         = Identity.Adapters.Repositories.Memory.Applied
+         and then Identity.Adapters.Repositories.Memory.Event_Count (Repository)
+           = EM_Before + 1,
+         "emission: audited password reset request records exactly one "
+         & "identity.password.reset.requested");
+
+      --  identity.password.reset.completed --------------------------------
+      Identity.Adapters.Repositories.Memory.Find_Token
+        (Repository, EM_T1, EM_Found, Token_Check);
+      EM_Token_Version := Token_Check.Version;
+      Identity.Adapters.Repositories.Memory.Find_Active_Password
+        (Repository, EM_P1, Found_Password_Check, Password_Check);
+      EM_Before := Identity.Adapters.Repositories.Memory.Event_Count (Repository);
+      Assert
+        (EM_Found
+         and then Found_Password_Check
+         and then Identity.Operations.Passwords.Complete_Reset.Execute
+           (Repository,
+            Identity.Operations.Passwords.Complete_Reset.Reset_Completion_Request'
+              (Token => EM_T1,
+               Principal => EM_P1,
+               Secret => Reset_Token_Secret,
+               Now => 227,
+               New_Credential => EM_C3,
+               Password => Reset_Password,
+               Expected_Token_Version => EM_Token_Version,
+               Expected_Predecessor_Version => Password_Check.Version),
+            EM_Ctx,
+            EM_Event ("a8"),
+            227)
+           = Identity.Tokens.Verification.Valid
+         and then Identity.Adapters.Repositories.Memory.Event_Count (Repository)
+           = EM_Before + 1,
+         "emission: audited password reset completion records exactly one "
+         & "identity.password.reset.completed");
+
+      EM_Before := Identity.Adapters.Repositories.Memory.Event_Count (Repository);
+      Assert
+        (Identity.Operations.Passwords.Complete_Reset.Execute
+           (Repository, EM_T1, EM_P1, Reset_Token_Secret, 228, EM_C6, Reset_Password)
+         = Identity.Tokens.Verification.Already_Consumed
+         and then Identity.Adapters.Repositories.Memory.Event_Count (Repository)
+           = EM_Before,
+         "emission: the plain password reset completion overload records no event");
+
+      --  identity.account.disabled ----------------------------------------
+      Identity.Adapters.Repositories.Memory.Find_Account
+        (Repository, EM_P3, EM_Found, Account_Check);
+      EM_Before := Identity.Adapters.Repositories.Memory.Event_Count (Repository);
+      Assert
+        (EM_Found
+         and then Identity.Operations.Accounts.Disable.Execute
+           (Repository,
+            Identity.Operations.Accounts.Disable.Disable_Request'
+              (Account => EM_A3,
+               Principal => EM_P3,
+               Transition =>
+                 (Actor =>
+                    (Kind => Identity.Events.Envelopes.Authenticated_Principal,
+                     Principal => (Present => True, Value => EM_P3)),
+                  Reason => Identity.Identifiers.Registry.From_String
+                    ("identity.account.disable"),
+                  Operation => O1,
+                  Correlation => R1,
+                  Requested_At => 230,
+                  Expected_Version => Account_Check.Version,
+                  Previous_State => Account_Check.State.Administrative,
+                  New_State => Identity.Accounts.States.Disabled,
+                  Mandatory_Audit => True)),
+            EM_Ctx,
+            EM_Event ("a9"),
+            230)
+           = Identity.Adapters.Repositories.Memory.Applied
+         and then Identity.Adapters.Repositories.Memory.Event_Count (Repository)
+           = EM_Before + 1,
+         "emission: audited account disable records exactly one identity.account.disabled");
+
+      EM_Before := Identity.Adapters.Repositories.Memory.Event_Count (Repository);
+      Assert
+        (Identity.Operations.Accounts.Disable.Execute (Repository, EM_A3, EM_P3)
+         = Identity.Adapters.Repositories.Memory.State_Conflict
+         and then Identity.Adapters.Repositories.Memory.Event_Count (Repository)
+           = EM_Before,
+         "emission: the plain account disable overload records no event");
+
+      --  identity.contact.verified ----------------------------------------
+      Assert
+        (Identity.Operations.Verification.Request.Execute
+           (Repository,
+            Identity.Contacts.Bindings.Contact_Binding_Record'
+              (Id => EM_CB1,
+               Principal => EM_P1,
+               Kind => Contact_Email,
+               Normalized_Value => EM_Contact,
+               State => Identity.Contacts.Bindings.Pending_Verification,
+               Version => 0),
+            Identity.Operations.Verification.Request.Verification_Token_Request'
+              (Id => EM_T3,
+               Principal => EM_P1,
+               Secret => Contact_Verification_Secret,
+               Issued_At => 235,
+               Expires_At => (Present => True, Time_Point => 900)))
+         = Identity.Adapters.Repositories.Memory.Applied,
+         "emission: contact verification fixture binding and token installed");
+
+      EM_Before := Identity.Adapters.Repositories.Memory.Event_Count (Repository);
+      Assert
+        (Identity.Operations.Verification.Complete.Execute
+           (Repository,
+            Identity.Operations.Verification.Complete.Staged_Completion_Request'
+              (Token => EM_T3,
+               Expected_Token_Version => 0,
+               Expected_Contact_Version => 0,
+               Secret => Contact_Verification_Secret,
+               Now => 236,
+               Contact => EM_CB1),
+            EM_Ctx,
+            EM_Event ("b1"),
+            236)
+         = Identity.Tokens.Verification.Valid
+         and then Identity.Adapters.Repositories.Memory.Event_Count (Repository)
+           = EM_Before + 1,
+         "emission: audited contact verification records exactly one identity.contact.verified");
+
+      EM_Before := Identity.Adapters.Repositories.Memory.Event_Count (Repository);
+      Assert
+        (Identity.Operations.Verification.Complete.Execute
+           (Repository, EM_T3, Contact_Verification_Secret, 237, EM_CB1)
+         = Identity.Tokens.Verification.Already_Consumed
+         and then Identity.Adapters.Repositories.Memory.Event_Count (Repository)
+           = EM_Before,
+         "emission: the plain contact verification overload records no event");
+
+      --  identity.mfa.challenge.completed ---------------------------------
+      Assert
+        (Identity.Operations.Authentication.Begin_Transaction.Execute
+           (Repository,
+            (Id => EM_MT1,
+             Principal => EM_P1,
+             Requested_Profile => Identity.Assurance.Profiles.Sensitive,
+             Created_At => 240,
+             Expires_At => (Present => True, Time_Point => 900),
+             State => Identity.Authentication.Transactions.Started,
+             Attempts => 0,
+             Evidence_Count => 0,
+             Version => 0))
+         = Identity.Authentication.Transactions.Applied
+         and then Identity.Operations.Factors.Issue_Challenge.Execute
+           (Repository,
+            Identity.Authentication.Challenges.Challenge_Record'
+              (Id => EM_CH1,
+               Transaction => EM_MT1,
+               Principal => EM_P1,
+               Method => TOTP_Algorithm,
+               Created_At => 241,
+               Expires_At => (Present => True, Time_Point => 900),
+               State => Identity.Authentication.Challenges.Issued,
+               Attempts => 0,
+               Version => 0))
+           = Identity.Authentication.Transactions.Applied,
+         "emission: MFA fixture transaction and challenge installed");
+
+      Identity.Adapters.Repositories.Memory.Find_Authentication_Transaction
+        (Repository, EM_MT1, EM_Found, Auth_Tx_Check);
+      EM_Before := Identity.Adapters.Repositories.Memory.Event_Count (Repository);
+      Assert
+        (EM_Found
+         and then Identity.Operations.Authentication.Continue.Complete_Challenge
+           (Repository,
+            Identity.Operations.Authentication.Continue
+              .Staged_Challenge_Completion_Request'
+              (Challenge => EM_CH1,
+               Principal => EM_P1,
+               Now => 242,
+               Expected_Challenge_Version => 0,
+               Expected_Transaction_Version => Auth_Tx_Check.Version),
+            EM_Ctx,
+            EM_Event ("b2"),
+            242)
+           = Identity.Authentication.Transactions.Applied
+         and then Identity.Adapters.Repositories.Memory.Event_Count (Repository)
+           = EM_Before + 1,
+         "emission: audited challenge completion records exactly one "
+         & "identity.mfa.challenge.completed");
+
+      EM_Before := Identity.Adapters.Repositories.Memory.Event_Count (Repository);
+      Assert
+        (Identity.Operations.Authentication.Continue.Complete_Challenge
+           (Repository, EM_CH1, EM_P1, 243)
+         = Identity.Authentication.Transactions.State_Conflict
+         and then Identity.Adapters.Repositories.Memory.Event_Count (Repository)
+           = EM_Before,
+         "emission: the plain challenge completion overload records no event");
+
+      --  identity.recovery.completed --------------------------------------
+      Assert
+        (Identity.Operations.Recovery.Begin_Recovery.Execute
+           (Repository,
+            (Id => EM_RT1,
+             Principal => EM_P5,
+             Account => EM_A5,
+             Created_At => 245,
+             Expires_At => (Present => True, Time_Point => 900),
+             State => Identity.Recovery.Transactions.Started,
+             Version => 0))
+         = Identity.Recovery.Transactions.Applied
+         and then Identity.Operations.Recovery.Continue.Execute
+           (Repository, EM_RT1, EM_P5, 246)
+           = Identity.Recovery.Transactions.Applied,
+         "emission: recovery fixture transaction begun and evidence accepted");
+
+      Identity.Adapters.Repositories.Memory.Find_Recovery_Transaction
+        (Repository, EM_RT1, EM_Found, Recovery_Check);
+      Identity.Adapters.Repositories.Memory.Find_Account
+        (Repository, EM_P5, Found_Account_Check, Account_Check);
+      EM_Before := Identity.Adapters.Repositories.Memory.Event_Count (Repository);
+      Assert
+        (EM_Found
+         and then Found_Account_Check
+         and then Identity.Operations.Recovery.Complete.Execute
+           (Repository,
+            Identity.Operations.Recovery.Complete.Staged_Completion_Request'
+              (Transaction => EM_RT1,
+               Principal => EM_P5,
+               Now => 247,
+               Expected_Transaction_Version => Recovery_Check.Version,
+               Expected_Account_Version => Account_Check.Version),
+            EM_Ctx,
+            EM_Event ("b3"),
+            247)
+           = Identity.Recovery.Transactions.Applied
+         and then Identity.Adapters.Repositories.Memory.Event_Count (Repository)
+           = EM_Before + 1,
+         "emission: audited recovery completion records exactly one "
+         & "identity.recovery.completed");
+
+      EM_Before := Identity.Adapters.Repositories.Memory.Event_Count (Repository);
+      Assert
+        (Identity.Operations.Recovery.Complete.Execute (Repository, EM_RT1, EM_P5, 248)
+         = Identity.Recovery.Transactions.State_Conflict
+         and then Identity.Adapters.Repositories.Memory.Event_Count (Repository)
+           = EM_Before,
+         "emission: the plain recovery completion overload records no event");
+
+      --  identity.api-key.authenticated -----------------------------------
+      Assert
+        (Identity.Operations.API_Keys.Issue.Execute
+           (Repository,
+            Identity.API_Keys.Credentials.API_Key_Credential_Record'
+              (Id => EM_C4,
+               Principal => EM_P2,
+               Public_Key_Id => EM_Key_Id,
+               Credential_Class_Id => Identity.Identifiers.Registry.From_String
+                 ("identity.service.api-key"),
+               Secret_Verifier => Identity.Crypto.Secret_Verifiers.Derive_Text
+                 (Identity.Crypto.Domains.API_Key, API_Key_Secret),
+               State => Identity.Credentials.States.Active,
+               Created_At => 250,
+               Expires_At => (Present => True, Time_Point => 900),
+               Last_Used_At => (Present => False, Time_Point => 0),
+               Rotation_Generation => 0,
+               Version => 0))
+         = Identity.Adapters.Repositories.Memory.Applied,
+         "emission: API key fixture credential issued");
+
+      Identity.Adapters.Repositories.Memory.Find_API_Key
+        (Repository, EM_C4, EM_Found, API_Key_Check);
+      EM_Before := Identity.Adapters.Repositories.Memory.Event_Count (Repository);
+      Assert
+        (EM_Found
+         and then Identity.Operations.API_Keys.Authenticate.Execute
+           (Repository,
+            Identity.Operations.API_Keys.Authenticate.Staged_Authentication_Request'
+              (Public_Key_Id => EM_Key_Id,
+               Secret => API_Key_Secret,
+               Now => 251,
+               Expected_Credential_Version => API_Key_Check.Version),
+            EM_Ctx,
+            EM_Event ("b4"),
+            251).Status = Identity.Results.Succeeded
+         and then Identity.Adapters.Repositories.Memory.Event_Count (Repository)
+           = EM_Before + 1,
+         "emission: audited API key authentication records exactly one "
+         & "identity.api-key.authenticated");
+
+      EM_Before := Identity.Adapters.Repositories.Memory.Event_Count (Repository);
+      Assert
+        (Identity.Operations.API_Keys.Authenticate.Execute
+           (Repository, EM_Key_Id, API_Key_Secret, 252).Status
+         = Identity.Results.Succeeded
+         and then Identity.Adapters.Repositories.Memory.Event_Count (Repository)
+           = EM_Before,
+         "emission: the plain API key authentication overload records no event");
+
+      --  identity.api-key.revoked -----------------------------------------
+      Identity.Adapters.Repositories.Memory.Find_API_Key
+        (Repository, EM_C4, EM_Found, API_Key_Check);
+      EM_Before := Identity.Adapters.Repositories.Memory.Event_Count (Repository);
+      Assert
+        (EM_Found
+         and then Identity.Operations.API_Keys.Revoke.Execute
+           (Repository,
+            Identity.Operations.API_Keys.Revoke.Staged_Revoke_Request'
+              (Credential => EM_C4,
+               Expected_Credential_Version => API_Key_Check.Version),
+            EM_Ctx,
+            EM_Event ("b5"),
+            253)
+           = Identity.Adapters.Repositories.Memory.Applied
+         and then Identity.Adapters.Repositories.Memory.Event_Count (Repository)
+           = EM_Before + 1,
+         "emission: audited API key revocation records exactly one identity.api-key.revoked");
+
+      EM_Before := Identity.Adapters.Repositories.Memory.Event_Count (Repository);
+      Assert
+        (Identity.Operations.API_Keys.Revoke.Execute (Repository, EM_C4)
+         = Identity.Adapters.Repositories.Memory.State_Conflict
+         and then Identity.Adapters.Repositories.Memory.Event_Count (Repository)
+           = EM_Before,
+         "emission: the plain API key revocation overload records no event");
+
+      --  identity.totp.replay-detected ------------------------------------
+      Assert
+        (Identity.Operations.Factors.Begin_Enrollment.Execute
+           (Repository,
+            Identity.Operations.Factors.Begin_Enrollment.TOTP_Begin_Request'
+              (Id => EM_C5,
+               Principal => EM_P1,
+               Algorithm => TOTP_Algorithm,
+               Created_At => 260))
+         = Identity.Adapters.Repositories.Memory.Applied
+         and then Identity.Operations.Factors.Complete_Enrollment.Execute
+           (Repository,
+            Identity.Operations.Factors.Complete_Enrollment.TOTP_Completion_Request'
+              (Id => EM_C5,
+               Principal => EM_P1,
+               Algorithm => TOTP_Algorithm,
+               Secret => TOTP_Seed,
+               Created_At => 260,
+               Highest_Accepted_Counter => 10))
+           = Identity.Adapters.Repositories.Memory.Applied,
+         "emission: TOTP fixture credential enrolled with an accepted counter of ten");
+
+      Identity.Adapters.Repositories.Memory.Find_TOTP_Credential
+        (Repository, EM_C5, EM_Found, TOTP_Check);
+      EM_Version := TOTP_Check.Version;
+      EM_Before := Identity.Adapters.Repositories.Memory.Event_Count (Repository);
+      Assert
+        (EM_Found
+         and then Identity.Operations.Factors.Accept_TOTP_Counter.Execute
+           (Repository,
+            Identity.Operations.Factors.Accept_TOTP_Counter.Accept_Request'
+              (Credential => EM_C5,
+               Expected_Version => EM_Version,
+               Counter => 11),
+            EM_Ctx,
+            EM_Event ("b6"),
+            261)
+           = Identity.One_Time_Passwords.Credentials.Accepted
+         and then Identity.Adapters.Repositories.Memory.Event_Count (Repository)
+           = EM_Before,
+         "emission: an accepted TOTP counter is ordinary traffic and records no event");
+
+      Identity.Adapters.Repositories.Memory.Find_TOTP_Credential
+        (Repository, EM_C5, EM_Found, TOTP_Check);
+      EM_Version := TOTP_Check.Version;
+      EM_Before := Identity.Adapters.Repositories.Memory.Event_Count (Repository);
+      Assert
+        (EM_Found
+         and then Identity.Operations.Factors.Accept_TOTP_Counter.Execute
+           (Repository,
+            Identity.Operations.Factors.Accept_TOTP_Counter.Accept_Request'
+              (Credential => EM_C5,
+               Expected_Version => EM_Version,
+               Counter => 11),
+            EM_Ctx,
+            EM_Event ("b7"),
+            262)
+           = Identity.One_Time_Passwords.Credentials.Replayed
+         and then Identity.Adapters.Repositories.Memory.Event_Count (Repository)
+           = EM_Before + 1,
+         "emission: audited TOTP counter acceptance records exactly one "
+         & "identity.totp.replay-detected on a replayed counter");
+
+      EM_Before := Identity.Adapters.Repositories.Memory.Event_Count (Repository);
+      Assert
+        (Identity.Operations.Factors.Accept_TOTP_Counter.Execute (Repository, EM_C5, 11)
+         = Identity.One_Time_Passwords.Credentials.Replayed
+         and then Identity.Adapters.Repositories.Memory.Event_Count (Repository)
+           = EM_Before,
+         "emission: the plain TOTP counter acceptance overload records no event");
+
+      --  identity.external.assertion.replay-detected ----------------------
+      --  The staged audited form must tell a genuine replay -- a fingerprint
+      --  that was already registered -- apart from a lost binding-version
+      --  check on a first-seen fingerprint. Both reach the store as a
+      --  conflict; only the first is a security event.
+      Assert
+        (Identity.Operations.External_Identities.Bind.Execute
+           (Repository,
+            (Id => EM_EB1,
+             Principal => EM_P4,
+             Provider => EP1,
+             Issuer => External_Issuer,
+             External_Subject => EM_Ext_Subject,
+             State => Identity.External_Providers.Bindings.Active,
+             Created_At => 270,
+             Version => 0))
+         = Identity.Adapters.Repositories.Memory.Applied,
+         "emission: external assertion fixture binding installed");
+
+      EM_Before := Identity.Adapters.Repositories.Memory.Event_Count (Repository);
+      Assert
+        (Identity.Operations.Authentication.External.Execute
+           (Repository,
+            Identity.Operations.Authentication.External.Staged_Authentication_Request'
+              (Assertion => EM_Assertion (EM_FP1),
+               Expected_Binding_Version => 0),
+            271,
+            EM_Ctx,
+            EM_Event ("b8"),
+            271).Status = Identity.Results.Succeeded
+         and then Identity.Adapters.Repositories.Memory.Event_Count (Repository)
+           = EM_Before,
+         "emission: a first presentation of a staged external assertion records no event");
+
+      EM_Before := Identity.Adapters.Repositories.Memory.Event_Count (Repository);
+      Assert
+        (Identity.Operations.Authentication.External.Execute
+           (Repository,
+            Identity.Operations.Authentication.External.Staged_Authentication_Request'
+              (Assertion => EM_Assertion (EM_FP1),
+               Expected_Binding_Version => 0),
+            272,
+            EM_Ctx,
+            EM_Event ("b9"),
+            272).Status = Identity.Results.Conflict
+         and then Identity.Adapters.Repositories.Memory.Event_Count (Repository)
+           = EM_Before + 1,
+         "emission: a genuine staged external assertion replay records exactly one "
+         & "identity.external.assertion.replay-detected");
+
+      EM_Replays :=
+        Identity.Adapters.Repositories.Memory.External_Replay_Count (Repository);
+      EM_Before := Identity.Adapters.Repositories.Memory.Event_Count (Repository);
+      Assert
+        (Identity.Operations.Authentication.External.Execute
+           (Repository,
+            Identity.Operations.Authentication.External.Staged_Authentication_Request'
+              (Assertion => EM_Assertion (EM_FP2),
+               Expected_Binding_Version => 99),
+            273,
+            EM_Ctx,
+            EM_Event ("c1"),
+            273).Status = Identity.Results.Conflict
+         and then Identity.Adapters.Repositories.Memory.Event_Count (Repository)
+           = EM_Before
+         and then Identity.Adapters.Repositories.Memory.External_Replay_Count (Repository)
+           = EM_Replays,
+         "emission: a lost binding-version check on a first-seen staged external "
+         & "assertion is a conflict that records no replay event");
+
+      EM_Before := Identity.Adapters.Repositories.Memory.Event_Count (Repository);
+      Assert
+        (Identity.Operations.Authentication.External.Execute
+           (Repository,
+            Identity.Operations.Authentication.External.Staged_Authentication_Request'
+              (Assertion => EM_Assertion (EM_FP1),
+               Expected_Binding_Version => 0),
+            274).Status = Identity.Results.Conflict
+         and then Identity.Adapters.Repositories.Memory.Event_Count (Repository)
+           = EM_Before,
+         "emission: the plain staged external authentication overload records no event");
+
+      --  ---------------------------------------------------------------
+      --  Reserve-before-mutate. From here on the event log is full and
+      --  stays full: every audited operation must refuse and leave the
+      --  entity it would have changed exactly as it was.
+      --  ---------------------------------------------------------------
+      while Identity.Adapters.Repositories.Memory.Event_Capacity_Available
+        (Repository, 1)
+      loop
+         EM_Filled := EM_Filled + 1;
+         EM_Fill_Status :=
+           Identity.Adapters.Repositories.Memory.Append_Event
+             (Repository, EM_Filler (EM_Filled));
+         exit when EM_Fill_Status /= Identity.Adapters.Repositories.Memory.Applied;
+      end loop;
+
+      Assert
+        (EM_Fill_Status = Identity.Adapters.Repositories.Memory.Applied
+         and then EM_Filled > 0
+         and then not Identity.Adapters.Repositories.Memory.Event_Capacity_Available
+           (Repository, 1),
+         "emission: the shared event log is filled to capacity");
+
+      EM_Before := Identity.Adapters.Repositories.Memory.Event_Count (Repository);
+      EM_Before_Sessions :=
+        Identity.Adapters.Repositories.Memory.Session_Count (Repository);
+      Assert
+        (Identity.Operations.Sessions.Create.Execute
+           (Repository,
+            EM_Create_Request (EM_S5, "emission-session-5"),
+            EM_Ctx,
+            EM_Event ("c2"),
+            300)
+         = Identity.Adapters.Repositories.Memory.Capacity_Conflict
+         and then Identity.Adapters.Repositories.Memory.Session_Count (Repository)
+           = EM_Before_Sessions
+         and then Identity.Adapters.Repositories.Memory.Event_Count (Repository)
+           = EM_Before,
+         "emission: a full event log refuses the audited session creation outright");
+
+      Identity.Adapters.Repositories.Memory.Find_Session
+        (Repository, EM_S5, EM_Found, Session_Check);
+      Assert
+        (not EM_Found,
+         "emission: the session refused for want of audit capacity was never created");
+
+      Identity.Adapters.Repositories.Memory.Find_Active_Password
+        (Repository, EM_P1, EM_Found, Password_Check);
+      EM_Version := Password_Check.Version;
+      EM_Before := Identity.Adapters.Repositories.Memory.Event_Count (Repository);
+      Assert
+        (EM_Found
+         and then Identity.Operations.Passwords.Change.Execute
+           (Repository,
+            Identity.Operations.Passwords.Change.Change_Request'
+              (Principal => EM_P1,
+               New_Credential => EM_C6,
+               Expected_Current_Version => EM_Version,
+               Current => Presented_Reset_Password,
+               Replacement => Changed_Password),
+            EM_Ctx,
+            EM_Event ("c3"),
+            301)
+           = Identity.Results.Operational_Failure
+         and then Identity.Adapters.Repositories.Memory.Event_Count (Repository)
+           = EM_Before,
+         "emission: a full event log refuses the audited password change outright");
+
+      Identity.Adapters.Repositories.Memory.Find_Active_Password
+        (Repository, EM_P1, Found_Password_Check, Password_Check);
+      Assert
+        (Found_Password_Check
+         and then Password_Check.Id = EM_C3
+         and then Password_Check.Version = EM_Version
+         and then Identity.Operations.Passwords.Authenticate.Execute
+           (Repository,
+            (Kind => Login_Kind, Value => EM_Login),
+            Presented_Reset_Password).Status = Identity.Results.Succeeded,
+         "emission: the password refused for want of audit capacity was never replaced");
+
+      --  Capacity_Conflict is the TOTP verdict for a refused audit record.
+      --  It is not State_Conflict: the credential was in a perfectly good
+      --  state, and the presentation may be retried.
+      Identity.Adapters.Repositories.Memory.Find_TOTP_Credential
+        (Repository, EM_C5, EM_Found, TOTP_Check);
+      EM_Version := TOTP_Check.Version;
+      EM_Counter := TOTP_Check.Highest_Accepted_Counter;
+      EM_Before := Identity.Adapters.Repositories.Memory.Event_Count (Repository);
+      EM_TOTP_Status :=
+        Identity.Operations.Factors.Accept_TOTP_Counter.Execute
+          (Repository,
+           Identity.Operations.Factors.Accept_TOTP_Counter.Accept_Request'
+             (Credential => EM_C5,
+              Expected_Version => EM_Version,
+              Counter => 20),
+           EM_Ctx,
+           EM_Event ("c4"),
+           302);
+      Assert
+        (EM_Found
+         and then EM_TOTP_Status
+           = Identity.One_Time_Passwords.Credentials.Capacity_Conflict
+         and then Identity.Adapters.Repositories.Memory.Event_Count (Repository)
+           = EM_Before,
+         "emission: a full event log refuses the audited TOTP counter acceptance "
+         & "with Capacity_Conflict");
+
+      Identity.Adapters.Repositories.Memory.Find_TOTP_Credential
+        (Repository, EM_C5, EM_Found, TOTP_Check);
+      Assert
+        (EM_Found
+         and then TOTP_Check.Version = EM_Version
+         and then TOTP_Check.Highest_Accepted_Counter = EM_Counter,
+         "emission: the TOTP counter refused for want of audit capacity never advanced");
+
+      Assert
+        (Identity.One_Time_Passwords.Credentials.Audit_Capacity_Rejected
+           (Identity.One_Time_Passwords.Credentials.Capacity_Conflict)
+         and then not Identity.One_Time_Passwords.Credentials.Audit_Capacity_Rejected
+           (Identity.One_Time_Passwords.Credentials.State_Conflict)
+         and then EM_TOTP_Status
+           /= Identity.One_Time_Passwords.Credentials.State_Conflict
+         and then not Identity.One_Time_Passwords.Credentials.Conflict
+           (Identity.One_Time_Passwords.Credentials.Capacity_Conflict)
+         and then Identity.One_Time_Passwords.Credentials.No_Replay_State_Mutation
+           (Identity.One_Time_Passwords.Credentials.Capacity_Conflict)
+         and then not Identity.One_Time_Passwords.Credentials.Counter_Accepted
+           (Identity.One_Time_Passwords.Credentials.Capacity_Conflict),
+         "emission: Capacity_Conflict classifies as an audit-capacity refusal and "
+         & "stays distinct from State_Conflict");
+   end;
+
    null;
 end Identity_Tests;
