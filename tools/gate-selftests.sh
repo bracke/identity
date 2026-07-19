@@ -623,6 +623,36 @@ base_line "identity_tools reports release provenance field coverage" \
    "identity_tools:release-validation:" ":provenance-fields: 9:" \
    ":missing-provenance: 0"
 
+base_line "release artifact registry parses" \
+   "identity_tools:release-validation:" \
+   ":missing-artifacts: 0:missing-prohibited: 0:missing-provenance: 0"
+
+#  The registry parsing and the on-disk fixture inventory are asserted together:
+#  ":missing-files: 0" is the tool's own statement that every fixture path listed
+#  in registries/persisted-formats.json resolves to a file, and the loop below
+#  re-checks that claim independently so the case cannot pass on a marker alone.
+ok=1
+if has_line "$BASELINE" "identity_tools:persisted-validation:" \
+   ":missing-formats: 0:missing-fixtures: 0:" ":missing-files: 0"; then
+   ok=0
+   while IFS= read -r fixture; do
+      if [ ! -f "$REPO/$fixture" ]; then
+         note "persisted format registry parses and every listed fixture exists: missing fixture: $fixture"
+         ok=1
+      fi
+   done < <(python3 -c '
+import json, sys
+with open(sys.argv[1], encoding="utf-8") as handle:
+    document = json.load(handle)
+for entry in document.get("formats", []):
+    for fixture in entry.get("fixtures", []):
+        print(fixture)
+' "$REPO/registries/persisted-formats.json")
+else
+   note "persisted format registry parses and every listed fixture exists: baseline marker absent"
+fi
+record "persisted format registry parses and every listed fixture exists" "$ok"
+
 base_line "identity_tools reports release report generation counts" \
    "identity_tools:release-reports:" ":write-failures:" ":skipped:"
 

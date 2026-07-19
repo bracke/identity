@@ -1544,6 +1544,28 @@ begin
 
       Assert
         (Public_Repository_Error.Code = Identity.Errors.Codes.Repository_Unavailable
+         and then Public_Repository_Error.Retry = Repository_Error.Retry
+         and then Public_Repository_Error.Retry = Identity.Errors.Retry_After
+         and then Public_Crypto_Error.Code = Identity.Errors.Codes.Crypto_Unavailable
+         and then Public_Crypto_Error.Retry = Crypto_Error.Retry
+         and then Public_Crypto_Error.Retry = Identity.Errors.Retry_Same_Request
+         and then Public_Rejection_Error.Code
+           = Identity.Errors.Codes.Authentication_Rejected
+         and then Public_Rejection_Error.Retry = Rejection_Error.Retry
+         and then Public_Rejection_Error.Retry = Identity.Errors.Do_Not_Retry
+         and then Public_Repository_Error.Code /= Public_Crypto_Error.Code
+         and then Identity.Errors.Public.Code_For (Repository_Error)
+           = Public_Repository_Error.Code
+         and then Identity.Errors.Public.Code_For (Crypto_Error)
+           = Public_Crypto_Error.Code
+         and then Diagnostic_Repository_Error.Code = Public_Repository_Error.Code
+         and then Diagnostic_Repository_Error.Retry = Public_Repository_Error.Retry
+         and then Identity.Errors.Public.Retryable (Public_Repository_Error)
+         and then not Identity.Errors.Public.Retryable (Public_Rejection_Error),
+         "public error projection preserves stable code and retry class");
+
+      Assert
+        (Public_Repository_Error.Code = Identity.Errors.Codes.Repository_Unavailable
          and then Public_Repository_Error.Message =
            Identity.Text.Messages.Operational_Failure
          and then Public_Repository_Error.Retry = Identity.Errors.Retry_After
@@ -2447,6 +2469,37 @@ begin
          and then Identity.Crypto.One_Time_Passwords.Available (CryptoLib_OTP)
          and then Identity.Crypto.Event_Integrity.Configured (CryptoLib_Event),
          "IDENTITY-CRYPTO-004 bound cryptolib primitives report available capabilities");
+
+      Assert
+        (Identity.Crypto.CryptoLib.MACs.Capability
+           (Identity.Crypto.Domains.Event_Integrity)
+           = Identity.Crypto.Capabilities.Missing
+         and then Identity.Crypto.Capabilities.Capability_Missing
+           (Identity.Crypto.CryptoLib.MACs.Capability
+              (Identity.Crypto.Domains.Event_Integrity))
+         and then Identity.Crypto.CryptoLib.MACs.Capability
+           (Identity.Crypto.CryptoLib.MACs.HMAC_SHA256_Algorithm)
+           = Identity.Crypto.Capabilities.Available
+         and then Identity.Crypto.CryptoLib.MACs.Compute
+           (Identity.Crypto.Domains.Event_Integrity, MAC_Key, MAC_Data).Capability
+           = Identity.Crypto.Capabilities.Missing
+         and then Identity.Text.Bounded.Length
+           (Identity.Crypto.CryptoLib.MACs.Compute
+              (Identity.Crypto.Domains.Event_Integrity, MAC_Key, MAC_Data).Output) = 0
+         and then Identity.Crypto.CryptoLib.MACs.Unsupported
+           (Identity.Crypto.Domains.Event_Integrity).Capability
+           = Identity.Crypto.Capabilities.Missing
+         and then Identity.Crypto.CryptoLib.One_Time_Passwords.Capability
+           (Identity.Crypto.Domains.TOTP_Secret).HMAC
+           = Identity.Crypto.CryptoLib.MACs.Capability
+               (Identity.Crypto.CryptoLib.MACs.HMAC_SHA256_Algorithm)
+         and then Identity.Crypto.CryptoLib.Event_Integrity.Service
+           (Identity.Crypto.Domains.Event_Integrity).Capability
+           = Identity.Crypto.CryptoLib.MACs.Capability
+               (Identity.Crypto.CryptoLib.MACs.HMAC_SHA256_Algorithm)
+         and then not Entropy_Available
+         and then Entropy_Buffer = [Entropy_Buffer'Range => 0],
+         "cryptolib child packages report unavailable primitives explicitly");
 
       Assert
         (Identity.Crypto.Capabilities.Supports_Core_V1 (Probed_Capabilities)
@@ -6212,6 +6265,59 @@ begin
          "IDENTITY-EXTERNAL-001 external assertion core admission is explicit");
 
       Assert
+        (Identity.External_Providers.Assertions.Has_Replay_Fingerprint (Assertion)
+         and then Identity.External_Providers.Assertions.Ready_For_Replay_Registration
+           (Assertion, 60)
+         and then not Identity.External_Providers.Assertions
+           .Ready_For_Replay_Registration
+             ((Assertion with delta
+                 Assertion_Fingerprint => Identity.Text.Bounded.From_String ("")),
+              60)
+         and then not Identity.External_Providers.Assertions.Has_Replay_Fingerprint
+           ((Assertion with delta
+               Assertion_Fingerprint => Identity.Text.Bounded.From_String ("")))
+         and then not Identity.External_Providers.Assertions
+           .Ready_For_Replay_Registration (Expired_Assertion, 60)
+         and then not Identity.External_Providers.Assertions
+           .Ready_For_Replay_Registration (Invalid_Nonce_Assertion, 60)
+         and then Identity.External_Providers.Assertions.Replay_Registration_Eligible
+           (Identity.External_Providers.Assertions.Admit_For_Core (Assertion, 60))
+         and then not Identity.External_Providers.Assertions
+           .Replay_Registration_Eligible
+             (Identity.External_Providers.Assertions.Admit_For_Core
+                (Expired_Assertion, 60)),
+         "external assertion replay readiness is explicit");
+
+      Assert
+        (Identity.Adapters.External_Providers.Accepts_For_Core
+           (Assertion_Result.Status)
+         and then Identity.Adapters.External_Providers.Validated_Status
+           (Assertion_Result.Status)
+         and then Identity.External_Providers.Assertions.Admit_For_Core
+           (Assertion_Result.Assertion, 60)
+           = Identity.External_Providers.Assertions.Admitted
+         and then Identity.Text.Bounded.Equal
+           (Assertion_Result.Assertion.Issuer, Assertion_Result.Issuer)
+         and then Identity.Text.Bounded.Equal
+           (Assertion_Result.Assertion.External_Subject, Assertion_Result.Subject)
+         and then Identity.Identifiers.Registry.Image
+           (Assertion_Result.Assertion.Validation_Profile)
+           = Identity.Identifiers.Registry.Image (Assertion_Result.Profile)
+         and then Identity.External_Providers.Assertions.Nonce_Acceptable
+           (Assertion_Result.Assertion.Nonce)
+         and then not Identity.Adapters.External_Providers.Accepts_For_Core
+           (Identity.Adapters.External_Providers.Provider_Untrusted)
+         and then Identity.Adapters.External_Providers.Adapter_Rejected
+           (Identity.Adapters.External_Providers.Nonce_Mismatch)
+         and then Identity.Adapters.External_Providers.Adapter_Rejected
+           (Identity.Adapters.External_Providers.Replay_Suspected)
+         and then not Identity.Adapters.External_Providers.Accepts_For_Core
+           (Identity.Adapters.External_Providers.Missing_Capability)
+         and then Identity.Adapters.External_Providers.Operational_Failure
+           (Identity.Adapters.External_Providers.Infrastructure_Failure),
+         "external adapters pass only normalized validated assertions");
+
+      Assert
         (Identity.External_Providers.Assertions.Assertion_Admitted
            (Identity.External_Providers.Assertions.Admitted)
          and then not Identity.External_Providers.Assertions.Assertion_Rejected
@@ -6470,6 +6576,38 @@ begin
          and then not Identity.Operations.Post_Commit.Safety_Rejection
            (Identity.Operations.Post_Commit.Count_Mismatch),
          "post-commit release admission reports structured rejection reason");
+
+      Assert
+        (Identity.Operations.Post_Commit.Count_Mismatch_Rejection
+           (Identity.Operations.Post_Commit.Count_Mismatch)
+         and then not Identity.Operations.Post_Commit.Count_Mismatch_Rejection
+           (Identity.Operations.Post_Commit.None)
+         and then not Identity.Operations.Post_Commit.Safety_Rejection
+           (Identity.Operations.Post_Commit.Count_Mismatch)
+         and then Identity.Operations.Post_Commit.Publication_Timing_Rejection
+           (Identity.Operations.Post_Commit.Publication_Not_Post_Commit)
+         and then Identity.Operations.Post_Commit.Safety_Rejection
+           (Identity.Operations.Post_Commit.Publication_Not_Post_Commit)
+         and then Identity.Operations.Post_Commit.Notification_Rejection
+           (Identity.Operations.Post_Commit.Unsafe_Notification)
+         and then not Identity.Operations.Post_Commit.Notification_Rejection
+           (Identity.Operations.Post_Commit.Unsafe_One_Time_Output)
+         and then Identity.Operations.Post_Commit.One_Time_Output_Rejection
+           (Identity.Operations.Post_Commit.Unsafe_One_Time_Output)
+         and then Identity.Operations.Post_Commit.Safety_Rejection
+           (Identity.Operations.Post_Commit.Unsafe_One_Time_Output)
+         and then not Identity.Operations.Post_Commit.Safety_Rejection
+           (Identity.Operations.Post_Commit.None)
+         and then Identity.Operations.Post_Commit.Accepted
+           ((Ready => True, Reason => Identity.Operations.Post_Commit.None))
+         and then not Identity.Operations.Post_Commit.Accepted
+           ((Ready => True,
+             Reason => Identity.Operations.Post_Commit.Count_Mismatch))
+         and then Identity.Operations.Post_Commit.Rejected
+           ((Ready => False, Reason => Identity.Operations.Post_Commit.Count_Mismatch))
+         and then not Identity.Operations.Post_Commit.Rejected
+           ((Ready => True, Reason => Identity.Operations.Post_Commit.None)),
+         "post-commit release admission reason classifiers are explicit");
    end;
 
    declare

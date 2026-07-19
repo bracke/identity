@@ -22,7 +22,7 @@ package Identity.Times is
    end record;
 
    --  SPARK-analysable form of Add. Functions with "out" parameters are not
-   --  legal in SPARK, so callers inside the proof scope use this instead.
+   --  legal in SPARK, so proof-verified callers use this instead.
    function Sum (Base : Instant; Span : Duration_Seconds) return Instant_Sum
      with Post => Sum'Result.Ok = (Base <= Instant'Last - Instant (Span))
                   and then (if not Sum'Result.Ok
