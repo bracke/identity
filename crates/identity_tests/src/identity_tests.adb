@@ -5749,6 +5749,177 @@ begin
         (Identity.Results.Resource_Limit),
       "IDENTITY-DISCLOSURE-001 disclosure_generic_rejection_and_non_rejection_failures");
 
+   Assert
+     (Identity.Operations.Disclosure.To_Disclosure_Safe_Result
+        (Identity.Results.Conflict,
+         Identity.Operations.Disclosure.Untrusted_Interactive)
+        = Identity.Operations.Disclosure.Authentication_Rejected
+      and then Identity.Operations.Disclosure.To_Disclosure_Safe_Result
+        (Identity.Results.Conflict,
+         Identity.Operations.Disclosure.Untrusted_API)
+        = Identity.Operations.Disclosure.Authentication_Rejected
+      and then Identity.Operations.Disclosure.To_Disclosure_Safe_Result
+        (Identity.Results.Conflict,
+         Identity.Operations.Disclosure.Authenticated_Self_Service)
+        = Identity.Operations.Disclosure.Authentication_Rejected
+      and then Identity.Operations.Disclosure.Public_Rejection
+        (Identity.Operations.Disclosure.To_Disclosure_Safe_Result
+           (Identity.Results.Conflict,
+            Identity.Operations.Disclosure.Untrusted_Interactive))
+      and then not Identity.Operations.Disclosure.Conflict_Detail_Visible
+        (Identity.Operations.Disclosure.To_Disclosure_Safe_Result
+           (Identity.Results.Conflict,
+            Identity.Operations.Disclosure.Untrusted_Interactive))
+      and then Identity.Operations.Disclosure.To_Disclosure_Safe_Result
+        (Identity.Results.Conflict,
+         Identity.Operations.Disclosure.Trusted_Administrative)
+        = Identity.Operations.Disclosure.Conflict_Detailed
+      and then Identity.Operations.Disclosure.To_Disclosure_Safe_Result
+        (Identity.Results.Conflict,
+         Identity.Operations.Disclosure.Internal_Operations)
+        = Identity.Operations.Disclosure.Conflict_Detailed
+      and then Identity.Operations.Disclosure.Conflict_Detail_Visible
+        (Identity.Operations.Disclosure.To_Disclosure_Safe_Result
+           (Identity.Results.Conflict,
+            Identity.Operations.Disclosure.Trusted_Administrative))
+      and then Identity.Operations.Disclosure.To_Disclosure_Safe_Result
+        (Identity.Tokens.Verification.State_Conflict,
+         Identity.Operations.Disclosure.Untrusted_Interactive)
+        = Identity.Operations.Disclosure.Token_Invalid_Or_Expired
+      and then Identity.Operations.Disclosure.To_Disclosure_Safe_Result
+        (Identity.Tokens.Verification.State_Conflict,
+         Identity.Operations.Disclosure.Trusted_Administrative)
+        = Identity.Operations.Disclosure.Conflict_Detailed
+      and then Identity.Operations.Disclosure.Reveals_No_More_Than
+        (Identity.Operations.Disclosure.Untrusted_Interactive,
+         Identity.Operations.Disclosure.Trusted_Administrative)
+      and then not Identity.Operations.Disclosure.Reveals_No_More_Than
+        (Identity.Operations.Disclosure.Trusted_Administrative,
+         Identity.Operations.Disclosure.Untrusted_Interactive),
+      "operation conflicts collapse for untrusted disclosure and remain structured "
+      & "for trusted disclosure");
+
+   Assert
+     (Identity.Operations.Budgets.Within_Hard_Limits
+        (Identity.Operations.Budgets.Hard_Limits)
+      and then Identity.Operations.Budgets.Accepted
+        (Identity.Operations.Budgets.Admit_Hard_Limits
+           (Identity.Operations.Budgets.Hard_Limits))
+      and then Identity.Operations.Budgets.Accepted
+        (Identity.Operations.Budgets.Admit_Hard_Limits
+           (Identity.Operations.Budgets.Hard_Limits).Status)
+      and then not Identity.Operations.Budgets.Rejected
+        (Identity.Operations.Budgets.Admit_Hard_Limits
+           (Identity.Operations.Budgets.Hard_Limits))
+      and then Identity.Operations.Budgets.Has_Bounded_Detail
+        (Identity.Operations.Budgets.Admit_Hard_Limits
+           (Identity.Operations.Budgets.Hard_Limits))
+      and then Identity.Operations.Budgets.Rejected
+        (Identity.Operations.Budgets.Admit
+           ((Identity.Operations.Budgets.Hard_Limits with delta
+               Repository_Reads =>
+                 Identity.Operations.Budgets.Hard_Limits.Repository_Reads + 1),
+            Identity.Operations.Budgets.Hard_Limits))
+      and then Identity.Operations.Budgets.Rejected
+        (Identity.Operations.Budgets.Admit
+           ((Identity.Operations.Budgets.Hard_Limits with delta
+               Repository_Reads =>
+                 Identity.Operations.Budgets.Hard_Limits.Repository_Reads + 1),
+            Identity.Operations.Budgets.Hard_Limits).Status)
+      and then Identity.Operations.Budgets.Exceeded
+        (Identity.Operations.Budgets.Admit
+           ((Identity.Operations.Budgets.Hard_Limits with delta
+               Repository_Reads =>
+                 Identity.Operations.Budgets.Hard_Limits.Repository_Reads + 1),
+            Identity.Operations.Budgets.Hard_Limits),
+         Identity.Operations.Budgets.Repository_Reads)
+      and then not Identity.Operations.Budgets.Exceeded
+        (Identity.Operations.Budgets.Admit
+           ((Identity.Operations.Budgets.Hard_Limits with delta
+               Repository_Reads =>
+                 Identity.Operations.Budgets.Hard_Limits.Repository_Reads + 1),
+            Identity.Operations.Budgets.Hard_Limits),
+         Identity.Operations.Budgets.Output_Bytes)
+      and then Identity.Operations.Budgets.Has_Bounded_Detail
+        (Identity.Operations.Budgets.Admit
+           ((Identity.Operations.Budgets.Hard_Limits with delta
+               Repository_Reads =>
+                 Identity.Operations.Budgets.Hard_Limits.Repository_Reads + 1),
+            Identity.Operations.Budgets.Hard_Limits)),
+      "operation budget admission predicates classify accepted and rejected budgets");
+
+   Assert
+     (Identity.Operations.Budgets.Exceeds_Hard_Limit
+        ((Identity.Operations.Budgets.Hard_Limits with delta
+            Cryptographic_Operations =>
+              Identity.Limits.Max_Cryptographic_Operations + 1),
+         Identity.Operations.Budgets.Cryptographic_Operations)
+      and then Identity.Operations.Budgets.Exceeds_Hard_Limit
+        ((Identity.Operations.Budgets.Hard_Limits with delta
+            Event_Attributes => Identity.Limits.Max_Event_Attributes + 1),
+         Identity.Operations.Budgets.Event_Attributes)
+      and then Identity.Operations.Budgets.Exceeds_Hard_Limit
+        ((Identity.Operations.Budgets.Hard_Limits with delta
+            Retry_Count => Identity.Limits.Max_Operation_Retries + 1),
+         Identity.Operations.Budgets.Retry_Count)
+      and then not Identity.Operations.Budgets.Within_Hard_Limits
+        ((Identity.Operations.Budgets.Hard_Limits with delta
+            Output_Bytes => Identity.Limits.Max_Output_Bytes + 1))
+      and then Identity.Operations.Budgets.Within_Hard_Limits
+        (Identity.Policies.Defaults.Default_Snapshot.Budget),
+      "operation hard-limit budget admission rejects policy values above implementation maxima");
+
+   Assert
+     (Identity.Identities.Bindings.Admission
+        (Identity.Identities.Bindings.Active,
+         Identity.Identities.Bindings.Subject_Resolution)
+        = Identity.Identities.Bindings.Binding_Admitted
+      and then Identity.Identities.Bindings.Usable_For_Resolution
+        (Identity.Identities.Bindings.Active)
+      and then Identity.Identities.Bindings.Admission
+        (Identity.Identities.Bindings.Suspended,
+         Identity.Identities.Bindings.Subject_Resolution)
+        = Identity.Identities.Bindings.Active_Required
+      and then Identity.Identities.Bindings.Active_Rejected
+        (Identity.Identities.Bindings.Admission
+           (Identity.Identities.Bindings.Suspended,
+            Identity.Identities.Bindings.Subject_Resolution))
+      and then not Identity.Identities.Bindings.Usable_For_Resolution
+        (Identity.Identities.Bindings.Rebinding_Required)
+      and then Identity.Identities.Bindings.Admission
+        (Identity.Identities.Bindings.Active,
+         Identity.Identities.Bindings.Binding_Revocation)
+        = Identity.Identities.Bindings.Binding_Admitted
+      and then Identity.Identities.Bindings.Can_Revoke
+        (Identity.Identities.Bindings.Pending)
+      and then Identity.Identities.Bindings.Admission
+        (Identity.Identities.Bindings.Revoked,
+         Identity.Identities.Bindings.Binding_Revocation)
+        = Identity.Identities.Bindings.Not_Revoked_Required
+      and then Identity.Identities.Bindings.Revoked_Rejected
+        (Identity.Identities.Bindings.Admission
+           (Identity.Identities.Bindings.Revoked,
+            Identity.Identities.Bindings.Binding_Revocation))
+      and then not Identity.Identities.Bindings.Can_Revoke
+        (Identity.Identities.Bindings.Revoked)
+      and then Identity.Identities.Bindings.Can_Replace
+        (Identity.Identities.Bindings.Active)
+      and then not Identity.Identities.Bindings.Can_Replace
+        (Identity.Identities.Bindings.Pending)
+      and then Identity.Identities.Bindings.Active_Rejected
+        (Identity.Identities.Bindings.Admission
+           (Identity.Identities.Bindings.Pending,
+            Identity.Identities.Bindings.Binding_Replacement))
+      and then Identity.Identities.Bindings.No_Mutation
+        (Identity.Identities.Bindings.Admission
+           (Identity.Identities.Bindings.Revoked,
+            Identity.Identities.Bindings.Binding_Revocation))
+      and then not Identity.Identities.Bindings.No_Mutation
+        (Identity.Identities.Bindings.Admission
+           (Identity.Identities.Bindings.Active,
+            Identity.Identities.Bindings.Subject_Resolution)),
+      "identity binding lifecycle admission classifies resolution revocation and replacement");
+
    declare
       Untrusted_Rules : constant Identity.Operations.Disclosure.Disclosure_Profile_Rules :=
         Identity.Operations.Disclosure.Rules_For

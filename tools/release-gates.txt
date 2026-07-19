@@ -1,98 +1,73 @@
 identity release gates
 ======================
 
-Mandatory V1 gates are orchestrated through project_tools as the implementation
-expands:
+How to run
+----------
 
-- alr build
-- identity_tools executable project_tools workflow manifest validation
-- crates/identity_tests AUnit suite
-- repository conformance
-- cryptolib integration self-tests
-- identity_tools executable crypto algorithm registry validation
-- secret-leak scanning
-- identity_tools executable canary secret-leak validation
-- atomicity and concurrency suites
-- disclosure projection suite
-- persisted-format compatibility
-- identity_tools executable persisted-format registry and fixture validation
-- invariant traceability
-- identity_tools executable invariant traceability validation
-- event registry coverage
-- identity_tools executable event registry coverage validation
-- architecture dependency checks
-- identity_tools executable architecture boundary validation
-- documentation checks
-- GNATprove
+    ./tools/release-check.sh
 
-Current implemented gate coverage:
+That script is the release gate. It builds the library, runs every suite,
+records each run's real outcome under generated/evidence/, and only then runs
+identity_tools, which validates the registries and generates the release
+reports in generated/release/ from that evidence. It exits non-zero if any
+gate fails. Nothing downstream should treat generated/release/ as meaningful
+unless release-check.sh exited 0 in the same run that produced it.
 
-- machine-readable project_tools workflow manifest
-- executable project_tools workflow validation for required workflow names,
-  required gates, root package metadata, and project_tools orchestration
-- machine-readable release artifact and prohibited-material inventory
-- executable release artifact registry validation
-- executable crypto registry validation for algorithm identifiers, cryptolib
-  implementation binding, format versions, constant-time verification,
-  separated creation and verification permissions, and deprecation state
-- persisted-format compatibility registry and deterministic fixture inventory
-- executable persisted-format validation for required fixtures, compatibility cases, and fixture files
-- strict GNAT 2022 library build
-- AUnit assertion test executable
-- buildable identity_examples, identity_conformance, and identity_tools companion crates
-- executable transport-neutral identity_lifecycle example
-- cryptolib import isolation check
-- invariant-to-test references for the implemented invariant seed
-- executable invariant registry validation for required tests and failure severity metadata
-- one-time secret extraction and pepper material smoke coverage
-- principal retirement authentication rejection smoke coverage
-- principal and account creation through public operation boundaries
-- identity binding add/change/revoke smoke coverage
-- password enrollment/authentication/change/reset request/reset-completion operation smoke coverage
-- account administrative, lifecycle, requirement, and lock-state transition smoke coverage
-- stateful session verifier-only lookup, renewal, expiration, purge, and revocation smoke coverage
-- stateful session creation through public operation boundary
-- action-token purpose and single-use smoke coverage
-- action-token issuance through public operation boundary
-- immutable safe projection smoke coverage
-- policy snapshot validation smoke coverage
-- public policy family aggregation and validation smoke coverage
-- explicit service and operation context budget/deadline/cancellation smoke coverage
-- repository SPI context, transaction, rollback-on-close, and capability smoke coverage
-- repository SPI child-view and conformance profile smoke coverage
-- identity_conformance executable reports all V1 certification profiles passed
-- internal orchestration, transition, validation, encoding, event, budget, and crypto binding smoke coverage
-- executable architecture validation for internal dependency, cryptolib import, and authorization-boundary source checks
-- bounded deterministic collection and persisted canonical codec smoke coverage
-- typed event attribute redaction, diagnostic, correlation, and audit integrity smoke coverage
-- service-principal, system-actor, MFA policy/enrollment, and step-up binding smoke coverage
-- crypto capability, algorithm registry, canonical crypto input, and key-state smoke coverage
-- deterministic testing clock, entropy, failure checkpoint, barrier, canary, and fixture smoke coverage
-- executable canary secret-leak validation for docs, registries, fixtures, tools, examples, and conformance outputs
-- password/API-key/TOTP/recovery-code policy and lifecycle helper smoke coverage
-- external-provider, key, notification, event-sink, diagnostic, and transport adapter SPI smoke coverage
-- session/token/recovery/attempt/throttle/lockout state-policy helper smoke coverage
-- account/principal/contact/credential lifecycle and projection helper smoke coverage
-- authentication request/context and assurance dependency/evaluation/projection smoke coverage
-- text UTF-8/redaction/message, error code/message/retry/diagnostic, and time helper smoke coverage
-- semantic duration wrapper smoke coverage for policy lifetimes and timeouts
-- token kind and verification contact/policy/result smoke coverage
-- contact verification request, binding mismatch, atomic completion, and single-use smoke coverage
-- contact-change pending successor, atomic activation, and single-use smoke coverage
-- API-key issue, service authentication, rotation, and revocation smoke coverage
-- stateful session rotation, predecessor rejection, family revocation, and principal session revocation smoke coverage
-- credential-derived session revocation smoke coverage
-- provider-derived session revocation smoke coverage
-- event envelope classification and canonical encoding smoke coverage
-- executable event registry validation for public event type constants
-- expanded V1 event registry coverage for authentication, session, password,
-  account, contact, MFA, recovery, API-key, TOTP, and external replay events
-- attempt recording and lockout threshold smoke coverage
-- recovery-code verifier-only single-use and regeneration smoke coverage
-- account recovery begin/continue/complete/cancel and restriction smoke coverage
-- recovery evidence source and reduced-assurance smoke coverage
-- MFA authentication transaction, challenge binding, completion, and satisfaction smoke coverage
-- session-bound step-up assurance upgrade and stale-context revision smoke coverage
-- external-provider binding, revocation, no auto-linking, and replay smoke coverage
-- external-provider definition, assurance mapping, enrollment decision, and projection smoke coverage
-- TOTP pending enrollment, proof-before-activation, replay-state, and factor-removal smoke coverage
+Enforced gates
+--------------
+
+Each of these fails the release check when it fails. "Evidence" means the gate
+records its outcome to generated/evidence/<name>.txt; identity_tools refuses to
+generate release reports if any evidence file is missing or records a failure,
+so a suite that never ran cannot be reported as satisfied.
+
+- alr build of the library under -gnatwe (warnings are errors)
+- crates/identity_tests AUnit assertion suite                    [evidence: aunit]
+- crates/identity_conformance repository conformance             [evidence: conformance]
+  Runs 39 real commands and queries against the in-memory store across the five
+  certification profiles, and fails a profile unless the number of checks
+  actually executed equals Required_Check_Count for that profile.
+- crates/identity_examples identity_lifecycle walkthrough        [evidence: examples]
+- GNATprove over registries/proof-scope.json                     [evidence: gnatprove]
+  Fails on any unproved check, any SPARK legality error, and any non-excluded
+  proof-scope package that was not analysed. Currently 616 checks, 0 unproved.
+- tools/gate-selftests.sh gate self-tests                        [evidence: gate-selftests]
+  Mutation-tests the gates themselves: each case copies the tree, breaks one
+  piece of evidence, and requires identity_tools to fail with that gate's own
+  marker. Proves the gates fail closed rather than passing vacuously.
+- identity_tools registry and source validation:
+  - project_tools workflow manifest (required workflows, gates, orchestration)
+  - release artifact and prohibited-material inventory
+  - crypto algorithm registry (binding, format versions, constant-time,
+    separated creation/verification permissions, deprecation state)
+  - persisted-format registry and deterministic fixture inventory
+  - invariant traceability: every name under "required_tests" in
+    registries/invariants.json must appear verbatim in a real evidence source
+    (the AUnit suite, the gate self-tests, the conformance harness, or the
+    examples). Metadata presence alone is not accepted.
+  - event registry coverage against the public event constants
+  - architecture boundaries: no Identity.Internal dependencies from public
+    code, cryptolib imports confined to the Identity.Crypto.CryptoLib.*
+    subtree, no authorization-boundary vocabulary
+  - canary secret-leak scanning over docs, registries, fixtures, tools,
+    examples and conformance output
+
+Known gaps
+----------
+
+These are listed as mandatory above the line in earlier revisions of this file
+but are NOT yet enforced. They are recorded here rather than being described as
+implemented.
+
+- Atomicity and concurrency suites: no dedicated suite exists. The in-memory
+  store is single-threaded and its transaction/rollback behaviour is covered
+  only incidentally by the conformance harness.
+- Disclosure projection suite: no dedicated suite exists; disclosure behaviour
+  is asserted piecemeal in the AUnit suite.
+- Documentation checks: not implemented.
+- Event registry coverage is structural, not behavioural: the registry and the
+  public constants are checked against each other, but the AUnit suite exercises
+  only a subset of the 16 event constants.
+- The repository SPI is not pluggable. Public operations are hard-typed to
+  Identity.Adapters.Repositories.Memory.Store, so the conformance profiles
+  currently certify that one implementation rather than any adapter.
