@@ -1,0 +1,4 @@
+artifact-count: 15
+prohibited-material-count: 8
+provenance-field-count: 9
+sensitive-artifacts: 0

@@ -1,0 +1,100 @@
+{
+  "version": "1.0.0-dev",
+  "gnatprove": {
+    "workflow": "proof",
+    "gate": "gnatprove",
+    "orchestrator": "project_tools",
+    "project": "identity.gpr",
+    "mode": "alire-managed"
+  },
+  "packages": [
+    {
+      "name": "Identity.Collections",
+      "properties": ["collection-bounds", "capacity-status-safety"],
+      "security_critical": true,
+      "excluded": false,
+      "compensating_tests": ["collection status predicates classify success and no-mutation failures"]
+    },
+    {
+      "name": "Identity.Text.Bounded",
+      "properties": ["identifier-and-text-length-invariants", "bounded-text-construction"],
+      "security_critical": true,
+      "excluded": false,
+      "compensating_tests": ["UTF-8 validation and redacted text helpers are bounded"]
+    },
+    {
+      "name": "Identity.Times.Expirations",
+      "properties": ["time-arithmetic-overflow", "expiration-construction-safety"],
+      "security_critical": true,
+      "excluded": false,
+      "compensating_tests": ["expiration construction reports overflow explicitly"]
+    },
+    {
+      "name": "Identity.Versions",
+      "properties": ["counter-saturation", "entity-version-monotonicity"],
+      "security_critical": true,
+      "excluded": false,
+      "compensating_tests": ["entity version comparison and saturated advance are explicit"]
+    },
+    {
+      "name": "Identity.Codecs.Canonical",
+      "properties": ["canonical-encoding-bounds", "deterministic-framing"],
+      "security_critical": true,
+      "excluded": false,
+      "compensating_tests": ["canonical codec frames are deterministic and bounded"]
+    },
+    {
+      "name": "Identity.Tokens.Definitions",
+      "properties": ["token-state-transitions", "consumed-state-never-reactivates"],
+      "security_critical": true,
+      "excluded": false,
+      "compensating_tests": ["token state terminal and consumed predicates are explicit"]
+    },
+    {
+      "name": "Identity.Sessions.Rotation",
+      "properties": ["session-rotation-generation", "rotation-admission-safety"],
+      "security_critical": true,
+      "excluded": false,
+      "compensating_tests": ["session policy rejects zero durations and exhausted rotation"]
+    },
+    {
+      "name": "Identity.Secrets.One_Time",
+      "properties": ["one-time-secret-state", "single-extraction-safety"],
+      "security_critical": true,
+      "excluded": false,
+      "compensating_tests": ["one-time secret extraction pepper material and presence are bounded"]
+    },
+    {
+      "name": "Identity.Operations.Contexts",
+      "properties": ["option-and-result-variant-safety", "deadline-checkpoint-safety"],
+      "security_critical": true,
+      "excluded": false,
+      "compensating_tests": ["operation deadline evaluation classifies boundary states"]
+    },
+    {
+      "name": "Identity.Recovery_Codes.Sets",
+      "properties": ["selected-state-machine-invariants", "single-use-recovery-code-state"],
+      "security_critical": true,
+      "excluded": false,
+      "compensating_tests": ["recovery code status predicates classify single-use and no-mutation outcomes"]
+    }
+  ],
+  "required_properties": [
+    "collection-bounds",
+    "identifier-and-text-length-invariants",
+    "time-arithmetic-overflow",
+    "counter-saturation",
+    "canonical-encoding-bounds",
+    "token-state-transitions",
+    "session-rotation-generation",
+    "one-time-secret-state",
+    "option-and-result-variant-safety",
+    "selected-state-machine-invariants"
+  ],
+  "release_gate": {
+    "mandatory": true,
+    "may_lower_baseline_silently": false,
+    "requires_documented_exclusions": true,
+    "requires_compensating_tests": true
+  }
+}

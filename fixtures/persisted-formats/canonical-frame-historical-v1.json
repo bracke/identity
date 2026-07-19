@@ -1,0 +1,9 @@
+{
+  "format_id": "identity.codec.canonical-frame",
+  "case": "historical-v1",
+  "version": 1,
+  "canonical": true,
+  "valid": true,
+  "label": "identity.fixture.historical",
+  "payload": "historical-v1"
+}

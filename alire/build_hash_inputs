@@ -1,0 +1,6 @@
+dependency:cryptolib=0.1.0-dev=92712048d98494887d63c75abf305d659caac8db0ef0df451e5a11c9828ed12e
+external:IDENTITY_LIBRARY_TYPE=default
+external:LIBRARY_TYPE=default
+profile:identity=RELEASE
+switches:identity=-O3,-fdata-sections,-ffunction-sections,-gnatW8,-gnatn
+version:gnat_native=15.2.1

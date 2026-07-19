@@ -1,0 +1,31 @@
+with Identity.Adapters.Repositories.Memory;
+with Identity.API_Keys.Credentials;
+with Identity.Identifiers.Entities;
+with Identity.Identifiers.Registry;
+with Identity.Secrets.API_Keys;
+with Identity.Text.Bounded;
+with Identity.Times;
+with Identity.Versions;
+
+package Identity.Operations.API_Keys.Issue is
+   type Issue_Request is record
+      Id                  : Identity.Identifiers.Entities.Credential_Id;
+      Principal           : Identity.Identifiers.Entities.Principal_Id;
+      Public_Key_Id       : Identity.Text.Bounded.Bounded_Text;
+      Credential_Class_Id : Identity.Identifiers.Registry.Registry_Id;
+      Secret              : Identity.Secrets.API_Keys.API_Key_Secret;
+      Created_At          : Identity.Times.Instant := 0;
+      Expires_At          : Identity.Times.Expiration;
+      Rotation_Generation : Identity.Versions.Rotation_Generation := 0;
+   end record;
+
+   function Execute
+     (Repository : in out Identity.Adapters.Repositories.Memory.Store;
+      Credential : Identity.API_Keys.Credentials.API_Key_Credential_Record)
+      return Identity.Adapters.Repositories.Memory.Command_Status;
+
+   function Execute
+     (Repository : in out Identity.Adapters.Repositories.Memory.Store;
+      Request    : Issue_Request)
+      return Identity.Adapters.Repositories.Memory.Command_Status;
+end Identity.Operations.API_Keys.Issue;

@@ -1,0 +1,27 @@
+{
+  "version": "1.0.0-dev",
+  "algorithms": [
+    {
+      "id": "identity.pbkdf2-hmac-sha256",
+      "class": "password-hashing",
+      "implementation": "cryptolib",
+      "implementation_version": "0.1.0-dev",
+      "format_versions": [1],
+      "constant_time_verification": true,
+      "creation_allowed": true,
+      "verification_allowed": true,
+      "deprecated": false
+    },
+    {
+      "id": "identity.sha256-domain-verifier",
+      "class": "secret-verifier",
+      "implementation": "cryptolib",
+      "implementation_version": "0.1.0-dev",
+      "format_versions": [1],
+      "constant_time_verification": true,
+      "creation_allowed": true,
+      "verification_allowed": true,
+      "deprecated": false
+    }
+  ]
+}

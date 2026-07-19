@@ -1,0 +1,3 @@
+gate:gnatprove:required
+orchestrator:project_tools
+baseline-rule:no-silent-lowering

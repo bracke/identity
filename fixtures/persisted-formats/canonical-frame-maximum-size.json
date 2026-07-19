@@ -1,0 +1,9 @@
+{
+  "format_id": "identity.codec.canonical-frame",
+  "case": "maximum-size",
+  "version": 1,
+  "canonical": true,
+  "valid": true,
+  "label": "identity.fixture.maximum-size",
+  "payload_size": 384
+}

@@ -1,0 +1,116 @@
+{
+  "version": "1.0.0-dev",
+  "release_artifacts": [
+    {
+      "id": "identity.source-archive",
+      "title": "Source archive",
+      "required": true,
+      "contains_sensitive_material": false
+    },
+    {
+      "id": "identity.alire-metadata",
+      "title": "Alire metadata",
+      "required": true,
+      "contains_sensitive_material": false
+    },
+    {
+      "id": "identity.api-documentation",
+      "title": "API documentation",
+      "required": true,
+      "contains_sensitive_material": false
+    },
+    {
+      "id": "identity.package-map",
+      "title": "Package map",
+      "required": true,
+      "contains_sensitive_material": false
+    },
+    {
+      "id": "identity.threat-model",
+      "title": "Threat model revision",
+      "required": true,
+      "contains_sensitive_material": false
+    },
+    {
+      "id": "identity.invariant-traceability",
+      "title": "Invariant traceability report",
+      "required": true,
+      "contains_sensitive_material": false
+    },
+    {
+      "id": "identity.adapter-conformance",
+      "title": "Adapter conformance report",
+      "required": true,
+      "contains_sensitive_material": false
+    },
+    {
+      "id": "identity.crypto-capability-inventory",
+      "title": "Cryptographic capability inventory",
+      "required": true,
+      "contains_sensitive_material": false
+    },
+    {
+      "id": "identity.persisted-format-compatibility",
+      "title": "Persisted-format compatibility report",
+      "required": true,
+      "contains_sensitive_material": false
+    },
+    {
+      "id": "identity.test-summary",
+      "title": "Test summary",
+      "required": true,
+      "contains_sensitive_material": false
+    },
+    {
+      "id": "identity.proof-summary",
+      "title": "Proof summary",
+      "required": true,
+      "contains_sensitive_material": false
+    },
+    {
+      "id": "identity.changelog",
+      "title": "Changelog",
+      "required": true,
+      "contains_sensitive_material": false
+    },
+    {
+      "id": "identity.migration-notes",
+      "title": "Migration notes",
+      "required": true,
+      "contains_sensitive_material": false
+    },
+    {
+      "id": "identity.artifact-digests",
+      "title": "Artifact digests",
+      "required": true,
+      "contains_sensitive_material": false
+    },
+    {
+      "id": "identity.release-provenance",
+      "title": "Release provenance",
+      "required": true,
+      "contains_sensitive_material": false
+    }
+  ],
+  "prohibited_material": [
+    "private-keys",
+    "environment-files",
+    "temporary-secrets",
+    "local-databases",
+    "sensitive-logs",
+    "unreleased-vulnerability-notes",
+    "test-entropy-state",
+    "raw-verifier-payload-reports"
+  ],
+  "provenance_required_fields": [
+    "source-commit",
+    "crate-version",
+    "alire-lockfile-digest",
+    "compiler-version",
+    "cryptolib-version",
+    "project-tools-version",
+    "proof-configuration",
+    "build-profile",
+    "enabled-capabilities"
+  ]
+}

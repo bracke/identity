@@ -1,0 +1,25 @@
+name = "identity"
+description = "Transport-neutral Ada Identity and Authentication library"
+version = "1.0.0-dev"
+
+authors = ["Bent Bracke"]
+maintainers = ["Bent Bracke <bent@bracke.dk>"]
+maintainers-logins = ["bracke"]
+licenses = "MIT OR Apache-2.0 WITH LLVM-exception"
+website = "https://github.com/bracke/identity"
+tags = ["identity", "authentication", "security", "library"]
+
+project-files = ["identity.gpr"]
+
+[[depends-on]]
+gnat_native = "=15.2.1"
+
+[[depends-on]]
+cryptolib = "*"
+
+[[pins]]
+cryptolib = { path = "../cryptolib" }
+
+[[actions]]
+type = "test"
+command = ["sh", "-c", "cd crates/identity_tests && alr build && ./bin/identity_tests"]

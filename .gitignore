@@ -1,0 +1,8 @@
+bin/
+obj/
+lib/
+*.lexch
+*.bexch
+
+crates/*/bin/
+crates/*/obj/

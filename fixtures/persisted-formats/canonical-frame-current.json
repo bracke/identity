@@ -1,0 +1,9 @@
+{
+  "format_id": "identity.codec.canonical-frame",
+  "case": "current",
+  "version": 1,
+  "canonical": true,
+  "valid": true,
+  "label": "identity.fixture.current",
+  "payload": "current"
+}

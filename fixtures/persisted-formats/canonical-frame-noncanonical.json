@@ -1,0 +1,9 @@
+{
+  "format_id": "identity.codec.canonical-frame",
+  "case": "noncanonical",
+  "version": 1,
+  "canonical": false,
+  "valid": false,
+  "label": "identity.fixture.noncanonical",
+  "payload": "noncanonical-length"
+}

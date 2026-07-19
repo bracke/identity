@@ -1,0 +1,21 @@
+{
+  "version": "1.0.0-dev",
+  "event_types": [
+    "identity.authentication.succeeded",
+    "identity.authentication.rejected",
+    "identity.session.created",
+    "identity.session.rotated",
+    "identity.session.revoked",
+    "identity.password.changed",
+    "identity.password.reset.requested",
+    "identity.password.reset.completed",
+    "identity.account.disabled",
+    "identity.contact.verified",
+    "identity.mfa.challenge.completed",
+    "identity.recovery.completed",
+    "identity.api-key.authenticated",
+    "identity.api-key.revoked",
+    "identity.totp.replay-detected",
+    "identity.external.assertion.replay-detected"
+  ]
+}

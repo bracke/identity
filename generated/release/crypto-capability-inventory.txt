@@ -1,0 +1,5 @@
+provider:cryptolib
+password-hashing:registered
+secret-verifiers:registered
+constant-time:registered
+event-integrity:registered

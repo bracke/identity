@@ -1,0 +1,5 @@
+crate-name:identity
+crate-version: 1. 0. 0
+crate-status:development
+build-profile:release-required
+enabled-capabilities:identity-core

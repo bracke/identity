@@ -1,0 +1,98 @@
+identity release gates
+======================
+
+Mandatory V1 gates are orchestrated through project_tools as the implementation
+expands:
+
+- alr build
+- identity_tools executable project_tools workflow manifest validation
+- crates/identity_tests AUnit suite
+- repository conformance
+- cryptolib integration self-tests
+- identity_tools executable crypto algorithm registry validation
+- secret-leak scanning
+- identity_tools executable canary secret-leak validation
+- atomicity and concurrency suites
+- disclosure projection suite
+- persisted-format compatibility
+- identity_tools executable persisted-format registry and fixture validation
+- invariant traceability
+- identity_tools executable invariant traceability validation
+- event registry coverage
+- identity_tools executable event registry coverage validation
+- architecture dependency checks
+- identity_tools executable architecture boundary validation
+- documentation checks
+- GNATprove
+
+Current implemented gate coverage:
+
+- machine-readable project_tools workflow manifest
+- executable project_tools workflow validation for required workflow names,
+  required gates, root package metadata, and project_tools orchestration
+- machine-readable release artifact and prohibited-material inventory
+- executable release artifact registry validation
+- executable crypto registry validation for algorithm identifiers, cryptolib
+  implementation binding, format versions, constant-time verification,
+  separated creation and verification permissions, and deprecation state
+- persisted-format compatibility registry and deterministic fixture inventory
+- executable persisted-format validation for required fixtures, compatibility cases, and fixture files
+- strict GNAT 2022 library build
+- AUnit assertion test executable
+- buildable identity_examples, identity_conformance, and identity_tools companion crates
+- executable transport-neutral identity_lifecycle example
+- cryptolib import isolation check
+- invariant-to-test references for the implemented invariant seed
+- executable invariant registry validation for required tests and failure severity metadata
+- one-time secret extraction and pepper material smoke coverage
+- principal retirement authentication rejection smoke coverage
+- principal and account creation through public operation boundaries
+- identity binding add/change/revoke smoke coverage
+- password enrollment/authentication/change/reset request/reset-completion operation smoke coverage
+- account administrative, lifecycle, requirement, and lock-state transition smoke coverage
+- stateful session verifier-only lookup, renewal, expiration, purge, and revocation smoke coverage
+- stateful session creation through public operation boundary
+- action-token purpose and single-use smoke coverage
+- action-token issuance through public operation boundary
+- immutable safe projection smoke coverage
+- policy snapshot validation smoke coverage
+- public policy family aggregation and validation smoke coverage
+- explicit service and operation context budget/deadline/cancellation smoke coverage
+- repository SPI context, transaction, rollback-on-close, and capability smoke coverage
+- repository SPI child-view and conformance profile smoke coverage
+- identity_conformance executable reports all V1 certification profiles passed
+- internal orchestration, transition, validation, encoding, event, budget, and crypto binding smoke coverage
+- executable architecture validation for internal dependency, cryptolib import, and authorization-boundary source checks
+- bounded deterministic collection and persisted canonical codec smoke coverage
+- typed event attribute redaction, diagnostic, correlation, and audit integrity smoke coverage
+- service-principal, system-actor, MFA policy/enrollment, and step-up binding smoke coverage
+- crypto capability, algorithm registry, canonical crypto input, and key-state smoke coverage
+- deterministic testing clock, entropy, failure checkpoint, barrier, canary, and fixture smoke coverage
+- executable canary secret-leak validation for docs, registries, fixtures, tools, examples, and conformance outputs
+- password/API-key/TOTP/recovery-code policy and lifecycle helper smoke coverage
+- external-provider, key, notification, event-sink, diagnostic, and transport adapter SPI smoke coverage
+- session/token/recovery/attempt/throttle/lockout state-policy helper smoke coverage
+- account/principal/contact/credential lifecycle and projection helper smoke coverage
+- authentication request/context and assurance dependency/evaluation/projection smoke coverage
+- text UTF-8/redaction/message, error code/message/retry/diagnostic, and time helper smoke coverage
+- semantic duration wrapper smoke coverage for policy lifetimes and timeouts
+- token kind and verification contact/policy/result smoke coverage
+- contact verification request, binding mismatch, atomic completion, and single-use smoke coverage
+- contact-change pending successor, atomic activation, and single-use smoke coverage
+- API-key issue, service authentication, rotation, and revocation smoke coverage
+- stateful session rotation, predecessor rejection, family revocation, and principal session revocation smoke coverage
+- credential-derived session revocation smoke coverage
+- provider-derived session revocation smoke coverage
+- event envelope classification and canonical encoding smoke coverage
+- executable event registry validation for public event type constants
+- expanded V1 event registry coverage for authentication, session, password,
+  account, contact, MFA, recovery, API-key, TOTP, and external replay events
+- attempt recording and lockout threshold smoke coverage
+- recovery-code verifier-only single-use and regeneration smoke coverage
+- account recovery begin/continue/complete/cancel and restriction smoke coverage
+- recovery evidence source and reduced-assurance smoke coverage
+- MFA authentication transaction, challenge binding, completion, and satisfaction smoke coverage
+- session-bound step-up assurance upgrade and stale-context revision smoke coverage
+- external-provider binding, revocation, no auto-linking, and replay smoke coverage
+- external-provider definition, assurance mapping, enrollment decision, and projection smoke coverage
+- TOTP pending enrollment, proof-before-activation, replay-state, and factor-removal smoke coverage

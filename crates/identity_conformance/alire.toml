@@ -1,0 +1,20 @@
+name = "identity_conformance"
+description = "Repository conformance harness entry points for identity"
+version = "1.0.0-dev"
+
+authors = ["Bent Bracke"]
+maintainers = ["Bent Bracke <bent@bracke.dk>"]
+maintainers-logins = ["bracke"]
+licenses = "MIT OR Apache-2.0 WITH LLVM-exception"
+
+executables = ["identity_conformance"]
+project-files = ["identity_conformance.gpr"]
+
+[[depends-on]]
+gnat_native = "=15.2.1"
+
+[[depends-on]]
+identity = "*"
+
+[[pins]]
+identity = { path = "../.." }

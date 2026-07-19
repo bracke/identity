@@ -1,0 +1,94 @@
+[project]
+name = "identity"
+crate = "identity"
+root_package = "Identity"
+gpr = "identity.gpr"
+
+[orchestrator]
+required = "project_tools"
+parallel_shell_workflows_allowed = false
+
+[[workflow]]
+name = "check"
+requires_release_profile = false
+gates = ["alire-build", "architecture-scan", "identity-tools-architecture", "identity-tools-workflows", "invariant-registry-parse", "identity-tools-invariants"]
+
+[[workflow]]
+name = "test"
+requires_release_profile = false
+gates = ["aunit", "examples-build", "fixture-determinism", "secret-leak-canary-scan", "identity-tools-secret-leaks"]
+
+[[workflow]]
+name = "security-check"
+requires_release_profile = false
+gates = ["cryptolib-import-isolation", "authorization-boundary-scan", "identity-tools-architecture", "crypto-algorithm-registry", "identity-tools-crypto-validation", "event-redaction", "identity-tools-secret-leaks"]
+
+[[workflow]]
+name = "conformance"
+requires_release_profile = false
+gates = ["repository-conformance", "conformance-crate-build", "memory-reference-adapter"]
+
+[[workflow]]
+name = "proof"
+requires_release_profile = false
+gates = ["gnatprove"]
+
+[[workflow]]
+name = "documentation-check"
+requires_release_profile = false
+gates = ["ai-docs", "public-contract-docs", "threat-model"]
+
+[[workflow]]
+name = "fixtures-check"
+requires_release_profile = false
+gates = ["fixture-determinism", "persisted-format-registry", "persisted-format-compatibility", "identity-tools-persisted-validation"]
+
+[[workflow]]
+name = "release-check"
+requires_release_profile = true
+gates = [
+  "clean-tree-metadata",
+  "lockfile-validation",
+  "release-build",
+  "aunit",
+  "examples-build",
+  "repository-conformance",
+  "conformance-crate-build",
+  "tools-crate-build",
+  "cryptolib-self-tests",
+  "crypto-algorithm-registry",
+  "identity-tools-crypto-validation",
+  "secret-leak-canary-scan",
+  "identity-tools-secret-leaks",
+  "fault-injection",
+  "concurrency",
+  "disclosure",
+  "resource-bounds",
+  "persisted-format-compatibility",
+  "persisted-format-registry",
+  "identity-tools-persisted-validation",
+  "invariant-traceability",
+  "identity-tools-invariants",
+  "event-coverage",
+  "identity-tools-events",
+  "documentation-check",
+  "architecture-scan",
+  "identity-tools-architecture",
+  "identity-tools-workflows",
+  "gnatprove",
+  "archive-hygiene",
+  "artifact-verification"
+]
+
+[[workflow]]
+name = "release-artifacts"
+requires_release_profile = true
+gates = [
+  "release-check",
+  "release-artifact-inventory",
+  "identity-tools-release-validation",
+  "provenance",
+  "digests",
+  "reports",
+  "prohibited-material-scan"
+]

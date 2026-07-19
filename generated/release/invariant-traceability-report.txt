@@ -1,0 +1,3 @@
+invariant-registry:registries/invariants.json
+required-test-metadata:required
+failure-severity:required

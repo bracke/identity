@@ -1,0 +1,25 @@
+with "config/identity_config.gpr";
+with "../cryptolib/cryptolib.gpr";
+
+project Identity is
+   for Library_Name use "identity";
+   for Library_Version use Project'Library_Name & ".so." & Identity_Config.Crate_Version;
+   for Source_Dirs use ("src/public", "src/adapters", "src/internal", "config");
+   for Object_Dir use "obj/" & Identity_Config.Build_Profile;
+   for Create_Missing_Dirs use "True";
+   for Library_Dir use "lib";
+
+   type Library_Type_Type is ("relocatable", "static", "static-pic");
+   Library_Type : Library_Type_Type :=
+     external ("IDENTITY_LIBRARY_TYPE", external ("LIBRARY_TYPE", "static"));
+   for Library_Kind use Library_Type;
+
+   package Compiler is
+      for Default_Switches ("Ada") use
+        Identity_Config.Ada_Compiler_Switches & ("-gnat2022", "-gnatwe", "-gnatyM120", "-gnatX");
+   end Compiler;
+
+   package Binder is
+      for Switches ("Ada") use ("-Es");
+   end Binder;
+end Identity;

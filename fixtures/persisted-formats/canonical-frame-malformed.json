@@ -1,0 +1,9 @@
+{
+  "format_id": "identity.codec.canonical-frame",
+  "case": "malformed",
+  "version": 1,
+  "canonical": false,
+  "valid": false,
+  "label": "identity.fixture.malformed",
+  "payload": "missing-frame-prefix"
+}

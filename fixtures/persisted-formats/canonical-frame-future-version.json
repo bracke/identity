@@ -1,0 +1,9 @@
+{
+  "format_id": "identity.codec.canonical-frame",
+  "case": "future-version",
+  "version": 2,
+  "canonical": true,
+  "valid": false,
+  "label": "identity.fixture.future",
+  "payload": "future-version"
+}

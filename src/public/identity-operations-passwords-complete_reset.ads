@@ -1,0 +1,35 @@
+with Identity.Adapters.Repositories.Memory;
+with Identity.Identifiers.Entities;
+with Identity.Secrets.Passwords;
+with Identity.Secrets.Tokens;
+with Identity.Times;
+with Identity.Tokens.Verification;
+with Identity.Versions;
+
+package Identity.Operations.Passwords.Complete_Reset is
+   type Reset_Completion_Request is record
+      Token                        : Identity.Identifiers.Entities.Token_Id;
+      Principal                    : Identity.Identifiers.Entities.Principal_Id;
+      Secret                       : Identity.Secrets.Tokens.Reset_Token_Secret;
+      Now                          : Identity.Times.Instant;
+      New_Credential               : Identity.Identifiers.Entities.Credential_Id;
+      Password                     : Identity.Secrets.Passwords.New_Password;
+      Expected_Token_Version       : Identity.Versions.Entity_Version;
+      Expected_Predecessor_Version : Identity.Versions.Entity_Version;
+   end record;
+
+   function Execute
+     (Repository     : in out Identity.Adapters.Repositories.Memory.Store;
+      Token          : Identity.Identifiers.Entities.Token_Id;
+      Principal      : Identity.Identifiers.Entities.Principal_Id;
+      Secret         : Identity.Secrets.Tokens.Reset_Token_Secret;
+      Now            : Identity.Times.Instant;
+      New_Credential : Identity.Identifiers.Entities.Credential_Id;
+      Password       : Identity.Secrets.Passwords.New_Password)
+      return Identity.Tokens.Verification.Token_Verification_Outcome;
+
+   function Execute
+     (Repository : in out Identity.Adapters.Repositories.Memory.Store;
+      Request    : Reset_Completion_Request)
+      return Identity.Tokens.Verification.Token_Verification_Outcome;
+end Identity.Operations.Passwords.Complete_Reset;

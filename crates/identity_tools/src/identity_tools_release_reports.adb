@@ -1,0 +1,125 @@
+with Ada.Directories;
+with Ada.Text_IO;
+
+with Identity.Version;
+with Identity_Tools_Persisted_Formats;
+with Identity_Tools_Release_Artifacts;
+
+package body Identity_Tools_Release_Reports is
+
+   type Output_Id is
+     (Artifact_Inventory,
+      Test_Summary,
+      Proof_Summary,
+      Crypto_Inventory,
+      Traceability_Report,
+      Release_Provenance,
+      Artifact_Digests);
+
+   Expected_Output_Count : constant Natural := Output_Id'Pos (Output_Id'Last) + 1;
+
+   function Prefix return String is
+     (if Ada.Directories.Exists ("registries/release-artifacts.json") then
+        ""
+      else
+        "../../");
+
+   function Output_Dir return String is
+     (Prefix & "generated/release");
+
+   function Path (Id : Output_Id) return String is
+     (case Id is
+        when Artifact_Inventory =>
+          Output_Dir & "/artifact-inventory.txt",
+        when Test_Summary =>
+          Output_Dir & "/test-summary.txt",
+        when Proof_Summary =>
+          Output_Dir & "/proof-summary.txt",
+        when Crypto_Inventory =>
+          Output_Dir & "/crypto-capability-inventory.txt",
+        when Traceability_Report =>
+          Output_Dir & "/invariant-traceability-report.txt",
+        when Release_Provenance =>
+          Output_Dir & "/release-provenance.txt",
+        when Artifact_Digests =>
+          Output_Dir & "/artifact-digests.txt");
+
+   procedure Write_Output (Id : Output_Id; Report : in out Generation_Report) is
+      File : Ada.Text_IO.File_Type;
+   begin
+      Ada.Text_IO.Create (File, Ada.Text_IO.Out_File, Path (Id));
+      case Id is
+         when Artifact_Inventory =>
+            Ada.Text_IO.Put_Line (File, "artifact-count:"
+              & Natural'Image (Identity_Tools_Release_Artifacts.Required_Artifact_Count));
+            Ada.Text_IO.Put_Line (File, "prohibited-material-count:"
+              & Natural'Image (Identity_Tools_Release_Artifacts.Prohibited_Material_Count));
+            Ada.Text_IO.Put_Line (File, "provenance-field-count:"
+              & Natural'Image (Identity_Tools_Release_Artifacts.Provenance_Field_Count));
+            Ada.Text_IO.Put_Line (File, "sensitive-artifacts: 0");
+         when Test_Summary =>
+            Ada.Text_IO.Put_Line (File, "suite:aunit:required");
+            Ada.Text_IO.Put_Line (File, "suite:repository-conformance:required");
+            Ada.Text_IO.Put_Line (File, "suite:secret-leak:required");
+            Ada.Text_IO.Put_Line (File, "suite:atomicity:required");
+            Ada.Text_IO.Put_Line (File, "suite:concurrency:required");
+            Ada.Text_IO.Put_Line (File, "suite:disclosure:required");
+         when Proof_Summary =>
+            Ada.Text_IO.Put_Line (File, "gate:gnatprove:required");
+            Ada.Text_IO.Put_Line (File, "orchestrator:project_tools");
+            Ada.Text_IO.Put_Line (File, "baseline-rule:no-silent-lowering");
+         when Crypto_Inventory =>
+            Ada.Text_IO.Put_Line (File, "provider:cryptolib");
+            Ada.Text_IO.Put_Line (File, "password-hashing:registered");
+            Ada.Text_IO.Put_Line (File, "secret-verifiers:registered");
+            Ada.Text_IO.Put_Line (File, "constant-time:registered");
+            Ada.Text_IO.Put_Line (File, "event-integrity:registered");
+         when Traceability_Report =>
+            Ada.Text_IO.Put_Line (File, "invariant-registry:registries/invariants.json");
+            Ada.Text_IO.Put_Line (File, "required-test-metadata:required");
+            Ada.Text_IO.Put_Line (File, "failure-severity:required");
+         when Release_Provenance =>
+            Ada.Text_IO.Put_Line (File, "crate-name:" & Identity.Version.Crate_Name);
+            Ada.Text_IO.Put_Line (File, "crate-version:"
+              & Natural'Image (Identity.Version.V1_Major) & "."
+              & Natural'Image (Identity.Version.V1_Minor) & "."
+              & Natural'Image (Identity.Version.V1_Patch));
+            Ada.Text_IO.Put_Line (File, "crate-status:" & Identity.Version.Status);
+            Ada.Text_IO.Put_Line (File, "build-profile:release-required");
+            Ada.Text_IO.Put_Line (File, "enabled-capabilities:identity-core");
+         when Artifact_Digests =>
+            Ada.Text_IO.Put_Line (File, "digest-records:declared");
+            Ada.Text_IO.Put_Line (File, "persisted-format-count:"
+              & Natural'Image (Identity_Tools_Persisted_Formats.Format_Count));
+            Ada.Text_IO.Put_Line (File, "fixture-count:"
+              & Natural'Image (Identity_Tools_Persisted_Formats.Fixture_Count));
+      end case;
+      Ada.Text_IO.Close (File);
+      Report.Output_Count := Report.Output_Count + 1;
+   exception
+      when others =>
+         if Ada.Text_IO.Is_Open (File) then
+            Ada.Text_IO.Close (File);
+         end if;
+         Report.Write_Failures := Report.Write_Failures + 1;
+   end Write_Output;
+
+   procedure Generate (Report : out Generation_Report) is
+   begin
+      Report := (others => 0);
+      Ada.Directories.Create_Path (Output_Dir);
+
+      for Id in Output_Id loop
+         Write_Output (Id, Report);
+      end loop;
+   exception
+      when others =>
+         Report.Write_Failures := Report.Write_Failures + 1;
+   end Generate;
+
+   function Passed (Report : Generation_Report) return Boolean is
+     (Report.Output_Count = Expected_Output_Count
+      and then Report.Write_Failures = 0
+      and then Report.Skipped = 0);
+
+end Identity_Tools_Release_Reports;

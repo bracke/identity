@@ -1,0 +1,8 @@
+{
+  "format_id": "identity.event.canonical-envelope",
+  "case": "current",
+  "version": 1,
+  "canonical": true,
+  "valid": true,
+  "contains_secret": false
+}

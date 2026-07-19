@@ -1,0 +1,51 @@
+{
+  "version": "1.0.0-dev",
+  "formats": [
+    {
+      "id": "identity.codec.canonical-frame",
+      "current_version": 1,
+      "minimum_supported_version": 1,
+      "maximum_supported_version": 1,
+      "fixtures": [
+        "fixtures/persisted-formats/canonical-frame-current.json",
+        "fixtures/persisted-formats/canonical-frame-historical-v1.json",
+        "fixtures/persisted-formats/canonical-frame-malformed.json",
+        "fixtures/persisted-formats/canonical-frame-maximum-size.json",
+        "fixtures/persisted-formats/canonical-frame-future-version.json",
+        "fixtures/persisted-formats/canonical-frame-noncanonical.json"
+      ]
+    },
+    {
+      "id": "identity.crypto.secret-verifier-text",
+      "current_version": 1,
+      "minimum_supported_version": 1,
+      "maximum_supported_version": 1,
+      "fixtures": [
+        "fixtures/persisted-formats/secret-verifier-current.json",
+        "fixtures/persisted-formats/secret-verifier-malformed.json",
+        "fixtures/persisted-formats/secret-verifier-future-version.json"
+      ]
+    },
+    {
+      "id": "identity.event.canonical-envelope",
+      "current_version": 1,
+      "minimum_supported_version": 1,
+      "maximum_supported_version": 1,
+      "fixtures": [
+        "fixtures/persisted-formats/event-envelope-current.json",
+        "fixtures/persisted-formats/event-envelope-maximum-size.json",
+        "fixtures/persisted-formats/event-envelope-noncanonical.json"
+      ]
+    }
+  ],
+  "requirements": {
+    "deterministic": true,
+    "byte_order": "network",
+    "framed": true,
+    "length_delimited": true,
+    "bounded": true,
+    "future_versions_rejected": true,
+    "malformed_forms_rejected": true,
+    "noncanonical_forms_rejected": true
+  }
+}

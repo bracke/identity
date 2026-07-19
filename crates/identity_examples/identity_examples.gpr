@@ -1,0 +1,15 @@
+with "../../identity.gpr";
+with "config/identity_examples_config.gpr";
+
+project Identity_Examples is
+   for Source_Dirs use ("src", "config");
+   for Main use ("identity_lifecycle.adb");
+   for Object_Dir use "obj";
+   for Exec_Dir use "bin";
+   for Create_Missing_Dirs use "True";
+
+   package Compiler is
+      for Default_Switches ("Ada") use
+        Identity_Examples_Config.Ada_Compiler_Switches & ("-gnat2022", "-gnatwe", "-gnatyM120", "-gnatX");
+   end Compiler;
+end Identity_Examples;

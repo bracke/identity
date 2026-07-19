@@ -1,0 +1,6 @@
+suite:aunit:required
+suite:repository-conformance:required
+suite:secret-leak:required
+suite:atomicity:required
+suite:concurrency:required
+suite:disclosure:required
