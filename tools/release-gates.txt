@@ -73,6 +73,16 @@ so a suite that never ran cannot be reported as satisfied.
     subtree, no authorization-boundary vocabulary
   - canary secret-leak scanning over docs, registries, fixtures, tools,
     examples and conformance output
+  - capability backing (marker identity_tools:capabilities). Every flag that
+    Full_Memory_Profile advertises as True must have its backing SPI primitive
+    actually called from the operations layer, because Admit_Transaction and
+    Admit_Command make admission decisions from those flags. An advertised
+    capability that nothing implements is reported as
+    capabilities:advertised-but-unbacked:<flag>:<primitive>. Mandatory events
+    additionally require the reserve-before-mutate call, reported as
+    capabilities:unreserved:<flag>. The audit helper itself is excluded from
+    the scan: counting it would prove only that the helper exists, not that
+    any operation calls it.
   - documentation checks (marker identity_tools:documentation). Five checks,
     each of which fails the release check on its own:
     1. every documentation artifact named with a .md path in
@@ -91,6 +101,20 @@ so a suite that never ran cannot be reported as satisfied.
     5. CHANGELOG.md carries a section heading for the crate version declared in
        alire.toml (documentation:missing-changelog-section:<version>)
 
+Audit events
+------------
+
+Security-relevant transitions emit an event through Identity.Operations.Audit.
+Because a transition and its audit record must be inseparable, an operation
+reserves event capacity BEFORE mutating (Audit.Capacity_Reserved) and appends
+after the transition (Audit.Emit); a store that cannot accept the event refuses
+the operation rather than applying a change nobody can audit. Conflicts are
+audited as well as successes, so a rejected attempt still leaves a record.
+
+Emission is added as an overload on each operation, so callers that do not pass
+an operation context keep working unchanged -- and produce no audit trail. Code
+that needs an audit trail must use the context-taking entry points.
+
 Known gaps
 ----------
 
@@ -100,6 +124,11 @@ implemented.
 
 - Atomicity: no dedicated suite yet; the store's transaction/rollback behaviour
   is covered only incidentally by the conformance harness.
+- Idempotency is not wired. The store keeps idempotency records and the SPI
+  exposes them, but no operation reserves an idempotency key, so
+  Full_Memory_Profile advertises Idempotency => False. Replaying a command is
+  therefore the caller's problem today. The capability gate keeps the flag
+  honest: flipping it to True without wiring a caller fails the release check.
 - Disclosure projection suite: no dedicated suite exists; disclosure behaviour
   is asserted piecemeal in the AUnit suite.
 - Event registry coverage is structural, not behavioural: the registry and the

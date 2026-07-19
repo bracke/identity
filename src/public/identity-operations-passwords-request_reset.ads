@@ -1,5 +1,6 @@
 with Identity.Adapters.Repositories.Stores;
 with Identity.Identifiers.Entities;
+with Identity.Operations.Contexts;
 with Identity.Secrets.Tokens;
 with Identity.Times;
 with Identity.Tokens.Definitions;
@@ -21,5 +22,17 @@ package Identity.Operations.Passwords.Request_Reset is
    function Execute
      (Repository : in out Identity.Adapters.Repositories.Stores.Store_Interface'Class;
       Request    : Reset_Request)
+      return Identity.Adapters.Repositories.Stores.Command_Status;
+
+   --  Audited form. Emits identity.password.reset.requested for the issued
+   --  token, and refuses the operation if the store cannot accept that event,
+   --  so a reset token is never issued without its audit record.
+   function Execute
+     (Repository  : in out
+        Identity.Adapters.Repositories.Stores.Store_Interface'Class;
+      Request     : Reset_Request;
+      Context     : Identity.Operations.Contexts.Operation_Context;
+      Event       : Identity.Identifiers.Entities.Event_Id;
+      Recorded_At : Identity.Times.Instant)
       return Identity.Adapters.Repositories.Stores.Command_Status;
 end Identity.Operations.Passwords.Request_Reset;

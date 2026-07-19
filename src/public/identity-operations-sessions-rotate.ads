@@ -2,6 +2,7 @@ with Identity.Adapters.Repositories.Stores;
 with Identity.Assurance.Attributes;
 with Identity.Assurance.Levels;
 with Identity.Identifiers.Entities;
+with Identity.Operations.Contexts;
 with Identity.Secrets.Sessions;
 with Identity.Sessions.Definitions;
 with Identity.Text.Bounded;
@@ -56,5 +57,17 @@ package Identity.Operations.Sessions.Rotate is
    function Execute
      (Repository : in out Identity.Adapters.Repositories.Stores.Store_Interface'Class;
       Request    : Staged_Rotate_Request)
+      return Identity.Adapters.Repositories.Stores.Command_Status;
+
+   --  Audited form. Emits identity.session.rotated for the transition, and
+   --  refuses the operation if the store cannot accept that event, so a
+   --  session is never rotated without its audit record.
+   function Execute
+     (Repository  : in out
+        Identity.Adapters.Repositories.Stores.Store_Interface'Class;
+      Request     : Rotate_Request;
+      Context     : Identity.Operations.Contexts.Operation_Context;
+      Event       : Identity.Identifiers.Entities.Event_Id;
+      Recorded_At : Identity.Times.Instant)
       return Identity.Adapters.Repositories.Stores.Command_Status;
 end Identity.Operations.Sessions.Rotate;

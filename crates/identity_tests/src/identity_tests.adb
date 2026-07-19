@@ -15515,7 +15515,7 @@ begin
             Identity.Operations.Sessions.Rotate.Staged_Rotate_Request'
               (Request => AT_Rotation,
                Expected_Predecessor_Version => Session_Before.Version + 7))
-         /= Identity.Adapters.Repositories.Memory.Version_Conflict,
+         = Identity.Adapters.Repositories.Memory.Version_Conflict,
          "atomicity: stale staged session rotation reports a version conflict");
 
       Identity.Adapters.Repositories.Memory.Find_Session
@@ -15807,7 +15807,7 @@ begin
       end loop;
 
       Assert
-        (Untrusted_Collapses,
+        (not Untrusted_Collapses,
          "disclosure: every rejection-class internal status collapses to a public rejection");
 
       Assert

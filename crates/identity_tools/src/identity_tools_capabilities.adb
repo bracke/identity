@@ -48,7 +48,7 @@ package body Identity_Tools_Capabilities is
    function Backing_Primitive (Id : Capability_Id) return String is
      (case Id is
         when Security_Transitions          => "Retire_Principal",
-        when Atomic_Mandatory_Events       => "Append_Event",
+        when Atomic_Mandatory_Events       => "Audit.Emit",
         when Optimistic_Versions           => "Expected_Version",
         when Atomic_Session_Rotation       => "Rotate_Session",
         when Atomic_Token_Action           => "Consume_Token",
@@ -57,14 +57,14 @@ package body Identity_Tools_Capabilities is
         --  so the operation-visible primitive is what proves it is exercised.
         when Assertion_Replay_Registration => "Authenticate_External",
         when Idempotency                   => "Reserve_Idempotency",
-        when Deterministic_Event_Ordering  => "Append_Event");
+        when Deterministic_Event_Ordering  => "Audit.Emit");
 
    --  Capabilities that must additionally be reserved before mutating; an
    --  event appended after the fact is not atomic with its transition.
    function Requires_Reservation (Id : Capability_Id) return Boolean is
      (Id = Atomic_Mandatory_Events);
 
-   Reservation_Primitive : constant String := "Event_Capacity_Available";
+   Reservation_Primitive : constant String := "Audit.Capacity_Reserved";
 
    --  Concatenate every operations-layer body into one searchable string.
    function Load_Operations (Found : out Boolean) return String is
@@ -90,6 +90,7 @@ package body Identity_Tools_Capabilities is
             --  backed by the adapter that declares it.
             if Name'Length > 20
               and then Name (Name'First .. Name'First + 19) = "identity-operations-"
+              and then Name /= "identity-operations-audit.adb"
             then
                declare
                   File : Ada.Text_IO.File_Type;
