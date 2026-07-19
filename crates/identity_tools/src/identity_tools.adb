@@ -1,6 +1,7 @@
 with Ada.Text_IO;
 with Ada.Command_Line;
 with Identity_Tools_Architecture;
+with Identity_Tools_Capabilities;
 with Identity_Tools_Crypto_Validation;
 with Identity_Tools_Documentation;
 with Identity_Tools_Events;
@@ -18,6 +19,7 @@ with Identity_Tools_Workflows;
 
 procedure Identity_Tools is
    Architecture_Report : Identity_Tools_Architecture.Validation_Report;
+   Capability_Report   : Identity_Tools_Capabilities.Validation_Report;
    Crypto_Report       : Identity_Tools_Crypto_Validation.Validation_Report;
    Doc_Report          : Identity_Tools_Documentation.Validation_Report;
    Event_Report        : Identity_Tools_Events.Validation_Report;
@@ -216,6 +218,15 @@ begin
       & Natural'Image (Leak_Report.Files_Checked)
       & ":canary-hits:"
       & Natural'Image (Leak_Report.Canary_Hits));
+   Identity_Tools_Capabilities.Validate (Capability_Report);
+   Ada.Text_IO.Put_Line
+     ("identity_tools:capabilities:"
+      & Natural'Image (Capability_Report.Advertised)
+      & ":backed:"
+      & Natural'Image (Capability_Report.Backed)
+      & ":unbacked:"
+      & Natural'Image (Capability_Report.Unbacked));
+
    Identity_Tools_Evidence.Validate (Evidence_Report);
    Ada.Text_IO.Put_Line
      ("identity_tools:evidence:"
@@ -228,7 +239,8 @@ begin
       & Natural'Image (Evidence_Report.Missing));
 
    Gates_Passed :=
-     Identity_Tools_Evidence.Passed (Evidence_Report)
+     Identity_Tools_Capabilities.Passed (Capability_Report)
+     and then Identity_Tools_Evidence.Passed (Evidence_Report)
      and then Identity_Tools_Architecture.Passed (Architecture_Report)
      and then Identity_Tools_Crypto_Validation.Passed (Crypto_Report)
      and then Identity_Tools_Documentation.Passed (Doc_Report)

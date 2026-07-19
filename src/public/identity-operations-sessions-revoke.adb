@@ -1,3 +1,7 @@
+with Identity.Events.Types;
+with Identity.Operations.Audit;
+with Identity.Text.Bounded;
+
 package body Identity.Operations.Sessions.Revoke is
    function Execute
      (Repository : in out Identity.Adapters.Repositories.Stores.Store_Interface'Class;

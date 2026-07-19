@@ -1160,6 +1160,25 @@ package body Identity.Adapters.Repositories.Serialized is
          raise;
    end Find_API_Key;
 
+   overriding function Event_Capacity_Available
+     (Repository : Store;
+      Count      : Positive) return Boolean
+   is
+   begin
+      Repository.Guard.Seize;
+      declare
+         Result : constant Boolean :=
+           Stores.Event_Capacity_Available (Repository.Inner.all, Count);
+      begin
+         Repository.Guard.Release;
+         return Result;
+      end;
+   exception
+      when others =>
+         Repository.Guard.Release;
+         raise;
+   end Event_Capacity_Available;
+
    overriding function Append_Event
      (Repository : in out Store;
       Event      : Identity.Events.Envelopes.Event_Envelope) return Stores.Command_Status

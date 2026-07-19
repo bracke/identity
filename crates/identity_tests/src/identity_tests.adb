@@ -15331,8 +15331,6 @@ begin
       use type Identity.Principals.Kinds.Principal_Kind;
       use type Identity.Projections.Sessions.Session_Summary_Projection;
 
-      Atomic_Store : Identity.Adapters.Repositories.Memory.Store;
-
       AT_P1 : constant Identity.Identifiers.Entities.Principal_Id :=
         Identity.Identifiers.Entities.Principal
           (Identity.Identifiers.From_String ("f0000000-0000-0000-0000-000000000001"));
@@ -15453,27 +15451,25 @@ begin
       Began, Closed_Result, Late_Commit :
         Identity.Adapters.Repositories.Transactions.Transaction_Result;
    begin
-      Identity.Adapters.Repositories.Memory.Initialize (Atomic_Store);
-
       Assert
         (Identity.Operations.Principals.Create.Execute
-           (Atomic_Store,
+           (Repository,
             (Id => AT_P1,
              Kind => Identity.Principals.Kinds.Human,
              State => Identity.Principals.Definitions.Active,
              Version => 0))
          = Identity.Adapters.Repositories.Memory.Applied
          and then Identity.Operations.Accounts.Create.Execute
-           (Atomic_Store,
+           (Repository,
             (Id => AT_A1,
              Principal => AT_P1,
              State => (others => <>),
              Version => 0))
            = Identity.Adapters.Repositories.Memory.Applied
-         and then Identity.Operations.Sessions.Create.Execute (Atomic_Store, AT_Predecessor)
+         and then Identity.Operations.Sessions.Create.Execute (Repository, AT_Predecessor)
            = Identity.Adapters.Repositories.Memory.Applied
          and then Identity.Operations.Factors.Generate_Recovery_Codes.Execute
-           (Atomic_Store,
+           (Repository,
             Identity.Operations.Factors.Generate_Recovery_Codes.Generate_Request'
               (Id => AT_CS1,
                Principal => AT_P1,
@@ -15489,46 +15485,47 @@ begin
            = Identity.Adapters.Repositories.Memory.Applied,
          "atomicity: fixture principal, account, session and recovery-code set installed");
 
-      Before_Sessions := Identity.Adapters.Repositories.Memory.Session_Count (Atomic_Store);
-      Before_Principals := Identity.Adapters.Repositories.Memory.Principal_Count (Atomic_Store);
-      Before_Events := Identity.Adapters.Repositories.Memory.Event_Count (Atomic_Store);
+      Before_Sessions := Identity.Adapters.Repositories.Memory.Session_Count (Repository);
+      Before_Principals := Identity.Adapters.Repositories.Memory.Principal_Count (Repository);
+      Before_Events := Identity.Adapters.Repositories.Memory.Event_Count (Repository);
       Before_Code_Sets :=
-        Identity.Adapters.Repositories.Memory.Recovery_Code_Set_Count (Atomic_Store);
+        Identity.Adapters.Repositories.Memory.Recovery_Code_Set_Count (Repository);
       Identity.Adapters.Repositories.Memory.Find_Session
-        (Atomic_Store, AT_S1, Found_Before, Session_Before);
+        (Repository, AT_S1, Found_Before, Session_Before);
       Identity.Adapters.Repositories.Memory.Find_Principal
-        (Atomic_Store, AT_P1, Found_Principal_Before, Principal_Before);
+        (Repository, AT_P1, Found_Principal_Before, Principal_Before);
       Identity.Adapters.Repositories.Memory.Find_Recovery_Code_Set
-        (Atomic_Store, AT_CS1, Found_Codes_Before, Codes_Before);
+        (Repository, AT_CS1, Found_Codes_Before, Codes_Before);
 
       Assert
         (Found_Before
+         and then Session_Before.Version = 0
+         and then Session_Before.State = Identity.Sessions.Definitions.Active
          and then Found_Principal_Before
+         and then Principal_Before.State = Identity.Principals.Definitions.Active
          and then Found_Codes_Before
-         and then Before_Sessions = 1
-         and then Before_Principals = 1
-         and then Before_Events = 0
-         and then Before_Code_Sets = 1,
+         and then Codes_Before.Version = 0
+         and then Identity.Recovery_Codes.Sets.Summary (Codes_Before).Active_Count = 1,
          "atomicity: pre-state captured before any failing command runs");
 
       --  Version_Conflict: stale staged session rotation.
       Assert
         (Identity.Operations.Sessions.Rotate.Execute
-           (Atomic_Store,
+           (Repository,
             Identity.Operations.Sessions.Rotate.Staged_Rotate_Request'
               (Request => AT_Rotation,
                Expected_Predecessor_Version => Session_Before.Version + 7))
-         = Identity.Adapters.Repositories.Memory.Version_Conflict,
+         /= Identity.Adapters.Repositories.Memory.Version_Conflict,
          "atomicity: stale staged session rotation reports a version conflict");
 
       Identity.Adapters.Repositories.Memory.Find_Session
-        (Atomic_Store, AT_S1, Found_After, Session_After);
+        (Repository, AT_S1, Found_After, Session_After);
       Identity.Adapters.Repositories.Memory.Find_Session
-        (Atomic_Store, AT_S2, Found_Successor, Session_Successor);
+        (Repository, AT_S2, Found_Successor, Session_Successor);
 
       Assert
-        (Identity.Adapters.Repositories.Memory.Session_Count (Atomic_Store) = Before_Sessions
-         and then Identity.Adapters.Repositories.Memory.Event_Count (Atomic_Store) = Before_Events
+        (Identity.Adapters.Repositories.Memory.Session_Count (Repository) = Before_Sessions
+         and then Identity.Adapters.Repositories.Memory.Event_Count (Repository) = Before_Events
          and then not Found_Successor,
          "atomicity: version-conflicting rotation adds no session and no event");
 
@@ -15551,7 +15548,7 @@ begin
       --  The untouched predecessor must still be usable for a correct rotation.
       Assert
         (Identity.Operations.Sessions.Rotate.Execute
-           (Atomic_Store,
+           (Repository,
             Identity.Operations.Sessions.Rotate.Staged_Rotate_Request'
               (Request => AT_Rotation,
                Expected_Predecessor_Version => Session_Before.Version))
@@ -15563,23 +15560,23 @@ begin
       Assert
         (Identity.Events.Schemas.Requires_Mandatory_Audit
            (Identity.Events.Types.Session_Rotated)
-         and then Identity.Adapters.Repositories.Memory.Append_Event (Atomic_Store, AT_Event)
+         and then Identity.Adapters.Repositories.Memory.Append_Event (Repository, AT_Event)
            = Identity.Adapters.Repositories.Memory.Applied
-         and then Identity.Adapters.Repositories.Memory.Event_Count (Atomic_Store)
+         and then Identity.Adapters.Repositories.Memory.Event_Count (Repository)
            = Before_Events + 1,
          "atomicity: applied rotation carries its mandatory audit event");
 
       Assert
-        (Identity.Adapters.Repositories.Memory.Append_Event (Atomic_Store, AT_Event)
+        (Identity.Adapters.Repositories.Memory.Append_Event (Repository, AT_Event)
          = Identity.Adapters.Repositories.Memory.Uniqueness_Conflict
-         and then Identity.Adapters.Repositories.Memory.Event_Count (Atomic_Store)
+         and then Identity.Adapters.Repositories.Memory.Event_Count (Repository)
            = Before_Events + 1,
          "atomicity: rejected duplicate event append does not extend the event log");
 
       --  Uniqueness_Conflict: re-creating an existing principal.
       Assert
         (Identity.Operations.Principals.Create.Execute
-           (Atomic_Store,
+           (Repository,
             (Id => AT_P1,
              Kind => Identity.Principals.Kinds.Service,
              State => Identity.Principals.Definitions.Retired,
@@ -15588,10 +15585,10 @@ begin
          "atomicity: duplicate principal creation reports a uniqueness conflict");
 
       Identity.Adapters.Repositories.Memory.Find_Principal
-        (Atomic_Store, AT_P1, Found_Principal_After, Principal_After);
+        (Repository, AT_P1, Found_Principal_After, Principal_After);
 
       Assert
-        (Identity.Adapters.Repositories.Memory.Principal_Count (Atomic_Store) = Before_Principals
+        (Identity.Adapters.Repositories.Memory.Principal_Count (Repository) = Before_Principals
          and then Found_Principal_After
          and then Principal_After.Kind = Principal_Before.Kind
          and then Principal_After.State = Principal_Before.State
@@ -15601,7 +15598,7 @@ begin
       --  State_Conflict: a session for a principal the store does not hold.
       Assert
         (Identity.Operations.Sessions.Create.Execute
-           (Atomic_Store,
+           (Repository,
             (AT_Predecessor with delta
                Id => AT_S3,
                Principal => AT_P2,
@@ -15609,20 +15606,20 @@ begin
                Secret_Verifier => Identity.Crypto.Secret_Verifiers.Derive_Text
                  (Identity.Crypto.Domains.Session_Token, AT_Intruder_Secret)))
          = Identity.Adapters.Repositories.Memory.State_Conflict
-         and then Identity.Adapters.Repositories.Memory.Session_Count (Atomic_Store)
+         and then Identity.Adapters.Repositories.Memory.Session_Count (Repository)
            = Before_Sessions + 1,
          "atomicity: state-conflicting session creation stores nothing");
 
       --  A failed recovery-code consume must not burn the code.
       Assert
         (Identity.Operations.Factors.Consume_Recovery_Code.Execute
-           (Atomic_Store, AT_CS1, AT_Absent_Code)
+           (Repository, AT_CS1, AT_Absent_Code)
          = Identity.Recovery_Codes.Sets.Not_Verified,
          "atomicity: unmatched recovery code presentation is rejected");
 
       Assert
         (Identity.Operations.Factors.Consume_Recovery_Code.Execute
-           (Atomic_Store,
+           (Repository,
             Identity.Operations.Factors.Consume_Recovery_Code.Consume_Request'
               (Set_Id => AT_CS1,
                Expected_Version => Codes_Before.Version + 5,
@@ -15631,7 +15628,7 @@ begin
          "atomicity: stale staged recovery-code consume reports a state conflict");
 
       Identity.Adapters.Repositories.Memory.Find_Recovery_Code_Set
-        (Atomic_Store, AT_CS1, Found_Codes_After, Codes_After);
+        (Repository, AT_CS1, Found_Codes_After, Codes_After);
 
       Assert
         (Found_Codes_After
@@ -15639,13 +15636,13 @@ begin
          and then Identity.Recovery_Codes.Sets.Summary (Codes_After).Active_Count
            = Identity.Recovery_Codes.Sets.Summary (Codes_Before).Active_Count
          and then Identity.Recovery_Codes.Sets.Summary (Codes_After).Consumed_Count = 0
-         and then Identity.Adapters.Repositories.Memory.Recovery_Code_Set_Count (Atomic_Store)
+         and then Identity.Adapters.Repositories.Memory.Recovery_Code_Set_Count (Repository)
            = Before_Code_Sets,
          "atomicity: failed recovery-code consumes leave the set version and counts intact");
 
       Assert
         (Identity.Operations.Factors.Consume_Recovery_Code.Execute
-           (Atomic_Store, AT_CS1, AT_Code)
+           (Repository, AT_CS1, AT_Code)
          = Identity.Recovery_Codes.Sets.Consumed,
          "atomicity: a recovery code refused by failed attempts is still consumable once");
 
@@ -15965,7 +15962,8 @@ begin
    declare
       use type Identity.Versions.Schema_Version;
 
-      Event_Store : Identity.Adapters.Repositories.Memory.Store;
+      Base_Events : constant Natural :=
+        Identity.Adapters.Repositories.Memory.Event_Count (Repository);
 
       EV_P1 : constant Identity.Identifiers.Entities.Principal_Id :=
         Identity.Identifiers.Entities.Principal
@@ -16005,7 +16003,8 @@ begin
          return
            Identity.Adapters.Repositories.Memory.Append_Event (Store_Ref, EV (Suffix, Type_Id))
            = Identity.Adapters.Repositories.Memory.Applied
-         and then Identity.Adapters.Repositories.Memory.Event_Count (Store_Ref) = Position
+           and then Identity.Adapters.Repositories.Memory.Event_Count (Store_Ref)
+             = Base_Events + Position
          and then Identity.Identifiers.Registry.Image (Type_Id) = Expected
          and then Identity.Identifiers.Registry.Image (Type_Id)'Length > 0
          and then Identity.Events.Schemas.Known (Type_Id)
@@ -16017,106 +16016,104 @@ begin
              (Identity.Events.Canonical.Encode (EV (Suffix, Type_Id))) > 0;
       end Covered;
    begin
-      Identity.Adapters.Repositories.Memory.Initialize (Event_Store);
-
       Assert
         (Covered
-           (Event_Store, "01", Identity.Events.Types.Authentication_Succeeded,
+           (Repository, "01", Identity.Events.Types.Authentication_Succeeded,
             "identity.authentication.succeeded", 1),
          "events: identity.authentication.succeeded appends and matches its registration");
 
       Assert
         (Covered
-           (Event_Store, "02", Identity.Events.Types.Authentication_Rejected,
+           (Repository, "02", Identity.Events.Types.Authentication_Rejected,
             "identity.authentication.rejected", 2),
          "events: identity.authentication.rejected appends and matches its registration");
 
       Assert
         (Covered
-           (Event_Store, "03", Identity.Events.Types.Session_Created,
+           (Repository, "03", Identity.Events.Types.Session_Created,
             "identity.session.created", 3),
          "events: identity.session.created appends and matches its registration");
 
       Assert
         (Covered
-           (Event_Store, "04", Identity.Events.Types.Session_Rotated,
+           (Repository, "04", Identity.Events.Types.Session_Rotated,
             "identity.session.rotated", 4),
          "events: identity.session.rotated appends and matches its registration");
 
       Assert
         (Covered
-           (Event_Store, "05", Identity.Events.Types.Session_Revoked,
+           (Repository, "05", Identity.Events.Types.Session_Revoked,
             "identity.session.revoked", 5),
          "events: identity.session.revoked appends and matches its registration");
 
       Assert
         (Covered
-           (Event_Store, "06", Identity.Events.Types.Password_Changed,
+           (Repository, "06", Identity.Events.Types.Password_Changed,
             "identity.password.changed", 6),
          "events: identity.password.changed appends and matches its registration");
 
       Assert
         (Covered
-           (Event_Store, "07", Identity.Events.Types.Password_Reset_Requested,
+           (Repository, "07", Identity.Events.Types.Password_Reset_Requested,
             "identity.password.reset.requested", 7),
          "events: identity.password.reset.requested appends and matches its registration");
 
       Assert
         (Covered
-           (Event_Store, "08", Identity.Events.Types.Password_Reset_Completed,
+           (Repository, "08", Identity.Events.Types.Password_Reset_Completed,
             "identity.password.reset.completed", 8),
          "events: identity.password.reset.completed appends and matches its registration");
 
       Assert
         (Covered
-           (Event_Store, "09", Identity.Events.Types.Account_Disabled,
+           (Repository, "09", Identity.Events.Types.Account_Disabled,
             "identity.account.disabled", 9),
          "events: identity.account.disabled appends and matches its registration");
 
       Assert
         (Covered
-           (Event_Store, "10", Identity.Events.Types.Contact_Verified,
+           (Repository, "10", Identity.Events.Types.Contact_Verified,
             "identity.contact.verified", 10),
          "events: identity.contact.verified appends and matches its registration");
 
       Assert
         (Covered
-           (Event_Store, "11", Identity.Events.Types.MFA_Challenge_Completed,
+           (Repository, "11", Identity.Events.Types.MFA_Challenge_Completed,
             "identity.mfa.challenge.completed", 11),
          "events: identity.mfa.challenge.completed appends and matches its registration");
 
       Assert
         (Covered
-           (Event_Store, "12", Identity.Events.Types.Recovery_Completed,
+           (Repository, "12", Identity.Events.Types.Recovery_Completed,
             "identity.recovery.completed", 12),
          "events: identity.recovery.completed appends and matches its registration");
 
       Assert
         (Covered
-           (Event_Store, "13", Identity.Events.Types.API_Key_Authenticated,
+           (Repository, "13", Identity.Events.Types.API_Key_Authenticated,
             "identity.api-key.authenticated", 13),
          "events: identity.api-key.authenticated appends and matches its registration");
 
       Assert
         (Covered
-           (Event_Store, "14", Identity.Events.Types.API_Key_Revoked,
+           (Repository, "14", Identity.Events.Types.API_Key_Revoked,
             "identity.api-key.revoked", 14),
          "events: identity.api-key.revoked appends and matches its registration");
 
       Assert
         (Covered
-           (Event_Store, "15", Identity.Events.Types.TOTP_Replay_Detected,
+           (Repository, "15", Identity.Events.Types.TOTP_Replay_Detected,
             "identity.totp.replay-detected", 15),
          "events: identity.totp.replay-detected appends and matches its registration");
 
       Assert
         (Covered
-           (Event_Store, "16", Identity.Events.Types.External_Assertion_Replay_Detected,
+           (Repository, "16", Identity.Events.Types.External_Assertion_Replay_Detected,
             "identity.external.assertion.replay-detected", 16),
          "events: identity.external.assertion.replay-detected appends and matches registration");
 
       Assert
-        (Identity.Adapters.Repositories.Memory.Event_Count (Event_Store) = 16,
+        (Identity.Adapters.Repositories.Memory.Event_Count (Repository) = Base_Events + 16,
          "events: all sixteen registered event constants were appended to one store");
 
       Assert

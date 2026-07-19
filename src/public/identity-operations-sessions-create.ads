@@ -1,4 +1,5 @@
 with Identity.Adapters.Repositories.Stores;
+with Identity.Operations.Contexts;
 with Identity.Assurance.Attributes;
 with Identity.Assurance.Levels;
 with Identity.Identifiers.Entities;
@@ -44,5 +45,17 @@ package Identity.Operations.Sessions.Create is
    function Execute
      (Repository : in out Identity.Adapters.Repositories.Stores.Store_Interface'Class;
       Request    : Create_Request)
+      return Identity.Adapters.Repositories.Stores.Command_Status;
+
+   --  Audited form. Emits identity.session.created for the transition, and
+   --  refuses the operation if the store cannot accept that event, so a
+   --  session is never created without its audit record.
+   function Execute
+     (Repository  : in out
+        Identity.Adapters.Repositories.Stores.Store_Interface'Class;
+      Request     : Create_Request;
+      Context     : Identity.Operations.Contexts.Operation_Context;
+      Event       : Identity.Identifiers.Entities.Event_Id;
+      Recorded_At : Identity.Times.Instant)
       return Identity.Adapters.Repositories.Stores.Command_Status;
 end Identity.Operations.Sessions.Create;

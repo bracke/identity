@@ -595,6 +595,14 @@ package body Identity.Adapters.Repositories.Recording is
       Stores.Find_API_Key (Repository.Inner.all, Credential, Found, Value);
    end Find_API_Key;
 
+   overriding function Event_Capacity_Available
+     (Repository : Store;
+      Count      : Positive) return Boolean
+   is
+   begin
+      return Stores.Event_Capacity_Available (Repository.Inner.all, Count);
+   end Event_Capacity_Available;
+
    overriding function Append_Event
      (Repository : in out Store;
       Event      : Identity.Events.Envelopes.Event_Envelope) return Stores.Command_Status

@@ -1955,6 +1955,20 @@ package body Identity.Adapters.Repositories.Memory is
       end loop;
    end Find_API_Key;
 
+   overriding function Event_Capacity_Available
+     (Repository : Store;
+      Count      : Positive) return Boolean
+   is
+      Used : Natural := 0;
+   begin
+      for Slot of Repository.Events loop
+         if Slot.Present then
+            Used := Used + 1;
+         end if;
+      end loop;
+      return Used + Count <= Max_Events;
+   end Event_Capacity_Available;
+
    overriding function Append_Event
      (Repository : in out Store;
       Event      : Identity.Events.Envelopes.Event_Envelope) return Command_Status

@@ -336,6 +336,13 @@ package Identity.Adapters.Repositories.Stores is
       Found      : out Boolean;
       Value      : out Identity.API_Keys.Credentials.API_Key_Credential_Record) is abstract;
 
+   --  True when the store can still accept Count more events. Operations that
+   --  must emit a mandatory event check this BEFORE mutating, so a full event
+   --  log cannot leave a transition applied with its audit record missing.
+   function Event_Capacity_Available
+     (Repository : Store_Interface;
+      Count      : Positive) return Boolean is abstract;
+
    function Append_Event
      (Repository : in out Store_Interface;
       Event      : Identity.Events.Envelopes.Event_Envelope) return Command_Status is abstract;

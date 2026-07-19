@@ -335,6 +335,10 @@ package Identity.Adapters.Repositories.Recording is
       Found      : out Boolean;
       Value      : out Identity.API_Keys.Credentials.API_Key_Credential_Record);
 
+   overriding function Event_Capacity_Available
+     (Repository : Store;
+      Count      : Positive) return Boolean;
+
    overriding function Append_Event
      (Repository : in out Store;
       Event      : Identity.Events.Envelopes.Event_Envelope) return Stores.Command_Status;
