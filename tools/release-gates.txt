@@ -13,6 +13,21 @@ reports in generated/release/ from that evidence. It exits non-zero if any
 gate fails. Nothing downstream should treat generated/release/ as meaningful
 unless release-check.sh exited 0 in the same run that produced it.
 
+The repository SPI
+------------------
+
+Public operations depend on Identity.Adapters.Repositories.Stores.Store_Interface,
+not on any adapter. Three adapters implement it:
+
+- Memory     -- the reference in-memory store (not task-safe).
+- Recording  -- wraps any store and counts delegated calls; exists to prove the
+                SPI is pluggable rather than merely declared.
+- Serialized -- wraps any store behind one lock to make it safe to share
+                between tasks; reports Concurrent_Access in its capabilities.
+
+The conformance harness runs all five certification profiles against both the
+memory and recording adapters through the identical code path.
+
 Enforced gates
 --------------
 
@@ -28,6 +43,13 @@ so a suite that never ran cannot be reported as satisfied.
   certification profiles, and fails a profile unless the number of checks
   actually executed equals Required_Check_Count for that profile.
 - crates/identity_examples identity_lifecycle walkthrough        [evidence: examples]
+- concurrency suite (identity_concurrency)                       [evidence: concurrency]
+  16 tasks contend for the same identifiers through the Serialized adapter and
+  the tally must come out exact: one Applied per identifier, every other attempt
+  a uniqueness conflict, every stored principal still readable. Detection of a
+  broken lock is probabilistic by nature -- measured at 9/10 runs against a
+  deliberately disabled lock, with no false failures in 10 runs against a
+  correct one.
 - GNATprove over registries/proof-scope.json                     [evidence: gnatprove]
   Fails on any unproved check, any SPARK legality error, and any non-excluded
   proof-scope package that was not analysed. Currently 616 checks, 0 unproved.
@@ -76,14 +98,14 @@ These are listed as mandatory above the line in earlier revisions of this file
 but are NOT yet enforced. They are recorded here rather than being described as
 implemented.
 
-- Atomicity and concurrency suites: no dedicated suite exists. The in-memory
-  store is single-threaded and its transaction/rollback behaviour is covered
-  only incidentally by the conformance harness.
+- Atomicity: no dedicated suite yet; the store's transaction/rollback behaviour
+  is covered only incidentally by the conformance harness.
 - Disclosure projection suite: no dedicated suite exists; disclosure behaviour
   is asserted piecemeal in the AUnit suite.
 - Event registry coverage is structural, not behavioural: the registry and the
   public constants are checked against each other, but the AUnit suite exercises
   only a subset of the 16 event constants.
-- The repository SPI is not pluggable. Public operations are hard-typed to
-  Identity.Adapters.Repositories.Memory.Store, so the conformance profiles
-  currently certify that one implementation rather than any adapter.
+- The conformance profiles are certified against the two adapters shipped here
+  (memory, and the recording decorator over it). No persistent adapter exists
+  yet, so the SPI has not been exercised against a store with real I/O,
+  transactions or external failure modes.

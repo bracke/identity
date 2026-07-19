@@ -58,6 +58,16 @@ run_crate conformance "$ROOT/crates/identity_conformance" identity_conformance
 echo "== examples =="
 run_crate examples "$ROOT/crates/identity_examples" identity_lifecycle
 
+echo "== concurrency =="
+# Second main in the conformance crate; already built by the step above.
+if out=$("$ROOT/crates/identity_conformance/bin/identity_concurrency" 2>&1); then
+  record concurrency passed \
+    "$(printf '%s\n' "$out" | grep -o 'identity_concurrency:tasks:.*' | tail -1)"
+else
+  record concurrency failed "identity_concurrency reported a failure"
+  printf '%s\n' "$out" | grep ':failed' | head -10
+fi
+
 echo "== gnatprove =="
 # The proof gate is satisfied only when GNATprove reports zero unproved checks
 # for the units in registries/proof-scope.json.

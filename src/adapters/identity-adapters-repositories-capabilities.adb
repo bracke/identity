@@ -9,6 +9,7 @@ package body Identity.Adapters.Repositories.Capabilities is
        Assertion_Replay_Registration => True,
        Idempotency                   => True,
        Deterministic_Event_Ordering  => True,
+       Concurrent_Access             => False,
        Maximum_Atomic_Event_Count    => 64,
        Maximum_Command_Size          => 65_536));
 

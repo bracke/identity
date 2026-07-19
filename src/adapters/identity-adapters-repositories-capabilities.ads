@@ -38,6 +38,10 @@ package Identity.Adapters.Repositories.Capabilities is
       Assertion_Replay_Registration    : Boolean := False;
       Idempotency                      : Boolean := False;
       Deterministic_Event_Ordering     : Boolean := False;
+      --  True only for adapters safe to share between tasks. The reference
+      --  memory adapter is not; wrap it in
+      --  Identity.Adapters.Repositories.Serialized to obtain a store that is.
+      Concurrent_Access                : Boolean := False;
       Maximum_Atomic_Event_Count       : Natural := 0;
       Maximum_Command_Size             : Natural := 0;
    end record;

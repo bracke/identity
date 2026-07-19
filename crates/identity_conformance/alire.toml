@@ -9,7 +9,7 @@ licenses = "MIT OR Apache-2.0 WITH LLVM-exception"
 website = "https://github.com/bracke/identity"
 tags = ["identity", "conformance"]
 
-executables = ["identity_conformance"]
+executables = ["identity_conformance", "identity_concurrency"]
 project-files = ["identity_conformance.gpr"]
 
 [[depends-on]]

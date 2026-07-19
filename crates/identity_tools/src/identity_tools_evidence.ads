@@ -11,7 +11,8 @@ package Identity_Tools_Evidence is
       Conformance,
       Gate_Self_Tests,
       Proof,
-      Examples);
+      Examples,
+      Concurrency);
 
    type Evidence_State is (Passed, Failed, Missing);
 

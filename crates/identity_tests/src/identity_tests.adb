@@ -15321,5 +15321,811 @@ begin
       = Identity.Adapters.Repositories.Memory.State_Conflict,
       "TOTP factor removal cannot be replayed");
 
+   --  ------------------------------------------------------------------
+   --  atomicity suite: a failed repository command leaves no partial
+   --  mutation. Every case captures observable state before the call,
+   --  issues the failing command, and compares the state afterwards.
+   --  ------------------------------------------------------------------
+   declare
+      use type Identity.Principals.Definitions.Principal_Lifecycle;
+      use type Identity.Principals.Kinds.Principal_Kind;
+      use type Identity.Projections.Sessions.Session_Summary_Projection;
+
+      Atomic_Store : Identity.Adapters.Repositories.Memory.Store;
+
+      AT_P1 : constant Identity.Identifiers.Entities.Principal_Id :=
+        Identity.Identifiers.Entities.Principal
+          (Identity.Identifiers.From_String ("f0000000-0000-0000-0000-000000000001"));
+      AT_P2 : constant Identity.Identifiers.Entities.Principal_Id :=
+        Identity.Identifiers.Entities.Principal
+          (Identity.Identifiers.From_String ("f0000000-0000-0000-0000-000000000002"));
+      AT_A1 : constant Identity.Identifiers.Entities.Account_Id :=
+        Identity.Identifiers.Entities.Account
+          (Identity.Identifiers.From_String ("f0000000-0000-0000-0000-000000000011"));
+      AT_F1 : constant Identity.Identifiers.Entities.Session_Family_Id :=
+        Identity.Identifiers.Entities.Session_Family
+          (Identity.Identifiers.From_String ("f0000000-0000-0000-0000-000000000021"));
+      AT_S1 : constant Identity.Identifiers.Entities.Session_Id :=
+        Identity.Identifiers.Entities.Session
+          (Identity.Identifiers.From_String ("f0000000-0000-0000-0000-000000000031"));
+      AT_S2 : constant Identity.Identifiers.Entities.Session_Id :=
+        Identity.Identifiers.Entities.Session
+          (Identity.Identifiers.From_String ("f0000000-0000-0000-0000-000000000032"));
+      AT_S3 : constant Identity.Identifiers.Entities.Session_Id :=
+        Identity.Identifiers.Entities.Session
+          (Identity.Identifiers.From_String ("f0000000-0000-0000-0000-000000000033"));
+      AT_CS1 : constant Identity.Identifiers.Entities.Credential_Set_Id :=
+        Identity.Identifiers.Entities.Credential_Set
+          (Identity.Identifiers.From_String ("f0000000-0000-0000-0000-000000000041"));
+      AT_E1 : constant Identity.Identifiers.Entities.Event_Id :=
+        Identity.Identifiers.Entities.Event
+          (Identity.Identifiers.From_String ("f0000000-0000-0000-0000-000000000051"));
+
+      AT_Predecessor_Secret : constant Identity.Secrets.Sessions.Session_Secret :=
+        Identity.Secrets.Text.From_UTF_8 ("atomicity-predecessor-material");
+      AT_Successor_Secret : constant Identity.Secrets.Sessions.Session_Secret :=
+        Identity.Secrets.Text.From_UTF_8 ("atomicity-successor-material");
+      AT_Intruder_Secret : constant Identity.Secrets.Sessions.Session_Secret :=
+        Identity.Secrets.Text.From_UTF_8 ("atomicity-intruder-material");
+      AT_Code : constant Identity.Secrets.Recovery_Codes.Recovery_Code :=
+        Identity.Secrets.Text.From_UTF_8 ("atomicity-recovery-code-one");
+      AT_Absent_Code : constant Identity.Secrets.Recovery_Codes.Recovery_Code :=
+        Identity.Secrets.Text.From_UTF_8 ("atomicity-recovery-code-absent");
+
+      AT_Predecessor : constant Identity.Sessions.Definitions.Session_Record :=
+        (Id => AT_S1,
+         Family => AT_F1,
+         Principal => AT_P1,
+         Credential => (Present => False),
+         External_Provider => (Present => False),
+         Public_Reference => Identity.Text.Bounded.From_String ("atomicity-session-1"),
+         Secret_Verifier => Identity.Crypto.Secret_Verifiers.Derive_Text
+           (Identity.Crypto.Domains.Session_Token, AT_Predecessor_Secret),
+         Assurance => Identity.Assurance.Levels.Basic,
+         Attributes => (others => <>),
+         Created_At => 10,
+         Original_Authenticated_At => 10,
+         Primary_Authenticated_At => 10,
+         MFA_Completed_At => (Present => False),
+         Step_Up_At => (Present => False),
+         Last_Seen_At => 10,
+         Idle_Expires_At => (Present => True, Time_Point => 500),
+         Absolute_Expires_At => (Present => True, Time_Point => 5000),
+         Remembered => False,
+         Generation => 0,
+         State => Identity.Sessions.Definitions.Active,
+         Version => 0);
+
+      AT_Rotation : constant Identity.Operations.Sessions.Rotate.Rotate_Request :=
+        (Predecessor => AT_S1,
+         Id => AT_S2,
+         Family => AT_F1,
+         Principal => AT_P1,
+         Credential => (Present => False),
+         External_Provider => (Present => False),
+         Public_Reference => Identity.Text.Bounded.From_String ("atomicity-session-2"),
+         Secret => AT_Successor_Secret,
+         Assurance => Identity.Assurance.Levels.Basic,
+         Attributes => (others => <>),
+         Created_At => 20,
+         Original_Authenticated_At => 10,
+         Primary_Authenticated_At => 20,
+         MFA_Completed_At => (Present => False),
+         Step_Up_At => (Present => False),
+         Last_Seen_At => 20,
+         Idle_Expires_At => (Present => True, Time_Point => 600),
+         Absolute_Expires_At => (Present => True, Time_Point => 5000),
+         Remembered => False,
+         Generation => 1);
+
+      AT_Event : constant Identity.Events.Envelopes.Event_Envelope :=
+        (Id => AT_E1,
+         Type_Id => Identity.Events.Types.Session_Rotated,
+         Schema => 1,
+         Occurred_At => 20,
+         Recorded_At => 21,
+         Severity => Identity.Events.Envelopes.Notice,
+         Correlation => R1,
+         Operation => O1,
+         Actor =>
+           (Kind => Identity.Events.Envelopes.Authenticated_Principal,
+            Principal => (Present => True, Value => AT_P1)),
+         Subject => (Present => True, Value => AT_P1),
+         Target => Identity.Text.Bounded.From_String ("session"),
+         Outcome => Identity.Events.Envelopes.Succeeded);
+
+      Before_Sessions   : Natural := 0;
+      Before_Principals : Natural := 0;
+      Before_Events     : Natural := 0;
+      Before_Code_Sets  : Natural := 0;
+
+      Found_Before, Found_After, Found_Successor : Boolean := False;
+      Session_Before, Session_After, Session_Successor :
+        Identity.Sessions.Definitions.Session_Record;
+
+      Found_Principal_Before, Found_Principal_After : Boolean := False;
+      Principal_Before, Principal_After : Identity.Principals.Definitions.Principal_Record;
+
+      Found_Codes_Before, Found_Codes_After : Boolean := False;
+      Codes_Before, Codes_After : Identity.Recovery_Codes.Sets.Recovery_Code_Set_Record;
+
+      Opened_Context : Identity.Adapters.Repositories.Contexts.Repository_Context;
+      Began, Closed_Result, Late_Commit :
+        Identity.Adapters.Repositories.Transactions.Transaction_Result;
+   begin
+      Identity.Adapters.Repositories.Memory.Initialize (Atomic_Store);
+
+      Assert
+        (Identity.Operations.Principals.Create.Execute
+           (Atomic_Store,
+            (Id => AT_P1,
+             Kind => Identity.Principals.Kinds.Human,
+             State => Identity.Principals.Definitions.Active,
+             Version => 0))
+         = Identity.Adapters.Repositories.Memory.Applied
+         and then Identity.Operations.Accounts.Create.Execute
+           (Atomic_Store,
+            (Id => AT_A1,
+             Principal => AT_P1,
+             State => (others => <>),
+             Version => 0))
+           = Identity.Adapters.Repositories.Memory.Applied
+         and then Identity.Operations.Sessions.Create.Execute (Atomic_Store, AT_Predecessor)
+           = Identity.Adapters.Repositories.Memory.Applied
+         and then Identity.Operations.Factors.Generate_Recovery_Codes.Execute
+           (Atomic_Store,
+            Identity.Operations.Factors.Generate_Recovery_Codes.Generate_Request'
+              (Id => AT_CS1,
+               Principal => AT_P1,
+               Created_At => 10,
+               Count => 1,
+               Codes =>
+                 [1 =>
+                    (Code_Id => Identity.Text.Bounded.From_String ("atomicity-code-1"),
+                     Secret => AT_Code),
+                  others =>
+                    (Code_Id => Identity.Text.Bounded.From_String (""),
+                     Secret => AT_Absent_Code)]))
+           = Identity.Adapters.Repositories.Memory.Applied,
+         "atomicity: fixture principal, account, session and recovery-code set installed");
+
+      Before_Sessions := Identity.Adapters.Repositories.Memory.Session_Count (Atomic_Store);
+      Before_Principals := Identity.Adapters.Repositories.Memory.Principal_Count (Atomic_Store);
+      Before_Events := Identity.Adapters.Repositories.Memory.Event_Count (Atomic_Store);
+      Before_Code_Sets :=
+        Identity.Adapters.Repositories.Memory.Recovery_Code_Set_Count (Atomic_Store);
+      Identity.Adapters.Repositories.Memory.Find_Session
+        (Atomic_Store, AT_S1, Found_Before, Session_Before);
+      Identity.Adapters.Repositories.Memory.Find_Principal
+        (Atomic_Store, AT_P1, Found_Principal_Before, Principal_Before);
+      Identity.Adapters.Repositories.Memory.Find_Recovery_Code_Set
+        (Atomic_Store, AT_CS1, Found_Codes_Before, Codes_Before);
+
+      Assert
+        (Found_Before
+         and then Found_Principal_Before
+         and then Found_Codes_Before
+         and then Before_Sessions = 1
+         and then Before_Principals = 1
+         and then Before_Events = 0
+         and then Before_Code_Sets = 1,
+         "atomicity: pre-state captured before any failing command runs");
+
+      --  Version_Conflict: stale staged session rotation.
+      Assert
+        (Identity.Operations.Sessions.Rotate.Execute
+           (Atomic_Store,
+            Identity.Operations.Sessions.Rotate.Staged_Rotate_Request'
+              (Request => AT_Rotation,
+               Expected_Predecessor_Version => Session_Before.Version + 7))
+         = Identity.Adapters.Repositories.Memory.Version_Conflict,
+         "atomicity: stale staged session rotation reports a version conflict");
+
+      Identity.Adapters.Repositories.Memory.Find_Session
+        (Atomic_Store, AT_S1, Found_After, Session_After);
+      Identity.Adapters.Repositories.Memory.Find_Session
+        (Atomic_Store, AT_S2, Found_Successor, Session_Successor);
+
+      Assert
+        (Identity.Adapters.Repositories.Memory.Session_Count (Atomic_Store) = Before_Sessions
+         and then Identity.Adapters.Repositories.Memory.Event_Count (Atomic_Store) = Before_Events
+         and then not Found_Successor,
+         "atomicity: version-conflicting rotation adds no session and no event");
+
+      Assert
+        (Found_After
+         and then Session_After.Version = Session_Before.Version
+         and then Session_After.State = Session_Before.State
+         and then Session_After.Generation = Session_Before.Generation
+         and then Identity.Text.Bounded.Equal
+           (Session_After.Secret_Verifier, Session_Before.Secret_Verifier)
+         and then Identity.Text.Bounded.Equal
+           (Session_After.Public_Reference, Session_Before.Public_Reference),
+         "atomicity: version-conflicting rotation leaves the predecessor session untouched");
+
+      Assert
+        (Identity.Projections.Sessions.Summary (Session_After)
+         = Identity.Projections.Sessions.Summary (Session_Before),
+         "atomicity: version-conflicting rotation leaves the session projection unchanged");
+
+      --  The untouched predecessor must still be usable for a correct rotation.
+      Assert
+        (Identity.Operations.Sessions.Rotate.Execute
+           (Atomic_Store,
+            Identity.Operations.Sessions.Rotate.Staged_Rotate_Request'
+              (Request => AT_Rotation,
+               Expected_Predecessor_Version => Session_Before.Version))
+         = Identity.Adapters.Repositories.Memory.Applied,
+         "atomicity: predecessor session survives a failed rotation and still rotates");
+
+      --  Mandatory-event atomicity: the applied transition is paired with its
+      --  mandatory audit event; the failed transition above emitted none.
+      Assert
+        (Identity.Events.Schemas.Requires_Mandatory_Audit
+           (Identity.Events.Types.Session_Rotated)
+         and then Identity.Adapters.Repositories.Memory.Append_Event (Atomic_Store, AT_Event)
+           = Identity.Adapters.Repositories.Memory.Applied
+         and then Identity.Adapters.Repositories.Memory.Event_Count (Atomic_Store)
+           = Before_Events + 1,
+         "atomicity: applied rotation carries its mandatory audit event");
+
+      Assert
+        (Identity.Adapters.Repositories.Memory.Append_Event (Atomic_Store, AT_Event)
+         = Identity.Adapters.Repositories.Memory.Uniqueness_Conflict
+         and then Identity.Adapters.Repositories.Memory.Event_Count (Atomic_Store)
+           = Before_Events + 1,
+         "atomicity: rejected duplicate event append does not extend the event log");
+
+      --  Uniqueness_Conflict: re-creating an existing principal.
+      Assert
+        (Identity.Operations.Principals.Create.Execute
+           (Atomic_Store,
+            (Id => AT_P1,
+             Kind => Identity.Principals.Kinds.Service,
+             State => Identity.Principals.Definitions.Retired,
+             Version => 99))
+         = Identity.Adapters.Repositories.Memory.Uniqueness_Conflict,
+         "atomicity: duplicate principal creation reports a uniqueness conflict");
+
+      Identity.Adapters.Repositories.Memory.Find_Principal
+        (Atomic_Store, AT_P1, Found_Principal_After, Principal_After);
+
+      Assert
+        (Identity.Adapters.Repositories.Memory.Principal_Count (Atomic_Store) = Before_Principals
+         and then Found_Principal_After
+         and then Principal_After.Kind = Principal_Before.Kind
+         and then Principal_After.State = Principal_Before.State
+         and then Principal_After.Version = Principal_Before.Version,
+         "atomicity: rejected duplicate principal leaves the stored principal unmodified");
+
+      --  State_Conflict: a session for a principal the store does not hold.
+      Assert
+        (Identity.Operations.Sessions.Create.Execute
+           (Atomic_Store,
+            (AT_Predecessor with delta
+               Id => AT_S3,
+               Principal => AT_P2,
+               Public_Reference => Identity.Text.Bounded.From_String ("atomicity-session-3"),
+               Secret_Verifier => Identity.Crypto.Secret_Verifiers.Derive_Text
+                 (Identity.Crypto.Domains.Session_Token, AT_Intruder_Secret)))
+         = Identity.Adapters.Repositories.Memory.State_Conflict
+         and then Identity.Adapters.Repositories.Memory.Session_Count (Atomic_Store)
+           = Before_Sessions + 1,
+         "atomicity: state-conflicting session creation stores nothing");
+
+      --  A failed recovery-code consume must not burn the code.
+      Assert
+        (Identity.Operations.Factors.Consume_Recovery_Code.Execute
+           (Atomic_Store, AT_CS1, AT_Absent_Code)
+         = Identity.Recovery_Codes.Sets.Not_Verified,
+         "atomicity: unmatched recovery code presentation is rejected");
+
+      Assert
+        (Identity.Operations.Factors.Consume_Recovery_Code.Execute
+           (Atomic_Store,
+            Identity.Operations.Factors.Consume_Recovery_Code.Consume_Request'
+              (Set_Id => AT_CS1,
+               Expected_Version => Codes_Before.Version + 5,
+               Code => AT_Code))
+         = Identity.Recovery_Codes.Sets.State_Conflict,
+         "atomicity: stale staged recovery-code consume reports a state conflict");
+
+      Identity.Adapters.Repositories.Memory.Find_Recovery_Code_Set
+        (Atomic_Store, AT_CS1, Found_Codes_After, Codes_After);
+
+      Assert
+        (Found_Codes_After
+         and then Codes_After.Version = Codes_Before.Version
+         and then Identity.Recovery_Codes.Sets.Summary (Codes_After).Active_Count
+           = Identity.Recovery_Codes.Sets.Summary (Codes_Before).Active_Count
+         and then Identity.Recovery_Codes.Sets.Summary (Codes_After).Consumed_Count = 0
+         and then Identity.Adapters.Repositories.Memory.Recovery_Code_Set_Count (Atomic_Store)
+           = Before_Code_Sets,
+         "atomicity: failed recovery-code consumes leave the set version and counts intact");
+
+      Assert
+        (Identity.Operations.Factors.Consume_Recovery_Code.Execute
+           (Atomic_Store, AT_CS1, AT_Code)
+         = Identity.Recovery_Codes.Sets.Consumed,
+         "atomicity: a recovery code refused by failed attempts is still consumable once");
+
+      --  Rollback on close: staged work is discarded, never committed.
+      Opened_Context :=
+        Identity.Adapters.Repositories.Contexts.Opened
+          (Identity.Adapters.Repositories.Memory.Capabilities);
+      Began :=
+        Identity.Adapters.Repositories.Transactions.Begin_Transaction
+          (Opened_Context.State, Identity.Adapters.Repositories.Read_Write);
+      Closed_Result :=
+        Identity.Adapters.Repositories.Transactions.Close (Began.State);
+      Late_Commit :=
+        Identity.Adapters.Repositories.Transactions.Commit (Closed_Result.State);
+
+      Assert
+        (Identity.Adapters.Repositories.Transactions.Active (Began)
+         and then Identity.Adapters.Repositories.Transactions.Rolled_Back (Closed_Result)
+         and then not Identity.Adapters.Repositories.Transactions.Committed (Closed_Result),
+         "atomicity: closing an active transaction rolls back rather than commits");
+
+      Assert
+        (Identity.Adapters.Repositories.Transactions.Failed (Late_Commit)
+         and then Late_Commit.Failure.Code
+           = Identity.Adapters.Repositories.Failures.Already_Finalized,
+         "atomicity: staged work discarded on close cannot be committed afterwards");
+   end;
+
+   --  ------------------------------------------------------------------
+   --  disclosure projection suite: untrusted disclosure never leaks the
+   --  internal cause, trusted disclosure keeps causes distinct, and no
+   --  projection carries secret or verifier material.
+   --  ------------------------------------------------------------------
+   declare
+      use type Identity.Operations.Disclosure.Disclosure_Profile_Rules;
+      use type Identity.Passwords.Credentials.Password_Credential_Projection;
+      use type Identity.Projections.Sessions.Session_Summary_Projection;
+
+      Untrusted : constant Identity.Operations.Disclosure.Disclosure_Profile :=
+        Identity.Operations.Disclosure.Untrusted_Interactive;
+      Untrusted_Machine : constant Identity.Operations.Disclosure.Disclosure_Profile :=
+        Identity.Operations.Disclosure.Untrusted_API;
+      Trusted : constant Identity.Operations.Disclosure.Disclosure_Profile :=
+        Identity.Operations.Disclosure.Trusted_Administrative;
+
+      DS_P1 : constant Identity.Identifiers.Entities.Principal_Id :=
+        Identity.Identifiers.Entities.Principal
+          (Identity.Identifiers.From_String ("f1000000-0000-0000-0000-000000000001"));
+      DS_C1 : constant Identity.Identifiers.Entities.Credential_Id :=
+        Identity.Identifiers.Entities.Credential
+          (Identity.Identifiers.From_String ("f1000000-0000-0000-0000-000000000011"));
+      DS_F1 : constant Identity.Identifiers.Entities.Session_Family_Id :=
+        Identity.Identifiers.Entities.Session_Family
+          (Identity.Identifiers.From_String ("f1000000-0000-0000-0000-000000000021"));
+      DS_S1 : constant Identity.Identifiers.Entities.Session_Id :=
+        Identity.Identifiers.Entities.Session
+          (Identity.Identifiers.From_String ("f1000000-0000-0000-0000-000000000031"));
+      DS_E1 : constant Identity.Identifiers.Entities.Event_Id :=
+        Identity.Identifiers.Entities.Event
+          (Identity.Identifiers.From_String ("f1000000-0000-0000-0000-000000000041"));
+
+      DS_Secret_One : constant Identity.Secrets.Sessions.Session_Secret :=
+        Identity.Secrets.Text.From_UTF_8 ("disclosure-session-material-one");
+      DS_Secret_Two : constant Identity.Secrets.Sessions.Session_Secret :=
+        Identity.Secrets.Text.From_UTF_8 ("disclosure-session-material-two");
+
+      DS_Session_One : constant Identity.Sessions.Definitions.Session_Record :=
+        (Id => DS_S1,
+         Family => DS_F1,
+         Principal => DS_P1,
+         Credential => (Present => True, Value => DS_C1),
+         External_Provider => (Present => False),
+         Public_Reference => Identity.Text.Bounded.From_String ("disclosure-session-1"),
+         Secret_Verifier => Identity.Crypto.Secret_Verifiers.Derive_Text
+           (Identity.Crypto.Domains.Session_Token, DS_Secret_One),
+         Assurance => Identity.Assurance.Levels.Basic,
+         Attributes => (others => <>),
+         Created_At => 30,
+         Original_Authenticated_At => 30,
+         Primary_Authenticated_At => 30,
+         MFA_Completed_At => (Present => False),
+         Step_Up_At => (Present => False),
+         Last_Seen_At => 30,
+         Idle_Expires_At => (Present => True, Time_Point => 700),
+         Absolute_Expires_At => (Present => True, Time_Point => 7000),
+         Remembered => False,
+         Generation => 0,
+         State => Identity.Sessions.Definitions.Active,
+         Version => 0);
+
+      DS_Session_Two : constant Identity.Sessions.Definitions.Session_Record :=
+        (DS_Session_One with delta
+           Secret_Verifier => Identity.Crypto.Secret_Verifiers.Derive_Text
+             (Identity.Crypto.Domains.Session_Token, DS_Secret_Two));
+
+      DS_Password_One : constant Identity.Passwords.Credentials.Password_Credential_Record :=
+        (Id => DS_C1,
+         Principal => DS_P1,
+         State => Identity.Credentials.States.Active,
+         Verifier => Identity.Text.Bounded.From_String ("disclosure-password-verifier-one"),
+         Version => 3);
+      DS_Password_Two : constant Identity.Passwords.Credentials.Password_Credential_Record :=
+        (DS_Password_One with delta
+           Verifier => Identity.Text.Bounded.From_String ("disclosure-password-verifier-two"));
+
+      DS_Sensitive : constant Identity.Text.Bounded.Bounded_Text :=
+        Identity.Text.Bounded.From_String ("disclosure-sensitive-target");
+
+      DS_Event_Redacted : constant Identity.Events.Envelopes.Event_Envelope :=
+        (Id => DS_E1,
+         Type_Id => Identity.Events.Types.Session_Revoked,
+         Schema => 1,
+         Occurred_At => 30,
+         Recorded_At => 31,
+         Severity => Identity.Events.Envelopes.Notice,
+         Correlation => R1,
+         Operation => O1,
+         Actor =>
+           (Kind => Identity.Events.Envelopes.Authenticated_Principal,
+            Principal => (Present => True, Value => DS_P1)),
+         Subject => (Present => True, Value => DS_P1),
+         Target => Identity.Redaction.Public_Image
+           (Identity.Events.Classification.Sensitive, DS_Sensitive),
+         Outcome => Identity.Events.Envelopes.Succeeded);
+
+      DS_Event_Raw : constant Identity.Events.Envelopes.Event_Envelope :=
+        (DS_Event_Redacted with delta Target => DS_Sensitive);
+
+      DS_Projected : constant Identity.Projections.Events.Event_Projection := DS_Event_Redacted;
+
+      Untrusted_Collapses : Boolean := True;
+      Profiles_Agree      : Boolean := True;
+      Token_Collapses     : Boolean := True;
+   begin
+      for Status in Identity.Results.Operation_Status loop
+         if Identity.Results.Disclosure_Generic_Rejection (Status)
+           or else Identity.Results.Conflict_Status (Status)
+         then
+            if Identity.Operations.Disclosure.To_Disclosure_Safe_Result (Status, Untrusted)
+              not in Identity.Operations.Disclosure.Authentication_Rejected
+                   | Identity.Operations.Disclosure.Authentication_Throttled
+            then
+               Untrusted_Collapses := False;
+            end if;
+         end if;
+
+         if Identity.Operations.Disclosure.To_Disclosure_Safe_Result (Status, Untrusted)
+           /= Identity.Operations.Disclosure.To_Disclosure_Safe_Result (Status, Untrusted_Machine)
+         then
+            Profiles_Agree := False;
+         end if;
+      end loop;
+
+      for Outcome in Identity.Tokens.Verification.Token_Verification_Outcome loop
+         if not Identity.Tokens.Verification.Is_Valid (Outcome)
+           and then Outcome /= Identity.Tokens.Verification.Infrastructure_Failure
+           and then Identity.Operations.Disclosure.To_Disclosure_Safe_Result (Outcome, Untrusted)
+             /= Identity.Operations.Disclosure.Token_Invalid_Or_Expired
+         then
+            Token_Collapses := False;
+         end if;
+      end loop;
+
+      Assert
+        (Untrusted_Collapses,
+         "disclosure: every rejection-class internal status collapses to a public rejection");
+
+      Assert
+        (Profiles_Agree,
+         "disclosure: the two untrusted profiles disclose identically for every internal status");
+
+      Assert
+        (Token_Collapses,
+         "disclosure: every invalid token outcome collapses to one untrusted token status");
+
+      Assert
+        (Identity.Operations.Disclosure.To_Disclosure_Safe_Result
+           (Identity.Results.Rejected, Untrusted)
+         = Identity.Operations.Disclosure.To_Disclosure_Safe_Result
+           (Identity.Results.Conflict, Untrusted)
+         and then Identity.Operations.Disclosure.To_Disclosure_Safe_Result
+           (Identity.Results.Conflict, Untrusted)
+           = Identity.Operations.Disclosure.To_Disclosure_Safe_Result
+             (Identity.Results.Additional_Factor_Required, Untrusted)
+         and then Identity.Operations.Disclosure.To_Disclosure_Safe_Result
+           (Identity.Results.Additional_Factor_Required, Untrusted)
+           = Identity.Operations.Disclosure.To_Disclosure_Safe_Result
+             (Identity.Results.Verification_Required, Untrusted),
+         "disclosure: untrusted disclosure cannot distinguish rejection, conflict or step-up");
+
+      Assert
+        (Identity.Operations.Disclosure.To_Disclosure_Safe_Result
+           (Identity.Results.Conflict, Trusted)
+         /= Identity.Operations.Disclosure.To_Disclosure_Safe_Result
+           (Identity.Results.Rejected, Trusted)
+         and then Identity.Operations.Disclosure.To_Disclosure_Safe_Result
+           (Identity.Results.Additional_Factor_Required, Trusted)
+           /= Identity.Operations.Disclosure.To_Disclosure_Safe_Result
+             (Identity.Results.Rejected, Trusted)
+         and then Identity.Operations.Disclosure.Conflict_Detail_Visible
+           (Identity.Operations.Disclosure.To_Disclosure_Safe_Result
+              (Identity.Results.Conflict, Trusted))
+         and then Identity.Operations.Disclosure.Additional_Action
+           (Identity.Operations.Disclosure.To_Disclosure_Safe_Result
+              (Identity.Results.Additional_Factor_Required, Trusted)),
+         "disclosure: trusted disclosure keeps conflict and step-up causes distinct");
+
+      Assert
+        (Identity.Operations.Disclosure.To_Disclosure_Safe_Result
+           (Identity.Tokens.Verification.State_Conflict, Trusted)
+         /= Identity.Operations.Disclosure.To_Disclosure_Safe_Result
+           (Identity.Tokens.Verification.Expired, Trusted)
+         and then Identity.Operations.Disclosure.To_Disclosure_Safe_Result
+           (Identity.Tokens.Verification.State_Conflict, Untrusted)
+           = Identity.Operations.Disclosure.To_Disclosure_Safe_Result
+             (Identity.Tokens.Verification.Expired, Untrusted),
+         "disclosure: token state conflict is visible only to trusted disclosure");
+
+      Assert
+        (Identity.Operations.Disclosure.Reveals_No_More_Than (Untrusted, Trusted)
+         and then Identity.Operations.Disclosure.Reveals_No_More_Than (Untrusted, Untrusted_Machine)
+         and then not Identity.Operations.Disclosure.Reveals_No_More_Than (Trusted, Untrusted)
+         and then not Identity.Operations.Disclosure.Reveals_No_More_Than
+           (Identity.Operations.Disclosure.Internal_Operations, Trusted),
+         "disclosure: the profile lattice orders untrusted strictly below trusted");
+
+      Assert
+        (Identity.Operations.Disclosure.Rules_For (Untrusted)
+         = Identity.Operations.Disclosure.Rules_For (Untrusted_Machine)
+         and then Identity.Operations.Disclosure.Rules_For (Untrusted)
+           = Identity.Operations.Disclosure.Disclosure_Profile_Rules'(others => False),
+         "disclosure: untrusted profiles carry no detail flag at all");
+
+      Assert
+        (not Identity.Operations.Disclosure.Rules_For (Trusted).Token_State_Detail
+         and then not Identity.Operations.Disclosure.Rules_For
+           (Identity.Operations.Disclosure.Authenticated_Self_Service).Token_State_Detail
+         and then Identity.Operations.Disclosure.Rules_For
+           (Identity.Operations.Disclosure.Internal_Operations).Token_State_Detail,
+         "disclosure: token state detail is reserved to internal operations");
+
+      Assert
+        (Identity.Identifiers.Registry.Image
+           (Identity.Errors.Public.To_Public
+              ((Category => Identity.Errors.Rejection, others => <>)).Code)
+         = Identity.Identifiers.Registry.Image
+           (Identity.Errors.Public.To_Public
+              ((Category => Identity.Errors.Invalid_Input, others => <>)).Code)
+         and then Identity.Errors.Public.Generic_Authentication_Rejection
+           (Identity.Errors.Public.To_Public
+              ((Category => Identity.Errors.Additional_Action_Required, others => <>)))
+         and then not Identity.Errors.Public.Generic_Authentication_Rejection
+           (Identity.Errors.Public.To_Public
+              ((Category => Identity.Errors.Conflict, others => <>))),
+         "disclosure: public error codes collapse rejection causes but keep conflict apart");
+
+      Assert
+        (not Identity.Errors.Public.To_Public
+           ((Category => Identity.Errors.Internal_Invariant_Failure,
+             Cause => Identity.Errors.Bug,
+             others => <>)).Diagnostic_Allowed
+         and then not Identity.Errors.Public.Diagnostic_Disclosure_Allowed
+           (Identity.Errors.Public.To_Public
+              ((Category => Identity.Errors.Internal_Invariant_Failure,
+                Cause => Identity.Errors.Bug,
+                others => <>))),
+         "disclosure: internal invariant failures disclose no diagnostic by default");
+
+      Assert
+        (Identity.Projections.Sessions.Summary (DS_Session_One)
+         = Identity.Projections.Sessions.Summary (DS_Session_Two)
+         and then not Identity.Text.Bounded.Equal
+           (DS_Session_One.Secret_Verifier, DS_Session_Two.Secret_Verifier)
+         and then Identity.Projections.Sessions.Summary (DS_Session_One).Verifier_Present,
+         "disclosure: session projections differ in no way when only the verifier differs");
+
+      Assert
+        (Identity.Passwords.Credentials.Summary (DS_Password_One)
+         = Identity.Passwords.Credentials.Summary (DS_Password_Two)
+         and then not Identity.Text.Bounded.Equal
+           (DS_Password_One.Verifier, DS_Password_Two.Verifier)
+         and then Identity.Passwords.Credentials.Summary (DS_Password_One).Verifier_Present,
+         "disclosure: password projections report verifier presence but not verifier material");
+
+      Assert
+        (Identity.Text.Bounded.Equal
+           (DS_Event_Redacted.Target, Identity.Text.Redacted.Redacted)
+         and then not Identity.Text.Bounded.Equal (DS_Event_Redacted.Target, DS_Sensitive)
+         and then Identity.Text.Bounded.Equal
+           (DS_Projected.Target, Identity.Text.Redacted.Redacted),
+         "disclosure: redacted target text stays redacted after event projection");
+
+      Assert
+        (not Identity.Text.Bounded.Equal
+           (Identity.Events.Canonical.Encode (DS_Event_Redacted),
+            Identity.Events.Canonical.Encode (DS_Event_Raw))
+         and then Identity.Text.Bounded.Equal
+           (Identity.Events.Canonical.Encode (DS_Event_Redacted),
+            Identity.Events.Canonical.Encode
+              ((DS_Event_Redacted with delta
+                  Target => Identity.Text.Redacted.Redacted))),
+         "disclosure: canonical encoding of a redacted event carries the redaction, not the value");
+
+      Assert
+        (Identity.Projections.Events.Has_Subject_Principal (DS_Projected)
+         and then Identity.Projections.Events.Actor_Matches_Subject (DS_Projected)
+         and then not Identity.Projections.Events.Requires_Operational_Attention
+           (DS_Projected),
+         "disclosure: event projection exposes only structural actor and subject facts");
+   end;
+
+   --  ------------------------------------------------------------------
+   --  event registry coverage: each of the sixteen public event constants
+   --  is appended through the real store, then checked against the schema
+   --  registry, its registered identifier and its canonical encoding.
+   --  ------------------------------------------------------------------
+   declare
+      use type Identity.Versions.Schema_Version;
+
+      Event_Store : Identity.Adapters.Repositories.Memory.Store;
+
+      EV_P1 : constant Identity.Identifiers.Entities.Principal_Id :=
+        Identity.Identifiers.Entities.Principal
+          (Identity.Identifiers.From_String ("f2000000-0000-0000-0000-000000000001"));
+
+      function EV_Id (Suffix : String) return Identity.Identifiers.Entities.Event_Id is
+        (Identity.Identifiers.Entities.Event
+           (Identity.Identifiers.From_String ("f2000000-0000-0000-0000-0000000000" & Suffix)));
+
+      function EV
+        (Suffix  : String;
+         Type_Id : Identity.Identifiers.Registry.Registry_Id)
+         return Identity.Events.Envelopes.Event_Envelope is
+        ((Id => EV_Id (Suffix),
+          Type_Id => Type_Id,
+          Schema => 1,
+          Occurred_At => 40,
+          Recorded_At => 41,
+          Severity => Identity.Events.Envelopes.Informational,
+          Correlation => R1,
+          Operation => O1,
+          Actor =>
+            (Kind => Identity.Events.Envelopes.Authenticated_Principal,
+             Principal => (Present => True, Value => EV_P1)),
+          Subject => (Present => True, Value => EV_P1),
+          Target => Identity.Text.Bounded.From_String ("registry-coverage"),
+          Outcome => Identity.Events.Envelopes.Succeeded));
+
+      function Covered
+        (Store_Ref : in out Identity.Adapters.Repositories.Memory.Store;
+         Suffix    : String;
+         Type_Id   : Identity.Identifiers.Registry.Registry_Id;
+         Expected  : String;
+         Position  : Positive) return Boolean
+      is
+      begin
+         return
+           Identity.Adapters.Repositories.Memory.Append_Event (Store_Ref, EV (Suffix, Type_Id))
+           = Identity.Adapters.Repositories.Memory.Applied
+         and then Identity.Adapters.Repositories.Memory.Event_Count (Store_Ref) = Position
+         and then Identity.Identifiers.Registry.Image (Type_Id) = Expected
+         and then Identity.Identifiers.Registry.Image (Type_Id)'Length > 0
+         and then Identity.Events.Schemas.Known (Type_Id)
+         and then Identity.Events.Schemas.Requires_Mandatory_Audit (Type_Id)
+         and then Identity.Events.Schemas.Registration_For (Type_Id).Schema.Version = 1
+         and then Identity.Events.Classification.Allowed_In_Ordinary_Event
+           (Identity.Events.Schemas.Registration_For (Type_Id).Class)
+           and then Identity.Text.Bounded.Length
+             (Identity.Events.Canonical.Encode (EV (Suffix, Type_Id))) > 0;
+      end Covered;
+   begin
+      Identity.Adapters.Repositories.Memory.Initialize (Event_Store);
+
+      Assert
+        (Covered
+           (Event_Store, "01", Identity.Events.Types.Authentication_Succeeded,
+            "identity.authentication.succeeded", 1),
+         "events: identity.authentication.succeeded appends and matches its registration");
+
+      Assert
+        (Covered
+           (Event_Store, "02", Identity.Events.Types.Authentication_Rejected,
+            "identity.authentication.rejected", 2),
+         "events: identity.authentication.rejected appends and matches its registration");
+
+      Assert
+        (Covered
+           (Event_Store, "03", Identity.Events.Types.Session_Created,
+            "identity.session.created", 3),
+         "events: identity.session.created appends and matches its registration");
+
+      Assert
+        (Covered
+           (Event_Store, "04", Identity.Events.Types.Session_Rotated,
+            "identity.session.rotated", 4),
+         "events: identity.session.rotated appends and matches its registration");
+
+      Assert
+        (Covered
+           (Event_Store, "05", Identity.Events.Types.Session_Revoked,
+            "identity.session.revoked", 5),
+         "events: identity.session.revoked appends and matches its registration");
+
+      Assert
+        (Covered
+           (Event_Store, "06", Identity.Events.Types.Password_Changed,
+            "identity.password.changed", 6),
+         "events: identity.password.changed appends and matches its registration");
+
+      Assert
+        (Covered
+           (Event_Store, "07", Identity.Events.Types.Password_Reset_Requested,
+            "identity.password.reset.requested", 7),
+         "events: identity.password.reset.requested appends and matches its registration");
+
+      Assert
+        (Covered
+           (Event_Store, "08", Identity.Events.Types.Password_Reset_Completed,
+            "identity.password.reset.completed", 8),
+         "events: identity.password.reset.completed appends and matches its registration");
+
+      Assert
+        (Covered
+           (Event_Store, "09", Identity.Events.Types.Account_Disabled,
+            "identity.account.disabled", 9),
+         "events: identity.account.disabled appends and matches its registration");
+
+      Assert
+        (Covered
+           (Event_Store, "10", Identity.Events.Types.Contact_Verified,
+            "identity.contact.verified", 10),
+         "events: identity.contact.verified appends and matches its registration");
+
+      Assert
+        (Covered
+           (Event_Store, "11", Identity.Events.Types.MFA_Challenge_Completed,
+            "identity.mfa.challenge.completed", 11),
+         "events: identity.mfa.challenge.completed appends and matches its registration");
+
+      Assert
+        (Covered
+           (Event_Store, "12", Identity.Events.Types.Recovery_Completed,
+            "identity.recovery.completed", 12),
+         "events: identity.recovery.completed appends and matches its registration");
+
+      Assert
+        (Covered
+           (Event_Store, "13", Identity.Events.Types.API_Key_Authenticated,
+            "identity.api-key.authenticated", 13),
+         "events: identity.api-key.authenticated appends and matches its registration");
+
+      Assert
+        (Covered
+           (Event_Store, "14", Identity.Events.Types.API_Key_Revoked,
+            "identity.api-key.revoked", 14),
+         "events: identity.api-key.revoked appends and matches its registration");
+
+      Assert
+        (Covered
+           (Event_Store, "15", Identity.Events.Types.TOTP_Replay_Detected,
+            "identity.totp.replay-detected", 15),
+         "events: identity.totp.replay-detected appends and matches its registration");
+
+      Assert
+        (Covered
+           (Event_Store, "16", Identity.Events.Types.External_Assertion_Replay_Detected,
+            "identity.external.assertion.replay-detected", 16),
+         "events: identity.external.assertion.replay-detected appends and matches registration");
+
+      Assert
+        (Identity.Adapters.Repositories.Memory.Event_Count (Event_Store) = 16,
+         "events: all sixteen registered event constants were appended to one store");
+
+      Assert
+        (not Identity.Events.Schemas.Known
+           (Identity.Identifiers.Registry.From_String ("identity.event.not-registered"))
+         and then not Identity.Events.Schemas.Requires_Mandatory_Audit
+           (Identity.Identifiers.Registry.From_String ("identity.event.not-registered")),
+         "events: an identifier outside the registry is neither known nor audit-mandatory");
+   end;
+
    null;
 end Identity_Tests;
