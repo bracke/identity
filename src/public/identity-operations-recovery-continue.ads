@@ -1,5 +1,6 @@
 with Identity.Adapters.Repositories.Stores;
 with Identity.Identifiers.Entities;
+with Identity.Operations.Contexts;
 with Identity.Recovery.Transactions;
 with Identity.Times;
 with Identity.Versions;
@@ -22,5 +23,16 @@ package Identity.Operations.Recovery.Continue is
    function Execute
      (Repository : in out Identity.Adapters.Repositories.Stores.Store_Interface'Class;
       Request    : Staged_Continue_Request)
+      return Identity.Recovery.Transactions.Recovery_Transition_Status;
+
+   --  Audited advance: each step a recovery takes toward releasing an account
+   --  has to be reconstructable afterwards, not just the final release.
+   function Execute
+     (Repository  : in out
+        Identity.Adapters.Repositories.Stores.Store_Interface'Class;
+      Request     : Staged_Continue_Request;
+      Context     : Identity.Operations.Contexts.Operation_Context;
+      Event       : Identity.Identifiers.Entities.Event_Id;
+      Recorded_At : Identity.Times.Instant)
       return Identity.Recovery.Transactions.Recovery_Transition_Status;
 end Identity.Operations.Recovery.Continue;

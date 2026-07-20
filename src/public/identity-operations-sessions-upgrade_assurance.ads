@@ -3,6 +3,7 @@ with Identity.Assurance.Attributes;
 with Identity.Assurance.Levels;
 with Identity.Authentication.Transactions;
 with Identity.Identifiers.Entities;
+with Identity.Operations.Contexts;
 with Identity.Times;
 with Identity.Versions;
 
@@ -31,5 +32,16 @@ package Identity.Operations.Sessions.Upgrade_Assurance is
    function Execute
      (Repository : in out Identity.Adapters.Repositories.Stores.Store_Interface'Class;
       Request    : Staged_Upgrade_Request)
+      return Identity.Authentication.Transactions.Authentication_Transaction_Status;
+
+   --  Audited upgrade: a session that gains assurance without a record leaves
+   --  no answer to "what raised this session's standing, and when?".
+   function Execute
+     (Repository  : in out
+        Identity.Adapters.Repositories.Stores.Store_Interface'Class;
+      Request     : Staged_Upgrade_Request;
+      Context     : Identity.Operations.Contexts.Operation_Context;
+      Event       : Identity.Identifiers.Entities.Event_Id;
+      Recorded_At : Identity.Times.Instant)
       return Identity.Authentication.Transactions.Authentication_Transaction_Status;
 end Identity.Operations.Sessions.Upgrade_Assurance;

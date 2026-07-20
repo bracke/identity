@@ -7,6 +7,7 @@ with Identity.Operations.Contexts;
 with Identity.Recovery.Transactions;
 with Identity.Recovery_Codes.Sets;
 with Identity.Results;
+with Identity.Sessions.Handles;
 with Identity.Tokens.Verification;
 with Identity.Text.Bounded;
 with Identity.Times;
@@ -50,6 +51,12 @@ package Identity.Operations.Audit is
 
    function Outcome_Of
      (Status : Identity.Recovery_Codes.Sets.Recovery_Code_Consume_Status)
+      return Identity.Events.Envelopes.Event_Outcome;
+
+   --  A session lookup that resolves nothing usable rejects the presented
+   --  reference; there is no stored state for it to have raced with.
+   function Outcome_Of
+     (Status : Identity.Sessions.Handles.Session_Lookup_Status)
       return Identity.Events.Envelopes.Event_Outcome;
 
    --  Severity follows the outcome unless the caller states otherwise;

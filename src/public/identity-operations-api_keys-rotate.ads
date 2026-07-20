@@ -2,6 +2,7 @@ with Identity.API_Keys.Credentials;
 with Identity.Adapters.Repositories.Stores;
 with Identity.Identifiers.Entities;
 with Identity.Identifiers.Registry;
+with Identity.Operations.Contexts;
 with Identity.Secrets.API_Keys;
 with Identity.Text.Bounded;
 with Identity.Times;
@@ -39,5 +40,16 @@ package Identity.Operations.API_Keys.Rotate is
    function Execute
      (Repository : in out Identity.Adapters.Repositories.Stores.Store_Interface'Class;
       Request    : Staged_Rotate_Request)
+      return Identity.Adapters.Repositories.Stores.Command_Status;
+
+   --  Audited rotation: the successor key only exists if its issuance is
+   --  recorded alongside the retirement of its predecessor.
+   function Execute
+     (Repository  : in out
+        Identity.Adapters.Repositories.Stores.Store_Interface'Class;
+      Request     : Rotate_Request;
+      Context     : Identity.Operations.Contexts.Operation_Context;
+      Event       : Identity.Identifiers.Entities.Event_Id;
+      Recorded_At : Identity.Times.Instant)
       return Identity.Adapters.Repositories.Stores.Command_Status;
 end Identity.Operations.API_Keys.Rotate;

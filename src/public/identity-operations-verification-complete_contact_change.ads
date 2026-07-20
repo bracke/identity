@@ -1,5 +1,6 @@
 with Identity.Adapters.Repositories.Stores;
 with Identity.Identifiers.Entities;
+with Identity.Operations.Contexts;
 with Identity.Secrets.Tokens;
 with Identity.Times;
 with Identity.Tokens.Verification;
@@ -30,5 +31,16 @@ package Identity.Operations.Verification.Complete_Contact_Change is
    function Execute
      (Repository : in out Identity.Adapters.Repositories.Stores.Store_Interface'Class;
       Request    : Staged_Completion_Request)
+      return Identity.Tokens.Verification.Token_Verification_Outcome;
+
+   --  Audited completion: moving where an account can be reached is a change
+   --  a later recovery depends on, so it must leave a record.
+   function Execute
+     (Repository  : in out
+        Identity.Adapters.Repositories.Stores.Store_Interface'Class;
+      Request     : Staged_Completion_Request;
+      Context     : Identity.Operations.Contexts.Operation_Context;
+      Event       : Identity.Identifiers.Entities.Event_Id;
+      Recorded_At : Identity.Times.Instant)
       return Identity.Tokens.Verification.Token_Verification_Outcome;
 end Identity.Operations.Verification.Complete_Contact_Change;

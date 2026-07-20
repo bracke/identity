@@ -72,6 +72,13 @@ package body Identity.Operations.Audit is
           Envelopes.Conflict,
         when others => Envelopes.Rejected);
 
+   function Outcome_Of
+     (Status : Identity.Sessions.Handles.Session_Lookup_Status)
+      return Envelopes.Event_Outcome is
+     (case Status is
+        when Identity.Sessions.Handles.Found => Envelopes.Succeeded,
+        when others => Envelopes.Rejected);
+
    function Severity_Of
      (Outcome : Envelopes.Event_Outcome) return Envelopes.Event_Severity is
      (case Outcome is
