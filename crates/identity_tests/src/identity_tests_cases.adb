@@ -167,6 +167,7 @@ with Identity.Operations.Passwords.Authenticate;
 with Identity.Operations.Passwords.Change;
 with Identity.Operations.Passwords.Complete_Reset;
 with Identity.Operations.Passwords.Enroll;
+with Identity.Operations.Passwords.Migrate_Verifier;
 with Identity.Operations.Passwords.Request_Reset;
 with Identity.Operations.Principals.Create;
 with Identity.Operations.Principals.Retire;
@@ -17827,6 +17828,239 @@ package body Identity_Tests_Cases is
       null;
    end Test_71_section;
 
+   --  ------------------------------------------------------------------
+   --  Content read-back for every event type the suite emits into the
+   --  shared repository. Earlier routines drive the operations; this one
+   --  reads the recorded event log back and asserts that each of the 53
+   --  types that reach this store was actually recorded with its own
+   --  identifier -- not merely that some count moved -- and that every
+   --  recorded identifier is one of the declared public constants.
+   --  Password_Verifier_Migrated is covered separately, in the routine
+   --  that drives a migration.
+   --  ------------------------------------------------------------------
+   procedure Test_72_recorded_event_types_read_back
+     (T : in out AUnit.Test_Cases.Test_Case'Class)
+   is
+      pragma Unreferenced (T);
+
+      Expected : constant array (Positive range <>)
+                   of Identity.Identifiers.Registry.Registry_Id :=
+        [Identity.Events.Types.Authentication_Succeeded,
+            Identity.Events.Types.Authentication_Rejected,
+            Identity.Events.Types.Session_Created,
+            Identity.Events.Types.Session_Rotated,
+            Identity.Events.Types.Session_Revoked,
+            Identity.Events.Types.Password_Changed,
+            Identity.Events.Types.Password_Reset_Requested,
+            Identity.Events.Types.Password_Reset_Completed,
+            Identity.Events.Types.Account_Disabled,
+            Identity.Events.Types.Contact_Verified,
+            Identity.Events.Types.MFA_Challenge_Completed,
+            Identity.Events.Types.Recovery_Completed,
+            Identity.Events.Types.API_Key_Authenticated,
+            Identity.Events.Types.API_Key_Revoked,
+            Identity.Events.Types.TOTP_Replay_Detected,
+            Identity.Events.Types.External_Assertion_Replay_Detected,
+            Identity.Events.Types.Principal_Created,
+            Identity.Events.Types.Principal_Retired,
+            Identity.Events.Types.Account_Created,
+            Identity.Events.Types.Account_Enabled,
+            Identity.Events.Types.Account_Suspended,
+            Identity.Events.Types.Account_Closed,
+            Identity.Events.Types.Account_Unlocked,
+            Identity.Events.Types.Account_MFA_Required,
+            Identity.Events.Types.Account_Password_Change_Required,
+            Identity.Events.Types.Password_Enrolled,
+            Identity.Events.Types.API_Key_Issued,
+            Identity.Events.Types.API_Key_Rotated,
+            Identity.Events.Types.Authentication_Transaction_Began,
+            Identity.Events.Types.MFA_Enrollment_Began,
+            Identity.Events.Types.MFA_Factor_Enrolled,
+            Identity.Events.Types.MFA_Factor_Removed,
+            Identity.Events.Types.MFA_Challenge_Issued,
+            Identity.Events.Types.Recovery_Codes_Generated,
+            Identity.Events.Types.Recovery_Code_Consumed,
+            Identity.Events.Types.Identity_Binding_Added,
+            Identity.Events.Types.Identity_Binding_Changed,
+            Identity.Events.Types.Identity_Binding_Revoked,
+            Identity.Events.Types.External_Binding_Revoked,
+            Identity.Events.Types.Token_Issued,
+            Identity.Events.Types.Token_Consumed,
+            Identity.Events.Types.Recovery_Began,
+            Identity.Events.Types.Recovery_Continued,
+            Identity.Events.Types.Recovery_Cancelled,
+            Identity.Events.Types.Contact_Change_Began,
+            Identity.Events.Types.Contact_Change_Completed,
+            Identity.Events.Types.External_Binding_Created,
+            Identity.Events.Types.Session_Expired,
+            Identity.Events.Types.Session_Purged,
+            Identity.Events.Types.Contact_Verification_Requested,
+            Identity.Events.Types.Session_Renewed,
+            Identity.Events.Types.Session_Assurance_Upgraded,
+            Identity.Events.Types.TOTP_Counter_Accepted];
+
+      Total : constant Natural :=
+        Identity.Adapters.Repositories.Memory.Event_Count (Repository);
+      Found : Boolean;
+      Ev    : Identity.Events.Envelopes.Event_Envelope;
+
+      function Recorded
+        (Wanted : Identity.Identifiers.Registry.Registry_Id) return Boolean
+      is
+         Hit   : Boolean;
+         Slot  : Identity.Events.Envelopes.Event_Envelope;
+      begin
+         for Position in 1 .. Total loop
+            Identity.Adapters.Repositories.Stores.Find_Event
+              (Identity.Adapters.Repositories.Stores.Store_Interface'Class
+                 (Repository), Position, Hit, Slot);
+            if Hit and then Slot.Type_Id = Wanted then
+               return True;
+            end if;
+         end loop;
+         return False;
+      end Recorded;
+
+      function Is_Declared
+        (Value : Identity.Identifiers.Registry.Registry_Id) return Boolean is
+      begin
+         for E of Expected loop
+            if E = Value then
+               return True;
+            end if;
+         end loop;
+         return False;
+      end Is_Declared;
+
+      All_Present : Boolean := True;
+      All_Known   : Boolean := True;
+   begin
+      --  Every expected type was recorded with its own identifier.
+      for E of Expected loop
+         if not Recorded (E) then
+            All_Present := False;
+         end if;
+      end loop;
+      Assert
+        (Total > 0 and then All_Present,
+         "emission: every event type the suite emits is recorded by read-back "
+         & "with its own identifier");
+
+      --  No recorded event carries an identifier outside the declared set.
+      for Position in 1 .. Total loop
+         Identity.Adapters.Repositories.Stores.Find_Event
+           (Identity.Adapters.Repositories.Stores.Store_Interface'Class
+              (Repository), Position, Found, Ev);
+         if not Found or else not Is_Declared (Ev.Type_Id) then
+            All_Known := False;
+         end if;
+      end loop;
+      Assert
+        (All_Known,
+         "emission: no recorded event carries an identifier outside the "
+         & "declared public constants");
+   end Test_72_recorded_event_types_read_back;
+
+   --  ------------------------------------------------------------------
+   --  Password_Verifier_Migrated is the one type no earlier routine emits,
+   --  because migration needs a stored verifier that is below current policy
+   --  yet still verifies a known password. A below-policy verifier cannot be
+   --  produced through the public API (Create_Verifier always uses the current
+   --  cost), so the credential is enrolled with a precomputed 100000-iteration
+   --  envelope injected through the store, then migrated, and the recorded
+   --  event is read back.
+   --  ------------------------------------------------------------------
+   procedure Test_73_migration_event_read_back
+     (T : in out AUnit.Test_Cases.Test_Case'Class)
+   is
+      pragma Unreferenced (T);
+      type MG_Store_Access is
+        access Identity.Adapters.Repositories.Memory.Store;
+      MG_Ptr : constant MG_Store_Access :=
+        new Identity.Adapters.Repositories.Memory.Store;
+      MG : Identity.Adapters.Repositories.Stores.Store_Interface'Class renames
+        Identity.Adapters.Repositories.Stores.Store_Interface'Class (MG_Ptr.all);
+
+      function MG_Id (Suffix : String)
+        return Identity.Identifiers.Entities.Principal_Id is
+        (Identity.Identifiers.Entities.Principal
+           (Identity.Identifiers.From_String
+              ("fb000000-0000-0000-0000-0000000000" & Suffix)));
+
+      MG_P : constant Identity.Identifiers.Entities.Principal_Id := MG_Id ("01");
+      MG_C1 : constant Identity.Identifiers.Entities.Credential_Id :=
+        Identity.Identifiers.Entities.Credential
+          (Identity.Identifiers.From_String
+             ("fb000001-0000-0000-0000-000000000001"));
+      MG_C2 : constant Identity.Identifiers.Entities.Credential_Id :=
+        Identity.Identifiers.Entities.Credential
+          (Identity.Identifiers.From_String
+             ("fb000001-0000-0000-0000-000000000002"));
+
+      --  Precomputed offline: 100000 iterations (below the 600000 default), a
+      --  fixed salt, and the matching PBKDF2 output for the password below.
+      MG_Weak_Envelope : constant String :=
+        "identity-pbkdf2-sha256:v2:100000:"
+        & "3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c:"
+        & "90381202efffafeb874cd990527662a4bb5bedfacc23f9759cee37352ba0ca9d";
+      MG_Password : constant Identity.Secrets.Passwords.Presented_Password :=
+        Identity.Secrets.Text.From_UTF_8 ("migration coverage passphrase");
+
+      MG_Ctx : constant Identity.Operations.Contexts.Operation_Context :=
+        Audit_Context;
+      MG_Status : Identity.Adapters.Repositories.Stores.Command_Status;
+      MG_Outcome : Identity.Operations.Passwords.Migrate_Verifier.Migration_Outcome;
+      Found : Boolean;
+      Ev : Identity.Events.Envelopes.Event_Envelope;
+   begin
+      Identity.Adapters.Repositories.Stores.Reset (MG);
+
+      MG_Status :=
+        Identity.Adapters.Repositories.Stores.Create_Principal
+          (MG,
+           (Id => MG_P, Kind => Identity.Principals.Kinds.Human,
+            State => Identity.Principals.Definitions.Active, Version => 0));
+      Assert (MG_Status = Identity.Adapters.Repositories.Stores.Applied,
+              "emission: migration fixture principal is created");
+
+      --  Inject the below-policy verifier directly through the store, since no
+      --  operation will produce one.
+      MG_Status :=
+        Identity.Adapters.Repositories.Stores.Enroll_Password
+          (MG,
+           (Id => MG_C1, Principal => MG_P,
+            State => Identity.Credentials.States.Active,
+            Verifier =>
+              Identity.Text.Bounded.From_String (MG_Weak_Envelope),
+            Version => 0));
+      Assert (MG_Status = Identity.Adapters.Repositories.Stores.Applied,
+              "emission: below-policy verifier is enrolled for migration");
+
+      MG_Outcome :=
+        Identity.Operations.Passwords.Migrate_Verifier.Execute
+          (MG,
+           (Principal => MG_P, Password => MG_Password,
+            Successor_Credential => MG_C2),
+           MG_Ctx,
+           Identity.Identifiers.Entities.Event
+             (Identity.Identifiers.From_String
+                ("fb000002-0000-0000-0000-000000000001")),
+           1);
+      Assert
+        (Identity.Operations.Passwords.Migrate_Verifier.Migration_Applied
+           (MG_Outcome),
+         "emission: a below-policy verifier is migrated");
+
+      Identity.Adapters.Repositories.Stores.Find_Event
+        (MG, Identity.Adapters.Repositories.Memory.Event_Count (MG_Ptr.all),
+         Found, Ev);
+      Assert
+        (Found
+         and then Ev.Type_Id = Identity.Events.Types.Password_Verifier_Migrated
+         and then Ev.Outcome = Identity.Events.Envelopes.Succeeded,
+         "emission: the migration records identity.password.verifier.migrated");
+   end Test_73_migration_event_read_back;
+
    overriding procedure Register_Tests (T : in out Test_Case) is
    begin
       Registration.Register_Routine
@@ -17971,6 +18205,12 @@ package body Identity_Tests_Cases is
         (T, Test_70_login_username'Access, "Test_70_login_username");
       Registration.Register_Routine
         (T, Test_71_section'Access, "Test_71_section");
+      Registration.Register_Routine
+        (T, Test_72_recorded_event_types_read_back'Access,
+         "Test_72_recorded_event_types_read_back");
+      Registration.Register_Routine
+        (T, Test_73_migration_event_read_back'Access,
+         "Test_73_migration_event_read_back");
    end Register_Tests;
 
    overriding function Name (T : Test_Case) return AUnit.Message_String is
