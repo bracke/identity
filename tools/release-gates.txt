@@ -198,6 +198,16 @@ sixteen that existed when those tests were written. The audit-coverage gate is
 what guarantees the remaining types are emitted by some operation; the suite is
 what checks the recorded contents of the ones it covers.
 
+Cost
+----
+
+A full release check takes about five minutes, dominated by the AUnit suite
+(~2 minutes). That is PBKDF2 at 600,000 iterations: every operation that
+creates or verifies a password verifier costs roughly 0.6 s, and the suite now
+performs a few hundred of them. It is real work, not waste -- lowering the
+iteration count to speed the suite up would weaken the thing being tested --
+but the trend is worth watching as more audited operations gain tests.
+
 Known gaps
 ----------
 
