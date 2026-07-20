@@ -16720,6 +16720,47 @@ package body Identity_Tests_Cases is
         (Identity.Adapters.Repositories.Memory.Event_Count (EM_Repo) = EM_Before + 10,
          "emission: the ten audited fixture operations record ten events");
 
+      --  Read the ten fixture events back and check each recorded type, not
+      --  just the count. This turns Principal_Created, Account_Created,
+      --  Identity_Binding_Added and Password_Enrolled from "emitted somewhere"
+      --  into "recorded with the right type", covering four event types that
+      --  otherwise had no content assertion.
+      declare
+         Found_Ev : Boolean;
+         Rec      : Identity.Events.Envelopes.Event_Envelope;
+         type Expected_Array is
+           array (Positive range <>) of Identity.Identifiers.Registry.Registry_Id;
+         Expected : constant Expected_Array :=
+           [Identity.Events.Types.Principal_Created,
+            Identity.Events.Types.Principal_Created,
+            Identity.Events.Types.Principal_Created,
+            Identity.Events.Types.Principal_Created,
+            Identity.Events.Types.Principal_Created,
+            Identity.Events.Types.Account_Created,
+            Identity.Events.Types.Account_Created,
+            Identity.Events.Types.Account_Created,
+            Identity.Events.Types.Identity_Binding_Added,
+            Identity.Events.Types.Password_Enrolled];
+         All_Match : Boolean := True;
+      begin
+         for Position in Expected'Range loop
+            Identity.Adapters.Repositories.Stores.Find_Event
+              (Identity.Adapters.Repositories.Stores.Store_Interface'Class
+                 (EM_Repo),
+               Position, Found_Ev, Rec);
+            if not Found_Ev
+              or else Rec.Type_Id /= Expected (Position)
+              or else Rec.Outcome /= Identity.Events.Envelopes.Succeeded
+            then
+               All_Match := False;
+            end if;
+         end loop;
+         Assert
+           (All_Match,
+            "emission: the fixture events read back as their recorded types "
+            & "principal.created account.created binding.added password.enrolled");
+      end;
+
       --  Absolute, not relative: this block owns its store, so the log can
       --  be pinned to an exact count rather than to a delta measured from
       --  whatever an earlier block happened to leave behind.
