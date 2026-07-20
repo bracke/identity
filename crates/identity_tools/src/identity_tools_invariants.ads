@@ -13,6 +13,10 @@ package Identity_Tools_Invariants is
       Traced_Required_Tests      : Natural := 0;
       Untraced_Required_Tests    : Natural := 0;
       Missing_Test_Source        : Natural := 0;
+      --  An invariant id is a citation target: the threat model and the
+      --  traceability metadata both refer to invariants by id. Two invariants
+      --  sharing one id makes every citation to it ambiguous.
+      Duplicate_Ids              : Natural := 0;
    end record;
 
    procedure Validate (Report : out Validation_Report);

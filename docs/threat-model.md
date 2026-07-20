@@ -11,7 +11,7 @@ control to an executable test.
 
 The threat vocabulary here is not invented for this document. It is the
 `threats_mitigated` vocabulary of `registries/invariants.json`: 80 invariant
-entries carrying 76 distinct identifiers and 59 distinct threat labels. Every
+entries carrying 80 distinct identifiers and 59 distinct threat labels. Every
 invariant id cited below exists in that registry, and every one of those
 invariants carries `required_tests` names that `identity_tools` refuses to
 accept unless they appear verbatim in real evidence — the AUnit suite, the gate
@@ -21,13 +21,6 @@ not accepted as traceability.
 The controls described here are therefore claims that a release gate can
 falsify. Where a control does not exist, section 9 says so rather than
 implying coverage.
-
-A registry hygiene note, since this document depends on those ids: four
-identifiers are each used by two distinct invariant entries —
-`IDENTITY-RECOVERY-002`, `IDENTITY-SESSION-003`, `IDENTITY-EVENT-002`, and
-`IDENTITY-SECRET-002`. Citations to those four resolve to two statements each.
-This is a defect in the registry, not in the controls, but a reader tracing a
-citation should expect it.
 
 ## 2. Assets
 
@@ -187,11 +180,11 @@ Overall operation latency is not equalised.
 
 | Threat | Control | Invariants |
 |---|---|---|
-| `session-theft` | Verifier-only session persistence, revocation by session, family, principal, credential, or provider, and expiration evaluated from an injected instant rather than a cleanup job. | `IDENTITY-SESSION-001`, `IDENTITY-SESSION-002`, `IDENTITY-SESSION-003`, `IDENTITY-SESSION-004`, `IDENTITY-TIME-001` |
+| `session-theft` | Verifier-only session persistence, revocation by session, family, principal, credential, or provider, and expiration evaluated from an injected instant rather than a cleanup job. | `IDENTITY-SESSION-001`, `IDENTITY-SESSION-002`, `IDENTITY-SESSION-003`, `IDENTITY-SESSION-004`, `IDENTITY-SESSION-005`, `IDENTITY-TIME-001` |
 | `token-theft` | Bearer secrets exist as one-time extractable values; tokens persist a domain-separated verifier and a purpose. | `IDENTITY-TOKEN-001`, `IDENTITY-SECRET-002`, `IDENTITY-VERIFICATION-001`, `IDENTITY-TIME-001` |
 | `reset-token-theft` | Reset tokens are purpose-bound; a newer reset token supersedes earlier live siblings, and successful completion consumes the presented token and supersedes siblings in the same protected transition. | `IDENTITY-TOKEN-002`, `IDENTITY-TOKEN-003`, `IDENTITY-RECOVERY-003`, `IDENTITY-ADAPTER-NOTIFY-001` |
-| `session-fixation` | New and rotated sessions require an active principal and produce a fresh public reference and verifier; a caller cannot pre-seed a session identifier. | `IDENTITY-SESSION-003` |
-| `rotated-token-replay` | Rotation marks the predecessor unusable and publishes exactly one successor with an advanced generation. Presenting the predecessor is a replay with explicit consequence predicates: reject, revoke successor, revoke family, revoke all principal sessions, or require reauthentication. | `IDENTITY-SESSION-001`, `IDENTITY-SESSION-003`, `IDENTITY-SESSION-004` |
+| `session-fixation` | New and rotated sessions require an active principal and produce a fresh public reference and verifier; a caller cannot pre-seed a session identifier. | `IDENTITY-SESSION-005` |
+| `rotated-token-replay` | Rotation marks the predecessor unusable and publishes exactly one successor with an advanced generation. Presenting the predecessor is a replay with explicit consequence predicates: reject, revoke successor, revoke family, revoke all principal sessions, or require reauthentication. | `IDENTITY-SESSION-001`, `IDENTITY-SESSION-004`, `IDENTITY-SESSION-005` |
 | `stale-context-use` | Authenticated security contexts carry separate authentication, evidence, and session revisions, so a consumer can reject a cached context after the underlying facts changed. Renewal advances the revision. | `IDENTITY-SESSION-001`, `IDENTITY-SESSION-002`, `IDENTITY-SESSION-003`, `IDENTITY-STEPUP-001`, `IDENTITY-PROJECTION-001` |
 | `cleanup-dependent-expiry` | Expiration and lockout state are projected from a captured operation instant with checked arithmetic; an expired temporary lock is usable again without a cleanup mutation. | `IDENTITY-TIME-001` |
 
@@ -201,6 +194,7 @@ Overall operation latency is not equalised.
 |---|---|---|
 | `cross-purpose-substitution` | Every bearer verifier is derived under an explicit cryptographic domain (`Identity.Crypto.Domains` declares nine: session token, password reset, contact verification, API key, recovery code, TOTP seed, subject fingerprint, external-assertion fingerprint, event integrity). A verifier derived in one domain does not verify in another. Crypto input is canonically framed, so domain separation cannot be defeated by concatenation ambiguity. | `IDENTITY-TOKEN-001`, `IDENTITY-TOKEN-002`, `IDENTITY-TOKEN-003`, `IDENTITY-CONTACT-001`, `IDENTITY-CONTACT-CHANGE-001`, `IDENTITY-KEYS-001`, `IDENTITY-ADAPTER-KEYS-001`, `IDENTITY-CRYPTO-003`, `IDENTITY-CRYPTO-004`, `IDENTITY-CODEC-001`, `IDENTITY-VERIFICATION-001` |
 | `replay`, `token-replay` | Terminal token states (`Consumed`, `Completed`, `Superseded`) cannot reactivate or be consumed twice; consumption is one repository transition. | `IDENTITY-TOKEN-002`, `IDENTITY-TOKEN-003`, `IDENTITY-CONTACT-001`, `IDENTITY-RECOVERY-001`, `IDENTITY-REPOSITORY-003`, `IDENTITY-REPOSITORY-004` |
+| Command-level replay of externally triggered operations | The five operations that are triggered from outside and cannot safely be repeated — password reset request, contact verification request, recovery begin, API-key issue, session rotate — offer an idempotency-key overload that reserves the key through the SPI before the transition and closes it after. A replayed reservation returns the recorded outcome instead of repeating the transition. This is opt-in per call: see section 9. | `IDENTITY-REPOSITORY-004` |
 | `totp-replay` | TOTP credentials carry a highest-accepted counter; acceptance advances it and rejects same-or-older counters. | `IDENTITY-TOTP-001`, `IDENTITY-MFA-001`, `IDENTITY-MFA-002`, `IDENTITY-CREDENTIAL-POLICY-001`, `IDENTITY-CRYPTO-003` |
 | `single-use-race` | Single-use consumption is staged with an expected version; a stale version conflicts before consumed-state disclosure or secret verification. | `IDENTITY-CONTACT-001` |
 
@@ -210,13 +204,13 @@ Overall operation latency is not equalised.
 |---|---|---|
 | `mfa-bypass` | Authentication transactions and challenges are separate persistent records. A challenge is bound to one principal and one transaction, and a transaction cannot become satisfied before challenge evidence has accumulated. | `IDENTITY-MFA-001`, `IDENTITY-TOTP-001`, `IDENTITY-STEPUP-001` |
 | `evidence-transfer` | Step-up upgrades exactly one active same-principal session from a satisfied transaction, then consumes the transaction so the same evidence cannot upgrade a second session. Step-up bindings must match session id, principal, family, and rotation generation. | `IDENTITY-STEPUP-001`, `IDENTITY-STEPUP-002`, `IDENTITY-MFA-001` |
-| `mfa-fatigue` | Bounded challenge and attempt limits, and assurance decided from structured attributes and independent-factor counts rather than method-name lookup. | `IDENTITY-MFA-002`, `IDENTITY-ASSURANCE-002`, `IDENTITY-CREDENTIAL-002`, `IDENTITY-RECOVERY-002` |
+| `mfa-fatigue` | Bounded challenge and attempt limits, and assurance decided from structured attributes and independent-factor counts rather than method-name lookup. | `IDENTITY-MFA-002`, `IDENTITY-ASSURANCE-002`, `IDENTITY-CREDENTIAL-002`, `IDENTITY-RECOVERY-004` |
 
 ### 6.6 Recovery abuse
 
 | Threat | Control | Invariants |
 |---|---|---|
-| `recovery-abuse` | Recovery is a persistent transaction with explicit states starting only for an active principal. Completion requires accepted evidence and applies structured restrictions, so authentication returns `Recovery_Action_Required` until they are explicitly cleared. Recovery evidence defaults to reduced assurance. | `IDENTITY-RECOVERY-001`, `IDENTITY-RECOVERY-002`, `IDENTITY-RECOVERY-003`, `IDENTITY-ACCOUNT-002`, `IDENTITY-ASSURANCE-002`, `IDENTITY-PASSWORD-AUTHORITY-001`, `IDENTITY-PRINCIPAL-002`, `IDENTITY-CREDENTIAL-002`, `IDENTITY-MFA-002`, `IDENTITY-CREDENTIAL-POLICY-001` |
+| `recovery-abuse` | Recovery is a persistent transaction with explicit states starting only for an active principal. Completion requires accepted evidence and applies structured restrictions, so authentication returns `Recovery_Action_Required` until they are explicitly cleared. Recovery evidence defaults to reduced assurance. | `IDENTITY-RECOVERY-001`, `IDENTITY-RECOVERY-002`, `IDENTITY-RECOVERY-003`, `IDENTITY-RECOVERY-004`, `IDENTITY-RECOVERY-004`, `IDENTITY-ACCOUNT-002`, `IDENTITY-ASSURANCE-002`, `IDENTITY-PASSWORD-AUTHORITY-001`, `IDENTITY-PRINCIPAL-002`, `IDENTITY-CREDENTIAL-002`, `IDENTITY-MFA-002`, `IDENTITY-CREDENTIAL-POLICY-001` |
 | `restriction-bypass` | Restrictions are a structured record, not a boolean. Reset policy validation rejects any policy that would clear administrative restrictions, and successful authentication does not silently clear them. | `IDENTITY-ACCOUNT-001`, `IDENTITY-RECOVERY-002` |
 | Recovery-code reuse | Codes are stored as domain-separated verifiers, single-use, transitioning to `Consumed`; regeneration revokes prior verifiers under an explicit admission check. | `IDENTITY-RECOVERY-001` |
 
@@ -248,7 +242,7 @@ leaks through.
 | Threat | Control | Invariants |
 |---|---|---|
 | `diagnostic-leakage` | Public projections are dedicated immutable records containing no plaintext secrets, verifier payloads, repository handles, or backend internals. Errors project through `Identity.Errors.Public` with stable codes and no dependency text. Redaction returns a fixed marker for Personal, Sensitive, Secret, and Derived_Secret classes. Diagnostic detail is suppressed unless explicitly requested on an operational path. | `IDENTITY-PROJECTION-001`, `IDENTITY-DISCLOSURE-001`, `IDENTITY-ERROR-001`, `IDENTITY-DIAGNOSTIC-001`, `IDENTITY-TEXT-001`, `IDENTITY-SECRET-001`, `IDENTITY-SECRET-002`, `IDENTITY-CONTEXT-001`, `IDENTITY-ADAPTER-SINK-001`, `IDENTITY-ADAPTER-NOTIFY-001`, `IDENTITY-INTERNAL-001`, `IDENTITY-FOUNDATION-001` |
-| `secret-leak-attempts` | Secret containers expose only presence and length as non-secret metadata and have no ordinary image or serialization path. Notification handoffs reject secret-bearing requests. Release-facing artifacts are canary-scanned by an executable gate. | `IDENTITY-SECRET-002`, `IDENTITY-PROJECTION-001`, `IDENTITY-EVENT-001`, `IDENTITY-EVENT-002`, `IDENTITY-ADAPTER-NOTIFY-001`, `IDENTITY-DIAGNOSTIC-001`, `IDENTITY-FIXTURE-001`, `IDENTITY-RELEASE-001`, `IDENTITY-RELEASE-002`, `IDENTITY-SERVICE-001`, `IDENTITY-TESTING-001`, `IDENTITY-TOOLING-001`, `IDENTITY-REPOSITORY-STRUCTURE-001` |
+| `secret-leak-attempts` | Secret containers expose only presence and length as non-secret metadata and have no ordinary image or serialization path. Notification handoffs reject secret-bearing requests. Release-facing artifacts are canary-scanned by an executable gate. | `IDENTITY-SECRET-003`, `IDENTITY-SECRET-003`, `IDENTITY-PROJECTION-001`, `IDENTITY-EVENT-001`, `IDENTITY-EVENT-002`, `IDENTITY-ADAPTER-NOTIFY-001`, `IDENTITY-DIAGNOSTIC-001`, `IDENTITY-FIXTURE-001`, `IDENTITY-RELEASE-001`, `IDENTITY-RELEASE-002`, `IDENTITY-SERVICE-001`, `IDENTITY-TESTING-001`, `IDENTITY-TOOLING-001`, `IDENTITY-REPOSITORY-STRUCTURE-001` |
 | `dependency-failure-confusion` | Repository, crypto, and dependency unavailability project as distinct operational failure codes and never as an authentication rejection. | `IDENTITY-ERROR-001` |
 
 ### 6.10 Persistence, concurrency, and races
@@ -273,14 +267,14 @@ leaks through.
 | Threat | Control | Invariants |
 |---|---|---|
 | `accountability-loss` | A transition and its audit record are inseparable: an operation reserves event capacity *before* mutating and appends after the transition, so a store that cannot accept the event refuses the operation rather than applying a change nobody can audit. Conflicts are audited as well as successes. | `IDENTITY-AUDIT-001` |
-| `event-injection`, `event-injection-attempts` | Events are immutable bounded envelopes with typed actors, subjects, targets, and outcomes, deterministically framed. Ordinary event construction rejects `Secret` and `Derived_Secret` data classes for every attribute value kind. Oversized target text is deterministically truncated rather than exceeding public text limits. Event publication is post-commit. | `IDENTITY-EVENT-001`, `IDENTITY-EVENT-002`, `IDENTITY-AUDIT-001`, `IDENTITY-ADAPTER-SINK-001`, `IDENTITY-REPOSITORY-001`, `IDENTITY-REPOSITORY-004`, `IDENTITY-FOUNDATION-001`, `IDENTITY-CRYPTO-003`, `IDENTITY-TEXT-001`, `IDENTITY-FORMAT-001` |
-| `audit-gap` | The event registry and the public `Identity.Events.Types` constants must expose the same V1 identifiers, validated by an executable gate. All 16 declared event types are driven through their audited operation in the suite. | `IDENTITY-EVENT-002` |
+| `event-injection`, `event-injection-attempts` | Events are immutable bounded envelopes with typed actors, subjects, targets, and outcomes, deterministically framed. Ordinary event construction rejects `Secret` and `Derived_Secret` data classes for every attribute value kind. Oversized target text is deterministically truncated rather than exceeding public text limits. Event publication is post-commit. | `IDENTITY-EVENT-001`, `IDENTITY-EVENT-002`, `IDENTITY-EVENT-003`, `IDENTITY-AUDIT-001`, `IDENTITY-ADAPTER-SINK-001`, `IDENTITY-REPOSITORY-001`, `IDENTITY-REPOSITORY-004`, `IDENTITY-FOUNDATION-001`, `IDENTITY-CRYPTO-003`, `IDENTITY-TEXT-001`, `IDENTITY-FORMAT-001` |
+| `audit-gap` | The event registry and the public `Identity.Events.Types` constants must expose the same V1 identifiers — currently 51, with zero missing on either side — validated by an executable gate. The audit-coverage gate additionally requires every mutating operation to offer an audited path (currently 45 audited, 0 unaudited). See section 9 for what that gate cannot prove. | `IDENTITY-EVENT-003`, `IDENTITY-AUDIT-001` |
 
 ### 6.13 Supply chain and release integrity
 
 | Threat | Control | Invariants |
 |---|---|---|
-| `supply-chain-compromise` | Machine-readable registries for invariants, events, crypto algorithms, persisted formats, release artifacts, and workflows, each validated by `identity_tools` as a release gate. Release reports are generated only from recorded evidence of runs that actually happened. | `IDENTITY-TOOLING-001`, `IDENTITY-REGISTRY-001`, `IDENTITY-RELEASE-001`, `IDENTITY-RELEASE-002`, `IDENTITY-RELEASE-003`, `IDENTITY-FORMAT-001`, `IDENTITY-FORMAT-002`, `IDENTITY-CRYPTO-002`, `IDENTITY-CRYPTO-004`, `IDENTITY-ARCH-002`, `IDENTITY-INTERNAL-001`, `IDENTITY-EVENT-002`, `IDENTITY-FIXTURE-001`, `IDENTITY-SECRET-002`, `IDENTITY-REPOSITORY-STRUCTURE-001` |
+| `supply-chain-compromise` | Machine-readable registries for invariants, events, crypto algorithms, persisted formats, release artifacts, and workflows, each validated by `identity_tools` as a release gate. Release reports are generated only from recorded evidence of runs that actually happened. | `IDENTITY-TOOLING-001`, `IDENTITY-REGISTRY-001`, `IDENTITY-RELEASE-001`, `IDENTITY-RELEASE-002`, `IDENTITY-RELEASE-003`, `IDENTITY-FORMAT-001`, `IDENTITY-FORMAT-002`, `IDENTITY-CRYPTO-002`, `IDENTITY-CRYPTO-004`, `IDENTITY-ARCH-002`, `IDENTITY-INTERNAL-001`, `IDENTITY-EVENT-003`, `IDENTITY-FIXTURE-001`, `IDENTITY-SECRET-003`, `IDENTITY-REPOSITORY-STRUCTURE-001` |
 | `security-regression` | Every invariant must carry `required_tests` names traceable verbatim to real evidence; metadata alone is rejected. | `IDENTITY-REGISTRY-001`, `IDENTITY-RELEASE-003` |
 | `release-gate-bypass` | The workflow manifest is validated for required workflow names and mandatory gate identifiers, and `tools/gate-selftests.sh` mutation-tests the gates themselves: each case breaks one piece of evidence and requires `identity_tools` to fail with that gate's own marker. This is what distinguishes a gate that passes from a gate that passes vacuously. | `IDENTITY-RELEASE-003` |
 | `release-artifact-contamination` | Artifact and prohibited-material inventories with mandatory provenance coverage; artifacts are not generated after failed gates. | `IDENTITY-RELEASE-002` |
@@ -350,13 +344,33 @@ The trust in section 5 has to land somewhere. It lands here.
 These are known gaps, recorded as gaps rather than described as implemented.
 They are taken from the "Known gaps" section of `tools/release-gates.txt`.
 
-**Idempotency is not wired.** The store keeps idempotency records and the SPI
-exposes them, but no operation reserves an idempotency key, so
-`Full_Memory_Profile` advertises `Idempotency => False`. Replaying a command is
-the caller's problem today. The consequence is concrete: a retried
-one-time-secret issuance can issue twice. The capability gate keeps the flag
-honest — flipping it to `True` without wiring a caller fails the release check,
-reported as `capabilities:advertised-but-unbacked`.
+**Replay protection is opt-in per call.** Idempotency is wired, but only for the
+five operations that are triggered from outside and cannot safely be repeated —
+password reset request, contact verification request, recovery begin, API-key
+issue, and session rotate. These are exactly the members of
+`Identity.Operations.Idempotency.Idempotent_Operation_Kind`. Each offers an
+overload taking an idempotency key that reserves the key through
+`Stores.Reserve_Idempotency` *before* the transition and closes it through
+`Stores.Complete_Idempotency` after it applies, so `Full_Memory_Profile`
+advertises `Idempotency => True` and the capability gate finds a real caller
+behind the flag. A replayed reservation returns the recorded outcome without
+performing the transition again: no second reset token, no second API key, no
+second recovery transaction, no second audit event. An empty key is refused
+without touching the store, because every empty key would collide with every
+other.
+
+The limitation is the overload: existing signatures are untouched, so **a caller
+that passes no key gets no replay protection at all**. Nothing detects such a
+caller. A retried one-time-secret issuance from a key-less call site can still
+issue twice. If a fresh reservation's transition does not apply, the record
+stays open by design — nothing happened, so nothing may later be replayed under
+that key — and a caller wanting a retry must present a fresh key.
+
+Note also that `Command_Status` has no infrastructure verdict of its own, so a
+store fault reported by the reservation collapses onto `State_Conflict` while
+the decision half of the verdict keeps the real cause. Code that needs to
+distinguish an infrastructure failure from a genuine state conflict must read
+the decision half.
 
 **Verifier migration is caller-driven.**
 `Identity.Operations.Passwords.Migrate_Verifier` re-derives a below-policy
@@ -365,11 +379,18 @@ invoke it — a replacement credential needs an identifier, and this crate never
 invents identifiers. A deployment that ignores `Upgrade_Required` keeps weak
 verifiers indefinitely. The crate reports; it does not remediate.
 
-**Audit trail is opt-in per call site.** Emission is an overload on each
-operation, so callers that do not pass an operation context keep working
-unchanged — and produce no audit trail. Code that needs an audit trail must use
-the context-taking entry points. Nothing detects a caller that consistently uses
-the plain overload.
+**The audit trail is opt-in per call site, and the bypass surface is large.**
+Emission was added additively as an overload on each operation so existing
+callers kept compiling. Callers that do not pass an operation context keep
+working unchanged — and produce no audit trail. Be precise about what the
+audit-coverage gate proves: it requires every mutating operation to *offer* an
+audited path; it cannot require callers to *take* one. The marker reports both
+numbers, and the bypass figure is the larger one — on the order of a hundred
+plain overloads against roughly half that many audited ones. Every one of those
+plain overloads still mutates without leaving a record. Closing the surface
+means removing the plain overloads, which is a breaking change deferred past V1.
+Treat the audit trail as a facility this crate offers, not a property it
+guarantees.
 
 **The store has fixed capacity.** A `Memory.Store` is 3.3 MB of fixed-capacity
 arrays sized for 512 events, 128 sessions, and so on. Two will not fit on a

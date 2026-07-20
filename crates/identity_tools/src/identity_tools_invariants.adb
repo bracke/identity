@@ -215,6 +215,50 @@ package body Identity_Tools_Invariants is
 
          Report.Invariant_Count :=
            Occurrences (Registry, """id"": ""IDENTITY-");
+
+         --  Collect every id and flag any that appears twice.
+         declare
+            Max_Ids : constant := 512;
+            type Id_Array is array (1 .. Max_Ids) of Unbounded_String;
+            Ids     : Id_Array := [others => Null_Unbounded_String];
+            Count   : Natural := 0;
+            Marker  : constant String := """id"": """;
+            Cursor  : Natural := Registry'First;
+         begin
+            loop
+               declare
+                  Hit : constant Natural :=
+                    Ada.Strings.Fixed.Index (Registry (Cursor .. Registry'Last), Marker);
+                  Stop : Natural;
+               begin
+                  exit when Hit = 0;
+                  Stop := Hit + Marker'Length;
+                  while Stop <= Registry'Last and then Registry (Stop) /= '"' loop
+                     Stop := Stop + 1;
+                  end loop;
+                  exit when Stop > Registry'Last;
+
+                  declare
+                     Id : constant String :=
+                       Registry (Hit + Marker'Length .. Stop - 1);
+                  begin
+                     for Index in 1 .. Count loop
+                        if To_String (Ids (Index)) = Id then
+                           Report.Duplicate_Ids := Report.Duplicate_Ids + 1;
+                           Ada.Text_IO.Put_Line
+                             ("invariants:duplicate-id:" & Id);
+                        end if;
+                     end loop;
+                     if Count < Max_Ids then
+                        Count := Count + 1;
+                        Ids (Count) := To_Unbounded_String (Id);
+                     end if;
+                  end;
+                  Cursor := Stop + 1;
+                  exit when Cursor > Registry'Last;
+               end;
+            end loop;
+         end;
          Report.Failure_Severity_Count :=
            Occurrences (Registry, """failure_severity"":");
 
@@ -284,6 +328,7 @@ package body Identity_Tools_Invariants is
       and then Report.Empty_Required_Test_Blocks = 0
       and then Report.Missing_Test_Source = 0
       and then Report.Required_Test_Names > 0
-      and then Report.Untraced_Required_Tests = 0);
+      and then Report.Untraced_Required_Tests = 0
+      and then Report.Duplicate_Ids = 0);
 
 end Identity_Tools_Invariants;

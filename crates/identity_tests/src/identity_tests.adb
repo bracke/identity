@@ -16567,7 +16567,7 @@ begin
       EM_Read_Last;
       Assert
         (EM_Read_Found
-         and then EM_Read.Type_Id = Identity.Events.Types.Recovery_Completed
+         and then EM_Read.Type_Id = Identity.Events.Types.Session_Rotated
          and then EM_Read.Outcome = Identity.Events.Envelopes.Succeeded
          and then EM_Read.Occurred_At = EM_Ctx.Requested_At
          and then EM_Read.Recorded_At = 205,

@@ -2606,7 +2606,7 @@
       "last_reviewed_version": "1.0.0-dev"
     },
     {
-      "id": "IDENTITY-SESSION-003",
+      "id": "IDENTITY-SESSION-005",
       "title": "Session policy expiration activity and rotation helpers are bounded",
       "statement": "Session policy and helper contracts classify policy duration failures, keep idle, absolute, and revocation continuity blockers independently classified, expose a detail projection for simultaneous expiration facts, expose session state predicates for lookup, revocation, expiration, and retention, prevent activity updates on expired sessions, and advance rotation generation through typed bounded arithmetic only when the predecessor remains rotation-eligible.",
       "affected_packages": [
@@ -3583,7 +3583,7 @@
       "last_reviewed_version": "1.0.0-dev"
     },
     {
-      "id": "IDENTITY-RECOVERY-002",
+      "id": "IDENTITY-RECOVERY-004",
       "title": "Recovery evidence source and reduced assurance are explicit",
       "statement": "Recovery evidence records identify the recovery source, bind to one principal and transaction, wrap authentication evidence, default to reduced assurance, and expose safe recovery evidence summaries.",
       "affected_packages": [
@@ -3851,7 +3851,7 @@
       "last_reviewed_version": "1.0.0-dev"
     },
     {
-      "id": "IDENTITY-SECRET-002",
+      "id": "IDENTITY-SECRET-003",
       "title": "Release-facing artifacts are scanned for canary secrets",
       "statement": "The identity_tools crate performs executable canary secret-leak scanning over documentation, registries, fixtures, tooling metadata, examples, and conformance sources while keeping test-only canary definitions out of release-facing outputs.",
       "affected_packages": [
@@ -3926,7 +3926,7 @@
       "last_reviewed_version": "1.0.0-dev"
     },
     {
-      "id": "IDENTITY-EVENT-002",
+      "id": "IDENTITY-EVENT-003",
       "title": "Event registry coverage is executable",
       "statement": "The identity_tools crate validates that the machine-readable event registry and Identity.Events.Types public constants expose the same V1 event identifiers.",
       "affected_packages": [

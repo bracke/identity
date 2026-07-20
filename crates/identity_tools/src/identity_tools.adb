@@ -167,7 +167,9 @@ begin
       & ":traced:"
       & Natural'Image (Invariant_Report.Traced_Required_Tests)
       & ":untraced:"
-      & Natural'Image (Invariant_Report.Untraced_Required_Tests));
+      & Natural'Image (Invariant_Report.Untraced_Required_Tests)
+      & ":duplicate-ids:"
+      & Natural'Image (Invariant_Report.Duplicate_Ids));
    Identity_Tools_Events.Validate (Event_Report);
    Ada.Text_IO.Put_Line
      ("identity_tools:events:"
