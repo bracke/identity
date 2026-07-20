@@ -6,6 +6,13 @@
 --  the SPI survives contact with storage that can be absent, truncated or
 --  foreign, rather than only with an in-memory record.
 --
+--  Not task-safe. It inherits the memory adapter's Concurrent_Access => False,
+--  which is the honest answer, but this is the adapter reached for in a
+--  deployment, so it is worth stating plainly: wrap it in
+--  Identity.Adapters.Repositories.Serialized to share it between tasks. The
+--  decorators compose -- Serialized over Persistent gives a durable store that
+--  is also safe to share.
+--
 --  Durability is per call, not per transaction. A single write is atomic: the
 --  snapshot is written to a sibling temporary and renamed into place, so a
 --  process that stops part way through leaves the previous complete snapshot

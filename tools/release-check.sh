@@ -74,8 +74,13 @@ echo "== gnatprove =="
 if ! command -v gnatprove >/dev/null 2>&1; then
   record gnatprove failed "gnatprove not installed"
 else
+  # -f forces a complete analysis. Without it GNATprove reuses cached results
+  # and reports only the units it re-analysed, so the recorded check count
+  # swings with cache state -- 616 on a clean tree, 170 on a warm one -- and a
+  # reader cannot tell a cached run from a collapse in coverage. The extra
+  # cost is about 17 seconds.
   prove_out=$(gnatprove -P identity.gpr -aP "$ROOT/../cryptolib" \
-                --mode=all --level=2 -j0 2>&1)
+                --mode=all --level=2 -j0 -f 2>&1)
   # Findings and SPARK legality errors are counted separately: a unit that is
   # rejected as not-in-SPARK produces NO findings, so counting findings alone
   # would score an unanalysed unit as clean.
