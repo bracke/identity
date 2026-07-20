@@ -1,6 +1,7 @@
 with Ada.Streams;
 with Identity.Crypto.Constant_Time;
 with Identity.Crypto.CryptoLib.Entropy;
+with Identity.Crypto.CryptoLib.Wipe;
 with Identity.Crypto.CryptoLib.Password_Hashing;
 with Identity.Limits;
 with Identity.Secrets.Bytes;
@@ -213,6 +214,9 @@ package body Identity.Crypto.Password_Hashing is
               Salt       => Salt,
               Iterations => Default_Iterations);
       begin
+         --  Borrow copies the plaintext into a local buffer; scrub it as soon
+         --  as the derivation is done rather than leaving it on the stack.
+         Identity.Crypto.CryptoLib.Wipe.Scrub (Buffer'Address, Buffer'Length);
          return Prefix
            & Decimal_Image (Default_Iterations)
            & ":" & To_Hex (Salt)
@@ -262,6 +266,7 @@ package body Identity.Crypto.Password_Hashing is
               Iterations => Parsed.Iterations);
          Migration : constant Migration_Status := Determine_Upgrade (Envelope);
       begin
+         Identity.Crypto.CryptoLib.Wipe.Scrub (Buffer'Address, Buffer'Length);
          --  Constant-time comparison: the running time must not reveal how
          --  much of a candidate verifier matched.
          if Identity.Crypto.Constant_Time.Equal (Derived, Parsed.Derived) then

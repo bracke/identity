@@ -1,3 +1,5 @@
+with Identity.Crypto.CryptoLib.Wipe;
+
 package body Identity.Secrets.Bytes is
    function From_Bytes (Value : Ada.Streams.Stream_Element_Array) return Secret_Bytes is
       Result : Secret_Bytes;
@@ -20,7 +22,12 @@ package body Identity.Secrets.Bytes is
 
    procedure Clear (Value : in out Secret_Bytes) is
    begin
-      Value.Data := [others => 0];
+      --  Scrubbed through volatile stores rather than by assigning zeroes.
+      --  This runs from Finalize, i.e. when the object is already dead, and a
+      --  dead store is exactly what an optimizing compiler deletes -- so the
+      --  plain assignment could leave the secret in memory in a release build.
+      Identity.Crypto.CryptoLib.Wipe.Scrub
+        (Value.Data'Address, Value.Data'Length);
       Value.Used := 0;
       Value.Present := False;
    end Clear;
