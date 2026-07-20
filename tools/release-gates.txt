@@ -132,6 +132,15 @@ Emission is added as an overload on each operation, so callers that do not pass
 an operation context keep working unchanged -- and produce no audit trail. Code
 that needs an audit trail must use the context-taking entry points.
 
+Be precise about what the audit-coverage gate proves. It requires every
+mutating operation to OFFER an audited path; it cannot require callers to take
+one. The marker reports both numbers -- audited-overloads and bypass-overloads
+-- and the bypass figure is large (currently 111 plain overloads against 48
+audited ones), because emission was added additively so existing callers kept
+compiling. Any of those plain overloads still mutates without leaving a record.
+Closing that surface means removing the plain overloads, which is a breaking
+change deferred past V1.
+
 All 16 declared event types are driven through their audited operation in the
 suite, each asserting the audited overload appends exactly one event while the
 plain overload of the same operation appends none. The store exposes no event

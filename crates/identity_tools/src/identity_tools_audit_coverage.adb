@@ -170,6 +170,65 @@ package body Identity_Tools_Audit_Coverage is
          end;
       end loop;
       Ada.Directories.End_Search (Search);
+
+      --  Second pass over the specs: how many Execute overloads take an
+      --  operation context (audited) and how many do not (bypass surface).
+      Ada.Directories.Start_Search
+        (Search, Operations_Dir, "*.ads",
+         [Ada.Directories.Ordinary_File => True, others => False]);
+      while Ada.Directories.More_Entries (Search) loop
+         Ada.Directories.Get_Next_Entry (Search, Item);
+         declare
+            Simple : constant String := Ada.Directories.Simple_Name (Item);
+         begin
+            if Simple'Length > 20
+              and then Simple (Simple'First .. Simple'First + 19) =
+                         "identity-operations-"
+              and then Simple /= "identity-operations-audit.ads"
+            then
+               declare
+                  Spec   : constant String :=
+                    Load (Ada.Directories.Full_Name (Item));
+                  Cursor : Natural := Spec'First;
+                  Marker : constant String := "Execute";
+               begin
+                  loop
+                     declare
+                        Hit : constant Natural :=
+                          Ada.Strings.Fixed.Index
+                            (Spec (Cursor .. Spec'Last), Marker);
+                        Stop : Natural;
+                     begin
+                        exit when Hit = 0;
+                        Stop := Ada.Strings.Fixed.Index
+                          (Spec (Hit .. Spec'Last), ";");
+                        if Stop = 0 then
+                           Stop := Spec'Last;
+                        end if;
+                        --  Look ahead to the end of this declaration for the
+                        --  context parameter that marks an audited overload.
+                        declare
+                           Window_Last : constant Natural :=
+                             Natural'Min (Spec'Last, Hit + 600);
+                           Window : constant String := Spec (Hit .. Window_Last);
+                        begin
+                           if Contains (Window, "Operation_Context") then
+                              Report.Audited_Overloads :=
+                                Report.Audited_Overloads + 1;
+                           else
+                              Report.Bypass_Overloads :=
+                                Report.Bypass_Overloads + 1;
+                           end if;
+                        end;
+                        Cursor := Hit + Marker'Length;
+                        exit when Cursor > Spec'Last;
+                     end;
+                  end loop;
+               end;
+            end if;
+         end;
+      end loop;
+      Ada.Directories.End_Search (Search);
    end Validate;
 
    function Passed (Report : Validation_Report) return Boolean is

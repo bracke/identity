@@ -240,7 +240,11 @@ begin
       & ":unaudited:"
       & Natural'Image (Audit_Report.Unaudited_Operations)
       & ":mutating-primitives:"
-      & Natural'Image (Audit_Report.Mutating_Primitives));
+      & Natural'Image (Audit_Report.Mutating_Primitives)
+      & ":audited-overloads:"
+      & Natural'Image (Audit_Report.Audited_Overloads)
+      & ":bypass-overloads:"
+      & Natural'Image (Audit_Report.Bypass_Overloads));
 
    Identity_Tools_Gap_Claims.Validate (Gap_Report);
    Ada.Text_IO.Put_Line
