@@ -5,10 +5,6 @@ with Identity.Operations.Contexts;
 with Identity.Times;
 
 package Identity.Operations.External_Identities.Bind is
-   function Execute
-     (Repository : in out Identity.Adapters.Repositories.Stores.Store_Interface'Class;
-      Binding    : Identity.External_Providers.Bindings.External_Binding_Record)
-      return Identity.Adapters.Repositories.Stores.Command_Status;
 
    --  Audited form. Emits identity.external.binding.created for the binding,
    --  and refuses the operation if the store cannot accept that event, so a

@@ -7,13 +7,6 @@ with Identity.Text.Bounded;
 with Identity.Times;
 
 package Identity.Operations.Sessions.Renew is
-   function Execute
-     (Repository       : in out Identity.Adapters.Repositories.Stores.Store_Interface'Class;
-      Public_Reference : Identity.Text.Bounded.Bounded_Text;
-      Secret           : Identity.Secrets.Sessions.Session_Secret;
-      Now              : Identity.Times.Instant;
-      Idle_Expires_At  : Identity.Times.Expiration)
-      return Identity.Sessions.Handles.Session_Handle;
 
    --  Audited renewal: extending a session's life is a change to how long a
    --  credential stays usable, so it leaves a record like any other.

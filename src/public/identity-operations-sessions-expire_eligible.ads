@@ -4,9 +4,6 @@ with Identity.Operations.Contexts;
 with Identity.Times;
 
 package Identity.Operations.Sessions.Expire_Eligible is
-   function Execute
-     (Repository : in out Identity.Adapters.Repositories.Stores.Store_Interface'Class;
-      Now        : Identity.Times.Instant) return Natural;
 
    --  Audited form. The sweep is one operation however many sessions it
    --  touches, so it emits a single identity.session.expired event whose

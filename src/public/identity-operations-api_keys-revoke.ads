@@ -10,16 +10,6 @@ package Identity.Operations.API_Keys.Revoke is
       Expected_Credential_Version : Identity.Versions.Entity_Version;
    end record;
 
-   function Execute
-     (Repository : in out Identity.Adapters.Repositories.Stores.Store_Interface'Class;
-      Credential : Identity.Identifiers.Entities.Credential_Id)
-      return Identity.Adapters.Repositories.Stores.Command_Status;
-
-   function Execute
-     (Repository : in out Identity.Adapters.Repositories.Stores.Store_Interface'Class;
-      Request    : Staged_Revoke_Request)
-      return Identity.Adapters.Repositories.Stores.Command_Status;
-
    --  Audited form. Emits identity.api-key.revoked for the transition, and
    --  refuses the operation if the store cannot accept that event, so a key
    --  is never revoked without its audit record.

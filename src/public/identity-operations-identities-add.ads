@@ -5,10 +5,6 @@ with Identity.Operations.Contexts;
 with Identity.Times;
 
 package Identity.Operations.Identities.Add is
-   function Execute
-     (Repository : in out Identity.Adapters.Repositories.Stores.Store_Interface'Class;
-      Binding    : Identity.Identities.Bindings.Binding_Record)
-      return Identity.Adapters.Repositories.Stores.Command_Status;
 
    --  Audited form. Emits identity.binding.added for the transition, and
    --  refuses the operation if the store cannot accept that event, so a new

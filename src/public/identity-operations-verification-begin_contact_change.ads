@@ -16,20 +16,6 @@ package Identity.Operations.Verification.Begin_Contact_Change is
       Expires_At : Identity.Times.Expiration;
    end record;
 
-   function Execute
-     (Repository : in out Identity.Adapters.Repositories.Stores.Store_Interface'Class;
-      Change     : Identity.Verification.Changes.Contact_Change_Record;
-      Successor  : Identity.Contacts.Bindings.Contact_Binding_Record;
-      Token      : Identity.Tokens.Definitions.Action_Token_Record)
-      return Identity.Adapters.Repositories.Stores.Command_Status;
-
-   function Execute
-     (Repository : in out Identity.Adapters.Repositories.Stores.Store_Interface'Class;
-      Change     : Identity.Verification.Changes.Contact_Change_Record;
-      Successor  : Identity.Contacts.Bindings.Contact_Binding_Record;
-      Request    : Contact_Change_Token_Request)
-      return Identity.Adapters.Repositories.Stores.Command_Status;
-
    --  Audited form. Emits identity.contact.change.began for the transition,
    --  and refuses the operation if the store cannot accept that event: moving
    --  the address that receives recovery mail is exactly the change an

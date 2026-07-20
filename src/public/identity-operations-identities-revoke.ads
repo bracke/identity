@@ -11,17 +11,6 @@ package Identity.Operations.Identities.Revoke is
       Expected_Binding_Version : Identity.Versions.Entity_Version;
    end record;
 
-   function Execute
-     (Repository : in out Identity.Adapters.Repositories.Stores.Store_Interface'Class;
-      Binding    : Identity.Identifiers.Entities.Identity_Binding_Id;
-      Principal  : Identity.Identifiers.Entities.Principal_Id)
-      return Identity.Adapters.Repositories.Stores.Command_Status;
-
-   function Execute
-     (Repository : in out Identity.Adapters.Repositories.Stores.Store_Interface'Class;
-      Request    : Staged_Revoke_Request)
-      return Identity.Adapters.Repositories.Stores.Command_Status;
-
    --  Audited form. Emits identity.binding.revoked for the transition, and
    --  refuses the operation if the store cannot accept that event, so a
    --  binding never disappears without its audit record.

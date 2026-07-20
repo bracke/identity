@@ -21,17 +21,6 @@ package Identity.Operations.Passwords.Authenticate is
       Lockout_Threshold   : Identity.Versions.Attempt_Count := 0;
    end record;
 
-   function Execute
-     (Repository : Identity.Adapters.Repositories.Stores.Store_Interface'Class;
-      Subject    : Identity.Identities.Subjects.Authentication_Subject;
-      Password   : Identity.Secrets.Passwords.Presented_Password)
-      return Identity.Authentication.Results.Password_Authentication_Result;
-
-   function Execute
-     (Repository : in out Identity.Adapters.Repositories.Stores.Store_Interface'Class;
-      Request    : Attempted_Request)
-      return Identity.Authentication.Results.Password_Authentication_Result;
-
    --  Audited form. Emits identity.authentication.succeeded when the
    --  credential check passes and identity.authentication.rejected when it
    --  does not, and refuses the operation if the store cannot accept that

@@ -45,22 +45,6 @@ package Identity.Operations.Sessions.Rotate is
       Expected_Predecessor_Version : Identity.Versions.Entity_Version;
    end record;
 
-   function Execute
-     (Repository  : in out Identity.Adapters.Repositories.Stores.Store_Interface'Class;
-      Predecessor : Identity.Identifiers.Entities.Session_Id;
-      Successor   : Identity.Sessions.Definitions.Session_Record)
-      return Identity.Adapters.Repositories.Stores.Command_Status;
-
-   function Execute
-     (Repository : in out Identity.Adapters.Repositories.Stores.Store_Interface'Class;
-      Request    : Rotate_Request)
-      return Identity.Adapters.Repositories.Stores.Command_Status;
-
-   function Execute
-     (Repository : in out Identity.Adapters.Repositories.Stores.Store_Interface'Class;
-      Request    : Staged_Rotate_Request)
-      return Identity.Adapters.Repositories.Stores.Command_Status;
-
    --  Audited form. Emits identity.session.rotated for the transition, and
    --  refuses the operation if the store cannot accept that event, so a
    --  session is never rotated without its audit record.

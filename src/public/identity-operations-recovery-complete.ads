@@ -14,18 +14,6 @@ package Identity.Operations.Recovery.Complete is
       Expected_Account_Version     : Identity.Versions.Entity_Version;
    end record;
 
-   function Execute
-     (Repository  : in out Identity.Adapters.Repositories.Stores.Store_Interface'Class;
-      Transaction : Identity.Identifiers.Entities.Authentication_Transaction_Id;
-      Principal   : Identity.Identifiers.Entities.Principal_Id;
-      Now         : Identity.Times.Instant)
-      return Identity.Recovery.Transactions.Recovery_Transition_Status;
-
-   function Execute
-     (Repository : in out Identity.Adapters.Repositories.Stores.Store_Interface'Class;
-      Request    : Staged_Completion_Request)
-      return Identity.Recovery.Transactions.Recovery_Transition_Status;
-
    --  Audited form. Emits identity.recovery.completed for the transition, and
    --  refuses the operation if the store cannot accept that event, so a
    --  recovery is never completed without its audit record.

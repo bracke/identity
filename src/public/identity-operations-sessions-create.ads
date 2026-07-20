@@ -37,16 +37,6 @@ package Identity.Operations.Sessions.Create is
       Generation          : Identity.Versions.Rotation_Generation := 0;
    end record;
 
-   function Execute
-     (Repository : in out Identity.Adapters.Repositories.Stores.Store_Interface'Class;
-      Session    : Identity.Sessions.Definitions.Session_Record)
-      return Identity.Adapters.Repositories.Stores.Command_Status;
-
-   function Execute
-     (Repository : in out Identity.Adapters.Repositories.Stores.Store_Interface'Class;
-      Request    : Create_Request)
-      return Identity.Adapters.Repositories.Stores.Command_Status;
-
    --  Audited form. Emits identity.session.created for the transition, and
    --  refuses the operation if the store cannot accept that event, so a
    --  session is never created without its audit record.

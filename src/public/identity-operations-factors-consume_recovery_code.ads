@@ -15,17 +15,6 @@ package Identity.Operations.Factors.Consume_Recovery_Code is
       Code             : Identity.Secrets.Recovery_Codes.Recovery_Code;
    end record;
 
-   function Execute
-     (Repository : in out Identity.Adapters.Repositories.Stores.Store_Interface'Class;
-      Set_Id     : Identity.Identifiers.Entities.Credential_Set_Id;
-      Code       : Identity.Secrets.Recovery_Codes.Recovery_Code)
-      return Recovery_Code_Consume_Status;
-
-   function Execute
-     (Repository : in out Identity.Adapters.Repositories.Stores.Store_Interface'Class;
-      Request    : Consume_Request)
-      return Recovery_Code_Consume_Status;
-
    --  Audited form. Emits identity.recovery-code.consumed for the attempt --
    --  including the rejected ones, which are exactly the attempts worth
    --  seeing -- and refuses the operation if the store cannot accept that

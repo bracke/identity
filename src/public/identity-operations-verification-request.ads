@@ -17,18 +17,6 @@ package Identity.Operations.Verification.Request is
       Expires_At : Identity.Times.Expiration;
    end record;
 
-   function Execute
-     (Repository : in out Identity.Adapters.Repositories.Stores.Store_Interface'Class;
-      Contact    : Identity.Contacts.Bindings.Contact_Binding_Record;
-      Token      : Identity.Tokens.Definitions.Action_Token_Record)
-      return Identity.Adapters.Repositories.Stores.Command_Status;
-
-   function Execute
-     (Repository : in out Identity.Adapters.Repositories.Stores.Store_Interface'Class;
-      Contact    : Identity.Contacts.Bindings.Contact_Binding_Record;
-      Request    : Verification_Token_Request)
-      return Identity.Adapters.Repositories.Stores.Command_Status;
-
    --  Audited form. Emits identity.contact.verification.requested for the
    --  transition, and refuses the operation if the store cannot accept that
    --  event, so a verification token is never sent out unrecorded.

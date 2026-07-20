@@ -22,16 +22,6 @@ package Identity.Operations.API_Keys.Issue is
       Rotation_Generation : Identity.Versions.Rotation_Generation := 0;
    end record;
 
-   function Execute
-     (Repository : in out Identity.Adapters.Repositories.Stores.Store_Interface'Class;
-      Credential : Identity.API_Keys.Credentials.API_Key_Credential_Record)
-      return Identity.Adapters.Repositories.Stores.Command_Status;
-
-   function Execute
-     (Repository : in out Identity.Adapters.Repositories.Stores.Store_Interface'Class;
-      Request    : Issue_Request)
-      return Identity.Adapters.Repositories.Stores.Command_Status;
-
    --  Audited form. Emits identity.api-key.issued for the issuance, and
    --  refuses the operation if the store cannot accept that event, so a key
    --  that can authenticate never exists without a record of its issue.

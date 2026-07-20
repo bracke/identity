@@ -5,10 +5,6 @@ with Identity.Operations.Contexts;
 with Identity.Times;
 
 package Identity.Operations.Accounts.Create is
-   function Execute
-     (Repository : in out Identity.Adapters.Repositories.Stores.Store_Interface'Class;
-      Account    : Identity.Accounts.Definitions.Account_Record)
-      return Identity.Adapters.Repositories.Stores.Command_Status;
 
    --  Audited form. Emits identity.account.created for the transition, and
    --  refuses the operation if the store cannot accept that event, so an

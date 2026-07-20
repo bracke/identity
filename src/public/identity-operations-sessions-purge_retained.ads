@@ -10,10 +10,6 @@ package Identity.Operations.Sessions.Purge_Retained is
       Policy : Identity.Policies.Snapshots.Session_Policy;
       Ok     : out Boolean) return Identity.Times.Instant;
 
-   function Execute
-     (Repository   : in out Identity.Adapters.Repositories.Stores.Store_Interface'Class;
-      Retain_After : Identity.Times.Instant) return Natural;
-
    --  Audited form. The purge is one operation however many rows it removes,
    --  so it emits a single identity.session.purged event whose target carries
    --  the affected count. Capacity for that one event is reserved first: a

@@ -19,21 +19,6 @@ package Identity.Operations.Sessions.Upgrade_Assurance is
       Expected_Transaction_Version : Identity.Versions.Entity_Version;
    end record;
 
-   function Execute
-     (Repository  : in out Identity.Adapters.Repositories.Stores.Store_Interface'Class;
-      Session     : Identity.Identifiers.Entities.Session_Id;
-      Transaction : Identity.Identifiers.Entities.Authentication_Transaction_Id;
-      Principal   : Identity.Identifiers.Entities.Principal_Id;
-      Now         : Identity.Times.Instant;
-      Assurance   : Identity.Assurance.Levels.Assurance_Level;
-      Attributes  : Identity.Assurance.Attributes.Assurance_Attributes)
-      return Identity.Authentication.Transactions.Authentication_Transaction_Status;
-
-   function Execute
-     (Repository : in out Identity.Adapters.Repositories.Stores.Store_Interface'Class;
-      Request    : Staged_Upgrade_Request)
-      return Identity.Authentication.Transactions.Authentication_Transaction_Status;
-
    --  Audited upgrade: a session that gains assurance without a record leaves
    --  no answer to "what raised this session's standing, and when?".
    function Execute

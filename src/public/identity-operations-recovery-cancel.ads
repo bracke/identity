@@ -12,17 +12,6 @@ package Identity.Operations.Recovery.Cancel is
       Expected_Version : Identity.Versions.Entity_Version;
    end record;
 
-   function Execute
-     (Repository  : in out Identity.Adapters.Repositories.Stores.Store_Interface'Class;
-      Transaction : Identity.Identifiers.Entities.Authentication_Transaction_Id;
-      Principal   : Identity.Identifiers.Entities.Principal_Id)
-      return Identity.Recovery.Transactions.Recovery_Transition_Status;
-
-   function Execute
-     (Repository : in out Identity.Adapters.Repositories.Stores.Store_Interface'Class;
-      Request    : Staged_Cancellation_Request)
-      return Identity.Recovery.Transactions.Recovery_Transition_Status;
-
    --  Audited cancellation: a recovery that disappears without a record is
    --  indistinguishable from one that was quietly suppressed.
    function Execute

@@ -9,16 +9,6 @@ package Identity.Operations.Sessions.Revoke_Family is
       Expected_Affected_Count : Natural;
    end record;
 
-   function Execute
-     (Repository : in out Identity.Adapters.Repositories.Stores.Store_Interface'Class;
-      Family     : Identity.Identifiers.Entities.Session_Family_Id)
-      return Identity.Adapters.Repositories.Stores.Command_Status;
-
-   function Execute
-     (Repository : in out Identity.Adapters.Repositories.Stores.Store_Interface'Class;
-      Request    : Staged_Revoke_Request)
-      return Identity.Adapters.Repositories.Stores.Command_Status;
-
    --  Audited form. Emits identity.session.revoked for the family-wide
    --  revocation, and refuses the operation if the store cannot accept that
    --  event, so sessions are never revoked without an audit record.

@@ -11,17 +11,6 @@ package Identity.Operations.External_Identities.Revoke is
       Expected_Binding_Version : Identity.Versions.Entity_Version;
    end record;
 
-   function Execute
-     (Repository : in out Identity.Adapters.Repositories.Stores.Store_Interface'Class;
-      Binding    : Identity.Identifiers.Entities.External_Binding_Id;
-      Principal  : Identity.Identifiers.Entities.Principal_Id)
-      return Identity.Adapters.Repositories.Stores.Command_Status;
-
-   function Execute
-     (Repository : in out Identity.Adapters.Repositories.Stores.Store_Interface'Class;
-      Request    : Staged_Revoke_Request)
-      return Identity.Adapters.Repositories.Stores.Command_Status;
-
    --  Audited form. Emits identity.external.binding.revoked for the removal,
    --  and refuses the operation if the store cannot accept that event, so a
    --  route into an account is never withdrawn without a record of it.

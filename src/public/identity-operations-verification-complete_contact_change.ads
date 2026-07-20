@@ -19,20 +19,6 @@ package Identity.Operations.Verification.Complete_Contact_Change is
       Successor                    : Identity.Identifiers.Entities.Contact_Binding_Id;
    end record;
 
-   function Execute
-     (Repository  : in out Identity.Adapters.Repositories.Stores.Store_Interface'Class;
-      Token       : Identity.Identifiers.Entities.Token_Id;
-      Secret      : Identity.Secrets.Tokens.Verification_Token_Secret;
-      Now         : Identity.Times.Instant;
-      Predecessor : Identity.Identifiers.Entities.Contact_Binding_Id;
-      Successor   : Identity.Identifiers.Entities.Contact_Binding_Id)
-      return Identity.Tokens.Verification.Token_Verification_Outcome;
-
-   function Execute
-     (Repository : in out Identity.Adapters.Repositories.Stores.Store_Interface'Class;
-      Request    : Staged_Completion_Request)
-      return Identity.Tokens.Verification.Token_Verification_Outcome;
-
    --  Audited completion: moving where an account can be reached is a change
    --  a later recovery depends on, so it must leave a record.
    function Execute

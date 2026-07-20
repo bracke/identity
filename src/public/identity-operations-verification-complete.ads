@@ -16,19 +16,6 @@ package Identity.Operations.Verification.Complete is
       Contact                  : Identity.Identifiers.Entities.Contact_Binding_Id;
    end record;
 
-   function Execute
-     (Repository : in out Identity.Adapters.Repositories.Stores.Store_Interface'Class;
-      Token      : Identity.Identifiers.Entities.Token_Id;
-      Secret     : Identity.Secrets.Tokens.Verification_Token_Secret;
-      Now        : Identity.Times.Instant;
-      Contact    : Identity.Identifiers.Entities.Contact_Binding_Id)
-      return Identity.Tokens.Verification.Token_Verification_Outcome;
-
-   function Execute
-     (Repository : in out Identity.Adapters.Repositories.Stores.Store_Interface'Class;
-      Request    : Staged_Completion_Request)
-      return Identity.Tokens.Verification.Token_Verification_Outcome;
-
    --  Audited form. Emits identity.contact.verified for the transition, and
    --  refuses the operation if the store cannot accept that event, so a
    --  contact is never marked verified without its audit record.

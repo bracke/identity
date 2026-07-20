@@ -26,22 +26,6 @@ package Identity.Operations.API_Keys.Rotate is
       Expected_Predecessor_Version : Identity.Versions.Entity_Version;
    end record;
 
-   function Execute
-     (Repository  : in out Identity.Adapters.Repositories.Stores.Store_Interface'Class;
-      Predecessor : Identity.Identifiers.Entities.Credential_Id;
-      Successor   : Identity.API_Keys.Credentials.API_Key_Credential_Record)
-      return Identity.Adapters.Repositories.Stores.Command_Status;
-
-   function Execute
-     (Repository : in out Identity.Adapters.Repositories.Stores.Store_Interface'Class;
-      Request    : Rotate_Request)
-      return Identity.Adapters.Repositories.Stores.Command_Status;
-
-   function Execute
-     (Repository : in out Identity.Adapters.Repositories.Stores.Store_Interface'Class;
-      Request    : Staged_Rotate_Request)
-      return Identity.Adapters.Repositories.Stores.Command_Status;
-
    --  Audited rotation: the successor key only exists if its issuance is
    --  recorded alongside the retirement of its predecessor.
    function Execute

@@ -314,6 +314,35 @@ with Identity.Versions;
 procedure Identity_Tests is
    use AUnit.Assertions;
 
+   Audit_Context : constant Identity.Operations.Contexts.Operation_Context :=
+     (Operation    => Identity.Identifiers.Operations.Operation
+                        (Identity.Identifiers.From_String
+                           ("7f000000-0000-0000-0000-000000000001")),
+      Correlation  => Identity.Identifiers.Operations.Correlation
+                        (Identity.Identifiers.From_String
+                           ("7f100000-0000-0000-0000-000000000001")),
+      Causation    => (Present => False),
+      Request      => (Present => False),
+      Actor        => (Kind => Identity.Events.Envelopes.Unauthenticated,
+                       Principal => (Present => False)),
+      Requested_At => 1,
+      Deadline     => (Present => False, Time_Point => 0),
+      others       => <>);
+
+   Audit_Event_Counter : Natural := 0;
+
+   --  A fresh id per call: the store rejects a duplicate event id.
+   function Next_Audit_Event return Identity.Identifiers.Entities.Event_Id is
+      Raw : constant String := Natural'Image (Audit_Event_Counter);
+      Digits_Text : constant String := Raw (Raw'First + 1 .. Raw'Last);
+      Padded : String (1 .. 12) := [others => '0'];
+   begin
+      Audit_Event_Counter := Audit_Event_Counter + 1;
+      Padded (Padded'Last - Digits_Text'Length + 1 .. Padded'Last) := Digits_Text;
+      return Identity.Identifiers.Entities.Event
+        (Identity.Identifiers.From_String ("7f200000-0000-0000-0000-" & Padded));
+   end Next_Audit_Event;
+
    Secret_A : constant Identity.Secrets.Bytes.Secret_Bytes :=
      Identity.Secrets.Text.From_UTF_8 ("CANARY-password-123");
    Secret_B : constant Identity.Secrets.Bytes.Secret_Bytes :=
@@ -9089,7 +9118,7 @@ begin
          (Id => P1,
           Kind => Identity.Principals.Kinds.Human,
           State => Identity.Principals.Definitions.Active,
-          Version => 0))
+          Version => 0), Audit_Context, Next_Audit_Event, 1)
       = Identity.Adapters.Repositories.Memory.Applied,
       "memory repository creates principal");
 
@@ -9104,7 +9133,7 @@ begin
                     Lock_State => Identity.Accounts.States.Not_Locked,
                     Requirements => (others => False),
                     Recovery => (others => False)),
-          Version => 0))
+          Version => 0), Audit_Context, Next_Audit_Event, 1)
       = Identity.Adapters.Repositories.Memory.Applied,
       "memory repository creates account only for existing principal");
 
@@ -9116,7 +9145,7 @@ begin
           Kind => Login_Kind,
           Normalized => Alice,
           State => Identity.Identities.Bindings.Active,
-          Version => 0))
+          Version => 0), Audit_Context, Next_Audit_Event, 1)
       = Identity.Adapters.Repositories.Memory.Applied,
       "identity binding add operation creates active binding");
 
@@ -9246,7 +9275,7 @@ begin
           Kind => Login_Kind,
           Normalized => Alice,
           State => Identity.Identities.Bindings.Active,
-          Version => 0))
+          Version => 0), Audit_Context, Next_Audit_Event, 1)
       = Identity.Adapters.Repositories.Memory.Uniqueness_Conflict,
       "IDENTITY-IDENTITY-001 active binding uniqueness enforced");
 
@@ -9258,7 +9287,7 @@ begin
           Kind => Login_Kind,
           Normalized => Alias_One,
           State => Identity.Identities.Bindings.Active,
-          Version => 0))
+          Version => 0), Audit_Context, Next_Audit_Event, 1)
       = Identity.Adapters.Repositories.Memory.Applied,
       "identity binding add operation applied");
 
@@ -9275,7 +9304,7 @@ begin
          Identity.Operations.Identities.Revoke.Staged_Revoke_Request'
            (Binding => B3,
             Principal => P1,
-            Expected_Binding_Version => 1))
+            Expected_Binding_Version => 1), Audit_Context, Next_Audit_Event, 1)
       = Identity.Adapters.Repositories.Memory.Version_Conflict,
       "stale staged identity binding revocation conflicts before revocation");
 
@@ -9287,7 +9316,7 @@ begin
       "stale staged identity binding revocation leaves binding resolvable");
 
    Assert
-     (Identity.Operations.Identities.Revoke.Execute (Repository, B3, P1)
+     (Identity.Operations.Identities.Revoke.Execute (Repository, B3, P1, Audit_Context, Next_Audit_Event, 1)
       = Identity.Adapters.Repositories.Memory.Applied,
       "identity binding revoke operation applied");
 
@@ -9320,7 +9349,7 @@ begin
           Kind => Login_Kind,
           Normalized => Alias_Two,
           State => Identity.Identities.Bindings.Active,
-          Version => 0))
+          Version => 0), Audit_Context, Next_Audit_Event, 1)
       = Identity.Adapters.Repositories.Memory.Applied,
       "identity binding added for change workflow");
 
@@ -9336,7 +9365,7 @@ begin
                Kind => Login_Kind,
                Normalized => Alias_Three,
                State => Identity.Identities.Bindings.Active,
-               Version => 0)))
+               Version => 0)), Audit_Context, Next_Audit_Event, 1)
       = Identity.Adapters.Repositories.Memory.Version_Conflict,
       "stale staged identity binding change conflicts before predecessor revocation");
 
@@ -9356,7 +9385,7 @@ begin
           Kind => Login_Kind,
           Normalized => Alias_Three,
           State => Identity.Identities.Bindings.Active,
-          Version => 0))
+          Version => 0), Audit_Context, Next_Audit_Event, 1)
       = Identity.Adapters.Repositories.Memory.Applied,
       "identity binding change revokes predecessor and adds successor");
 
@@ -9384,7 +9413,7 @@ begin
           Kind => Login_Kind,
           Normalized => Alice,
           State => Identity.Identities.Bindings.Active,
-          Version => 0))
+          Version => 0), Audit_Context, Next_Audit_Event, 1)
       = Identity.Adapters.Repositories.Memory.Uniqueness_Conflict,
       "identity binding change enforces active subject uniqueness");
 
@@ -9394,7 +9423,7 @@ begin
          (Id => P3,
           Kind => Identity.Principals.Kinds.Human,
           State => Identity.Principals.Definitions.Active,
-          Version => 0))
+          Version => 0), Audit_Context, Next_Audit_Event, 1)
       = Identity.Adapters.Repositories.Memory.Applied,
       "retirement fixture principal created");
 
@@ -9409,7 +9438,7 @@ begin
                     Lock_State => Identity.Accounts.States.Not_Locked,
                     Requirements => (others => False),
                     Recovery => (others => False)),
-          Version => 0))
+          Version => 0), Audit_Context, Next_Audit_Event, 1)
       = Identity.Adapters.Repositories.Memory.Applied,
       "retirement fixture account created");
 
@@ -9421,13 +9450,13 @@ begin
           Kind => Login_Kind,
           Normalized => Retired_User,
           State => Identity.Identities.Bindings.Active,
-          Version => 0))
+          Version => 0), Audit_Context, Next_Audit_Event, 1)
       = Identity.Adapters.Repositories.Memory.Applied,
       "retirement fixture identity binding created");
 
    Assert
      (Identity.Operations.Passwords.Enroll.Execute
-        (Repository, P3, C9, New_Password)
+        (Repository, P3, C9, New_Password, Audit_Context, Next_Audit_Event, 1)
       = Identity.Adapters.Repositories.Memory.Applied,
       "retirement fixture password enrolled");
 
@@ -9435,7 +9464,7 @@ begin
      (Identity.Operations.Passwords.Authenticate.Execute
         (Repository,
          (Kind => Login_Kind, Value => Retired_User),
-         Presented_Password).Status = Identity.Results.Succeeded,
+         Presented_Password, Audit_Context, Next_Audit_Event, 1).Status = Identity.Results.Succeeded,
       "active principal authenticates before retirement");
 
    Assert
@@ -9449,7 +9478,7 @@ begin
             Subject_Fingerprint => Identity.Text.Bounded.From_String ("subject-fingerprint-lockout"),
             Started_At => 73,
             Completed_At => 74,
-            Lockout_Threshold => 1)).Status = Identity.Results.Rejected,
+            Lockout_Threshold => 1), Audit_Context, Next_Audit_Event, 1).Status = Identity.Results.Rejected,
       "password failure threshold rejects authentication attempt");
 
    Identity.Adapters.Repositories.Memory.Find_Account
@@ -9463,7 +9492,7 @@ begin
      (Identity.Operations.Passwords.Authenticate.Execute
         (Repository,
          (Kind => Login_Kind, Value => Retired_User),
-         Presented_Password).Status = Identity.Results.Rejected,
+         Presented_Password, Audit_Context, Next_Audit_Event, 1).Status = Identity.Results.Rejected,
       "temporarily locked account rejects password authentication generically");
 
    Account_Check.State.Lock_State := Identity.Accounts.States.Not_Locked;
@@ -9478,7 +9507,7 @@ begin
         (Repository,
          Identity.Operations.Principals.Retire.Staged_Retire_Request'
            (Principal => P3,
-            Expected_Version => 99))
+            Expected_Version => 99), Audit_Context, Next_Audit_Event, 1)
       = Identity.Adapters.Repositories.Memory.Version_Conflict,
       "stale staged principal retirement conflicts before lifecycle change");
 
@@ -9495,7 +9524,7 @@ begin
    end;
 
    Assert
-     (Identity.Operations.Principals.Retire.Execute (Repository, P3)
+     (Identity.Operations.Principals.Retire.Execute (Repository, P3, Audit_Context, Next_Audit_Event, 1)
       = Identity.Adapters.Repositories.Memory.Applied,
       "principal retirement transition applied");
 
@@ -9507,7 +9536,7 @@ begin
           Kind => Login_Kind,
           Normalized => Retired_User_New_Binding,
           State => Identity.Identities.Bindings.Active,
-          Version => 0))
+          Version => 0), Audit_Context, Next_Audit_Event, 1)
       = Identity.Adapters.Repositories.Memory.State_Conflict,
       "identity binding add rejects retired principal");
 
@@ -9520,7 +9549,7 @@ begin
           Kind => Login_Kind,
           Normalized => Retired_User_Changed_Binding,
           State => Identity.Identities.Bindings.Active,
-          Version => 0))
+          Version => 0), Audit_Context, Next_Audit_Event, 1)
       = Identity.Adapters.Repositories.Memory.State_Conflict,
       "identity binding change rejects retired principal");
 
@@ -9528,7 +9557,7 @@ begin
      (Identity.Operations.Passwords.Authenticate.Execute
         (Repository,
          (Kind => Login_Kind, Value => Retired_User),
-         Presented_Password).Status = Identity.Results.Rejected,
+         Presented_Password, Audit_Context, Next_Audit_Event, 1).Status = Identity.Results.Rejected,
       "retired principal cannot authenticate");
 
    Assert
@@ -9538,13 +9567,13 @@ begin
              (Identity.Identifiers.From_String ("10000000-0000-0000-0000-000000000002")),
           Principal => P2,
           State => Account_State,
-          Version => 0))
+          Version => 0), Audit_Context, Next_Audit_Event, 1)
       = Identity.Adapters.Repositories.Memory.State_Conflict,
       "account creation requires existing principal");
 
    Assert
      (Identity.Operations.Passwords.Enroll.Execute
-        (Repository, P1, C1, New_Password)
+        (Repository, P1, C1, New_Password, Audit_Context, Next_Audit_Event, 1)
       = Identity.Adapters.Repositories.Memory.Applied,
       "IDENTITY-SECRET-001 password enrollment persists verifier only");
 
@@ -9584,7 +9613,7 @@ begin
 
    Assert
      (Identity.Operations.Passwords.Enroll.Execute
-        (Repository, P1, C2, New_Password)
+        (Repository, P1, C2, New_Password, Audit_Context, Next_Audit_Event, 1)
       = Identity.Adapters.Repositories.Memory.State_Conflict,
       "only one active password credential in this memory profile");
 
@@ -9592,7 +9621,7 @@ begin
      (Identity.Operations.Passwords.Authenticate.Execute
         (Repository,
          (Kind => Login_Kind, Value => Alice),
-         Presented_Password).Status = Identity.Results.Succeeded,
+         Presented_Password, Audit_Context, Next_Audit_Event, 1).Status = Identity.Results.Succeeded,
       "password authentication is a structured operation result");
 
    Assert
@@ -9606,7 +9635,7 @@ begin
             Subject_Fingerprint => Identity.Text.Bounded.From_String ("subject-fingerprint-login-success"),
             Started_At => 75,
             Completed_At => 76,
-            Lockout_Threshold => 0)).Status = Identity.Results.Succeeded,
+            Lockout_Threshold => 0), Audit_Context, Next_Audit_Event, 1).Status = Identity.Results.Succeeded,
       "password authentication request records successful attempt");
 
    Identity.Adapters.Repositories.Memory.Find_Attempt
@@ -9622,7 +9651,7 @@ begin
      (Identity.Operations.Passwords.Authenticate.Execute
         (Repository,
          (Kind => Login_Kind, Value => Alice),
-         Wrong_Password).Status = Identity.Results.Rejected,
+         Wrong_Password, Audit_Context, Next_Audit_Event, 1).Status = Identity.Results.Rejected,
       "wrong password is ordinary rejection");
 
    Assert
@@ -9630,7 +9659,7 @@ begin
         (Identity.Operations.Passwords.Authenticate.Execute
            (Repository,
             (Kind => Login_Kind, Value => Alice),
-            Wrong_Password).Status,
+            Wrong_Password, Audit_Context, Next_Audit_Event, 1).Status,
          Identity.Operations.Disclosure.Untrusted_Interactive)
       = Identity.Operations.Disclosure.Authentication_Rejected,
       "wrong password disclosure remains generic");
@@ -9639,7 +9668,7 @@ begin
      (Identity.Operations.Passwords.Authenticate.Execute
         (Repository,
          (Kind => Login_Kind, Value => Unknown_Login),
-         Wrong_Password).Status = Identity.Results.Rejected,
+         Wrong_Password, Audit_Context, Next_Audit_Event, 1).Status = Identity.Results.Rejected,
       "unknown subject performs synthetic verification and rejects generically");
 
    Assert
@@ -9653,7 +9682,7 @@ begin
             Subject_Fingerprint => Identity.Text.Bounded.From_String ("subject-fingerprint-login-unknown"),
             Started_At => 77,
             Completed_At => 78,
-            Lockout_Threshold => 0)).Status = Identity.Results.Rejected,
+            Lockout_Threshold => 0), Audit_Context, Next_Audit_Event, 1).Status = Identity.Results.Rejected,
       "password authentication request records rejected attempt");
 
    Identity.Adapters.Repositories.Memory.Find_Attempt
@@ -9670,14 +9699,14 @@ begin
         (Identity.Operations.Passwords.Authenticate.Execute
            (Repository,
             (Kind => Login_Kind, Value => Unknown_Login),
-            Wrong_Password).Status,
+            Wrong_Password, Audit_Context, Next_Audit_Event, 1).Status,
          Identity.Operations.Disclosure.Untrusted_Interactive)
       = Identity.Operations.Disclosure.Authentication_Rejected,
       "unknown subject disclosure remains generic");
 
    Assert
      (Identity.Operations.Passwords.Change.Execute
-        (Repository, P1, C6, Wrong_Password, Changed_Password)
+        (Repository, P1, C6, Wrong_Password, Changed_Password, Audit_Context, Next_Audit_Event, 1)
       = Identity.Results.Rejected,
       "wrong current password cannot replace credential");
 
@@ -9689,7 +9718,7 @@ begin
             New_Credential => C6,
             Expected_Current_Version => 99,
             Current => Presented_Password,
-            Replacement => Changed_Password))
+            Replacement => Changed_Password), Audit_Context, Next_Audit_Event, 1)
       = Identity.Results.Conflict,
       "stale staged password change conflicts before credential replacement");
 
@@ -9697,12 +9726,12 @@ begin
      (Identity.Operations.Passwords.Authenticate.Execute
         (Repository,
          (Kind => Login_Kind, Value => Alice),
-         Presented_Password).Status = Identity.Results.Succeeded,
+         Presented_Password, Audit_Context, Next_Audit_Event, 1).Status = Identity.Results.Succeeded,
       "stale staged password change leaves current credential active");
 
    Assert
      (Identity.Operations.Passwords.Change.Execute
-        (Repository, P1, C7, Presented_Password, Changed_Password)
+        (Repository, P1, C7, Presented_Password, Changed_Password, Audit_Context, Next_Audit_Event, 1)
       = Identity.Results.Succeeded,
       "password change verifies old credential before replacement");
 
@@ -9726,14 +9755,14 @@ begin
      (Identity.Operations.Passwords.Authenticate.Execute
         (Repository,
          (Kind => Login_Kind, Value => Alice),
-         Presented_Password).Status = Identity.Results.Rejected,
+         Presented_Password, Audit_Context, Next_Audit_Event, 1).Status = Identity.Results.Rejected,
       "retired password credential cannot authenticate");
 
    Assert
      (Identity.Operations.Passwords.Authenticate.Execute
         (Repository,
          (Kind => Login_Kind, Value => Alice),
-         Presented_Changed_Password).Status = Identity.Results.Succeeded,
+         Presented_Changed_Password, Audit_Context, Next_Audit_Event, 1).Status = Identity.Results.Succeeded,
       "replacement password credential authenticates");
 
    Assert
@@ -9761,7 +9790,7 @@ begin
             Remembered => False,
             Generation => 0,
             State => Identity.Sessions.Definitions.Active,
-            Version => 0))
+            Version => 0), Audit_Context, Next_Audit_Event, 1)
       = Identity.Adapters.Repositories.Memory.State_Conflict,
       "session creation rejects retired principal");
 
@@ -9813,7 +9842,7 @@ begin
       = Identity.Sessions.Handles.Not_Verified
       and then Identity.Sessions.Handles.Rejected
         (Identity.Operations.Sessions.Lookup.Execute
-           (Repository, Session_Reference, Wrong_Session_Secret, 20))
+           (Repository, Session_Reference, Wrong_Session_Secret, 20, Audit_Context, Next_Audit_Event, 1))
       and then Identity.Sessions.Handles.Disclosure_Collapsed_Invalid
         (Identity.Sessions.Handles.Not_Verified)
       and then Identity.Sessions.Handles.Not_Verified_Status
@@ -9879,7 +9908,7 @@ begin
       Session_Reference,
       Session_Secret,
       23,
-      (Present => True, Time_Point => 140));
+      (Present => True, Time_Point => 140), Audit_Context, Next_Audit_Event, 1);
    Assert
      (Renewed_Handle.Status = Identity.Sessions.Handles.Found
       and then Renewed_Handle.Last_Seen_At = 23
@@ -9895,7 +9924,7 @@ begin
          Session_Reference,
          Wrong_Session_Secret,
          23,
-         (Present => True, Time_Point => 140)).Status
+         (Present => True, Time_Point => 140), Audit_Context, Next_Audit_Event, 1).Status
       = Identity.Sessions.Handles.Not_Verified,
       "wrong secret cannot renew session");
 
@@ -9905,7 +9934,7 @@ begin
          Session_Reference,
          Session_Secret,
          23,
-         (Present => True, Time_Point => 1001)).Status
+         (Present => True, Time_Point => 1001), Audit_Context, Next_Audit_Event, 1).Status
       = Identity.Sessions.Handles.Expired
       and then Identity.Sessions.Handles.Expired (Identity.Sessions.Handles.Expired)
       and then Identity.Sessions.Handles.Terminal_Rejection
@@ -9941,7 +9970,7 @@ begin
           Remembered => False,
           Generation => 1,
           State => Identity.Sessions.Definitions.Active,
-          Version => 0))
+          Version => 0), Audit_Context, Next_Audit_Event, 1)
       = Identity.Adapters.Repositories.Memory.Applied,
       "IDENTITY-SESSION-001 session rotation command applied");
 
@@ -10004,7 +10033,7 @@ begin
 
    Assert
      (Identity.Operations.Sessions.Lookup.Execute
-        (Repository, Rotated_Session_Reference, Rotated_Session_Secret, 25).Status
+        (Repository, Rotated_Session_Reference, Rotated_Session_Secret, 25, Audit_Context, Next_Audit_Event, 1).Status
       = Identity.Sessions.Handles.Found,
       "rotated successor verifies with new bearer secret");
 
@@ -10034,7 +10063,7 @@ begin
           Remembered => False,
           Generation => 2,
           State => Identity.Sessions.Definitions.Active,
-          Version => 0))
+          Version => 0), Audit_Context, Next_Audit_Event, 1)
       = Identity.Adapters.Repositories.Memory.State_Conflict,
       "rotated predecessor cannot rotate again");
 
@@ -10049,7 +10078,7 @@ begin
 
    Assert
      (Identity.Operations.Sessions.Lookup.Execute
-        (Repository, Rotated_Session_Reference, Rotated_Session_Secret, 24).Status
+        (Repository, Rotated_Session_Reference, Rotated_Session_Secret, 24, Audit_Context, Next_Audit_Event, 1).Status
       = Identity.Sessions.Handles.Found,
       "stale staged session revocation leaves session usable");
 
@@ -10060,7 +10089,7 @@ begin
 
    Assert
      (Identity.Operations.Sessions.Lookup.Execute
-        (Repository, Rotated_Session_Reference, Rotated_Session_Secret, 24).Status
+        (Repository, Rotated_Session_Reference, Rotated_Session_Secret, 24, Audit_Context, Next_Audit_Event, 1).Status
       = Identity.Sessions.Handles.Revoked,
       "revoked session unusable");
 
@@ -10112,7 +10141,7 @@ begin
 
    Assert
      (Identity.Operations.Sessions.Lookup.Execute
-        (Repository, Request_Session_Reference, Request_Session_Secret, 26).Status
+        (Repository, Request_Session_Reference, Request_Session_Secret, 26, Audit_Context, Next_Audit_Event, 1).Status
       = Identity.Sessions.Handles.Found,
       "session created from secret container verifies with bearer secret");
 
@@ -10139,7 +10168,7 @@ begin
             Idle_Expires_At => (Present => True, Time_Point => 100),
             Absolute_Expires_At => (Present => True, Time_Point => 1000),
             Remembered => False,
-            Generation => 3))
+            Generation => 3), Audit_Context, Next_Audit_Event, 1)
       = Identity.Adapters.Repositories.Memory.State_Conflict,
       "session rotation rejects retired successor principal");
 
@@ -10189,7 +10218,8 @@ begin
 
    Assert
      (Identity.Operations.Sessions.Lookup.Execute
-        (Repository, Request_Rotated_Session_Reference, Request_Rotated_Session_Secret, 28).Status
+        (Repository, Request_Rotated_Session_Reference, Request_Rotated_Session_Secret, 28,
+         Audit_Context, Next_Audit_Event, 1).Status
       = Identity.Sessions.Handles.Found,
       "request-rotated session successor verifies with new bearer secret");
 
@@ -10218,7 +10248,7 @@ begin
           Remembered => False,
           Generation => 2,
           State => Identity.Sessions.Definitions.Active,
-          Version => 0))
+          Version => 0), Audit_Context, Next_Audit_Event, 1)
       = Identity.Adapters.Repositories.Memory.Applied,
       "second active family session created");
 
@@ -10233,7 +10263,7 @@ begin
 
    Assert
      (Identity.Operations.Sessions.Lookup.Execute
-        (Repository, Family_Session_Reference, Family_Session_Secret, 26).Status
+        (Repository, Family_Session_Reference, Family_Session_Secret, 26, Audit_Context, Next_Audit_Event, 1).Status
       = Identity.Sessions.Handles.Found,
       "stale staged session family revocation leaves session usable");
 
@@ -10244,7 +10274,7 @@ begin
 
    Assert
      (Identity.Operations.Sessions.Lookup.Execute
-        (Repository, Family_Session_Reference, Family_Session_Secret, 26).Status
+        (Repository, Family_Session_Reference, Family_Session_Secret, 26, Audit_Context, Next_Audit_Event, 1).Status
       = Identity.Sessions.Handles.Revoked
       and then Identity.Sessions.Handles.Revoked (Identity.Sessions.Handles.Revoked)
       and then Identity.Sessions.Handles.Terminal_Rejection
@@ -10276,7 +10306,7 @@ begin
           Remembered => False,
           Generation => 3,
           State => Identity.Sessions.Definitions.Active,
-          Version => 0))
+          Version => 0), Audit_Context, Next_Audit_Event, 1)
       = Identity.Adapters.Repositories.Memory.Applied,
       "principal session created after family revocation");
 
@@ -10291,7 +10321,8 @@ begin
 
    Assert
      (Identity.Operations.Sessions.Lookup.Execute
-        (Repository, Principal_Session_Reference, Principal_Session_Secret, 28).Status
+        (Repository, Principal_Session_Reference, Principal_Session_Secret, 28,
+         Audit_Context, Next_Audit_Event, 1).Status
       = Identity.Sessions.Handles.Found,
       "stale staged principal session revocation leaves session usable");
 
@@ -10302,7 +10333,8 @@ begin
 
    Assert
      (Identity.Operations.Sessions.Lookup.Execute
-        (Repository, Principal_Session_Reference, Principal_Session_Secret, 28).Status
+        (Repository, Principal_Session_Reference, Principal_Session_Secret, 28,
+         Audit_Context, Next_Audit_Event, 1).Status
       = Identity.Sessions.Handles.Revoked,
       "principal revoked session unusable");
 
@@ -10331,7 +10363,7 @@ begin
           Remembered => False,
           Generation => 4,
           State => Identity.Sessions.Definitions.Active,
-          Version => 0))
+          Version => 0), Audit_Context, Next_Audit_Event, 1)
       = Identity.Adapters.Repositories.Memory.Applied,
       "idle-expired session fixture created");
 
@@ -10341,12 +10373,12 @@ begin
 
    Assert
      (Identity.Operations.Sessions.Lookup.Execute
-        (Repository, Expired_Session_Reference, Expired_Session_Secret, 30).Status
+        (Repository, Expired_Session_Reference, Expired_Session_Secret, 30, Audit_Context, Next_Audit_Event, 1).Status
       = Identity.Sessions.Handles.Expired,
       "expired session lookup reports expiration");
 
    Assert
-     (Identity.Operations.Sessions.Purge_Retained.Execute (Repository, 31) = 7,
+     (Identity.Operations.Sessions.Purge_Retained.Execute (Repository, 31, Audit_Context, Next_Audit_Event, 1) = 7,
       "retained non-active sessions purged deterministically");
 
    Assert
@@ -10366,7 +10398,7 @@ begin
             Expires_At => (Present => True, Time_Point => 300),
             State => Identity.Tokens.Definitions.Issued,
             Attempts => 0,
-            Version => 0))
+            Version => 0), Audit_Context, Next_Audit_Event, 1)
       = Identity.Adapters.Repositories.Memory.State_Conflict,
       "action token issue rejects retired principal");
 
@@ -10401,13 +10433,15 @@ begin
 
    Assert
      (Identity.Operations.Tokens.Verify.Execute
-        (Repository, T1, Identity.Tokens.Purposes.Password_Reset, Wrong_Reset_Token_Secret, 40)
+        (Repository, T1, Identity.Tokens.Purposes.Password_Reset, Wrong_Reset_Token_Secret, 40,
+         Audit_Context, Next_Audit_Event, 1)
       = Identity.Tokens.Verification.Not_Verified,
       "wrong token secret rejected");
 
    Assert
      (Identity.Operations.Tokens.Consume.Execute
-        (Repository, T1, Identity.Tokens.Purposes.Password_Reset, Reset_Token_Secret, 40)
+        (Repository, T1, Identity.Tokens.Purposes.Password_Reset, Reset_Token_Secret, 40,
+         Audit_Context, Next_Audit_Event, 1)
       = Identity.Tokens.Verification.Valid,
       "token consumption succeeds once");
 
@@ -10435,13 +10469,14 @@ begin
             Expected_Version => 0,
             Purpose => Identity.Tokens.Purposes.Password_Reset,
             Secret => Reset_Token_Secret,
-            Now => 40))
+            Now => 40), Audit_Context, Next_Audit_Event, 1)
       = Identity.Tokens.Verification.State_Conflict,
       "stale token consumption request conflicts before consumed-state disclosure");
 
    Assert
      (Identity.Operations.Tokens.Consume.Execute
-        (Repository, T1, Identity.Tokens.Purposes.Password_Reset, Reset_Token_Secret, 40)
+        (Repository, T1, Identity.Tokens.Purposes.Password_Reset, Reset_Token_Secret, 40,
+         Audit_Context, Next_Audit_Event, 1)
       = Identity.Tokens.Verification.Already_Consumed,
       "consumed token cannot reactivate");
 
@@ -10464,13 +10499,15 @@ begin
 
    Assert
      (Identity.Operations.Tokens.Verify.Execute
-        (Repository, T12, Identity.Tokens.Purposes.Password_Reset, Reset_Token_Secret, 40)
+        (Repository, T12, Identity.Tokens.Purposes.Password_Reset, Reset_Token_Secret, 40,
+         Audit_Context, Next_Audit_Event, 1)
       = Identity.Tokens.Verification.Already_Consumed,
       "completed token cannot reactivate");
 
    Assert
      (Identity.Operations.Tokens.Consume.Execute
-        (Repository, T12, Identity.Tokens.Purposes.Password_Reset, Reset_Token_Secret, 40)
+        (Repository, T12, Identity.Tokens.Purposes.Password_Reset, Reset_Token_Secret, 40,
+         Audit_Context, Next_Audit_Event, 1)
       = Identity.Tokens.Verification.Already_Consumed,
       "completed token cannot be consumed again");
 
@@ -10511,7 +10548,8 @@ begin
 
    Assert
      (Identity.Operations.Tokens.Verify.Execute
-        (Repository, T8, Identity.Tokens.Purposes.Password_Reset, Reset_Token_Secret, 42)
+        (Repository, T8, Identity.Tokens.Purposes.Password_Reset, Reset_Token_Secret, 42,
+         Audit_Context, Next_Audit_Event, 1)
       = Identity.Tokens.Verification.Valid,
       "generic token issued from secret container verifies with matching secret");
 
@@ -10528,7 +10566,7 @@ begin
             Expires_At => (Present => True, Time_Point => 300),
             State => Identity.Tokens.Definitions.Issued,
             Attempts => 0,
-            Version => 0))
+            Version => 0), Audit_Context, Next_Audit_Event, 1)
       = Identity.Adapters.Repositories.Memory.Applied,
       "password reset request issues purpose-bound token through public operation");
 
@@ -10565,13 +10603,14 @@ begin
 
    Assert
      (Identity.Operations.Tokens.Verify.Execute
-        (Repository, T2, Identity.Tokens.Purposes.Password_Reset, Reset_Token_Secret, 42)
+        (Repository, T2, Identity.Tokens.Purposes.Password_Reset, Reset_Token_Secret, 42,
+         Audit_Context, Next_Audit_Event, 1)
       = Identity.Tokens.Verification.State_Conflict,
       "superseded prior reset token cannot verify");
 
    Assert
      (Identity.Operations.Passwords.Complete_Reset.Execute
-        (Repository, T5, P1, Wrong_Reset_Token_Secret, 42, C8, Reset_Password)
+        (Repository, T5, P1, Wrong_Reset_Token_Secret, 42, C8, Reset_Password, Audit_Context, Next_Audit_Event, 1)
       = Identity.Tokens.Verification.Not_Verified,
       "wrong reset token secret does not replace password");
 
@@ -10579,7 +10618,7 @@ begin
      (Identity.Operations.Passwords.Authenticate.Execute
         (Repository,
          (Kind => Login_Kind, Value => Alice),
-         Presented_Changed_Password).Status = Identity.Results.Succeeded,
+         Presented_Changed_Password, Audit_Context, Next_Audit_Event, 1).Status = Identity.Results.Succeeded,
       "password unchanged after failed reset completion");
 
    Assert
@@ -10593,7 +10632,7 @@ begin
             New_Credential => C8,
             Password => Reset_Password,
             Expected_Token_Version => 99,
-            Expected_Predecessor_Version => 0))
+            Expected_Predecessor_Version => 0), Audit_Context, Next_Audit_Event, 1)
       = Identity.Tokens.Verification.State_Conflict,
       "stale staged reset token version conflicts before password replacement");
 
@@ -10608,7 +10647,7 @@ begin
             New_Credential => C8,
             Password => Reset_Password,
             Expected_Token_Version => 0,
-            Expected_Predecessor_Version => 99))
+            Expected_Predecessor_Version => 99), Audit_Context, Next_Audit_Event, 1)
       = Identity.Tokens.Verification.State_Conflict,
       "stale staged reset predecessor version conflicts before password replacement");
 
@@ -10616,7 +10655,7 @@ begin
      (Identity.Operations.Passwords.Authenticate.Execute
         (Repository,
          (Kind => Login_Kind, Value => Alice),
-         Presented_Changed_Password).Status = Identity.Results.Succeeded,
+         Presented_Changed_Password, Audit_Context, Next_Audit_Event, 1).Status = Identity.Results.Succeeded,
       "stale staged password reset leaves current credential active");
 
    Assert
@@ -10634,13 +10673,14 @@ begin
 
    Assert
      (Identity.Operations.Tokens.Verify.Execute
-        (Repository, T2, Identity.Tokens.Purposes.Password_Reset, Reset_Token_Secret, 44)
+        (Repository, T2, Identity.Tokens.Purposes.Password_Reset, Reset_Token_Secret, 44,
+         Audit_Context, Next_Audit_Event, 1)
       = Identity.Tokens.Verification.State_Conflict,
       "superseded reset token remains unverifiable after password reset completion");
 
    Assert
      (Identity.Operations.Passwords.Complete_Reset.Execute
-        (Repository, T5, P1, Reset_Token_Secret, 44, C8, Reset_Password)
+        (Repository, T5, P1, Reset_Token_Secret, 44, C8, Reset_Password, Audit_Context, Next_Audit_Event, 1)
       = Identity.Tokens.Verification.Already_Consumed,
       "consumed reset token cannot complete twice");
 
@@ -10648,14 +10688,14 @@ begin
      (Identity.Operations.Passwords.Authenticate.Execute
         (Repository,
          (Kind => Login_Kind, Value => Alice),
-         Presented_Changed_Password).Status = Identity.Results.Rejected,
+         Presented_Changed_Password, Audit_Context, Next_Audit_Event, 1).Status = Identity.Results.Rejected,
       "pre-reset password credential is retired");
 
    Assert
      (Identity.Operations.Passwords.Authenticate.Execute
         (Repository,
          (Kind => Login_Kind, Value => Alice),
-         Presented_Reset_Password).Status = Identity.Results.Succeeded,
+         Presented_Reset_Password, Audit_Context, Next_Audit_Event, 1).Status = Identity.Results.Succeeded,
       "reset replacement password authenticates");
 
    Assert
@@ -10678,7 +10718,7 @@ begin
             Expires_At => (Present => True, Time_Point => 300),
             State => Identity.Tokens.Definitions.Issued,
             Attempts => 0,
-            Version => 0))
+            Version => 0), Audit_Context, Next_Audit_Event, 1)
       = Identity.Adapters.Repositories.Memory.State_Conflict,
       "contact verification request rejects retired principal");
 
@@ -10709,7 +10749,7 @@ begin
             Expires_At => (Present => True, Time_Point => 300),
             State => Identity.Tokens.Definitions.Issued,
             Attempts => 0,
-            Version => 0))
+            Version => 0), Audit_Context, Next_Audit_Event, 1)
       = Identity.Adapters.Repositories.Memory.State_Conflict,
       "contact change request rejects retired principal");
 
@@ -10744,7 +10784,7 @@ begin
    Assert
      (Identity.Operations.Tokens.Verify.Execute
         (Repository, T3, Identity.Tokens.Purposes.Contact_Verification,
-         Contact_Verification_Secret, 46)
+         Contact_Verification_Secret, 46, Audit_Context, Next_Audit_Event, 1)
       = Identity.Tokens.Verification.Valid,
       "contact verification token verifies with contact domain");
 
@@ -10763,7 +10803,7 @@ begin
             Principal => P1,
             Secret => Contact_Verification_Secret,
             Issued_At => 46,
-            Expires_At => (Present => True, Time_Point => 300)))
+            Expires_At => (Present => True, Time_Point => 300)), Audit_Context, Next_Audit_Event, 1)
       = Identity.Adapters.Repositories.Memory.Applied,
       "IDENTITY-CONTACT-001 contact verification request derives verifier from token secret");
 
@@ -10789,7 +10829,7 @@ begin
               Expected_Contact_Version => 0,
               Secret => Wrong_Contact_Verification_Secret,
               Now => 46,
-              Contact => CB4));
+              Contact => CB4), Audit_Context, Next_Audit_Event, 1);
    begin
       Assert
         (Stale_Contact_Verification = Identity.Tokens.Verification.State_Conflict,
@@ -10798,7 +10838,7 @@ begin
 
    Assert
      (Identity.Operations.Verification.Complete.Execute
-        (Repository, T3, Wrong_Contact_Verification_Secret, 46, CB1)
+        (Repository, T3, Wrong_Contact_Verification_Secret, 46, CB1, Audit_Context, Next_Audit_Event, 1)
       = Identity.Tokens.Verification.Not_Verified,
       "wrong contact verification secret rejected without mutation");
 
@@ -10859,13 +10899,13 @@ begin
 
    Assert
      (Identity.Operations.Verification.Complete.Execute
-        (Repository, T3, Contact_Verification_Secret, 47, CB2)
+        (Repository, T3, Contact_Verification_Secret, 47, CB2, Audit_Context, Next_Audit_Event, 1)
       = Identity.Tokens.Verification.Binding_Mismatch,
       "contact verification token is bound to one contact binding");
 
    Assert
      (Identity.Operations.Verification.Complete.Execute
-        (Repository, T3, Contact_Verification_Secret, 48, CB1)
+        (Repository, T3, Contact_Verification_Secret, 48, CB1, Audit_Context, Next_Audit_Event, 1)
       = Identity.Tokens.Verification.Valid,
       "contact verification atomically verifies binding and consumes token");
 
@@ -10915,7 +10955,7 @@ begin
 
    Assert
      (Identity.Operations.Verification.Complete.Execute
-        (Repository, T3, Contact_Verification_Secret, 49, CB1)
+        (Repository, T3, Contact_Verification_Secret, 49, CB1, Audit_Context, Next_Audit_Event, 1)
       = Identity.Tokens.Verification.Already_Consumed,
       "consumed contact verification token cannot verify twice");
 
@@ -10946,7 +10986,7 @@ begin
             Expires_At => (Present => True, Time_Point => 300),
             State => Identity.Tokens.Definitions.Issued,
             Attempts => 0,
-            Version => 0))
+            Version => 0), Audit_Context, Next_Audit_Event, 1)
       = Identity.Adapters.Repositories.Memory.Applied,
       "IDENTITY-CONTACT-CHANGE-001 contact change stores pending successor and token");
 
@@ -11066,7 +11106,7 @@ begin
             Principal => P1,
             Secret => Contact_Change_Secret,
             Issued_At => 50,
-            Expires_At => (Present => True, Time_Point => 300)))
+            Expires_At => (Present => True, Time_Point => 300)), Audit_Context, Next_Audit_Event, 1)
       = Identity.Adapters.Repositories.Memory.Applied,
       "IDENTITY-CONTACT-CHANGE-001 contact change request derives verifier from token secret");
 
@@ -11095,7 +11135,7 @@ begin
 
    Assert
      (Identity.Operations.Verification.Complete_Contact_Change.Execute
-        (Repository, T4, Wrong_Contact_Change_Secret, 51, CB1, CB3)
+        (Repository, T4, Wrong_Contact_Change_Secret, 51, CB1, CB3, Audit_Context, Next_Audit_Event, 1)
       = Identity.Tokens.Verification.Not_Verified,
       "wrong contact change secret rejected without mutation");
 
@@ -11108,13 +11148,13 @@ begin
 
    Assert
      (Identity.Operations.Verification.Complete_Contact_Change.Execute
-        (Repository, T4, Contact_Change_Secret, 52, CB2, CB3)
+        (Repository, T4, Contact_Change_Secret, 52, CB2, CB3, Audit_Context, Next_Audit_Event, 1)
       = Identity.Tokens.Verification.Binding_Mismatch,
       "contact change token is bound to the predecessor and successor");
 
    Assert
      (Identity.Operations.Verification.Complete_Contact_Change.Execute
-        (Repository, T4, Contact_Change_Secret, 53, CB1, CB3)
+        (Repository, T4, Contact_Change_Secret, 53, CB1, CB3, Audit_Context, Next_Audit_Event, 1)
       = Identity.Tokens.Verification.Valid,
       "contact change atomically verifies successor and retires predecessor");
 
@@ -11154,7 +11194,7 @@ begin
               Secret => Contact_Change_Secret,
               Now => 54,
               Predecessor => CB1,
-              Successor => CB3));
+              Successor => CB3), Audit_Context, Next_Audit_Event, 1);
    begin
       Assert
         (Stale_Contact_Change = Identity.Tokens.Verification.State_Conflict,
@@ -11163,7 +11203,7 @@ begin
 
    Assert
      (Identity.Operations.Verification.Complete_Contact_Change.Execute
-        (Repository, T4, Contact_Change_Secret, 54, CB1, CB3)
+        (Repository, T4, Contact_Change_Secret, 54, CB1, CB3, Audit_Context, Next_Audit_Event, 1)
       = Identity.Tokens.Verification.Already_Consumed,
       "consumed contact change token cannot activate twice");
 
@@ -11183,10 +11223,10 @@ begin
       Assert
         (Found_Account_Check
          and then Identity.Operations.Accounts.Require_Password_Change.Execute
-           (Repository, Stale_Password_Requirement)
+           (Repository, Stale_Password_Requirement, Audit_Context, Next_Audit_Event, 1)
          = Identity.Adapters.Repositories.Memory.State_Conflict
          and then Identity.Operations.Accounts.Require_Password_Change.Execute
-           (Repository, Password_Requirement)
+           (Repository, Password_Requirement, Audit_Context, Next_Audit_Event, 1)
          = Identity.Adapters.Repositories.Memory.Applied,
          "IDENTITY-ACCOUNT-001 account password-change requirement uses expected version");
    end;
@@ -11195,7 +11235,8 @@ begin
      (Identity.Operations.Passwords.Authenticate.Execute
         (Repository,
          (Kind => Login_Kind, Value => Alice),
-         Presented_Reset_Password).Status = Identity.Results.Password_Change_Required,
+         Presented_Reset_Password,
+         Audit_Context, Next_Audit_Event, 1).Status = Identity.Results.Password_Change_Required,
       "password-change requirement restricts authentication result");
 
    Identity.Adapters.Repositories.Memory.Find_Account
@@ -11225,10 +11266,10 @@ begin
       Assert
         (Found_Account_Check
          and then Identity.Operations.Accounts.Disable.Execute
-           (Repository, Stale_Disable_Request)
+           (Repository, Stale_Disable_Request, Audit_Context, Next_Audit_Event, 1)
          = Identity.Adapters.Repositories.Memory.State_Conflict
          and then Identity.Operations.Accounts.Disable.Execute
-           (Repository, Disable_Request)
+           (Repository, Disable_Request, Audit_Context, Next_Audit_Event, 1)
          = Identity.Adapters.Repositories.Memory.Applied,
          "IDENTITY-ACCOUNT-001 account disable requires actor reason correlation audit and expected version");
    end;
@@ -11237,7 +11278,7 @@ begin
      (Identity.Operations.Passwords.Authenticate.Execute
         (Repository,
          (Kind => Login_Kind, Value => Alice),
-         Presented_Reset_Password).Status = Identity.Results.Rejected,
+         Presented_Reset_Password, Audit_Context, Next_Audit_Event, 1).Status = Identity.Results.Rejected,
       "disabled account cannot authenticate");
 
    Identity.Adapters.Repositories.Memory.Find_Account
@@ -11261,7 +11302,7 @@ begin
       Assert
         (Found_Account_Check
          and then Identity.Operations.Accounts.Enable.Execute
-           (Repository, Enable_Request)
+           (Repository, Enable_Request, Audit_Context, Next_Audit_Event, 1)
          = Identity.Adapters.Repositories.Memory.Applied,
          "IDENTITY-ACCOUNT-001 account enable requires administrative transition metadata");
    end;
@@ -11270,7 +11311,8 @@ begin
      (Identity.Operations.Passwords.Authenticate.Execute
         (Repository,
          (Kind => Login_Kind, Value => Alice),
-         Presented_Reset_Password).Status = Identity.Results.Password_Change_Required,
+         Presented_Reset_Password,
+         Audit_Context, Next_Audit_Event, 1).Status = Identity.Results.Password_Change_Required,
       "authentication success does not clear password-change requirement");
 
    Identity.Adapters.Repositories.Memory.Find_Account
@@ -11302,10 +11344,10 @@ begin
       Assert
         (Found_Account_Check
          and then Identity.Operations.Accounts.Require_MFA.Execute
-           (Repository, Stale_MFA_Requirement)
+           (Repository, Stale_MFA_Requirement, Audit_Context, Next_Audit_Event, 1)
          = Identity.Adapters.Repositories.Memory.State_Conflict
          and then Identity.Operations.Accounts.Require_MFA.Execute
-           (Repository, MFA_Requirement)
+           (Repository, MFA_Requirement, Audit_Context, Next_Audit_Event, 1)
          = Identity.Adapters.Repositories.Memory.Applied,
          "IDENTITY-ACCOUNT-001 account MFA requirement uses expected version");
    end;
@@ -11314,7 +11356,8 @@ begin
      (Identity.Operations.Passwords.Authenticate.Execute
         (Repository,
          (Kind => Login_Kind, Value => Alice),
-         Presented_Reset_Password).Status = Identity.Results.Password_Change_Required,
+         Presented_Reset_Password,
+         Audit_Context, Next_Audit_Event, 1).Status = Identity.Results.Password_Change_Required,
       "MFA enrollment requirement restricts authentication result");
 
    Identity.Adapters.Repositories.Memory.Find_Account
@@ -11341,10 +11384,10 @@ begin
       Assert
         (Found_Account_Check
          and then Identity.Operations.Accounts.Unlock.Execute
-           (Repository, Stale_Unlock_Request)
+           (Repository, Stale_Unlock_Request, Audit_Context, Next_Audit_Event, 1)
          = Identity.Adapters.Repositories.Memory.State_Conflict
          and then Identity.Operations.Accounts.Unlock.Execute
-           (Repository, Unlock_Request)
+           (Repository, Unlock_Request, Audit_Context, Next_Audit_Event, 1)
          = Identity.Adapters.Repositories.Memory.Applied,
          "IDENTITY-ACCOUNT-001 account unlock uses expected version");
    end;
@@ -11377,7 +11420,7 @@ begin
       Assert
         (Found_Account_Check
          and then Identity.Operations.Accounts.Suspend.Execute
-           (Repository, Suspend_Request)
+           (Repository, Suspend_Request, Audit_Context, Next_Audit_Event, 1)
          = Identity.Adapters.Repositories.Memory.Applied,
          "IDENTITY-ACCOUNT-001 account suspend requires administrative transition metadata");
    end;
@@ -11386,7 +11429,7 @@ begin
      (Identity.Operations.Passwords.Authenticate.Execute
         (Repository,
          (Kind => Login_Kind, Value => Alice),
-         Presented_Reset_Password).Status = Identity.Results.Rejected,
+         Presented_Reset_Password, Audit_Context, Next_Audit_Event, 1).Status = Identity.Results.Rejected,
       "suspended account cannot authenticate");
 
    Identity.Adapters.Repositories.Memory.Find_Account
@@ -11410,7 +11453,7 @@ begin
       Assert
         (Found_Account_Check
          and then Identity.Operations.Accounts.Enable.Execute
-           (Repository, Reenable_Request)
+           (Repository, Reenable_Request, Audit_Context, Next_Audit_Event, 1)
          = Identity.Adapters.Repositories.Memory.Applied,
          "account reenabled after suspension for remaining fixtures");
    end;
@@ -11436,7 +11479,7 @@ begin
       Assert
         (Found_Account_Check
          and then Identity.Operations.Accounts.Close.Execute
-           (Repository, Close_Request)
+           (Repository, Close_Request, Audit_Context, Next_Audit_Event, 1)
          = Identity.Adapters.Repositories.Memory.Applied,
          "IDENTITY-ACCOUNT-001 account close requires administrative transition metadata");
    end;
@@ -11445,7 +11488,7 @@ begin
      (Identity.Operations.Passwords.Authenticate.Execute
         (Repository,
          (Kind => Login_Kind, Value => Alice),
-         Presented_Reset_Password).Status = Identity.Results.Rejected,
+         Presented_Reset_Password, Audit_Context, Next_Audit_Event, 1).Status = Identity.Results.Rejected,
       "closed account cannot authenticate");
 
    Identity.Adapters.Repositories.Memory.Find_Account
@@ -11468,12 +11511,13 @@ begin
       "rejected account transition leaves state unchanged");
 
    Assert
-     (Identity.Operations.Accounts.Enable.Execute (Repository, A1, P1)
+     (Identity.Operations.Accounts.Enable.Execute (Repository, A1, P1, Audit_Context, Next_Audit_Event, 1)
       = Identity.Adapters.Repositories.Memory.State_Conflict,
       "closed account cannot be reenabled through account operation");
 
    Assert
-     (Identity.Operations.Accounts.Require_Password_Change.Execute (Repository, A1, P1)
+     (Identity.Operations.Accounts.Require_Password_Change.Execute (Repository, A1, P1,
+                                                                    Audit_Context, Next_Audit_Event, 1)
       = Identity.Adapters.Repositories.Memory.State_Conflict,
       "closed account cannot receive new password-change requirement");
 
@@ -11493,7 +11537,7 @@ begin
          (Id => P2,
           Kind => Identity.Principals.Kinds.Service,
           State => Identity.Principals.Definitions.Active,
-          Version => 0))
+          Version => 0), Audit_Context, Next_Audit_Event, 1)
       = Identity.Adapters.Repositories.Memory.Applied,
       "service principal is an ordinary principal kind");
 
@@ -11512,7 +11556,7 @@ begin
             Expires_At => (Present => True, Time_Point => 500),
             Last_Used_At => (Present => False, Time_Point => 0),
             Rotation_Generation => 0,
-            Version => 0))
+            Version => 0), Audit_Context, Next_Audit_Event, 1)
       = Identity.Adapters.Repositories.Memory.Applied,
       "IDENTITY-APIKEY-001 api key issued through public operation with verifier-only storage");
 
@@ -11831,7 +11875,7 @@ begin
            (Public_Key_Id => API_Key_Id,
             Secret => API_Key_Secret,
             Now => 60,
-            Expected_Credential_Version => 99)).Status
+            Expected_Credential_Version => 99), Audit_Context, Next_Audit_Event, 1).Status
       = Identity.Results.Conflict,
       "stale staged api key authentication conflicts before last-used update");
 
@@ -11850,7 +11894,7 @@ begin
            (Public_Key_Id => API_Key_Id,
             Secret => API_Key_Secret,
             Now => 60,
-            Expected_Credential_Version => API_Key_Check.Version)).Status
+            Expected_Credential_Version => API_Key_Check.Version), Audit_Context, Next_Audit_Event, 1).Status
       = Identity.Results.Succeeded,
       "service api key authenticates without session creation");
 
@@ -11870,7 +11914,7 @@ begin
            (Public_Key_Id => API_Key_Id,
             Secret => API_Key_Secret,
             Now => 60,
-            Expected_Credential_Version => API_Key_Check.Version)).Status
+            Expected_Credential_Version => API_Key_Check.Version), Audit_Context, Next_Audit_Event, 1).Status
       = Identity.Results.Succeeded,
       "authentication API key operation package authenticates service principal");
 
@@ -11885,7 +11929,7 @@ begin
 
    Assert
      (Identity.Operations.API_Keys.Authenticate.Execute
-        (Repository, API_Key_Id, Wrong_API_Key_Secret, 60).Status
+        (Repository, API_Key_Id, Wrong_API_Key_Secret, 60, Audit_Context, Next_Audit_Event, 1).Status
       = Identity.Results.Rejected,
       "wrong api key secret rejected");
 
@@ -11915,7 +11959,7 @@ begin
           Expires_At => (Present => True, Time_Point => 600),
           Last_Used_At => (Present => False, Time_Point => 0),
           Rotation_Generation => 1,
-          Version => 0))
+          Version => 0), Audit_Context, Next_Audit_Event, 1)
       = Identity.Adapters.Repositories.Memory.Applied,
       "api key rotation retires predecessor and creates successor");
 
@@ -11942,19 +11986,19 @@ begin
                Created_At => 62,
                Expires_At => (Present => True, Time_Point => 600),
                Rotation_Generation => 2),
-            Expected_Predecessor_Version => Pre_Rotation_API_Key_Version))
+            Expected_Predecessor_Version => Pre_Rotation_API_Key_Version), Audit_Context, Next_Audit_Event, 1)
       = Identity.Adapters.Repositories.Memory.Version_Conflict,
       "stale staged api key rotation conflicts before predecessor-state disclosure");
 
    Assert
      (Identity.Operations.API_Keys.Authenticate.Execute
-        (Repository, API_Key_Id, API_Key_Secret, 60).Status
+        (Repository, API_Key_Id, API_Key_Secret, 60, Audit_Context, Next_Audit_Event, 1).Status
       = Identity.Results.Rejected,
       "retired api key cannot authenticate");
 
    Assert
      (Identity.Operations.API_Keys.Authenticate.Execute
-        (Repository, Rotated_API_Key_Id, Rotated_API_Key_Secret, 62).Status
+        (Repository, Rotated_API_Key_Id, Rotated_API_Key_Secret, 62, Audit_Context, Next_Audit_Event, 1).Status
       = Identity.Results.Succeeded,
       "rotated api key successor authenticates");
 
@@ -11972,7 +12016,7 @@ begin
         (Repository,
          Identity.Operations.API_Keys.Revoke.Staged_Revoke_Request'
            (Credential => C5,
-            Expected_Credential_Version => 0))
+            Expected_Credential_Version => 0), Audit_Context, Next_Audit_Event, 1)
       = Identity.Adapters.Repositories.Memory.Version_Conflict,
       "stale staged api key revocation conflicts before revocation");
 
@@ -11985,13 +12029,13 @@ begin
       "stale staged api key revocation leaves credential active");
 
    Assert
-     (Identity.Operations.API_Keys.Revoke.Execute (Repository, C5)
+     (Identity.Operations.API_Keys.Revoke.Execute (Repository, C5, Audit_Context, Next_Audit_Event, 1)
       = Identity.Adapters.Repositories.Memory.Applied,
       "api key revocation applied");
 
    Assert
      (Identity.Operations.API_Keys.Authenticate.Execute
-        (Repository, Rotated_API_Key_Id, Rotated_API_Key_Secret, 63).Status
+        (Repository, Rotated_API_Key_Id, Rotated_API_Key_Secret, 63, Audit_Context, Next_Audit_Event, 1).Status
       = Identity.Results.Rejected,
       "revoked api key cannot authenticate");
 
@@ -12006,7 +12050,7 @@ begin
             Secret => Issued_API_Key_Secret,
             Created_At => 64,
             Expires_At => (Present => True, Time_Point => 700),
-            Rotation_Generation => 0))
+            Rotation_Generation => 0), Audit_Context, Next_Audit_Event, 1)
       = Identity.Adapters.Repositories.Memory.Applied,
       "IDENTITY-APIKEY-001 api key issue operation derives verifier from secret container");
 
@@ -12045,7 +12089,7 @@ begin
 
    Assert
      (Identity.Operations.API_Keys.Authenticate.Execute
-        (Repository, Issued_API_Key_Id, Issued_API_Key_Secret, 65).Status
+        (Repository, Issued_API_Key_Id, Issued_API_Key_Secret, 65, Audit_Context, Next_Audit_Event, 1).Status
       = Identity.Results.Succeeded,
       "api key issued from secret container authenticates");
 
@@ -12061,7 +12105,7 @@ begin
             Secret => Request_Rotated_API_Key_Secret,
             Created_At => 66,
             Expires_At => (Present => True, Time_Point => 800),
-            Rotation_Generation => 1))
+            Rotation_Generation => 1), Audit_Context, Next_Audit_Event, 1)
       = Identity.Adapters.Repositories.Memory.Applied,
       "IDENTITY-APIKEY-001 api key rotate operation derives successor verifier from secret container");
 
@@ -12107,13 +12151,14 @@ begin
 
    Assert
      (Identity.Operations.API_Keys.Authenticate.Execute
-        (Repository, Issued_API_Key_Id, Issued_API_Key_Secret, 67).Status
+        (Repository, Issued_API_Key_Id, Issued_API_Key_Secret, 67, Audit_Context, Next_Audit_Event, 1).Status
       = Identity.Results.Rejected,
       "request-rotated api key predecessor cannot authenticate");
 
    Assert
      (Identity.Operations.API_Keys.Authenticate.Execute
-        (Repository, Request_Rotated_API_Key_Id, Request_Rotated_API_Key_Secret, 67).Status
+        (Repository, Request_Rotated_API_Key_Id, Request_Rotated_API_Key_Secret, 67,
+         Audit_Context, Next_Audit_Event, 1).Status
       = Identity.Results.Succeeded,
       "request-rotated api key successor authenticates");
 
@@ -12129,7 +12174,7 @@ begin
             Secret => Expired_API_Key_Secret,
             Created_At => 68,
             Expires_At => (Present => True, Time_Point => 68),
-            Rotation_Generation => 2))
+            Rotation_Generation => 2), Audit_Context, Next_Audit_Event, 1)
       = Identity.Adapters.Repositories.Memory.State_Conflict,
       "IDENTITY-APIKEY-001 api key rotate request rejects non-future expiration");
 
@@ -12144,7 +12189,7 @@ begin
             Secret => Expired_API_Key_Secret,
             Created_At => 68,
             Expires_At => (Present => True, Time_Point => 68),
-            Rotation_Generation => 0))
+            Rotation_Generation => 0), Audit_Context, Next_Audit_Event, 1)
       = Identity.Adapters.Repositories.Memory.State_Conflict,
       "IDENTITY-APIKEY-001 api key issue request rejects non-future expiration");
 
@@ -12163,13 +12208,13 @@ begin
             Expires_At => (Present => True, Time_Point => 69),
             Last_Used_At => (Present => False, Time_Point => 0),
             Rotation_Generation => 0,
-            Version => 0))
+            Version => 0), Audit_Context, Next_Audit_Event, 1)
       = Identity.Adapters.Repositories.Memory.Applied,
       "expired api key fixture issued with verifier-only storage");
 
    Assert
      (Identity.Operations.API_Keys.Authenticate.Execute
-        (Repository, Expired_API_Key_Id, Expired_API_Key_Secret, 70).Status
+        (Repository, Expired_API_Key_Id, Expired_API_Key_Secret, 70, Audit_Context, Next_Audit_Event, 1).Status
       = Identity.Results.Rejected,
       "expired api key cannot authenticate");
 
@@ -12187,7 +12232,7 @@ begin
          (Id => P4,
           Kind => Identity.Principals.Kinds.Service,
           State => Identity.Principals.Definitions.Active,
-          Version => 0))
+          Version => 0), Audit_Context, Next_Audit_Event, 1)
       = Identity.Adapters.Repositories.Memory.Applied,
       "retired-principal API key fixture principal created");
 
@@ -12202,18 +12247,19 @@ begin
             Secret => Retired_Principal_API_Key_Secret,
             Created_At => 68,
             Expires_At => (Present => True, Time_Point => 900),
-            Rotation_Generation => 0))
+            Rotation_Generation => 0), Audit_Context, Next_Audit_Event, 1)
       = Identity.Adapters.Repositories.Memory.Applied,
       "retired-principal API key fixture credential issued");
 
    Assert
-     (Identity.Operations.Principals.Retire.Execute (Repository, P4)
+     (Identity.Operations.Principals.Retire.Execute (Repository, P4, Audit_Context, Next_Audit_Event, 1)
       = Identity.Adapters.Repositories.Memory.Applied,
       "retired-principal API key fixture principal retired");
 
    Assert
      (Identity.Operations.API_Keys.Authenticate.Execute
-        (Repository, Retired_Principal_API_Key_Id, Retired_Principal_API_Key_Secret, 69).Status
+        (Repository, Retired_Principal_API_Key_Id, Retired_Principal_API_Key_Secret, 69,
+         Audit_Context, Next_Audit_Event, 1).Status
       = Identity.Results.Rejected,
       "api key for retired principal cannot authenticate");
 
@@ -12236,7 +12282,7 @@ begin
             Secret => Retired_Principal_Rotated_API_Key_Secret,
             Created_At => 69,
             Expires_At => (Present => True, Time_Point => 901),
-            Rotation_Generation => 0))
+            Rotation_Generation => 0), Audit_Context, Next_Audit_Event, 1)
       = Identity.Adapters.Repositories.Memory.State_Conflict,
       "api key issue rejects retired principal");
 
@@ -12252,7 +12298,7 @@ begin
             Secret => Retired_Principal_Rotated_API_Key_Secret,
             Created_At => 69,
             Expires_At => (Present => True, Time_Point => 901),
-            Rotation_Generation => 1))
+            Rotation_Generation => 1), Audit_Context, Next_Audit_Event, 1)
       = Identity.Adapters.Repositories.Memory.State_Conflict,
       "api key rotation rejects retired principal");
 
@@ -12462,7 +12508,7 @@ begin
                others =>
                  (Code_Id => Identity.Text.Bounded.From_String (""),
                   Secret_Verifier => Identity.Text.Bounded.From_String (""),
-                  State => Identity.Recovery_Codes.Sets.Revoked)]))
+                  State => Identity.Recovery_Codes.Sets.Revoked)]), Audit_Context, Next_Audit_Event, 1)
       = Identity.Adapters.Repositories.Memory.State_Conflict,
       "recovery code generation rejects retired principal");
 
@@ -12484,7 +12530,7 @@ begin
                others =>
                  (Code_Id => Identity.Text.Bounded.From_String (""),
                   Secret_Verifier => Identity.Text.Bounded.From_String (""),
-                  State => Identity.Recovery_Codes.Sets.Revoked)]))
+                  State => Identity.Recovery_Codes.Sets.Revoked)]), Audit_Context, Next_Audit_Event, 1)
       = Identity.Adapters.Repositories.Memory.State_Conflict,
       "recovery code regeneration rejects retired principal");
 
@@ -12506,7 +12552,7 @@ begin
                others =>
                  (Code_Id => Identity.Text.Bounded.From_String (""),
                   Secret_Verifier => Identity.Text.Bounded.From_String (""),
-                  State => Identity.Recovery_Codes.Sets.Revoked)]))
+                  State => Identity.Recovery_Codes.Sets.Revoked)]), Audit_Context, Next_Audit_Event, 1)
       = Identity.Adapters.Repositories.Memory.Applied,
       "IDENTITY-RECOVERY-001 recovery code set stores verifier only");
 
@@ -12627,7 +12673,7 @@ begin
                   Secret => Recovery_Code_3),
                others =>
                  (Code_Id => Identity.Text.Bounded.From_String (""),
-                  Secret => Wrong_Recovery_Code)]))
+                  Secret => Wrong_Recovery_Code)]), Audit_Context, Next_Audit_Event, 1)
       = Identity.Adapters.Repositories.Memory.Applied,
       "IDENTITY-RECOVERY-001 recovery code request derives verifier from code secret");
 
@@ -12682,13 +12728,13 @@ begin
 
    Assert
      (Identity.Operations.Factors.Consume_Recovery_Code.Execute
-        (Repository, CS1, Wrong_Recovery_Code)
+        (Repository, CS1, Wrong_Recovery_Code, Audit_Context, Next_Audit_Event, 1)
       = Identity.Recovery_Codes.Sets.Not_Verified,
       "wrong recovery code rejected");
 
    Assert
      (Identity.Operations.Factors.Consume_Recovery_Code.Execute
-        (Repository, CS1, Recovery_Code)
+        (Repository, CS1, Recovery_Code, Audit_Context, Next_Audit_Event, 1)
       = Identity.Recovery_Codes.Sets.Consumed,
       "recovery code consumed once");
 
@@ -12715,13 +12761,13 @@ begin
          Identity.Operations.Factors.Consume_Recovery_Code.Consume_Request'
            (Set_Id => CS1,
             Expected_Version => 0,
-            Code => Recovery_Code))
+            Code => Recovery_Code), Audit_Context, Next_Audit_Event, 1)
       = Identity.Recovery_Codes.Sets.State_Conflict,
       "stale recovery code consumption request conflicts before reuse");
 
    Assert
      (Identity.Operations.Factors.Consume_Recovery_Code.Execute
-        (Repository, CS1, Recovery_Code)
+        (Repository, CS1, Recovery_Code, Audit_Context, Next_Audit_Event, 1)
       = Identity.Recovery_Codes.Sets.Already_Consumed,
       "recovery code cannot be consumed twice");
 
@@ -12827,13 +12873,13 @@ begin
                   others =>
                     (Code_Id => Identity.Text.Bounded.From_String (""),
                      Secret => Wrong_Recovery_Code)]),
-            Expected_Affected_Count => 3))
+            Expected_Affected_Count => 3), Audit_Context, Next_Audit_Event, 1)
       = Identity.Adapters.Repositories.Memory.Version_Conflict,
       "stale staged recovery-code regeneration conflicts before revocation");
 
    Assert
      (Identity.Operations.Factors.Consume_Recovery_Code.Execute
-        (Repository, CS3, Recovery_Code_3)
+        (Repository, CS3, Recovery_Code_3, Audit_Context, Next_Audit_Event, 1)
       = Identity.Recovery_Codes.Sets.Consumed,
       "stale staged recovery-code regeneration leaves active set usable");
 
@@ -12855,7 +12901,7 @@ begin
                others =>
                  (Code_Id => Identity.Text.Bounded.From_String (""),
                   Secret_Verifier => Identity.Text.Bounded.From_String (""),
-                  State => Identity.Recovery_Codes.Sets.Revoked)]))
+                  State => Identity.Recovery_Codes.Sets.Revoked)]), Audit_Context, Next_Audit_Event, 1)
       = Identity.Adapters.Repositories.Memory.Applied,
       "recovery-code regeneration installs replacement verifier set");
 
@@ -12871,7 +12917,7 @@ begin
 
    Assert
      (Identity.Operations.Factors.Consume_Recovery_Code.Execute
-        (Repository, CS2, Recovery_Code_2)
+        (Repository, CS2, Recovery_Code_2, Audit_Context, Next_Audit_Event, 1)
       = Identity.Recovery_Codes.Sets.Consumed,
       "regenerated recovery code can be consumed once");
 
@@ -12889,7 +12935,7 @@ begin
                   Secret => Recovery_Code_3),
                others =>
                  (Code_Id => Identity.Text.Bounded.From_String (""),
-                  Secret => Wrong_Recovery_Code)]))
+                  Secret => Wrong_Recovery_Code)]), Audit_Context, Next_Audit_Event, 1)
       = Identity.Adapters.Repositories.Memory.Applied,
       "recovery-code regeneration request derives replacement verifier from code secret");
 
@@ -12906,7 +12952,7 @@ begin
 
    Assert
      (Identity.Operations.Factors.Consume_Recovery_Code.Execute
-        (Repository, CS4, Recovery_Code_3)
+        (Repository, CS4, Recovery_Code_3, Audit_Context, Next_Audit_Event, 1)
       = Identity.Recovery_Codes.Sets.Consumed,
       "regenerated recovery code from request can be consumed once");
 
@@ -12919,7 +12965,7 @@ begin
           Created_At => 93,
           Expires_At => (Present => True, Time_Point => 180),
           State => Identity.Recovery.Transactions.Started,
-          Version => 0))
+          Version => 0), Audit_Context, Next_Audit_Event, 1)
       = Identity.Recovery.Transactions.State_Conflict,
       "recovery transaction begin rejects retired principal");
 
@@ -12932,7 +12978,7 @@ begin
           Created_At => 94,
           Expires_At => (Present => True, Time_Point => 180),
           State => Identity.Recovery.Transactions.Started,
-          Version => 0))
+          Version => 0), Audit_Context, Next_Audit_Event, 1)
       = Identity.Recovery.Transactions.Applied,
       "IDENTITY-RECOVERY-002 recovery transaction begins in evidence-required state");
 
@@ -12992,7 +13038,7 @@ begin
       "recovery begin advances transaction state and version");
 
    Assert
-     (Identity.Operations.Recovery.Complete.Execute (Repository, RT1, P1, 95)
+     (Identity.Operations.Recovery.Complete.Execute (Repository, RT1, P1, 95, Audit_Context, Next_Audit_Event, 1)
       = Identity.Recovery.Transactions.State_Conflict,
       "recovery cannot complete before accepted evidence");
 
@@ -13117,7 +13163,7 @@ begin
            (Transaction => RT1,
             Principal => P1,
             Now => 96,
-            Expected_Version => 99))
+            Expected_Version => 99), Audit_Context, Next_Audit_Event, 1)
       = Identity.Recovery.Transactions.Version_Conflict,
       "stale staged recovery evidence acceptance conflicts before transition");
 
@@ -13136,7 +13182,7 @@ begin
            (Transaction => RT1,
             Principal => P1,
             Now => 96,
-            Expected_Version => Recovery_Check.Version))
+            Expected_Version => Recovery_Check.Version), Audit_Context, Next_Audit_Event, 1)
       = Identity.Recovery.Transactions.Applied,
       "recovery evidence acceptance transition applied");
 
@@ -13157,7 +13203,7 @@ begin
             Principal => P1,
             Now => 97,
             Expected_Transaction_Version => 99,
-            Expected_Account_Version => 0))
+            Expected_Account_Version => 0), Audit_Context, Next_Audit_Event, 1)
       = Identity.Recovery.Transactions.Version_Conflict,
       "stale staged recovery completion transaction version conflicts before restrictions");
 
@@ -13169,7 +13215,7 @@ begin
             Principal => P1,
             Now => 97,
             Expected_Transaction_Version => Recovery_Check.Version,
-            Expected_Account_Version => 99))
+            Expected_Account_Version => 99), Audit_Context, Next_Audit_Event, 1)
       = Identity.Recovery.Transactions.Version_Conflict,
       "stale staged recovery completion account version conflicts before restrictions");
 
@@ -13193,7 +13239,7 @@ begin
             Principal => P1,
             Now => 97,
             Expected_Transaction_Version => Recovery_Check.Version,
-            Expected_Account_Version => Account_Check.Version))
+            Expected_Account_Version => Account_Check.Version), Audit_Context, Next_Audit_Event, 1)
       = Identity.Recovery.Transactions.Applied,
       "recovery completion establishes restricted authentication state");
 
@@ -13211,11 +13257,12 @@ begin
      (Identity.Operations.Passwords.Authenticate.Execute
         (Repository,
          (Kind => Login_Kind, Value => Alice),
-         Presented_Reset_Password).Status = Identity.Results.Recovery_Action_Required,
+         Presented_Reset_Password,
+         Audit_Context, Next_Audit_Event, 1).Status = Identity.Results.Recovery_Action_Required,
       "recovery-restricted account returns recovery action result");
 
    Assert
-     (Identity.Operations.Recovery.Cancel.Execute (Repository, RT1, P1)
+     (Identity.Operations.Recovery.Cancel.Execute (Repository, RT1, P1, Audit_Context, Next_Audit_Event, 1)
       = Identity.Recovery.Transactions.State_Conflict,
       "completed recovery transaction cannot be cancelled");
 
@@ -13236,7 +13283,7 @@ begin
           Created_At => 98,
           Expires_At => (Present => True, Time_Point => 180),
           State => Identity.Recovery.Transactions.Started,
-          Version => 0))
+          Version => 0), Audit_Context, Next_Audit_Event, 1)
       = Identity.Recovery.Transactions.Applied,
       "second recovery transaction begins for cancellation");
 
@@ -13253,7 +13300,7 @@ begin
          Identity.Operations.Recovery.Cancel.Staged_Cancellation_Request'
            (Transaction => RT2,
             Principal => P1,
-            Expected_Version => 99))
+            Expected_Version => 99), Audit_Context, Next_Audit_Event, 1)
       = Identity.Recovery.Transactions.Version_Conflict,
       "stale staged recovery cancellation conflicts before cancelled state");
 
@@ -13270,7 +13317,7 @@ begin
          Identity.Operations.Recovery.Cancel.Staged_Cancellation_Request'
            (Transaction => RT2,
             Principal => P1,
-            Expected_Version => Recovery_Check.Version))
+            Expected_Version => Recovery_Check.Version), Audit_Context, Next_Audit_Event, 1)
       = Identity.Recovery.Transactions.Applied,
       "recovery cancellation transition applied");
 
@@ -13300,7 +13347,7 @@ begin
           External_Subject => External_Subject,
           State => Identity.External_Providers.Bindings.Active,
           Created_At => 100,
-          Version => 0))
+          Version => 0), Audit_Context, Next_Audit_Event, 1)
       = Identity.Adapters.Repositories.Memory.Applied,
       "IDENTITY-EXTERNAL-001 external binding is explicit");
 
@@ -13427,7 +13474,7 @@ begin
           External_Subject => External_Subject,
           State => Identity.External_Providers.Bindings.Active,
           Created_At => 101,
-          Version => 0))
+          Version => 0), Audit_Context, Next_Audit_Event, 1)
       = Identity.Adapters.Repositories.Memory.Uniqueness_Conflict,
       "provider issuer subject key is unique");
 
@@ -13614,7 +13661,7 @@ begin
           Nonce => Identity.External_Providers.Assertions.Validated,
          Assertion_Fingerprint => External_Fingerprint,
          Validation_Profile => Adapter_Profile),
-         120).Status = Identity.Results.Succeeded,
+         120, Audit_Context, Next_Audit_Event, 1).Status = Identity.Results.Succeeded,
       "external assertion authenticates only active explicit binding");
 
    Assert
@@ -13635,7 +13682,7 @@ begin
           Nonce => Identity.External_Providers.Assertions.Validated,
          Assertion_Fingerprint => External_Fingerprint_2,
          Validation_Profile => Adapter_Profile),
-         120).Status = Identity.Results.Recovery_Action_Required,
+         120, Audit_Context, Next_Audit_Event, 1).Status = Identity.Results.Recovery_Action_Required,
       "external identity is not auto-linked by alternate claims");
 
    Assert
@@ -13658,7 +13705,7 @@ begin
                Assertion_Fingerprint => External_Fingerprint_6,
                Validation_Profile => Adapter_Profile),
             Expected_Binding_Version => 99),
-         120).Status = Identity.Results.Conflict,
+         120, Audit_Context, Next_Audit_Event, 1).Status = Identity.Results.Conflict,
       "stale staged external authentication conflicts before replay registration");
 
    Assert
@@ -13677,7 +13724,7 @@ begin
          (Id => P5,
           Kind => Identity.Principals.Kinds.Human,
           State => Identity.Principals.Definitions.Active,
-          Version => 0))
+          Version => 0), Audit_Context, Next_Audit_Event, 1)
       = Identity.Adapters.Repositories.Memory.Applied,
       "external retired-principal fixture principal created");
 
@@ -13691,7 +13738,7 @@ begin
           External_Subject => Identity.Text.Bounded.From_String ("provider-subject-retired"),
           State => Identity.External_Providers.Bindings.Active,
           Created_At => 121,
-          Version => 0))
+          Version => 0), Audit_Context, Next_Audit_Event, 1)
       = Identity.Adapters.Repositories.Memory.Applied,
       "external binding fixture created before local principal retirement");
 
@@ -13705,12 +13752,12 @@ begin
           External_Subject => Identity.Text.Bounded.From_String ("provider-subject-retired-new"),
           State => Identity.External_Providers.Bindings.Active,
           Created_At => 121,
-          Version => 0))
+          Version => 0), Audit_Context, Next_Audit_Event, 1)
       = Identity.Adapters.Repositories.Memory.State_Conflict,
       "external binding creation rejects retired local principal");
 
    Assert
-     (Identity.Operations.Principals.Retire.Execute (Repository, P5)
+     (Identity.Operations.Principals.Retire.Execute (Repository, P5, Audit_Context, Next_Audit_Event, 1)
       = Identity.Adapters.Repositories.Memory.Applied,
       "external retired-principal fixture principal retired");
 
@@ -13728,7 +13775,7 @@ begin
           Nonce => Identity.External_Providers.Assertions.Validated,
           Assertion_Fingerprint => External_Fingerprint_4,
           Validation_Profile => Adapter_Profile),
-         122).Status = Identity.Results.Rejected,
+         122, Audit_Context, Next_Audit_Event, 1).Status = Identity.Results.Rejected,
       "external assertion bound to retired local principal cannot authenticate");
 
    Assert
@@ -13737,7 +13784,7 @@ begin
          Identity.Operations.External_Identities.Revoke.Staged_Revoke_Request'
            (Binding => EB1,
             Principal => P1,
-            Expected_Binding_Version => 1))
+            Expected_Binding_Version => 1), Audit_Context, Next_Audit_Event, 1)
       = Identity.Adapters.Repositories.Memory.Version_Conflict,
       "stale staged external binding revocation conflicts before revocation");
 
@@ -13755,11 +13802,11 @@ begin
           Nonce => Identity.External_Providers.Assertions.Validated,
           Assertion_Fingerprint => External_Fingerprint_5,
           Validation_Profile => Adapter_Profile),
-         123).Status = Identity.Results.Succeeded,
+         123, Audit_Context, Next_Audit_Event, 1).Status = Identity.Results.Succeeded,
       "stale staged external binding revocation leaves binding authenticable");
 
    Assert
-     (Identity.Operations.External_Identities.Revoke.Execute (Repository, EB1, P1)
+     (Identity.Operations.External_Identities.Revoke.Execute (Repository, EB1, P1, Audit_Context, Next_Audit_Event, 1)
       = Identity.Adapters.Repositories.Memory.Applied,
       "external binding revocation is explicit");
 
@@ -13777,7 +13824,7 @@ begin
           Nonce => Identity.External_Providers.Assertions.Validated,
           Assertion_Fingerprint => External_Fingerprint_3,
           Validation_Profile => Adapter_Profile),
-         122).Status = Identity.Results.Rejected,
+         122, Audit_Context, Next_Audit_Event, 1).Status = Identity.Results.Rejected,
       "revoked external binding cannot authenticate");
 
    Assert
@@ -13794,7 +13841,7 @@ begin
           Nonce => Identity.External_Providers.Assertions.Validated,
           Assertion_Fingerprint => External_Fingerprint,
           Validation_Profile => Adapter_Profile),
-         120).Status = Identity.Results.Conflict,
+         120, Audit_Context, Next_Audit_Event, 1).Status = Identity.Results.Conflict,
       "registered external assertion replay returns conflict");
 
    Assert
@@ -13822,7 +13869,7 @@ begin
           Remembered => False,
           Generation => 6,
           State => Identity.Sessions.Definitions.Active,
-          Version => 0))
+          Version => 0), Audit_Context, Next_Audit_Event, 1)
       = Identity.Adapters.Repositories.Memory.Applied,
       "provider-derived session fixture created");
 
@@ -13837,7 +13884,8 @@ begin
 
    Assert
      (Identity.Operations.Sessions.Lookup.Execute
-        (Repository, Provider_Session_Reference, Provider_Session_Secret, 122).Status
+        (Repository, Provider_Session_Reference, Provider_Session_Secret, 122,
+         Audit_Context, Next_Audit_Event, 1).Status
       = Identity.Sessions.Handles.Found,
       "stale staged provider session revocation leaves session usable");
 
@@ -13848,12 +13896,13 @@ begin
 
    Assert
      (Identity.Operations.Sessions.Lookup.Execute
-        (Repository, Provider_Session_Reference, Provider_Session_Secret, 122).Status
+        (Repository, Provider_Session_Reference, Provider_Session_Secret, 122,
+         Audit_Context, Next_Audit_Event, 1).Status
       = Identity.Sessions.Handles.Revoked,
       "provider-derived revoked session unusable");
 
    Assert
-     (Identity.Operations.Sessions.Revoke_Provider.Execute (Repository, EP1)
+     (Identity.Operations.Sessions.Revoke_Provider.Execute (Repository, EP1, Audit_Context, Next_Audit_Event, 1)
       = Identity.Adapters.Repositories.Memory.State_Conflict,
       "provider-derived session revocation is idempotency-conflict after all revoked");
 
@@ -13868,7 +13917,7 @@ begin
             State => Identity.Credentials.States.Created,
             Created_At => 128,
             Highest_Accepted_Counter => 0,
-            Version => 0))
+            Version => 0), Audit_Context, Next_Audit_Event, 1)
       = Identity.Adapters.Repositories.Memory.State_Conflict,
       "TOTP enrollment begin rejects retired principal");
 
@@ -13883,7 +13932,7 @@ begin
             State => Identity.Credentials.States.Created,
             Created_At => 129,
             Highest_Accepted_Counter => 0,
-            Version => 0))
+            Version => 0), Audit_Context, Next_Audit_Event, 1)
       = Identity.Adapters.Repositories.Memory.Applied,
       "TOTP enrollment begins with pending credential");
 
@@ -13898,7 +13947,7 @@ begin
             State => Identity.Credentials.States.Created,
             Created_At => 129,
             Highest_Accepted_Counter => 0,
-            Version => 0))
+            Version => 0), Audit_Context, Next_Audit_Event, 1)
       = Identity.Adapters.Repositories.Memory.Applied,
       "second TOTP enrollment begins with pending credential");
 
@@ -13909,7 +13958,7 @@ begin
            (Id => C13,
             Principal => P1,
             Algorithm => TOTP_Algorithm,
-            Created_At => 129))
+            Created_At => 129), Audit_Context, Next_Audit_Event, 1)
       = Identity.Adapters.Repositories.Memory.Applied,
       "IDENTITY-TOTP-002 TOTP begin request creates pending credential without caller verifier");
 
@@ -13933,7 +13982,7 @@ begin
 
    Assert
      (Identity.Operations.Factors.Accept_TOTP_Counter.Execute
-        (Repository, C4, 1)
+        (Repository, C4, 1, Audit_Context, Next_Audit_Event, 1)
       = Identity.One_Time_Passwords.Credentials.Credential_Unusable,
       "pending TOTP credential cannot authenticate before proof");
 
@@ -13949,7 +13998,7 @@ begin
                  Secret => TOTP_Seed_2,
                  Created_At => 130,
                  Highest_Accepted_Counter => 0),
-            Expected_Credential_Version => 1))
+            Expected_Credential_Version => 1), Audit_Context, Next_Audit_Event, 1)
       = Identity.Adapters.Repositories.Memory.Version_Conflict,
       "stale staged TOTP enrollment completion conflicts before activation");
 
@@ -13973,7 +14022,7 @@ begin
             State => Identity.Credentials.States.Active,
             Created_At => 130,
             Highest_Accepted_Counter => 0,
-            Version => 0))
+            Version => 0), Audit_Context, Next_Audit_Event, 1)
       = Identity.Adapters.Repositories.Memory.Applied,
       "TOTP enrollment completion activates verifier metadata");
 
@@ -13986,7 +14035,7 @@ begin
             Algorithm => TOTP_Algorithm,
             Secret => TOTP_Seed_2,
             Created_At => 130,
-            Highest_Accepted_Counter => 0))
+            Highest_Accepted_Counter => 0), Audit_Context, Next_Audit_Event, 1)
       = Identity.Adapters.Repositories.Memory.Applied,
       "IDENTITY-TOTP-002 TOTP completion request derives verifier from secret container");
 
@@ -14024,7 +14073,7 @@ begin
             State => Identity.Credentials.States.Active,
             Created_At => 130,
             Highest_Accepted_Counter => 0,
-            Version => 0))
+            Version => 0), Audit_Context, Next_Audit_Event, 1)
       = Identity.Adapters.Repositories.Memory.State_Conflict,
       "TOTP enrollment completion cannot activate twice");
 
@@ -14039,7 +14088,7 @@ begin
           State => Identity.Authentication.Transactions.Started,
           Attempts => 0,
           Evidence_Count => 0,
-          Version => 0))
+          Version => 0), Audit_Context, Next_Audit_Event, 1)
       = Identity.Authentication.Transactions.State_Conflict,
       "authentication transaction begin rejects retired principal");
 
@@ -14054,7 +14103,7 @@ begin
           State => Identity.Authentication.Transactions.Started,
           Attempts => 0,
           Evidence_Count => 0,
-          Version => 0))
+          Version => 0), Audit_Context, Next_Audit_Event, 1)
       = Identity.Authentication.Transactions.Applied,
       "IDENTITY-MFA-001 authentication transaction begins and requires factor");
 
@@ -14383,7 +14432,7 @@ begin
                State => Identity.Authentication.Challenges.Issued,
                Attempts => 0,
                Version => 0),
-            Expected_Transaction_Version => 99))
+            Expected_Transaction_Version => 99), Audit_Context, Next_Audit_Event, 1)
       = Identity.Authentication.Transactions.Version_Conflict,
       "stale staged challenge issuance conflicts before challenge creation");
 
@@ -14403,7 +14452,7 @@ begin
             Expires_At => (Present => True, Time_Point => 180),
             State => Identity.Authentication.Challenges.Issued,
             Attempts => 0,
-            Version => 0))
+            Version => 0), Audit_Context, Next_Audit_Event, 1)
       = Identity.Authentication.Transactions.Applied,
       "factor challenge issued for one authentication transaction");
 
@@ -14453,7 +14502,7 @@ begin
             Expires_At => (Present => True, Time_Point => 180),
             State => Identity.Authentication.Challenges.Issued,
             Attempts => 0,
-            Version => 0))
+            Version => 0), Audit_Context, Next_Audit_Event, 1)
       = Identity.Authentication.Transactions.State_Conflict,
       "challenge principal must match transaction principal");
 
@@ -14705,7 +14754,7 @@ begin
           Remembered => False,
           Generation => 5,
           State => Identity.Sessions.Definitions.Active,
-          Version => 0))
+          Version => 0), Audit_Context, Next_Audit_Event, 1)
       = Identity.Adapters.Repositories.Memory.Applied,
       "step-up session fixture created");
 
@@ -14727,7 +14776,7 @@ begin
           User_Presence => True,
           User_Verification => True,
           Managed_Credential => False,
-          Recent_Authentication => True))
+          Recent_Authentication => True), Audit_Context, Next_Audit_Event, 1)
       = Identity.Authentication.Transactions.State_Conflict,
       "step-up transaction principal must match session principal");
 
@@ -14760,7 +14809,7 @@ begin
       "step-up session remains lookupable");
 
    Renewed_Handle := Identity.Operations.Sessions.Lookup.Execute
-     (Repository, Step_Up_Session_Reference, Step_Up_Session_Secret, 139);
+     (Repository, Step_Up_Session_Reference, Step_Up_Session_Secret, 139, Audit_Context, Next_Audit_Event, 1);
    Assert
      (Renewed_Handle.Assurance = Identity.Assurance.Levels.Sensitive
       and then Renewed_Handle.Attributes.Factor_Count = 2
@@ -14799,7 +14848,7 @@ begin
           User_Presence => True,
           User_Verification => True,
           Managed_Credential => False,
-          Recent_Authentication => True))
+          Recent_Authentication => True), Audit_Context, Next_Audit_Event, 1)
       = Identity.Authentication.Transactions.State_Conflict,
       "consumed step-up transaction cannot upgrade twice");
 
@@ -14814,7 +14863,7 @@ begin
           State => Identity.Authentication.Transactions.Started,
           Attempts => 0,
           Evidence_Count => 0,
-          Version => 0))
+          Version => 0), Audit_Context, Next_Audit_Event, 1)
       = Identity.Authentication.Transactions.Applied,
       "session assurance upgrade transaction begins");
 
@@ -14830,7 +14879,7 @@ begin
             Expires_At => (Present => True, Time_Point => 190),
             State => Identity.Authentication.Challenges.Issued,
             Attempts => 0,
-            Version => 0))
+            Version => 0), Audit_Context, Next_Audit_Event, 1)
       = Identity.Authentication.Transactions.Applied,
       "session assurance upgrade challenge is issued");
 
@@ -14877,7 +14926,7 @@ begin
                Managed_Credential => False,
                Recent_Authentication => True),
             Expected_Session_Version => 99,
-            Expected_Transaction_Version => Auth_Tx_Check.Version))
+            Expected_Transaction_Version => Auth_Tx_Check.Version), Audit_Context, Next_Audit_Event, 1)
       = Identity.Authentication.Transactions.Version_Conflict,
       "stale staged assurance upgrade session version conflicts before upgrade");
 
@@ -14903,7 +14952,7 @@ begin
                Managed_Credential => False,
                Recent_Authentication => True),
             Expected_Session_Version => Session_Check.Version,
-            Expected_Transaction_Version => 99))
+            Expected_Transaction_Version => 99), Audit_Context, Next_Audit_Event, 1)
       = Identity.Authentication.Transactions.Version_Conflict,
       "stale staged assurance upgrade transaction version conflicts before upgrade");
 
@@ -14945,7 +14994,7 @@ begin
       "session assurance upgrade operation upgrades assurance atomically");
 
    Renewed_Handle := Identity.Operations.Sessions.Lookup.Execute
-     (Repository, Step_Up_Session_Reference, Step_Up_Session_Secret, 146);
+     (Repository, Step_Up_Session_Reference, Step_Up_Session_Secret, 146, Audit_Context, Next_Audit_Event, 1);
    Assert
      (Renewed_Handle.Assurance = Identity.Assurance.Levels.Administrative
       and then Renewed_Handle.Attributes.Factor_Count = 3
@@ -14958,7 +15007,7 @@ begin
          (Id => P6,
           Kind => Identity.Principals.Kinds.Human,
           State => Identity.Principals.Definitions.Active,
-          Version => 0))
+          Version => 0), Audit_Context, Next_Audit_Event, 1)
       = Identity.Adapters.Repositories.Memory.Applied,
       "challenge retired-principal fixture principal created");
 
@@ -14973,12 +15022,12 @@ begin
           State => Identity.Authentication.Transactions.Started,
           Attempts => 0,
           Evidence_Count => 0,
-          Version => 0))
+          Version => 0), Audit_Context, Next_Audit_Event, 1)
       = Identity.Authentication.Transactions.Applied,
       "challenge retired-principal fixture transaction begins");
 
    Assert
-     (Identity.Operations.Principals.Retire.Execute (Repository, P6)
+     (Identity.Operations.Principals.Retire.Execute (Repository, P6, Audit_Context, Next_Audit_Event, 1)
       = Identity.Adapters.Repositories.Memory.Applied,
       "challenge retired-principal fixture principal retired");
 
@@ -14994,7 +15043,7 @@ begin
             Expires_At => (Present => True, Time_Point => 190),
             State => Identity.Authentication.Challenges.Issued,
             Attempts => 0,
-            Version => 0))
+            Version => 0), Audit_Context, Next_Audit_Event, 1)
       = Identity.Authentication.Transactions.State_Conflict,
       "factor challenge issue rejects retired principal");
 
@@ -15009,7 +15058,7 @@ begin
 
    Assert
      (Identity.Operations.Sessions.Lookup.Execute
-        (Repository, Step_Up_Session_Reference, Step_Up_Session_Secret, 141).Status
+        (Repository, Step_Up_Session_Reference, Step_Up_Session_Secret, 141, Audit_Context, Next_Audit_Event, 1).Status
       = Identity.Sessions.Handles.Found,
       "stale staged credential session revocation leaves session usable");
 
@@ -15020,12 +15069,12 @@ begin
 
    Assert
      (Identity.Operations.Sessions.Lookup.Execute
-        (Repository, Step_Up_Session_Reference, Step_Up_Session_Secret, 141).Status
+        (Repository, Step_Up_Session_Reference, Step_Up_Session_Secret, 141, Audit_Context, Next_Audit_Event, 1).Status
       = Identity.Sessions.Handles.Revoked,
       "credential-derived revoked session unusable");
 
    Assert
-     (Identity.Operations.Sessions.Revoke_Credential.Execute (Repository, C8)
+     (Identity.Operations.Sessions.Revoke_Credential.Execute (Repository, C8, Audit_Context, Next_Audit_Event, 1)
       = Identity.Adapters.Repositories.Memory.State_Conflict,
       "credential-derived session revocation is idempotency-conflict after all revoked");
 
@@ -15139,7 +15188,7 @@ begin
 
    Assert
      (Identity.Operations.Factors.Accept_TOTP_Counter.Execute
-        (Repository, C4, 10)
+        (Repository, C4, 10, Audit_Context, Next_Audit_Event, 1)
       = Identity.One_Time_Passwords.Credentials.Accepted,
       "IDENTITY-TOTP-001 first TOTP counter accepted");
 
@@ -15260,25 +15309,25 @@ begin
          Identity.Operations.Factors.Accept_TOTP_Counter.Accept_Request'
            (Credential => C4,
             Expected_Version => 1,
-            Counter => 10))
+            Counter => 10), Audit_Context, Next_Audit_Event, 1)
       = Identity.One_Time_Passwords.Credentials.State_Conflict,
       "stale TOTP counter acceptance conflicts before replay classification");
 
    Assert
      (Identity.Operations.Factors.Accept_TOTP_Counter.Execute
-        (Repository, C4, 10)
+        (Repository, C4, 10, Audit_Context, Next_Audit_Event, 1)
       = Identity.One_Time_Passwords.Credentials.Replayed,
       "same TOTP counter replay rejected");
 
    Assert
      (Identity.Operations.Factors.Accept_TOTP_Counter.Execute
-        (Repository, C4, 9)
+        (Repository, C4, 9, Audit_Context, Next_Audit_Event, 1)
       = Identity.One_Time_Passwords.Credentials.Replayed,
       "lower TOTP counter replay rejected");
 
    Assert
      (Identity.Operations.Factors.Accept_TOTP_Counter.Execute
-        (Repository, C4, 11)
+        (Repository, C4, 11, Audit_Context, Next_Audit_Event, 1)
       = Identity.One_Time_Passwords.Credentials.Accepted,
       "higher TOTP counter advances replay state");
 
@@ -15288,7 +15337,7 @@ begin
          Identity.Operations.Factors.Remove.Staged_Removal_Request'
            (Credential => C4,
             Principal => P1,
-            Expected_Credential_Version => 1))
+            Expected_Credential_Version => 1), Audit_Context, Next_Audit_Event, 1)
       = Identity.Adapters.Repositories.Memory.Version_Conflict,
       "stale staged TOTP factor removal conflicts before revocation");
 
@@ -15301,7 +15350,7 @@ begin
       "stale staged TOTP factor removal leaves credential active");
 
    Assert
-     (Identity.Operations.Factors.Remove.Execute (Repository, C4, P1)
+     (Identity.Operations.Factors.Remove.Execute (Repository, C4, P1, Audit_Context, Next_Audit_Event, 1)
       = Identity.Adapters.Repositories.Memory.Applied,
       "TOTP factor removal revokes credential");
 
@@ -15317,12 +15366,12 @@ begin
 
    Assert
      (Identity.Operations.Factors.Accept_TOTP_Counter.Execute
-        (Repository, C4, 12)
+        (Repository, C4, 12, Audit_Context, Next_Audit_Event, 1)
       = Identity.One_Time_Passwords.Credentials.Credential_Unusable,
       "removed TOTP factor cannot accept counters");
 
    Assert
-     (Identity.Operations.Factors.Remove.Execute (Repository, C4, P1)
+     (Identity.Operations.Factors.Remove.Execute (Repository, C4, P1, Audit_Context, Next_Audit_Event, 1)
       = Identity.Adapters.Repositories.Memory.State_Conflict,
       "TOTP factor removal cannot be replayed");
 
@@ -15473,16 +15522,17 @@ begin
             (Id => AT_P1,
              Kind => Identity.Principals.Kinds.Human,
              State => Identity.Principals.Definitions.Active,
-             Version => 0))
+             Version => 0), Audit_Context, Next_Audit_Event, 1)
          = Identity.Adapters.Repositories.Memory.Applied
          and then Identity.Operations.Accounts.Create.Execute
            (AT_Repo,
             (Id => AT_A1,
              Principal => AT_P1,
              State => (others => <>),
-             Version => 0))
+             Version => 0), Audit_Context, Next_Audit_Event, 1)
            = Identity.Adapters.Repositories.Memory.Applied
-         and then Identity.Operations.Sessions.Create.Execute (AT_Repo, AT_Predecessor)
+         and then Identity.Operations.Sessions.Create.Execute (AT_Repo, AT_Predecessor,
+                                                               Audit_Context, Next_Audit_Event, 1)
            = Identity.Adapters.Repositories.Memory.Applied
          and then Identity.Operations.Factors.Generate_Recovery_Codes.Execute
            (AT_Repo,
@@ -15497,7 +15547,7 @@ begin
                      Secret => AT_Code),
                   others =>
                     (Code_Id => Identity.Text.Bounded.From_String (""),
-                     Secret => AT_Absent_Code)]))
+                     Secret => AT_Absent_Code)]), Audit_Context, Next_Audit_Event, 1)
            = Identity.Adapters.Repositories.Memory.Applied,
          "atomicity: fixture principal, account, session and recovery-code set installed");
 
@@ -15540,7 +15590,7 @@ begin
            (AT_Repo,
             Identity.Operations.Sessions.Rotate.Staged_Rotate_Request'
               (Request => AT_Rotation,
-               Expected_Predecessor_Version => Session_Before.Version + 7))
+               Expected_Predecessor_Version => Session_Before.Version + 7), Audit_Context, Next_Audit_Event, 1)
          = Identity.Adapters.Repositories.Memory.Version_Conflict,
          "atomicity: stale staged session rotation reports a version conflict");
 
@@ -15577,7 +15627,7 @@ begin
            (AT_Repo,
             Identity.Operations.Sessions.Rotate.Staged_Rotate_Request'
               (Request => AT_Rotation,
-               Expected_Predecessor_Version => Session_Before.Version))
+               Expected_Predecessor_Version => Session_Before.Version), Audit_Context, Next_Audit_Event, 1)
          = Identity.Adapters.Repositories.Memory.Applied,
          "atomicity: predecessor session survives a failed rotation and still rotates");
 
@@ -15606,7 +15656,7 @@ begin
             (Id => AT_P1,
              Kind => Identity.Principals.Kinds.Service,
              State => Identity.Principals.Definitions.Retired,
-             Version => 99))
+             Version => 99), Audit_Context, Next_Audit_Event, 1)
          = Identity.Adapters.Repositories.Memory.Uniqueness_Conflict,
          "atomicity: duplicate principal creation reports a uniqueness conflict");
 
@@ -15630,7 +15680,7 @@ begin
                Principal => AT_P2,
                Public_Reference => Identity.Text.Bounded.From_String ("atomicity-session-3"),
                Secret_Verifier => Identity.Crypto.Secret_Verifiers.Derive_Text
-                 (Identity.Crypto.Domains.Session_Token, AT_Intruder_Secret)))
+                 (Identity.Crypto.Domains.Session_Token, AT_Intruder_Secret)), Audit_Context, Next_Audit_Event, 1)
          = Identity.Adapters.Repositories.Memory.State_Conflict
          and then Identity.Adapters.Repositories.Memory.Session_Count (AT_Repo)
            = Before_Sessions + 1,
@@ -15639,7 +15689,7 @@ begin
       --  A failed recovery-code consume must not burn the code.
       Assert
         (Identity.Operations.Factors.Consume_Recovery_Code.Execute
-           (AT_Repo, AT_CS1, AT_Absent_Code)
+           (AT_Repo, AT_CS1, AT_Absent_Code, Audit_Context, Next_Audit_Event, 1)
          = Identity.Recovery_Codes.Sets.Not_Verified,
          "atomicity: unmatched recovery code presentation is rejected");
 
@@ -15649,7 +15699,7 @@ begin
             Identity.Operations.Factors.Consume_Recovery_Code.Consume_Request'
               (Set_Id => AT_CS1,
                Expected_Version => Codes_Before.Version + 5,
-               Code => AT_Code))
+               Code => AT_Code), Audit_Context, Next_Audit_Event, 1)
          = Identity.Recovery_Codes.Sets.State_Conflict,
          "atomicity: stale staged recovery-code consume reports a state conflict");
 
@@ -15668,7 +15718,7 @@ begin
 
       Assert
         (Identity.Operations.Factors.Consume_Recovery_Code.Execute
-           (AT_Repo, AT_CS1, AT_Code)
+           (AT_Repo, AT_CS1, AT_Code, Audit_Context, Next_Audit_Event, 1)
          = Identity.Recovery_Codes.Sets.Consumed,
          "atomicity: a recovery code refused by failed attempts is still consumable once");
 
@@ -16453,50 +16503,53 @@ begin
             (Id => EM_P1,
              Kind => Identity.Principals.Kinds.Human,
              State => Identity.Principals.Definitions.Active,
-             Version => 0))
+             Version => 0), Audit_Context, Next_Audit_Event, 1)
          = Identity.Adapters.Repositories.Memory.Applied
          and then Identity.Operations.Principals.Create.Execute
            (EM_Repo,
             (Id => EM_P2,
              Kind => Identity.Principals.Kinds.Service,
              State => Identity.Principals.Definitions.Active,
-             Version => 0))
+             Version => 0), Audit_Context, Next_Audit_Event, 1)
            = Identity.Adapters.Repositories.Memory.Applied
          and then Identity.Operations.Principals.Create.Execute
            (EM_Repo,
             (Id => EM_P3,
              Kind => Identity.Principals.Kinds.Human,
              State => Identity.Principals.Definitions.Active,
-             Version => 0))
+             Version => 0), Audit_Context, Next_Audit_Event, 1)
            = Identity.Adapters.Repositories.Memory.Applied
          and then Identity.Operations.Principals.Create.Execute
            (EM_Repo,
             (Id => EM_P4,
              Kind => Identity.Principals.Kinds.Human,
              State => Identity.Principals.Definitions.Active,
-             Version => 0))
+             Version => 0), Audit_Context, Next_Audit_Event, 1)
            = Identity.Adapters.Repositories.Memory.Applied
          and then Identity.Operations.Principals.Create.Execute
            (EM_Repo,
             (Id => EM_P5,
              Kind => Identity.Principals.Kinds.Human,
              State => Identity.Principals.Definitions.Active,
-             Version => 0))
+             Version => 0), Audit_Context, Next_Audit_Event, 1)
            = Identity.Adapters.Repositories.Memory.Applied,
          "emission: fixture principals created");
 
       Assert
         (Identity.Operations.Accounts.Create.Execute
            (EM_Repo,
-            (Id => EM_A1, Principal => EM_P1, State => EM_Enabled_State, Version => 0))
+            (Id => EM_A1, Principal => EM_P1, State => EM_Enabled_State, Version => 0),
+            Audit_Context, Next_Audit_Event, 1)
          = Identity.Adapters.Repositories.Memory.Applied
          and then Identity.Operations.Accounts.Create.Execute
            (EM_Repo,
-            (Id => EM_A3, Principal => EM_P3, State => EM_Enabled_State, Version => 0))
+            (Id => EM_A3, Principal => EM_P3, State => EM_Enabled_State, Version => 0),
+            Audit_Context, Next_Audit_Event, 1)
            = Identity.Adapters.Repositories.Memory.Applied
          and then Identity.Operations.Accounts.Create.Execute
            (EM_Repo,
-            (Id => EM_A5, Principal => EM_P5, State => EM_Enabled_State, Version => 0))
+            (Id => EM_A5, Principal => EM_P5, State => EM_Enabled_State, Version => 0),
+            Audit_Context, Next_Audit_Event, 1)
            = Identity.Adapters.Repositories.Memory.Applied
          and then Identity.Operations.Identities.Add.Execute
            (EM_Repo,
@@ -16505,7 +16558,7 @@ begin
              Kind => Login_Kind,
              Normalized => EM_Login,
              State => Identity.Identities.Bindings.Active,
-             Version => 0))
+             Version => 0), Audit_Context, Next_Audit_Event, 1)
            = Identity.Adapters.Repositories.Memory.Applied
          and then Identity.Operations.Passwords.Enroll.Execute
            (EM_Repo, EM_P1, EM_C1, New_Password)
@@ -16531,7 +16584,7 @@ begin
             EM_Create_Request (EM_S1, "emission-session-1"),
             EM_Ctx,
             EM_Event ("a1"),
-            200)
+            200, Audit_Context, Next_Audit_Event, 1)
          = Identity.Adapters.Repositories.Memory.Applied
          and then Identity.Adapters.Repositories.Memory.Event_Count (EM_Repo)
            = EM_Before + 1,
@@ -16562,7 +16615,7 @@ begin
             EM_Rotate_Request (EM_S1, EM_S3, "emission-session-3", 1),
             EM_Ctx,
             EM_Event ("a2"),
-            205)
+            205, Audit_Context, Next_Audit_Event, 1)
          = Identity.Adapters.Repositories.Memory.Applied
          and then Identity.Adapters.Repositories.Memory.Event_Count (EM_Repo)
            = EM_Before + 1,
@@ -16601,7 +16654,7 @@ begin
                Expected_Session_Version => Session_Check.Version),
             EM_Ctx,
             EM_Event ("a3"),
-            210)
+            210, Audit_Context, Next_Audit_Event, 1)
            = Identity.Adapters.Repositories.Memory.Applied
          and then Identity.Adapters.Repositories.Memory.Event_Count (EM_Repo)
            = EM_Before + 1,
@@ -16672,7 +16725,7 @@ begin
                Lockout_Threshold => 0),
             EM_Ctx,
             EM_Event ("a5"),
-            214).Status = Identity.Results.Rejected
+            214, Audit_Context, Next_Audit_Event, 1).Status = Identity.Results.Rejected
          and then Identity.Adapters.Repositories.Memory.Event_Count (EM_Repo)
            = EM_Before + 1,
          "emission: audited password authentication records one "
@@ -16720,7 +16773,7 @@ begin
                Replacement => Changed_Password),
             EM_Ctx,
             EM_Event ("a6"),
-            220)
+            220, Audit_Context, Next_Audit_Event, 1)
            = Identity.Results.Succeeded
          and then Identity.Adapters.Repositories.Memory.Event_Count (EM_Repo)
            = EM_Before + 1,
@@ -16740,7 +16793,7 @@ begin
       EM_Before := Identity.Adapters.Repositories.Memory.Event_Count (EM_Repo);
       Assert
         (Identity.Operations.Passwords.Change.Execute
-           (EM_Repo, EM_P1, EM_C6, Wrong_Password, Reset_Password)
+           (EM_Repo, EM_P1, EM_C6, Wrong_Password, Reset_Password, Audit_Context, Next_Audit_Event, 1)
          = Identity.Results.Rejected
          and then Identity.Adapters.Repositories.Memory.Event_Count (EM_Repo)
            = EM_Before,
@@ -16812,7 +16865,7 @@ begin
                Expected_Predecessor_Version => Password_Check.Version),
             EM_Ctx,
             EM_Event ("a8"),
-            227)
+            227, Audit_Context, Next_Audit_Event, 1)
            = Identity.Tokens.Verification.Valid
          and then Identity.Adapters.Repositories.Memory.Event_Count (EM_Repo)
            = EM_Before + 1,
@@ -16862,7 +16915,7 @@ begin
                   Mandatory_Audit => True)),
             EM_Ctx,
             EM_Event ("a9"),
-            230)
+            230, Audit_Context, Next_Audit_Event, 1)
            = Identity.Adapters.Repositories.Memory.Applied
          and then Identity.Adapters.Repositories.Memory.Event_Count (EM_Repo)
            = EM_Before + 1,
@@ -16878,7 +16931,7 @@ begin
 
       EM_Before := Identity.Adapters.Repositories.Memory.Event_Count (EM_Repo);
       Assert
-        (Identity.Operations.Accounts.Disable.Execute (EM_Repo, EM_A3, EM_P3)
+        (Identity.Operations.Accounts.Disable.Execute (EM_Repo, EM_A3, EM_P3, Audit_Context, Next_Audit_Event, 1)
          = Identity.Adapters.Repositories.Memory.State_Conflict
          and then Identity.Adapters.Repositories.Memory.Event_Count (EM_Repo)
            = EM_Before,
@@ -16917,7 +16970,7 @@ begin
                Contact => EM_CB1),
             EM_Ctx,
             EM_Event ("b1"),
-            236)
+            236, Audit_Context, Next_Audit_Event, 1)
          = Identity.Tokens.Verification.Valid
          and then Identity.Adapters.Repositories.Memory.Event_Count (EM_Repo)
            = EM_Before + 1,
@@ -16934,7 +16987,7 @@ begin
       EM_Before := Identity.Adapters.Repositories.Memory.Event_Count (EM_Repo);
       Assert
         (Identity.Operations.Verification.Complete.Execute
-           (EM_Repo, EM_T3, Contact_Verification_Secret, 237, EM_CB1)
+           (EM_Repo, EM_T3, Contact_Verification_Secret, 237, EM_CB1, Audit_Context, Next_Audit_Event, 1)
          = Identity.Tokens.Verification.Already_Consumed
          and then Identity.Adapters.Repositories.Memory.Event_Count (EM_Repo)
            = EM_Before,
@@ -16952,7 +17005,7 @@ begin
              State => Identity.Authentication.Transactions.Started,
              Attempts => 0,
              Evidence_Count => 0,
-             Version => 0))
+             Version => 0), Audit_Context, Next_Audit_Event, 1)
          = Identity.Authentication.Transactions.Applied
          and then Identity.Operations.Factors.Issue_Challenge.Execute
            (EM_Repo,
@@ -16965,7 +17018,7 @@ begin
                Expires_At => (Present => True, Time_Point => 900),
                State => Identity.Authentication.Challenges.Issued,
                Attempts => 0,
-               Version => 0))
+               Version => 0), Audit_Context, Next_Audit_Event, 1)
            = Identity.Authentication.Transactions.Applied,
          "emission: MFA fixture transaction and challenge installed");
 
@@ -17019,7 +17072,7 @@ begin
              Created_At => 245,
              Expires_At => (Present => True, Time_Point => 900),
              State => Identity.Recovery.Transactions.Started,
-             Version => 0))
+             Version => 0), Audit_Context, Next_Audit_Event, 1)
          = Identity.Recovery.Transactions.Applied
          and then Identity.Operations.Recovery.Continue.Execute
            (EM_Repo, EM_RT1, EM_P5, 246)
@@ -17044,7 +17097,7 @@ begin
                Expected_Account_Version => Account_Check.Version),
             EM_Ctx,
             EM_Event ("b3"),
-            247)
+            247, Audit_Context, Next_Audit_Event, 1)
            = Identity.Recovery.Transactions.Applied
          and then Identity.Adapters.Repositories.Memory.Event_Count (EM_Repo)
            = EM_Before + 1,
@@ -17061,7 +17114,7 @@ begin
 
       EM_Before := Identity.Adapters.Repositories.Memory.Event_Count (EM_Repo);
       Assert
-        (Identity.Operations.Recovery.Complete.Execute (EM_Repo, EM_RT1, EM_P5, 248)
+        (Identity.Operations.Recovery.Complete.Execute (EM_Repo, EM_RT1, EM_P5, 248, Audit_Context, Next_Audit_Event, 1)
          = Identity.Recovery.Transactions.State_Conflict
          and then Identity.Adapters.Repositories.Memory.Event_Count (EM_Repo)
            = EM_Before,
@@ -17102,7 +17155,7 @@ begin
                Expected_Credential_Version => API_Key_Check.Version),
             EM_Ctx,
             EM_Event ("b4"),
-            251).Status = Identity.Results.Succeeded
+            251, Audit_Context, Next_Audit_Event, 1).Status = Identity.Results.Succeeded
          and then Identity.Adapters.Repositories.Memory.Event_Count (EM_Repo)
            = EM_Before + 1,
          "emission: audited API key authentication records exactly one "
@@ -17138,7 +17191,7 @@ begin
                Expected_Credential_Version => API_Key_Check.Version),
             EM_Ctx,
             EM_Event ("b5"),
-            253)
+            253, Audit_Context, Next_Audit_Event, 1)
            = Identity.Adapters.Repositories.Memory.Applied
          and then Identity.Adapters.Repositories.Memory.Event_Count (EM_Repo)
            = EM_Before + 1,
@@ -17154,7 +17207,7 @@ begin
 
       EM_Before := Identity.Adapters.Repositories.Memory.Event_Count (EM_Repo);
       Assert
-        (Identity.Operations.API_Keys.Revoke.Execute (EM_Repo, EM_C4)
+        (Identity.Operations.API_Keys.Revoke.Execute (EM_Repo, EM_C4, Audit_Context, Next_Audit_Event, 1)
          = Identity.Adapters.Repositories.Memory.State_Conflict
          and then Identity.Adapters.Repositories.Memory.Event_Count (EM_Repo)
            = EM_Before,
@@ -17168,7 +17221,7 @@ begin
               (Id => EM_C5,
                Principal => EM_P1,
                Algorithm => TOTP_Algorithm,
-               Created_At => 260))
+               Created_At => 260), Audit_Context, Next_Audit_Event, 1)
          = Identity.Adapters.Repositories.Memory.Applied
          and then Identity.Operations.Factors.Complete_Enrollment.Execute
            (EM_Repo,
@@ -17216,7 +17269,7 @@ begin
                Counter => 11),
             EM_Ctx,
             EM_Event ("b7"),
-            262)
+            262, Audit_Context, Next_Audit_Event, 1)
            = Identity.One_Time_Passwords.Credentials.Replayed
          and then Identity.Adapters.Repositories.Memory.Event_Count (EM_Repo)
            = EM_Before + 1,
@@ -17233,7 +17286,8 @@ begin
 
       EM_Before := Identity.Adapters.Repositories.Memory.Event_Count (EM_Repo);
       Assert
-        (Identity.Operations.Factors.Accept_TOTP_Counter.Execute (EM_Repo, EM_C5, 11)
+        (Identity.Operations.Factors.Accept_TOTP_Counter.Execute (EM_Repo, EM_C5, 11,
+                                                                  Audit_Context, Next_Audit_Event, 1)
          = Identity.One_Time_Passwords.Credentials.Replayed
          and then Identity.Adapters.Repositories.Memory.Event_Count (EM_Repo)
            = EM_Before,
@@ -17309,7 +17363,7 @@ begin
             273,
             EM_Ctx,
             EM_Event ("c1"),
-            273).Status = Identity.Results.Conflict
+            273, Audit_Context, Next_Audit_Event, 1).Status = Identity.Results.Conflict
          and then Identity.Adapters.Repositories.Memory.Event_Count (EM_Repo)
            = EM_Before
          and then Identity.Adapters.Repositories.Memory.External_Replay_Count (EM_Repo)
@@ -17398,7 +17452,7 @@ begin
                Replacement => Changed_Password),
             EM_Ctx,
             EM_Event ("c3"),
-            301)
+            301, Audit_Context, Next_Audit_Event, 1)
            = Identity.Results.Operational_Failure
          and then Identity.Adapters.Repositories.Memory.Event_Count (EM_Repo)
            = EM_Before,
@@ -17433,7 +17487,7 @@ begin
               Counter => 20),
            EM_Ctx,
            EM_Event ("c4"),
-           302);
+           302, Audit_Context, Next_Audit_Event, 1);
       Assert
         (EM_Found
          and then EM_TOTP_Status
@@ -17549,7 +17603,7 @@ begin
       Assert (TStatus = TStores.Applied, "timing: probe account is created");
 
       T0 := Clock;
-      TResult := TAuth.Execute (TView, TSubject, TBad);
+      TResult := TAuth.Execute (TView, TSubject, TBad, Audit_Context, Next_Audit_Event, 1);
       Wrong_Password_Time := To_Duration (Clock - T0);
 
       --  Suspend the account, so authentication now leaves on an account-state

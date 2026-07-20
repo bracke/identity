@@ -7,10 +7,6 @@ with Identity.Recovery.Transactions;
 with Identity.Times;
 
 package Identity.Operations.Recovery.Begin_Recovery is
-   function Execute
-     (Repository  : in out Identity.Adapters.Repositories.Stores.Store_Interface'Class;
-      Transaction : Identity.Recovery.Transactions.Recovery_Transaction_Record)
-      return Identity.Recovery.Transactions.Recovery_Transition_Status;
 
    --  Audited form. Emits identity.recovery.began for the transition, and
    --  refuses the operation if the store cannot accept that event, so an

@@ -15,19 +15,6 @@ package Identity.Operations.Passwords.Change is
       Replacement              : Identity.Secrets.Passwords.New_Password;
    end record;
 
-   function Execute
-     (Repository     : in out Identity.Adapters.Repositories.Stores.Store_Interface'Class;
-      Principal      : Identity.Identifiers.Entities.Principal_Id;
-      New_Credential : Identity.Identifiers.Entities.Credential_Id;
-      Current        : Identity.Secrets.Passwords.Presented_Password;
-      Replacement    : Identity.Secrets.Passwords.New_Password)
-      return Identity.Results.Operation_Status;
-
-   function Execute
-     (Repository : in out Identity.Adapters.Repositories.Stores.Store_Interface'Class;
-      Request    : Change_Request)
-      return Identity.Results.Operation_Status;
-
    --  Audited form. Emits identity.password.changed for the transition, and
    --  refuses the operation if the store cannot accept that event, so a
    --  password is never replaced without its audit record. A rejected

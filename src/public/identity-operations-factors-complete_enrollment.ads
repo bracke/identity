@@ -22,21 +22,6 @@ package Identity.Operations.Factors.Complete_Enrollment is
       Expected_Credential_Version : Identity.Versions.Entity_Version;
    end record;
 
-   function Execute
-     (Repository : in out Identity.Adapters.Repositories.Stores.Store_Interface'Class;
-      Credential : Identity.One_Time_Passwords.Credentials.TOTP_Credential_Record)
-      return Identity.Adapters.Repositories.Stores.Command_Status;
-
-   function Execute
-     (Repository : in out Identity.Adapters.Repositories.Stores.Store_Interface'Class;
-      Request    : TOTP_Completion_Request)
-      return Identity.Adapters.Repositories.Stores.Command_Status;
-
-   function Execute
-     (Repository : in out Identity.Adapters.Repositories.Stores.Store_Interface'Class;
-      Request    : Staged_TOTP_Completion_Request)
-      return Identity.Adapters.Repositories.Stores.Command_Status;
-
    --  Audited form. Emits identity.mfa.factor.enrolled for the completion,
    --  and refuses the operation if the store cannot accept that event, so a
    --  factor never becomes usable without a record of its enrollment.

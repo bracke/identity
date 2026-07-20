@@ -12,17 +12,6 @@ package Identity.Operations.Factors.Accept_TOTP_Counter is
       Counter          : Identity.One_Time_Passwords.Credentials.TOTP_Counter;
    end record;
 
-   function Execute
-     (Repository : in out Identity.Adapters.Repositories.Stores.Store_Interface'Class;
-      Credential : Identity.Identifiers.Entities.Credential_Id;
-      Counter    : Identity.One_Time_Passwords.Credentials.TOTP_Counter)
-      return Identity.One_Time_Passwords.Credentials.TOTP_Accept_Status;
-
-   function Execute
-     (Repository : in out Identity.Adapters.Repositories.Stores.Store_Interface'Class;
-      Request    : Accept_Request)
-      return Identity.One_Time_Passwords.Credentials.TOTP_Accept_Status;
-
    --  Audited form. A counter that has already been accepted is a reused
    --  one-time password, which is security-significant even though the
    --  operation correctly refuses it; that case, and only that case, emits

@@ -11,17 +11,6 @@ package Identity.Operations.Accounts.Unlock is
       Expected_Version : Identity.Versions.Entity_Version;
    end record;
 
-   function Execute
-     (Repository : in out Identity.Adapters.Repositories.Stores.Store_Interface'Class;
-      Request    : Unlock_Request)
-      return Identity.Adapters.Repositories.Stores.Command_Status;
-
-   function Execute
-     (Repository : in out Identity.Adapters.Repositories.Stores.Store_Interface'Class;
-      Account    : Identity.Identifiers.Entities.Account_Id;
-      Principal  : Identity.Identifiers.Entities.Principal_Id)
-      return Identity.Adapters.Repositories.Stores.Command_Status;
-
    --  Audited form. Emits identity.account.unlocked for the transition, and
    --  refuses the operation if the store cannot accept that event, so
    --  a security lockout is never lifted without a record of who lifted it.

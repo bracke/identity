@@ -15,18 +15,6 @@ package Identity.Operations.API_Keys.Authenticate is
       Expected_Credential_Version : Identity.Versions.Entity_Version;
    end record;
 
-   function Execute
-     (Repository    : in out Identity.Adapters.Repositories.Stores.Store_Interface'Class;
-      Public_Key_Id : Identity.Text.Bounded.Bounded_Text;
-      Secret        : Identity.Secrets.API_Keys.API_Key_Secret;
-      Now           : Identity.Times.Instant)
-      return Identity.Authentication.Results.Password_Authentication_Result;
-
-   function Execute
-     (Repository : in out Identity.Adapters.Repositories.Stores.Store_Interface'Class;
-      Request    : Staged_Authentication_Request)
-      return Identity.Authentication.Results.Password_Authentication_Result;
-
    --  Audited form. Emits identity.api-key.authenticated for the attempt,
    --  carrying its outcome, and refuses the operation if the store cannot
    --  accept that event, so a key presentation is never handled unaudited.

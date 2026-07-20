@@ -19,16 +19,6 @@ package Identity.Operations.Tokens.Issue is
       Attempts        : Identity.Versions.Attempt_Count := 0;
    end record;
 
-   function Execute
-     (Repository : in out Identity.Adapters.Repositories.Stores.Store_Interface'Class;
-      Token      : Identity.Tokens.Definitions.Action_Token_Record)
-      return Identity.Adapters.Repositories.Stores.Command_Status;
-
-   function Execute
-     (Repository : in out Identity.Adapters.Repositories.Stores.Store_Interface'Class;
-      Request    : Issue_Request)
-      return Identity.Adapters.Repositories.Stores.Command_Status;
-
    --  Audited form. Emits identity.token.issued for the transition, and
    --  refuses the operation if the store cannot accept that event, so a token
    --  that can act on an account never exists without its audit record.

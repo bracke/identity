@@ -10,16 +10,6 @@ package Identity.Operations.Principals.Retire is
       Expected_Version : Identity.Versions.Entity_Version;
    end record;
 
-   function Execute
-     (Repository : in out Identity.Adapters.Repositories.Stores.Store_Interface'Class;
-      Principal  : Identity.Identifiers.Entities.Principal_Id)
-      return Identity.Adapters.Repositories.Stores.Command_Status;
-
-   function Execute
-     (Repository : in out Identity.Adapters.Repositories.Stores.Store_Interface'Class;
-      Request    : Staged_Retire_Request)
-      return Identity.Adapters.Repositories.Stores.Command_Status;
-
    --  Audited form. Emits identity.principal.retired for the transition, and
    --  refuses the operation if the store cannot accept that event, so a
    --  principal never leaves service without its audit record.

@@ -11,17 +11,6 @@ package Identity.Operations.Accounts.Require_MFA is
       Expected_Version : Identity.Versions.Entity_Version;
    end record;
 
-   function Execute
-     (Repository : in out Identity.Adapters.Repositories.Stores.Store_Interface'Class;
-      Request    : Requirement_Request)
-      return Identity.Adapters.Repositories.Stores.Command_Status;
-
-   function Execute
-     (Repository : in out Identity.Adapters.Repositories.Stores.Store_Interface'Class;
-      Account    : Identity.Identifiers.Entities.Account_Id;
-      Principal  : Identity.Identifiers.Entities.Principal_Id)
-      return Identity.Adapters.Repositories.Stores.Command_Status;
-
    --  Audited form. Emits identity.account.mfa-required for the transition, and
    --  refuses the operation if the store cannot accept that event, so
    --  the requirement is never imposed without a record of who imposed it.

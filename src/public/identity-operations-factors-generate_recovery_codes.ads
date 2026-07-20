@@ -29,16 +29,6 @@ package Identity.Operations.Factors.Generate_Recovery_Codes is
    function To_Record (Request : Generate_Request)
       return Identity.Recovery_Codes.Sets.Recovery_Code_Set_Record;
 
-   function Execute
-     (Repository : in out Identity.Adapters.Repositories.Stores.Store_Interface'Class;
-      Codes      : Identity.Recovery_Codes.Sets.Recovery_Code_Set_Record)
-      return Identity.Adapters.Repositories.Stores.Command_Status;
-
-   function Execute
-     (Repository : in out Identity.Adapters.Repositories.Stores.Store_Interface'Class;
-      Request    : Generate_Request)
-      return Identity.Adapters.Repositories.Stores.Command_Status;
-
    --  Audited form. Emits identity.recovery-codes.generated for the install,
    --  and refuses the operation if the store cannot accept that event, so a
    --  fresh set of account-recovery secrets never appears unrecorded.
