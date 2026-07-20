@@ -4,6 +4,7 @@ with Identity.Accounts.Definitions;
 with Identity.Accounts.States;
 with Identity.Adapters.Repositories.Conformance;
 with Identity.Adapters.Repositories.Memory;
+with Identity.Adapters.Repositories.Persistent;
 with Identity.Adapters.Repositories.Recording;
 with Identity.Adapters.Repositories.Stores;
 with Identity.API_Keys.Credentials;
@@ -43,8 +44,10 @@ procedure Identity_Conformance is
    package Memory renames Identity.Adapters.Repositories.Memory;
    package Stores renames Identity.Adapters.Repositories.Stores;
    package Recording renames Identity.Adapters.Repositories.Recording;
+   package Persistent renames Identity.Adapters.Repositories.Persistent;
 
    use type Stores.Command_Status;
+   use type Memory.Snapshot_Status;
    use type Identity.Accounts.States.Lifecycle_State;
    use type Identity.Crypto.Capabilities.Capability_State;
    use type Identity.External_Providers.Bindings.External_Binding_State;
@@ -715,12 +718,13 @@ procedure Identity_Conformance is
       end case;
    end Run;
 
-   type Adapter_Id is (Memory_Adapter, Recording_Adapter);
+   type Adapter_Id is (Memory_Adapter, Recording_Adapter, Persistent_Adapter);
 
    function Adapter_Image (Value : Adapter_Id) return String is
      (case Value is
         when Memory_Adapter => "memory",
-        when Recording_Adapter => "recording");
+        when Recording_Adapter => "recording",
+        when Persistent_Adapter => "persistent");
 
    --  Reference implementation, and an independent adapter wrapping its own
    --  backing store through the same interface. Both live on the heap: a
@@ -733,6 +737,12 @@ procedure Identity_Conformance is
 
    Wrapped_Store : Recording.Store
      (Inner => Stores.Store_Interface'Class (Backing_Ptr.all)'Access);
+
+   --  Third adapter: durable, backed by a snapshot file. Certifying it through
+   --  the same profiles is what shows the SPI holds up against real storage.
+   Persistent_Ptr   : constant Store_Access := new Memory.Store;
+   Persistent_Store : Persistent.Store (Inner => Persistent_Ptr);
+   Snapshot_Path    : constant String := "generated/evidence/conformance-store.bin";
 
    Failed_Run : Boolean := False;
    Status     : Conformance.Conformance_Status;
@@ -749,6 +759,12 @@ procedure Identity_Conformance is
          & (if State = Identity.Crypto.Capabilities.Available then "available" else "missing"));
    end Report_Capability;
 begin
+   declare
+      Status : Memory.Snapshot_Status;
+   begin
+      Persistent.Open (Persistent_Store, Snapshot_Path, Status);
+   end;
+
    --  Every profile runs against every adapter. The memory adapter is the
    --  reference implementation; the recording adapter is an independent
    --  implementation of the same SPI wrapping a memory store. Certifying both
@@ -763,6 +779,8 @@ begin
                Run (Value, Reference_Ptr.all);
             when Recording_Adapter =>
                Run (Value, Wrapped_Store);
+            when Persistent_Adapter =>
+               Run (Value, Persistent_Store);
          end case;
 
          Required := Conformance.Required_Check_Count (Value);
@@ -795,6 +813,30 @@ begin
          end if;
       end loop;
    end loop;
+
+   --  Durability is the persistent adapter's whole claim, so check it rather
+   --  than assume it: reload the snapshot into a fresh store and require the
+   --  last profile's state to still be there.
+   declare
+      Reloaded : constant Store_Access := new Memory.Store;
+      Status   : Memory.Snapshot_Status;
+   begin
+      Memory.Load (Reloaded.all, Snapshot_Path, Status);
+      if Status = Memory.Loaded
+        and then Stores.Principal_Count (Stores.Store_Interface'Class (Reloaded.all))
+                 = Stores.Principal_Count
+                     (Stores.Store_Interface'Class (Persistent_Store))
+      then
+         Ada.Text_IO.Put_Line
+           ("identity_conformance:adapter:persistent:snapshot-reloaded:"
+            & Count_Image
+                (Stores.Principal_Count (Stores.Store_Interface'Class (Reloaded.all))));
+      else
+         Ada.Text_IO.Put_Line
+           ("identity_conformance:adapter:persistent:snapshot-not-durable");
+         Failed_Run := True;
+      end if;
+   end;
 
    --  The decorator must actually have seen the traffic it delegated; a
    --  wrapper that silently bypassed the SPI would otherwise look certified.

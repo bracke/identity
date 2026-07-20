@@ -1,0 +1,69 @@
+name: release-check
+
+# The release gate. tools/release-check.sh builds the library, runs every
+# suite, records each run's real outcome under generated/evidence/, and only
+# then runs identity_tools to validate the registries and generate the release
+# reports from that evidence. Nothing here re-implements those checks: if this
+# workflow and the script ever disagree, the script is the definition.
+
+on:
+  push:
+    branches: ["**"]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  release-check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+
+    steps:
+      - name: Check out identity
+        uses: actions/checkout@v4
+        with:
+          path: identity
+
+      # cryptolib is a path-pinned sibling of this crate, so the checkout has
+      # to reproduce that layout: ../cryptolib relative to the identity root.
+      - name: Check out cryptolib
+        uses: actions/checkout@v4
+        with:
+          repository: bracke/cryptolib
+          path: cryptolib
+
+      - name: Install Alire
+        uses: alire-project/setup-alire@v4
+        with:
+          version: 2.1.0
+
+      - name: Report toolchain
+        working-directory: identity
+        run: |
+          alr --version
+          alr toolchain --select --none || true
+          gnatprove --version || echo "gnatprove not on PATH yet"
+
+      # GNATprove ships with the FSF toolchain via Alire; the proof gate fails
+      # closed if it is genuinely unavailable, so surface that here rather than
+      # letting the gate report a confusing "not installed".
+      - name: Install GNATprove
+        working-directory: identity
+        run: alr install gnatprove || true
+
+      - name: Run the release check
+        working-directory: identity
+        run: |
+          export PATH="$HOME/.alire/bin:$PATH"
+          ./tools/release-check.sh
+
+      # The evidence and generated reports are what the gate actually asserts
+      # on, so keep them for any run that needs explaining.
+      - name: Upload evidence and release reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: release-evidence
+          path: |
+            identity/generated/evidence/
+            identity/generated/release/
+          if-no-files-found: warn

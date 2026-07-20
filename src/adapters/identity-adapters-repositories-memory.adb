@@ -1,3 +1,5 @@
+with Ada.Directories;
+with Ada.Streams.Stream_IO;
 with Identity.API_Keys.Rotation;
 with Identity.Credentials.Lifecycle;
 with Identity.Credentials.States;
@@ -33,6 +35,57 @@ package body Identity.Adapters.Repositories.Memory is
 
    function Capabilities return Identity.Adapters.Repositories.Capabilities.Repository_Capabilities is
      (Identity.Adapters.Repositories.Capabilities.Full_Memory_Profile);
+
+   procedure Save
+     (Repository : Store;
+      Path       : String;
+      Status     : out Snapshot_Status)
+   is
+      File   : Ada.Streams.Stream_IO.File_Type;
+   begin
+      Status := Unavailable;
+      Ada.Streams.Stream_IO.Create
+        (File, Ada.Streams.Stream_IO.Out_File, Path);
+      Store'Write (Ada.Streams.Stream_IO.Stream (File), Repository);
+      Ada.Streams.Stream_IO.Close (File);
+      Status := Saved;
+   exception
+      when others =>
+         if Ada.Streams.Stream_IO.Is_Open (File) then
+            Ada.Streams.Stream_IO.Close (File);
+         end if;
+         Status := Unavailable;
+   end Save;
+
+   procedure Load
+     (Repository : out Store;
+      Path       : String;
+      Status     : out Snapshot_Status)
+   is
+      File : Ada.Streams.Stream_IO.File_Type;
+   begin
+      Initialize (Repository);
+      Status := Unavailable;
+
+      if not Ada.Directories.Exists (Path) then
+         return;
+      end if;
+
+      Ada.Streams.Stream_IO.Open
+        (File, Ada.Streams.Stream_IO.In_File, Path);
+      Store'Read (Ada.Streams.Stream_IO.Stream (File), Repository);
+      Ada.Streams.Stream_IO.Close (File);
+      Status := Loaded;
+   exception
+      when others =>
+         if Ada.Streams.Stream_IO.Is_Open (File) then
+            Ada.Streams.Stream_IO.Close (File);
+         end if;
+         --  A truncated or foreign file must not leave a half-populated
+         --  store behind: reset and say so.
+         Initialize (Repository);
+         Status := Malformed;
+   end Load;
 
    overriding procedure Reset (Repository : in out Store) is
    begin
