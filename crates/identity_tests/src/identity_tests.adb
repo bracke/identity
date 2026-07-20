@@ -1,4 +1,5 @@
 with AUnit.Assertions;
+with Ada.Real_Time;
 with Ada.Streams;
 with Identity.Adapters.Diagnostics;
 with Identity.Adapters.Event_Sinks;
@@ -24,6 +25,9 @@ with Identity.Adapters.Repositories.Failures;
 with Identity.Adapters.Repositories.Identities;
 with Identity.Adapters.Repositories.Idempotency;
 with Identity.Adapters.Repositories.Memory;
+with Identity.Authentication.Results;
+with Identity.Identities.Subjects;
+with Identity.Adapters.Repositories.Stores;
 with Identity.Adapters.Repositories.Principals;
 with Identity.Adapters.Repositories.Sessions;
 with Identity.Adapters.Repositories.Tokens;
@@ -17462,6 +17466,111 @@ begin
            (Identity.One_Time_Passwords.Credentials.Capacity_Conflict),
          "emission: Capacity_Conflict classifies as an audit-capacity refusal and "
          & "stays distinct from State_Conflict");
+   end;
+
+   --  Timing equalisation: an unauthenticated caller must not be able to read
+   --  account state off the clock. Every rejection path has to pay the same
+   --  key derivation as a real verification. Asserted as a RATIO rather than
+   --  an absolute duration so it does not depend on machine speed: a path that
+   --  skips the derivation comes back hundreds of thousands of times faster,
+   --  so any ratio near 1 passes and a short-circuit cannot.
+   declare
+      use Ada.Real_Time;
+      package TStores renames Identity.Adapters.Repositories.Stores;
+      package TMemory renames Identity.Adapters.Repositories.Memory;
+      package TAuth renames Identity.Operations.Passwords.Authenticate;
+
+      type TStore_Access is access TMemory.Store;
+      TPtr  : constant TStore_Access := new TMemory.Store;
+      TView : TStores.Store_Interface'Class renames
+        TStores.Store_Interface'Class (TPtr.all);
+
+      function TId (Value : String) return Identity.Identifiers.Encoded_Identifier is
+        (Identity.Identifiers.From_String (Value));
+
+      TP : constant Identity.Identifiers.Entities.Principal_Id :=
+        Identity.Identifiers.Entities.Principal
+          (TId ("00000000-0000-0000-0000-0000000000f9"));
+      TA : constant Identity.Identifiers.Entities.Account_Id :=
+        Identity.Identifiers.Entities.Account
+          (TId ("10000000-0000-0000-0000-0000000000f9"));
+      TB : constant Identity.Identifiers.Entities.Identity_Binding_Id :=
+        Identity.Identifiers.Entities.Identity_Binding
+          (TId ("20000000-0000-0000-0000-0000000000f9"));
+      TC : constant Identity.Identifiers.Entities.Credential_Id :=
+        Identity.Identifiers.Entities.Credential
+          (TId ("30000000-0000-0000-0000-0000000000f9"));
+
+      TKind : constant Identity.Identifiers.Registry.Registry_Id :=
+        Identity.Identifiers.Registry.From_String ("login.username");
+      TSubject : constant Identity.Identities.Subjects.Authentication_Subject :=
+        (Kind => TKind, Value => Identity.Text.Bounded.From_String ("timing-probe"));
+      TGood : constant Identity.Secrets.Passwords.New_Password :=
+        Identity.Secrets.Text.From_UTF_8 ("timing equalisation probe secret");
+      TBad : constant Identity.Secrets.Passwords.Presented_Password :=
+        Identity.Secrets.Text.From_UTF_8 ("timing equalisation probe secreu");
+
+      TStatus : TStores.Command_Status;
+      TResult : Identity.Authentication.Results.Password_Authentication_Result;
+      T0 : Time;
+      Wrong_Password_Time : Duration;
+      Locked_Account_Time : Duration;
+      pragma Unreferenced (TResult);
+   begin
+      TStores.Reset (TView);
+      TStatus := TStores.Create_Principal
+        (TView,
+         (Id => TP, Kind => Identity.Principals.Kinds.Human,
+          State => Identity.Principals.Definitions.Active, Version => 0));
+      Assert (TStatus = TStores.Applied, "timing: probe principal is created");
+      TStatus := TStores.Add_Binding
+        (TView,
+         (Id => TB, Principal => TP, Kind => TKind,
+          Normalized => Identity.Text.Bounded.From_String ("timing-probe"),
+          State => Identity.Identities.Bindings.Active, Version => 0));
+      Assert (TStatus = TStores.Applied, "timing: probe binding is added");
+      TStatus := TStores.Enroll_Password
+        (TView,
+         (Id => TC, Principal => TP,
+          State => Identity.Credentials.States.Active,
+          Verifier => Identity.Text.Bounded.From_String
+            (Identity.Crypto.Password_Hashing.Create_Verifier (TGood)),
+          Version => 0));
+      Assert (TStatus = TStores.Applied, "timing: probe password is enrolled");
+      TStatus := TStores.Create_Account
+        (TView,
+         (Id => TA, Principal => TP,
+          State => (Administrative => Identity.Accounts.States.Enabled,
+                    Lifecycle      => Identity.Accounts.States.Active,
+                    Verification   => Identity.Accounts.States.No_Verification_Required,
+                    Lock_State     => Identity.Accounts.States.Not_Locked,
+                    Requirements   => <>, Recovery => <>),
+          Version => 0));
+      Assert (TStatus = TStores.Applied, "timing: probe account is created");
+
+      T0 := Clock;
+      TResult := TAuth.Execute (TView, TSubject, TBad);
+      Wrong_Password_Time := To_Duration (Clock - T0);
+
+      --  Suspend the account, so authentication now leaves on an account-state
+      --  path rather than reaching the verifier comparison.
+      TStatus := TStores.Update_Account_State
+        (TView, TA, TP,
+         (Administrative => Identity.Accounts.States.Suspended,
+          Lifecycle      => Identity.Accounts.States.Active,
+          Verification   => Identity.Accounts.States.No_Verification_Required,
+          Lock_State     => Identity.Accounts.States.Not_Locked,
+          Requirements   => <>, Recovery => <>));
+      Assert (TStatus = TStores.Applied, "timing: account suspends for the equalisation probe");
+
+      T0 := Clock;
+      TResult := TAuth.Execute (TView, TSubject, TBad);
+      Locked_Account_Time := To_Duration (Clock - T0);
+
+      Assert
+        (Wrong_Password_Time > 0.0
+         and then Locked_Account_Time > Wrong_Password_Time / 4.0,
+         "timing: an ineligible account costs the same key derivation as a wrong password");
    end;
 
    null;

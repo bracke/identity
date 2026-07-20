@@ -96,25 +96,36 @@ package body Identity.Operations.Passwords.Authenticate is
 
       Identity.Adapters.Repositories.Stores.Find_Account
         (Repository, Resolution.Principal, Found_Account, Account);
+
+      --  Every account-state rejection below equalises timing the same way the
+      --  earlier exits do. Without this, an ineligible or locked account
+      --  answered in about a microsecond while every other outcome -- unknown
+      --  subject, wrong password, success -- took the full derivation, which
+      --  let an unauthenticated caller read account state off the clock.
       if not Found_Account then
+         Perform_Synthetic_Verification (Password);
          return (Status => Identity.Results.Conflict, Principal => (Present => False));
       end if;
 
       if Identity.Accounts.States.Evaluate (Account.State) = Identity.Accounts.States.Ineligible then
+         Perform_Synthetic_Verification (Password);
          return (Status => Identity.Results.Rejected, Principal => (Present => False));
       elsif Account.State.Lock_State in
         Identity.Accounts.States.Temporarily_Locked
         | Identity.Accounts.States.Indefinitely_Locked
         | Identity.Accounts.States.Unlock_Pending
       then
+         Perform_Synthetic_Verification (Password);
          return (Status => Identity.Results.Rejected, Principal => (Present => False));
       elsif Account.State.Recovery.Restricted_Session
         or else Account.State.Recovery.Required_Credential_Reestablishment
         or else Account.State.Recovery.MFA_Reenrollment
         or else Account.State.Recovery.Limited_Action_Profile
       then
+         Perform_Synthetic_Verification (Password);
          return (Status => Identity.Results.Recovery_Action_Required, Principal => (Present => False));
       elsif Identity.Accounts.States.Evaluate (Account.State) = Identity.Accounts.States.Restricted then
+         Perform_Synthetic_Verification (Password);
          return (Status => Identity.Results.Password_Change_Required, Principal => (Present => False));
       end if;
 
