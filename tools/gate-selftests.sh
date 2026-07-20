@@ -577,11 +577,27 @@ base_line "identity_tools reports crypto algorithm validation counts" \
    "identity_tools:crypto-validation: 2:classes: 2:" \
    ":missing-algorithms: 0:missing-fields: 0"
 
+# The count is deliberately not pinned: the vocabulary grows as operations are
+# audited, and a literal would fail on every addition without indicating a real
+# defect. What must hold is that the registry and the public constants agree.
 base_line "identity_tools reports event registry coverage counts" \
-   "identity_tools:events: 16:public: 16:" ":missing-public: 0:missing-registry: 0"
+   "identity_tools:events:" ":missing-public: 0:missing-registry: 0"
 
 ok=1
-if has_line "$BASELINE" "identity_tools:events: 16:public: 16:" \
+registry_count=$(grep -c '"identity\.' "$REPO/registries/event-types.json")
+public_count=$(grep -c 'constant Identity.Identifiers.Registry.Registry_Id' \
+   "$REPO/src/public/identity-events-types.ads")
+if [ "$registry_count" -gt 0 ] && [ "$registry_count" -eq "$public_count" ] \
+   && has_line "$BASELINE" "identity_tools:events: $registry_count:public: $public_count:" \
+      ":missing-public: 0:missing-registry: 0"; then
+   ok=0
+else
+   echo "gate-selftest:note:registry=$registry_count public=$public_count"
+fi
+record "identity_tools event registry and public constants agree in count" "$ok"
+
+ok=1
+if has_line "$BASELINE" "identity_tools:events:" \
    ":missing-public: 0:missing-registry: 0" \
    && file_has "$REPO/registries/event-types.json" \
       "identity.api-key.authenticated" \

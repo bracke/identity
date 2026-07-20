@@ -51,8 +51,21 @@ package body Identity_Tools_Gap_Claims is
          raise;
    end Load;
 
+   function Lowered (Text : String) return String is
+      Result : String := Text;
+   begin
+      for Ch of Result loop
+         if Ch in 'A' .. 'Z' then
+            Ch := Character'Val (Character'Pos (Ch) + 32);
+         end if;
+      end loop;
+      return Result;
+   end Lowered;
+
+   --  Case-insensitive: the gaps section is prose, so "Atomicity:" and
+   --  "atomicity" must both match the suite label.
    function Contains (Text : String; Pattern : String) return Boolean is
-     (Ada.Strings.Fixed.Index (Text, Pattern) /= 0);
+     (Ada.Strings.Fixed.Index (Lowered (Text), Lowered (Pattern)) /= 0);
 
    --  The gaps section is everything after the "Known gaps" heading.
    function Gaps_Section (Gates : String) return String is
