@@ -1,4 +1,5 @@
 dependency:identity=1.0.0-dev=2f0052f24a307972111e03de8da1d9222ba1225770f4db56ce85ef16d48d2276
+dependency:project_tools=0.1.0=c3258f263e87dfd5141ce0af8cbac0d79d64065ab3a692080c1503486f82c789
 external:IDENTITY_TOOLS_LIBRARY_TYPE=default
 external:LIBRARY_TYPE=default
 profile:identity_tools=DEVELOPMENT

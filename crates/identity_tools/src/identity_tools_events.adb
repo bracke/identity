@@ -1,4 +1,6 @@
 with Ada.Directories;
+with Ada.Strings.Unbounded;
+with Project_Tools.Text;
 with Ada.Strings.Fixed;
 with Ada.Text_IO;
 
@@ -235,6 +237,24 @@ package body Identity_Tools_Events is
    begin
       Report := (others => 0);
       Scan (Registry_Path, Registry_Presence, Report.Registry_Event_Count);
+
+      --  Every quoted identity. value in the registry must be one this gate
+      --  knows; anything else is an identifier with no public constant.
+      declare
+         Total : constant Natural :=
+           Project_Tools.Text.Count
+             (Ada.Strings.Unbounded.To_String
+                (Project_Tools.Text.Read_Text_File (Registry_Path)),
+              """identity.");
+      begin
+         if Total > Report.Registry_Event_Count then
+            Report.Unknown_Registry_Entries :=
+              Total - Report.Registry_Event_Count;
+            Ada.Text_IO.Put_Line
+              ("events:unknown-registry-entries:"
+               & Natural'Image (Report.Unknown_Registry_Entries));
+         end if;
+      end;
       Scan (Public_Path, Public_Presence, Report.Public_Event_Count);
 
       for Id in Event_Id loop
@@ -254,6 +274,7 @@ package body Identity_Tools_Events is
      (Report.Registry_Event_Count = Expected_Count
       and then Report.Public_Event_Count = Expected_Count
       and then Report.Missing_Public = 0
-      and then Report.Missing_Registry = 0);
+      and then Report.Missing_Registry = 0
+      and then Report.Unknown_Registry_Entries = 0);
 
 end Identity_Tools_Events;

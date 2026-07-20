@@ -18,6 +18,12 @@ gnat_native = "=15.2.1"
 [[depends-on]]
 identity = "*"
 
+# Shared check-program helpers: text searches, file reads, and the
+# generated-document currency check this crate uses to keep the gates
+# document's stated numbers from drifting away from the tool's output.
+[[depends-on]]
+project_tools = "*"
+
 [[pins]]
 identity = { path = "../.." }
 
@@ -25,6 +31,9 @@ identity = { path = "../.." }
 # cryptolib, so it must pin cryptolib too.
 [[pins]]
 cryptolib = { path = "../../../cryptolib" }
+
+[[pins]]
+project_tools = { path = "../../../project_tools" }
 
 [build-profiles]
 "*" = "development"

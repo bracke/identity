@@ -6,6 +6,7 @@ with Identity_Tools_Capabilities;
 with Identity_Tools_Crypto_Validation;
 with Identity_Tools_Documentation;
 with Identity_Tools_Events;
+with Identity_Tools_Facts;
 with Identity_Tools_Gap_Claims;
 with Identity_Tools_Evidence;
 with Identity_Tools_Invariants;
@@ -24,6 +25,7 @@ procedure Identity_Tools is
    Capability_Report   : Identity_Tools_Capabilities.Validation_Report;
    Audit_Report        : Identity_Tools_Audit_Coverage.Validation_Report;
    Gap_Report          : Identity_Tools_Gap_Claims.Validation_Report;
+   Facts_Report        : Identity_Tools_Facts.Validation_Report;
    Crypto_Report       : Identity_Tools_Crypto_Validation.Validation_Report;
    Doc_Report          : Identity_Tools_Documentation.Validation_Report;
    Event_Report        : Identity_Tools_Events.Validation_Report;
@@ -261,6 +263,25 @@ begin
       & ":unrecorded:"
       & Natural'Image (Gap_Report.Missing_Suites));
 
+   --  Checked last: it reports the figures the other gates just measured.
+   Identity_Tools_Facts.Validate
+     (Report              => Facts_Report,
+      Event_Types         => Event_Report.Registry_Event_Count,
+      Mutating_Operations => Audit_Report.Mutating_Operations,
+      Audited_Operations  => Audit_Report.Audited_Operations,
+      Exempt_Operations   => Audit_Report.Exemptions,
+      Audited_Overloads   => Audit_Report.Audited_Overloads,
+      Bypass_Overloads    => Audit_Report.Bypass_Overloads,
+      Proved_Packages     => Proof_Report.Package_Count,
+      Invariants          => Invariant_Report.Invariant_Count);
+   Ada.Text_IO.Put_Line
+     ("identity_tools:facts:"
+      & Natural'Image (Facts_Report.Blocks_Checked)
+      & ":stale:"
+      & Natural'Image (Facts_Report.Stale_Blocks)
+      & ":missing:"
+      & Natural'Image (Facts_Report.Missing_Blocks));
+
    Identity_Tools_Evidence.Validate (Evidence_Report);
    Ada.Text_IO.Put_Line
      ("identity_tools:evidence:"
@@ -275,6 +296,7 @@ begin
    Gates_Passed :=
      Identity_Tools_Audit_Coverage.Passed (Audit_Report)
      and then Identity_Tools_Gap_Claims.Passed (Gap_Report)
+     and then Identity_Tools_Facts.Passed (Facts_Report)
      and then Identity_Tools_Capabilities.Passed (Capability_Report)
      and then Identity_Tools_Evidence.Passed (Evidence_Report)
      and then Identity_Tools_Architecture.Passed (Architecture_Report)
