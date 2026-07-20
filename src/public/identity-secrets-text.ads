@@ -17,7 +17,11 @@ package Identity.Secrets.Text is
    function Size_Rejected (Status : Secret_Text_Status) return Boolean is
      (Status = Too_Large);
 
-   function Validate_UTF_8 (Value : String) return Secret_Text_Status;
+   --  Parses untrusted text, so it is proved rather than reviewed. The rest
+   --  of this package is outside SPARK: Secret_Text is a controlled type,
+   --  which SPARK does not permit.
+   function Validate_UTF_8 (Value : String) return Secret_Text_Status
+     with SPARK_Mode => On;
 
    function From_UTF_8 (Value : String) return Secret_Text
      with Pre => Validate_UTF_8 (Value) = Valid;

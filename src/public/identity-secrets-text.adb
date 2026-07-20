@@ -2,18 +2,27 @@ with Ada.Streams;
 with Identity.Limits;
 
 package body Identity.Secrets.Text is
-   function Continuation (Value : Character) return Boolean is
+   function Continuation (Value : Character) return Boolean
+     with SPARK_Mode => On
+   is
       B : constant Natural := Character'Pos (Value);
    begin
       return B in 16#80# .. 16#BF#;
    end Continuation;
 
-   function Validate_UTF_8 (Value : String) return Secret_Text_Status is
+   function Validate_UTF_8 (Value : String) return Secret_Text_Status
+     with SPARK_Mode => On
+   is
       Index : Integer := Value'First;
       B     : Natural;
       Need  : Natural;
    begin
-      if Value'Length > Identity.Limits.Max_Secret_Bytes then
+      --  Rejecting an over-long or extreme-bounded slice up front is both the
+      --  documented limit and what keeps the index arithmetic below inside
+      --  Integer for every input.
+      if Value'Length > Identity.Limits.Max_Secret_Bytes
+        or else (Value'Length > 0 and then Value'Last > Integer'Last - 4)
+      then
          return Too_Large;
       end if;
 
@@ -51,6 +60,8 @@ package body Identity.Secrets.Text is
          else
             return Invalid_UTF_8;
          end if;
+         pragma Loop_Invariant (Index >= Value'First);
+         pragma Loop_Variant (Increases => Index);
       end loop;
 
       return Valid;

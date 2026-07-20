@@ -142,6 +142,20 @@
       "compensating_tests": [
         "password verifier envelopes reject malformed, non-hex and out-of-range input"
       ]
+    },
+    {
+      "name": "Identity.Secrets.Text",
+      "properties": [
+        "utf8-validation-bounds",
+        "secret-text-admission-safety"
+      ],
+      "security_critical": true,
+      "excluded": false,
+      "partial": true,
+      "partial_reason": "Validate_UTF_8 is proved; the rest of the package is outside SPARK because Secret_Text is a controlled type, which SPARK does not permit",
+      "compensating_tests": [
+        "secret text validates UTF-8 and bounded length before construction"
+      ]
     }
   ],
   "required_properties": [

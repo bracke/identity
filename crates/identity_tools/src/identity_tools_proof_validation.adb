@@ -15,7 +15,8 @@ package body Identity_Tools_Proof_Validation is
       Secrets_One_Time,
       Operations_Contexts,
       Recovery_Code_Sets,
-      Crypto_Password_Hashing);
+      Crypto_Password_Hashing,
+      Secrets_Text);
 
    type Property_Id is
      (Collection_Bounds,
@@ -58,7 +59,8 @@ package body Identity_Tools_Proof_Validation is
         when Secrets_One_Time => "Identity.Secrets.One_Time",
         when Operations_Contexts => "Identity.Operations.Contexts",
         when Recovery_Code_Sets => "Identity.Recovery_Codes.Sets",
-        when Crypto_Password_Hashing => "Identity.Crypto.Password_Hashing");
+        when Crypto_Password_Hashing => "Identity.Crypto.Password_Hashing",
+        when Secrets_Text => "Identity.Secrets.Text");
 
    function Image (Id : Property_Id) return String is
      (case Id is
