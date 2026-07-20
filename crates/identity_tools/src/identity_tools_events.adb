@@ -20,7 +20,41 @@ package body Identity_Tools_Events is
       API_Key_Authenticated,
       API_Key_Revoked,
       TOTP_Replay_Detected,
-      External_Assertion_Replay_Detected);
+      External_Assertion_Replay_Detected,
+      Principal_Created,
+      Principal_Retired,
+      Account_Created,
+      Account_Enabled,
+      Account_Suspended,
+      Account_Closed,
+      Account_Unlocked,
+      Account_MFA_Required,
+      Account_Password_Change_Required,
+      Password_Enrolled,
+      API_Key_Issued,
+      API_Key_Rotated,
+      Authentication_Transaction_Began,
+      MFA_Enrollment_Began,
+      MFA_Factor_Enrolled,
+      MFA_Factor_Removed,
+      MFA_Challenge_Issued,
+      Recovery_Codes_Generated,
+      Recovery_Code_Consumed,
+      Identity_Binding_Added,
+      Identity_Binding_Changed,
+      Identity_Binding_Revoked,
+      External_Binding_Revoked,
+      Token_Issued,
+      Token_Consumed,
+      Recovery_Began,
+      Recovery_Continued,
+      Recovery_Cancelled,
+      Contact_Change_Began,
+      Contact_Change_Completed,
+      External_Binding_Created,
+      Session_Expired,
+      Session_Purged,
+      Contact_Verification_Requested);
 
    type Event_Presence is array (Event_Id) of Boolean;
 
@@ -74,7 +108,75 @@ package body Identity_Tools_Events is
         when TOTP_Replay_Detected =>
           "identity.totp.replay-detected",
         when External_Assertion_Replay_Detected =>
-          "identity.external.assertion.replay-detected");
+          "identity.external.assertion.replay-detected",
+        when Principal_Created =>
+          "identity.principal.created",
+        when Principal_Retired =>
+          "identity.principal.retired",
+        when Account_Created =>
+          "identity.account.created",
+        when Account_Enabled =>
+          "identity.account.enabled",
+        when Account_Suspended =>
+          "identity.account.suspended",
+        when Account_Closed =>
+          "identity.account.closed",
+        when Account_Unlocked =>
+          "identity.account.unlocked",
+        when Account_MFA_Required =>
+          "identity.account.mfa-required",
+        when Account_Password_Change_Required =>
+          "identity.account.password-change-required",
+        when Password_Enrolled =>
+          "identity.password.enrolled",
+        when API_Key_Issued =>
+          "identity.api-key.issued",
+        when API_Key_Rotated =>
+          "identity.api-key.rotated",
+        when Authentication_Transaction_Began =>
+          "identity.authentication.transaction.began",
+        when MFA_Enrollment_Began =>
+          "identity.mfa.factor.enrollment-began",
+        when MFA_Factor_Enrolled =>
+          "identity.mfa.factor.enrolled",
+        when MFA_Factor_Removed =>
+          "identity.mfa.factor.removed",
+        when MFA_Challenge_Issued =>
+          "identity.mfa.challenge.issued",
+        when Recovery_Codes_Generated =>
+          "identity.recovery-codes.generated",
+        when Recovery_Code_Consumed =>
+          "identity.recovery-code.consumed",
+        when Identity_Binding_Added =>
+          "identity.binding.added",
+        when Identity_Binding_Changed =>
+          "identity.binding.changed",
+        when Identity_Binding_Revoked =>
+          "identity.binding.revoked",
+        when External_Binding_Revoked =>
+          "identity.external.binding.revoked",
+        when Token_Issued =>
+          "identity.token.issued",
+        when Token_Consumed =>
+          "identity.token.consumed",
+        when Recovery_Began =>
+          "identity.recovery.began",
+        when Recovery_Continued =>
+          "identity.recovery.continued",
+        when Recovery_Cancelled =>
+          "identity.recovery.cancelled",
+        when Contact_Change_Began =>
+          "identity.contact.change.began",
+        when Contact_Change_Completed =>
+          "identity.contact.change.completed",
+        when External_Binding_Created =>
+          "identity.external.binding.created",
+        when Session_Expired =>
+          "identity.session.expired",
+        when Session_Purged =>
+          "identity.session.purged",
+        when Contact_Verification_Requested =>
+          "identity.contact.verification.requested");
 
    procedure Scan
      (Path     : String;

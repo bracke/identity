@@ -1,6 +1,7 @@
 with Ada.Text_IO;
 with Ada.Command_Line;
 with Identity_Tools_Architecture;
+with Identity_Tools_Audit_Coverage;
 with Identity_Tools_Capabilities;
 with Identity_Tools_Crypto_Validation;
 with Identity_Tools_Documentation;
@@ -20,6 +21,7 @@ with Identity_Tools_Workflows;
 procedure Identity_Tools is
    Architecture_Report : Identity_Tools_Architecture.Validation_Report;
    Capability_Report   : Identity_Tools_Capabilities.Validation_Report;
+   Audit_Report        : Identity_Tools_Audit_Coverage.Validation_Report;
    Crypto_Report       : Identity_Tools_Crypto_Validation.Validation_Report;
    Doc_Report          : Identity_Tools_Documentation.Validation_Report;
    Event_Report        : Identity_Tools_Events.Validation_Report;
@@ -227,6 +229,17 @@ begin
       & ":unbacked:"
       & Natural'Image (Capability_Report.Unbacked));
 
+   Identity_Tools_Audit_Coverage.Validate (Audit_Report);
+   Ada.Text_IO.Put_Line
+     ("identity_tools:audit-coverage:"
+      & Natural'Image (Audit_Report.Mutating_Operations)
+      & ":audited:"
+      & Natural'Image (Audit_Report.Audited_Operations)
+      & ":unaudited:"
+      & Natural'Image (Audit_Report.Unaudited_Operations)
+      & ":mutating-primitives:"
+      & Natural'Image (Audit_Report.Mutating_Primitives));
+
    Identity_Tools_Evidence.Validate (Evidence_Report);
    Ada.Text_IO.Put_Line
      ("identity_tools:evidence:"
@@ -239,7 +252,8 @@ begin
       & Natural'Image (Evidence_Report.Missing));
 
    Gates_Passed :=
-     Identity_Tools_Capabilities.Passed (Capability_Report)
+     Identity_Tools_Audit_Coverage.Passed (Audit_Report)
+     and then Identity_Tools_Capabilities.Passed (Capability_Report)
      and then Identity_Tools_Evidence.Passed (Evidence_Report)
      and then Identity_Tools_Architecture.Passed (Architecture_Report)
      and then Identity_Tools_Crypto_Validation.Passed (Crypto_Report)
