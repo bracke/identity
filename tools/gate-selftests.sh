@@ -40,7 +40,7 @@ TESTS_BIN="$REPO/crates/identity_tests/bin/identity_tests"
 CONFORMANCE_BIN="$REPO/crates/identity_conformance/bin/identity_conformance"
 EXAMPLES_BIN="$REPO/crates/identity_examples/bin/identity_lifecycle"
 MANIFEST="$REPO/tools/project_tools_workflows.toml"
-SUITE_SRC="$REPO/crates/identity_tests/src/identity_tests.adb"
+SUITE_SRC="$REPO/crates/identity_tests/src/identity_tests_cases.adb"
 
 WORK="$(mktemp -d)"
 trap 'rm -rf "$WORK"' EXIT

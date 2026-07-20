@@ -1,0 +1,17950 @@
+with AUnit.Assertions;
+with Ada.Real_Time;
+with Ada.Streams;
+with Identity.Adapters.Diagnostics;
+with Identity.Adapters.Event_Sinks;
+with Identity.Adapters.External_Providers;
+with Identity.Adapters.Keys;
+with Identity.Adapters.Notifications;
+with Identity.Adapters.Repositories;
+with Identity.Adapters.Repositories.Accounts;
+with Identity.Adapters.Repositories.Attempts;
+with Identity.Adapters.Repositories.Authentication;
+with Identity.Adapters.Repositories.Capabilities;
+with Identity.Adapters.Repositories.Challenges;
+with Identity.Adapters.Repositories.Commands;
+with Identity.Adapters.Repositories.Conformance;
+with Identity.Adapters.Repositories.Conflicts;
+with Identity.Adapters.Repositories.Contexts;
+with Identity.Adapters.Repositories.Contacts;
+with Identity.Adapters.Repositories.Credentials;
+with Identity.Adapters.Repositories.Events;
+with Identity.Adapters.Repositories.External_Bindings;
+with Identity.Adapters.Repositories.Factories;
+with Identity.Adapters.Repositories.Failures;
+with Identity.Adapters.Repositories.Identities;
+with Identity.Adapters.Repositories.Idempotency;
+with Identity.Adapters.Repositories.Memory;
+with Identity.Authentication.Results;
+with Identity.Identities.Subjects;
+with Identity.Adapters.Repositories.Stores;
+with Identity.Adapters.Repositories.Principals;
+with Identity.Adapters.Repositories.Sessions;
+with Identity.Adapters.Repositories.Tokens;
+with Identity.Adapters.Repositories.Transactions;
+with Identity.Adapters.Transport_Context;
+with Identity.Accounts.Definitions;
+with Identity.Accounts.Administrative;
+with Identity.Accounts.Evaluation;
+with Identity.Accounts.Lifecycle;
+with Identity.Accounts.Projections;
+with Identity.Accounts.Requirements;
+with Identity.Accounts.Security_Locks;
+with Identity.Accounts.States;
+with Identity.Accounts.Verification;
+with Identity.Audit;
+with Identity.Audit.Integrity;
+with Identity.Audit.Policies;
+with Identity.Audit.Records;
+with Identity.Assurance.Attributes;
+with Identity.Assurance.Levels;
+with Identity.Assurance.Profiles;
+with Identity.Assurance.Dependencies;
+with Identity.Assurance.Evaluation;
+with Identity.Assurance.Projections;
+with Identity.Authentication.Challenges;
+with Identity.Authentication.Contexts;
+with Identity.Authentication.Evidence;
+with Identity.Authentication.Projections;
+with Identity.Authentication.Requests;
+with Identity.Authentication.Transactions;
+with Identity.Attempts.Definitions;
+with Identity.Attempts.Outcomes;
+with Identity.Authentication.Security_Contexts;
+with Identity.Codecs;
+with Identity.Codecs.Canonical;
+with Identity.Codecs.Persisted;
+with Identity.Collections;
+with Identity.Collections.Maps;
+with Identity.Collections.Sets;
+with Identity.Collections.Vectors;
+with Identity.Contacts.Bindings;
+with Identity.Contacts.Verification_State;
+with Identity.Contracts;
+with Identity.Correlation;
+with Identity.Credentials.States;
+with Identity.Credentials.Definitions;
+with Identity.Credentials.Dependencies;
+with Identity.Credentials.Kinds;
+with Identity.Credentials.Lifecycle;
+with Identity.Credentials.Projections;
+with Identity.Crypto.Algorithms;
+with Identity.Crypto.Capabilities;
+with Identity.Crypto.Domains;
+with Identity.Crypto.Encoding;
+with Identity.Crypto.Event_Integrity;
+with Identity.Crypto.Keys;
+with Identity.Crypto.MACs;
+with Identity.Crypto.One_Time_Passwords;
+with Identity.Crypto.Password_Hashing;
+with Identity.Crypto.Registries;
+with Identity.Crypto.Secret_Verifiers;
+with Identity.Crypto.CryptoLib.Entropy;
+with Identity.Crypto.CryptoLib.Event_Integrity;
+with Identity.Crypto.CryptoLib.Capabilities;
+with Identity.Crypto.CryptoLib.MACs;
+with Identity.Crypto.CryptoLib.One_Time_Passwords;
+with Identity.Diagnostics;
+with Identity.Errors;
+with Identity.Errors.Codes;
+with Identity.Errors.Diagnostics;
+with Identity.Errors.Messages;
+with Identity.Errors.Public;
+with Identity.Errors.Retry;
+with Identity.Events.Attributes;
+with Identity.Events.Canonical;
+with Identity.Events.Classification;
+with Identity.Events.Envelopes;
+with Identity.Events.Policies;
+with Identity.Events.Schemas;
+with Identity.Events.Types;
+with Identity.External_Providers.Assertions;
+with Identity.External_Providers.Assurance;
+with Identity.External_Providers.Bindings;
+with Identity.External_Providers.Definitions;
+with Identity.External_Providers.Enrollment;
+with Identity.External_Providers.Policies;
+with Identity.External_Providers.Projections;
+with Identity.External_Providers.Trust;
+with Identity.Identities.Bindings;
+with Identity.Identities.Resolution;
+with Identity.Identifiers;
+with Identity.Identifiers.Entities;
+with Identity.Identifiers.Operations;
+with Identity.Identifiers.Policies;
+with Identity.Identifiers.Registry;
+with Identity.Internal.Crypto_Bindings;
+with Identity.Internal.Encoding;
+with Identity.Internal.Events;
+with Identity.Internal.Orchestration;
+with Identity.Internal.Resource_Budgets;
+with Identity.Internal.Transitions;
+with Identity.Internal.Validation;
+with Identity.Limits;
+with Identity.Operations.Disclosure;
+with Identity.Operations.Idempotency;
+with Identity.Operations.Post_Commit;
+with Identity.Lockout.Evaluation;
+with Identity.Lockout.Administration;
+with Identity.Lockout.Policies;
+with Identity.Lockout.States;
+with Identity.Multi_Factor.Enrollment;
+with Identity.Multi_Factor.Methods;
+with Identity.Multi_Factor.One_Time_Passwords;
+with Identity.Multi_Factor.Policies;
+with Identity.Multi_Factor.Recovery_Codes;
+with Identity.Multi_Factor.Step_Up;
+with Identity.Operations.Accounts.Create;
+with Identity.Operations.API_Keys.Authenticate;
+with Identity.Operations.API_Keys.Issue;
+with Identity.Operations.API_Keys.Revoke;
+with Identity.Operations.API_Keys.Rotate;
+with Identity.API_Keys.Credentials;
+with Identity.API_Keys.Policies;
+with Identity.API_Keys.Rotation;
+with Identity.Operations.Budgets;
+with Identity.Operations.Cancellation;
+with Identity.Operations.Contexts;
+with Identity.Operations.Deadlines;
+with Identity.Operations.Accounts.Close;
+with Identity.Operations.Accounts.Disable;
+with Identity.Operations.Accounts.Enable;
+with Identity.Operations.Accounts.Require_MFA;
+with Identity.Operations.Accounts.Require_Password_Change;
+with Identity.Operations.Accounts.Suspend;
+with Identity.Operations.Accounts.Unlock;
+with Identity.Operations.Passwords.Authenticate;
+with Identity.Operations.Passwords.Change;
+with Identity.Operations.Passwords.Complete_Reset;
+with Identity.Operations.Passwords.Enroll;
+with Identity.Operations.Passwords.Request_Reset;
+with Identity.Operations.Principals.Create;
+with Identity.Operations.Principals.Retire;
+with Identity.Operations.Recovery.Begin_Recovery;
+with Identity.Operations.Recovery.Cancel;
+with Identity.Operations.Recovery.Complete;
+with Identity.Operations.Recovery.Continue;
+with Identity.Operations.Verification.Begin_Contact_Change;
+with Identity.Operations.Verification.Complete;
+with Identity.Operations.Verification.Complete_Contact_Change;
+with Identity.Operations.Verification.Request;
+with Identity.Operations.Factors.Consume_Recovery_Code;
+with Identity.Operations.Factors.Accept_TOTP_Counter;
+with Identity.Operations.Factors.Begin_Enrollment;
+with Identity.Operations.Factors.Complete_Enrollment;
+with Identity.Operations.Factors.Generate_Recovery_Codes;
+with Identity.Operations.Factors.Regenerate_Recovery_Codes;
+with Identity.Operations.Factors.Remove;
+with Identity.Operations.Authentication.External;
+with Identity.Operations.Authentication.API_Key;
+with Identity.Operations.Authentication.Begin_Transaction;
+with Identity.Operations.Authentication.Continue;
+with Identity.Operations.Authentication.Step_Up;
+with Identity.Operations.External_Identities.Bind;
+with Identity.Operations.External_Identities.Revoke;
+with Identity.Operations.Factors.Issue_Challenge;
+with Identity.Operations.Identities.Add;
+with Identity.Operations.Identities.Change;
+with Identity.Operations.Identities.Revoke;
+with Identity.Operations.Sessions.Expire_Eligible;
+with Identity.Operations.Sessions.Enumerate;
+with Identity.Operations.Sessions.Create;
+with Identity.Operations.Sessions.Lookup;
+with Identity.Operations.Sessions.Purge_Retained;
+with Identity.Operations.Sessions.Renew;
+with Identity.Operations.Sessions.Revoke;
+with Identity.Operations.Sessions.Revoke_Credential;
+with Identity.Operations.Sessions.Revoke_Family;
+with Identity.Operations.Sessions.Revoke_Principal;
+with Identity.Operations.Sessions.Revoke_Provider;
+with Identity.Operations.Sessions.Rotate;
+with Identity.Operations.Sessions.Update_Activity;
+with Identity.Operations.Sessions.Upgrade_Assurance;
+with Identity.Operations.Tokens.Consume;
+with Identity.Operations.Tokens.Issue;
+with Identity.Operations.Tokens.Verify;
+with Identity.One_Time_Passwords.Credentials;
+with Identity.One_Time_Passwords.Policies;
+with Identity.Passwords.Changes;
+with Identity.Passwords.Credentials;
+with Identity.Passwords.History;
+with Identity.Passwords.Migrations;
+with Identity.Passwords.Policies;
+with Identity.Passwords.Resets;
+with Identity.Policies.Defaults;
+with Identity.Policies.Findings;
+with Identity.Policies.Providers;
+with Identity.Policies.Snapshots;
+with Identity.Policies.Validation;
+with Identity.Principals.Definitions;
+with Identity.Principals.Kinds;
+with Identity.Principals.Lifecycle;
+with Identity.Principals.Projections;
+with Identity.Projections.Accounts;
+with Identity.Projections.Authentication;
+with Identity.Projections.Credentials;
+with Identity.Projections.Events;
+with Identity.Projections.External_Bindings;
+with Identity.Projections.Principals;
+with Identity.Projections.Sessions;
+with Identity.Results;
+with Identity.Attempts.Buckets;
+with Identity.Attempts.Fingerprints;
+with Identity.Attempts.Policies;
+with Identity.Recovery.Transactions;
+with Identity.Recovery.Authority;
+with Identity.Recovery.Evidence;
+with Identity.Recovery.Policies;
+with Identity.Recovery.Restrictions;
+with Identity.Recovery.Results;
+with Identity.Recovery_Codes.Sets;
+with Identity.Recovery_Codes.Policies;
+with Identity.Redaction;
+with Identity.Secrets.Bytes;
+with Identity.Secrets.API_Keys;
+with Identity.Secrets.Comparison;
+with Identity.Secrets.Keys;
+with Identity.Secrets.One_Time;
+with Identity.Secrets.Passwords;
+with Identity.Secrets.Recovery_Codes;
+with Identity.Secrets.Sessions;
+with Identity.Secrets.Text;
+with Identity.Secrets.One_Time_Passwords;
+with Identity.Secrets.Tokens;
+with Identity.Service_Credentials;
+with Identity.Service_Principals;
+with Identity.Services.Construction;
+with Identity.Services.Contexts;
+with Identity.Sessions.Definitions;
+with Identity.Sessions.Activity;
+with Identity.Sessions.Assurance;
+with Identity.Sessions.Expiration;
+with Identity.Sessions.Families;
+with Identity.Sessions.Handles;
+with Identity.Sessions.Policies;
+with Identity.Sessions.Projections;
+with Identity.Sessions.Replay;
+with Identity.Sessions.Revocation;
+with Identity.Sessions.Rotation;
+with Identity.System_Actors;
+with Identity.Testing.Canaries;
+with Identity.Testing.Clocks;
+with Identity.Testing.Concurrency;
+with Identity.Testing.Entropy;
+with Identity.Testing.Failures;
+with Identity.Testing.Fixtures;
+with Identity.Testing.Identifiers;
+with Identity.Testing.Keys;
+with Identity.Testing.Repositories;
+with Identity.Text.Bounded;
+with Identity.Text.Messages;
+with Identity.Text.Redacted;
+with Identity.Text.UTF_8;
+with Identity.Throttling.Decisions;
+with Identity.Throttling.Policies;
+with Identity.Throttling.Windows;
+with Identity.Times;
+with Identity.Times.Durations;
+with Identity.Times.Expirations;
+with Identity.Times.Instants;
+with Identity.Tokens.Consumption;
+with Identity.Tokens.Definitions;
+with Identity.Tokens.Generation;
+with Identity.Tokens.Kinds;
+with Identity.Tokens.Policies;
+with Identity.Tokens.Projections;
+with Identity.Tokens.Purposes;
+with Identity.Tokens.Verification;
+with Identity.Verification.Changes;
+with Identity.Verification.Contacts;
+with Identity.Verification.Policies;
+with Identity.Verification.Results;
+with Identity.Versions;
+
+package body Identity_Tests_Cases is
+   use AUnit.Assertions;
+   package Registration renames AUnit.Test_Cases.Registration;
+
+   --  Hoisted from the former flat body: GNAT's -gnatX extension let these
+   --  sit among the statements, and at package level every routine keeps
+   --  the operator visibility the single procedure had.
+   use type Identity.Accounts.States.Eligibility;
+   use type Identity.Accounts.States.Administrative_State;
+   use type Identity.Accounts.States.Lifecycle_State;
+   use type Identity.Accounts.States.Verification_State;
+   use type Identity.Adapters.Repositories.Context_State;
+   use type Identity.Adapters.Repositories.Accounts.Account_Read_Status;
+   use type Identity.Adapters.Repositories.Attempts.Attempt_Record_Status;
+   use type Identity.Adapters.Repositories.Authentication.Authentication_View_Status;
+   use type Identity.Adapters.Repositories.Challenges.Challenge_Read_Status;
+   use type Identity.Adapters.Repositories.Conformance.Certification_Profile;
+   use type Identity.Adapters.Repositories.Conformance.Conformance_Status;
+   use type Identity.Adapters.Repositories.Contacts.Contact_Read_Status;
+   use type Identity.Adapters.Repositories.Credentials.Credential_Read_Status;
+   use type Identity.Adapters.Repositories.Events.Event_Append_Status;
+   use type Identity.Adapters.Repositories.External_Bindings.External_Binding_Read_Status;
+   use type Identity.Adapters.Repositories.Identities.Identity_Read_Status;
+   use type Identity.Adapters.Repositories.Idempotency.Idempotency_Status;
+   use type Identity.Adapters.Notifications.Post_Commit_Failure_Action;
+   use type Identity.Operations.Idempotency.Idempotency_Key_Status;
+   use type Identity.Operations.Idempotency.Idempotency_Decision;
+   use type Identity.Operations.Idempotency.Completion_State;
+   use type Identity.Operations.Post_Commit.Release_Rejection;
+   use type Identity.Adapters.Repositories.Principals.Principal_Read_Status;
+   use type Identity.Adapters.Repositories.Sessions.Session_Read_Status;
+   use type Identity.Adapters.Repositories.Tokens.Token_Read_Status;
+   use type Identity.Adapters.Diagnostics.Diagnostic_Sink_Status;
+   use type Identity.Adapters.Event_Sinks.Publication_Status;
+   use type Identity.Adapters.External_Providers.Assertion_Adapter_Status;
+   use type Identity.Adapters.Keys.Key_Lookup_Status;
+   use type Identity.Adapters.Keys.Key_Admission_Decision;
+   use type Identity.Adapters.Repositories.Capabilities.Capability_Admission;
+   use type Identity.Adapters.Repositories.Failures.Repository_Failure_Code;
+   use type Identity.Accounts.States.Security_Lock_State;
+   use type Identity.Adapters.Repositories.Memory.Command_Status;
+   use type Identity.Accounts.Administrative.Administrative_Transition_Admission_Status;
+   use type Identity.Accounts.Lifecycle.Lifecycle_Admission_Status;
+   use type Identity.Accounts.Verification.Verification_Admission_Status;
+   use type Identity.API_Keys.Policies.API_Key_Policy_Validation_Status;
+   use type Identity.API_Keys.Policies.Issue_Lifetime_Status;
+   use type Identity.API_Keys.Credentials.Authentication_Admission_Status;
+   use type Identity.API_Keys.Rotation.Rotation_Overlap_State;
+   use type Identity.API_Keys.Rotation.Rotation_Admission_Status;
+   use type Identity.API_Keys.Rotation.Rotation_Status;
+   use type Identity.API_Keys.Rotation.Successor_Admission_Status;
+   use type Identity.Audit.Policies.Audit_Requirement;
+   use type Identity.Audit.Policies.Audit_Policy_Validation_Status;
+   use type Identity.Assurance.Levels.Assurance_Level;
+   use type Identity.Attempts.Outcomes.Attempt_Outcome;
+   use type Identity.Attempts.Outcomes.Failure_Category;
+   use type Identity.Authentication.Transactions.Authentication_Transaction_Status;
+   use type Identity.Authentication.Transactions.Authentication_Transaction_State;
+   use type Identity.Authentication.Transactions.Transaction_Admission_Status;
+   use type Identity.Authentication.Challenges.Challenge_State;
+   use type Identity.Authentication.Challenges.Challenge_Action_Admission;
+   use type Identity.Authentication.Challenges.Challenge_Completion_Admission;
+   use type Identity.Authentication.Security_Contexts.Authentication_State;
+   use type Identity.Authentication.Security_Contexts.Context_Admission_Status;
+   use type Identity.Codecs.Codec_Status;
+   use type Identity.Operations.Budgets.Budget_Admission_Status;
+   use type Identity.Operations.Budgets.Budget_Dimension;
+   use type Identity.Collections.Collection_Status;
+   use type Identity.Contacts.Bindings.Contact_Binding_State;
+   use type Identity.Contacts.Bindings.Contact_Binding_Admission_Status;
+   use type Identity.Credentials.States.Credential_State;
+   use type Identity.Credentials.States.Credential_Authentication_Status;
+   use type Identity.Crypto.Capabilities.Capability_State;
+   use type Identity.Crypto.Registries.Algorithm_Registration_Status;
+   use type Identity.Crypto.Keys.Key_State;
+   use type Identity.Crypto.Secret_Verifiers.Verification_Outcome;
+   use type Identity.Identifiers.Entities.Credential_Id;
+   use type Identity.Identities.Bindings.Binding_Admission_Status;
+   use type Identity.Identities.Resolution.Resolution_Status;
+   use type Identity.Lockout.Evaluation.Lockout_Decision;
+   use type Identity.Lockout.Policies.Lockout_Policy_Validation_Status;
+   use type Identity.Lockout.States.Attempt_Admission_Status;
+   use type Identity.Lockout.States.Lock_State;
+   use type Identity.Operations.Disclosure.Disclosure_Status;
+   use type Identity.Operations.Cancellation.Cancellation_State;
+   use type Identity.Operations.Contexts.Checkpoint_Status;
+   use type Identity.Operations.Contexts.Deadline_Status;
+   use type Identity.Results.Operation_Status;
+   use type Identity.Recovery.Authority.Recovery_Authority_Issuance_Status;
+   use type Identity.Recovery.Authority.Recovery_Authority_Usability_Status;
+   use type Identity.Recovery.Restrictions.Session_Request_Admission_Status;
+   use type Identity.Sessions.Handles.Session_Lookup_Status;
+   use type Identity.Throttling.Decisions.Throttle_Decision_Kind;
+   use type Identity.Throttling.Policies.Throttling_Policy_Validation_Status;
+   use type Identity.Times.Instant;
+   use type Identity.Times.Expirations.Expiration_Construction_Status;
+   use type Identity.Tokens.Definitions.Token_Action_Admission_Status;
+   use type Identity.Tokens.Definitions.Token_State;
+   use type Identity.Tokens.Definitions.Token_Verifiability_Status;
+   use type Identity.Tokens.Generation.Presented_Token_Status;
+   use type Identity.Tokens.Verification.Token_Verification_Outcome;
+   use type Identity.Verification.Changes.Contact_Change_State;
+   use type Identity.Verification.Changes.Contact_Change_Admission_Status;
+   use type Identity.Events.Classification.Event_Data_Class;
+   use type Identity.Events.Envelopes.Event_Outcome;
+   use type Identity.Events.Attributes.Attribute_Status;
+   use type Identity.Events.Attributes.Attribute_Value_Kind;
+   use type Identity.Events.Policies.Event_Policy_Validation_Status;
+   use type Identity.Errors.Cause_Class;
+   use type Identity.Errors.Retry_Class;
+   use type Identity.Attempts.Buckets.Failure_Bucket_Policy_Validation_Status;
+   use type Identity.Attempts.Policies.Attempt_Policy_Validation_Status;
+   use type Identity.External_Providers.Bindings.External_Binding_State;
+   use type Identity.External_Providers.Bindings.External_Binding_Admission_Status;
+   use type Identity.External_Providers.Assurance.Mapping_Status;
+   use type Identity.External_Providers.Definitions.Provider_State;
+   use type Identity.External_Providers.Definitions.Provider_State_Admission_Status;
+   use type Identity.External_Providers.Definitions.JIT_Provisioning_Mode;
+   use type Identity.External_Providers.Enrollment.Enrollment_Decision;
+   use type Identity.External_Providers.Policies.External_Provider_Policy_Validation_Status;
+   use type Identity.External_Providers.Trust.Provider_Admission_Decision;
+   use type Identity.External_Providers.Trust.Provider_Trust_Status;
+   use type Identity.Accounts.States.Account_State_View;
+   use type Identity.Identifiers.Policies.Policy_Version;
+   use type Identity.Text.UTF_8.UTF_8_Status;
+   use type Identity.Identifiers.Registry.Registry_Id;
+   use type Identity.Internal.Crypto_Bindings.Crypto_Binding_Status;
+   use type Identity.Internal.Encoding.Encoding_Status;
+   use type Identity.Internal.Events.Event_Status;
+   use type Identity.Internal.Orchestration.Orchestration_Status;
+   use type Identity.Internal.Resource_Budgets.Budget_Status;
+   use type Identity.Internal.Transitions.Transition_Status;
+   use type Identity.Internal.Validation.Validation_Status;
+   use type Identity.Times.Duration_Seconds;
+   use type Identity.Sessions.Activity.Activity_Admission_Status;
+   use type Identity.Sessions.Expiration.Expiration_Status;
+   use type Identity.Sessions.Definitions.Session_Revocation_State;
+   use type Identity.Sessions.Definitions.Session_State_Admission_Status;
+   use type Identity.Sessions.Families.Session_Family_Admission_Status;
+   use type Identity.Sessions.Policies.Session_Policy_Validation_Status;
+   use type Identity.Sessions.Policies.Session_Request_Kind;
+   use type Identity.Tokens.Policies.Token_Policy_Validation_Status;
+   use type Identity.Sessions.Rotation.Rotation_Status;
+   use type Identity.Tokens.Consumption.Consumption_Status;
+   use type Identity.Authentication.Evidence.Factor_Category;
+   use type Identity.External_Providers.Assertions.Assertion_Admission_Status;
+   use type Identity.Verification.Contacts.Contact_Control_State;
+   use type Identity.Verification.Policies.Contact_Verification_Policy_Validation_Status;
+   use type Identity.Verification.Policies.Old_Contact_Confirmation_Mode;
+   use type Identity.Verification.Results.Verification_Result_Kind;
+   use type Identity.Multi_Factor.Enrollment.Enrollment_State;
+   use type Identity.Credentials.Lifecycle.Credential_Lifecycle_Admission_Status;
+   use type Identity.Multi_Factor.Enrollment.Enrollment_Activation_Status;
+   use type Identity.Multi_Factor.Methods.MFA_Method_Admission_Status;
+   use type Identity.Multi_Factor.Policies.MFA_Policy_Validation_Status;
+   use type Identity.One_Time_Passwords.Credentials.TOTP_Accept_Status;
+   use type Identity.One_Time_Passwords.Credentials.TOTP_Counter;
+   use type Identity.One_Time_Passwords.Policies.TOTP_Policy_Validation_Status;
+   use type Identity.Policies.Findings.Finding_Code;
+   use type Identity.Passwords.History.History_Check_Status;
+   use type Identity.Passwords.Changes.Password_Change_Admission_Status;
+   use type Identity.Passwords.Credentials.Password_Credential_Authentication_Status;
+   use type Identity.Passwords.Migrations.Migration_Decision;
+   use type Identity.Passwords.Policies.Password_Acceptance_Policy_Validation_Status;
+   use type Identity.Passwords.Policies.Password_Hashing_Policy_Validation_Status;
+   use type Identity.Passwords.Policies.Password_Length_Status;
+   use type Identity.Passwords.Resets.Reset_Policy_Validation_Status;
+   use type Identity.Passwords.History.History_Policy_Validation_Status;
+   use type Identity.Principals.Lifecycle.Principal_Lifecycle_Admission_Status;
+   use type Identity.Recovery.Evidence.Recovery_Evidence_Source;
+   use type Identity.Recovery.Policies.Recovery_Policy_Validation_Status;
+   use type Identity.Recovery_Codes.Policies.Recovery_Code_Policy_Validation_Status;
+   use type Identity.Recovery_Codes.Sets.Recovery_Code_Admission_Status;
+   use type Identity.Recovery_Codes.Sets.Recovery_Code_Consume_Status;
+   use type Identity.Recovery_Codes.Sets.Recovery_Code_State;
+   use type Identity.Recovery.Transactions.Recovery_Transaction_Admission_Status;
+   use type Identity.Recovery.Transactions.Recovery_Transition_Status;
+   use type Identity.Recovery.Transactions.Recovery_Transaction_State;
+   use type Identity.Secrets.API_Keys.API_Key_Secret_Status;
+   use type Identity.Secrets.Recovery_Codes.Recovery_Code_Status;
+   use type Identity.Secrets.Sessions.Session_Secret_Status;
+   use type Identity.Secrets.Text.Secret_Text_Status;
+   use type Identity.Secrets.Tokens.Token_Secret_Status;
+   use type Identity.Service_Credentials.Service_Credential_Admission_Status;
+   use type Identity.Versions.Attempt_Count;
+   use type Identity.Versions.Entity_Version;
+   use type Identity.Versions.Rotation_Generation;
+   use type Identity.Versions.Session_Revision;
+   use type Identity.Versions.Authentication_State_Revision;
+   use type Identity.Versions.Evidence_Revision;
+
+   Audit_Context : constant Identity.Operations.Contexts.Operation_Context :=
+     (Operation    => Identity.Identifiers.Operations.Operation
+                        (Identity.Identifiers.From_String
+                           ("7f000000-0000-0000-0000-000000000001")),
+      Correlation  => Identity.Identifiers.Operations.Correlation
+                        (Identity.Identifiers.From_String
+                           ("7f100000-0000-0000-0000-000000000001")),
+      Causation    => (Present => False),
+      Request      => (Present => False),
+      Actor        => (Kind => Identity.Events.Envelopes.Unauthenticated,
+                       Principal => (Present => False)),
+      Requested_At => 1,
+      Deadline     => (Present => False, Time_Point => 0),
+      others       => <>);
+
+   Audit_Event_Counter : Natural := 0;
+
+   --  A fresh id per call: the store rejects a duplicate event id.
+   function Next_Audit_Event return Identity.Identifiers.Entities.Event_Id is
+      Raw : constant String := Natural'Image (Audit_Event_Counter);
+      Digits_Text : constant String := Raw (Raw'First + 1 .. Raw'Last);
+      Padded : String (1 .. 12) := [others => '0'];
+   begin
+      Audit_Event_Counter := Audit_Event_Counter + 1;
+      Padded (Padded'Last - Digits_Text'Length + 1 .. Padded'Last) := Digits_Text;
+      return Identity.Identifiers.Entities.Event
+        (Identity.Identifiers.From_String ("7f200000-0000-0000-0000-" & Padded));
+   end Next_Audit_Event;
+
+   Secret_A : constant Identity.Secrets.Bytes.Secret_Bytes :=
+     Identity.Secrets.Text.From_UTF_8 ("CANARY-password-123");
+   Secret_B : constant Identity.Secrets.Bytes.Secret_Bytes :=
+     Identity.Secrets.Text.From_UTF_8 ("CANARY-password-123");
+   Verifier : constant Identity.Crypto.Secret_Verifiers.Verifier_Envelope :=
+     Identity.Crypto.Secret_Verifiers.Derive (Identity.Crypto.Domains.Session_Token, Secret_A);
+
+   Context : constant Identity.Authentication.Security_Contexts.Security_Context :=
+     Identity.Authentication.Security_Contexts.Anonymous_Context;
+
+   Account_State : Identity.Accounts.States.Account_State_View;
+   Account_Check : Identity.Accounts.Definitions.Account_Record;
+   Found_Account_Check : Boolean;
+   Contact_Check : Identity.Contacts.Bindings.Contact_Binding_Record;
+   Found_Contact_Check : Boolean;
+   Recovery_Check : Identity.Recovery.Transactions.Recovery_Transaction_Record;
+   Found_Recovery_Check : Boolean;
+   Auth_Tx_Check : Identity.Authentication.Transactions.Authentication_Transaction_Record;
+   Found_Auth_Tx_Check : Boolean;
+   Challenge_Check : Identity.Authentication.Challenges.Challenge_Record;
+   Found_Challenge_Check : Boolean;
+   Token_Check : Identity.Tokens.Definitions.Action_Token_Record;
+   Found_Token_Check : Boolean;
+   API_Key_Check : Identity.API_Keys.Credentials.API_Key_Credential_Record;
+   Found_API_Key_Check : Boolean;
+   Pre_Rotation_API_Key_Version : Identity.Versions.Entity_Version := 0;
+   Password_Check : Identity.Passwords.Credentials.Password_Credential_Record;
+   Found_Password_Check : Boolean;
+   Session_Check : Identity.Sessions.Definitions.Session_Record;
+   Found_Session_Check : Boolean;
+   Pre_Rotation_Session_Version : Identity.Versions.Entity_Version := 0;
+   Recovery_Code_Set_Check : Identity.Recovery_Codes.Sets.Recovery_Code_Set_Record;
+   Found_Recovery_Code_Set_Check : Boolean;
+   TOTP_Check : Identity.One_Time_Passwords.Credentials.TOTP_Credential_Record;
+   Found_TOTP_Check : Boolean;
+   Attempt_Check : Identity.Attempts.Definitions.Attempt_Record;
+   Found_Attempt_Check : Boolean;
+   Repository : Identity.Adapters.Repositories.Memory.Store;
+   P1 : constant Identity.Identifiers.Entities.Principal_Id :=
+     Identity.Identifiers.Entities.Principal
+       (Identity.Identifiers.From_String ("00000000-0000-0000-0000-000000000001"));
+   P2 : constant Identity.Identifiers.Entities.Principal_Id :=
+     Identity.Identifiers.Entities.Principal
+       (Identity.Identifiers.From_String ("00000000-0000-0000-0000-000000000002"));
+   P3 : constant Identity.Identifiers.Entities.Principal_Id :=
+     Identity.Identifiers.Entities.Principal
+       (Identity.Identifiers.From_String ("00000000-0000-0000-0000-000000000003"));
+   P4 : constant Identity.Identifiers.Entities.Principal_Id :=
+     Identity.Identifiers.Entities.Principal
+       (Identity.Identifiers.From_String ("00000000-0000-0000-0000-000000000004"));
+   P5 : constant Identity.Identifiers.Entities.Principal_Id :=
+     Identity.Identifiers.Entities.Principal
+       (Identity.Identifiers.From_String ("00000000-0000-0000-0000-000000000005"));
+   P6 : constant Identity.Identifiers.Entities.Principal_Id :=
+     Identity.Identifiers.Entities.Principal
+       (Identity.Identifiers.From_String ("00000000-0000-0000-0000-000000000006"));
+   A1 : constant Identity.Identifiers.Entities.Account_Id :=
+     Identity.Identifiers.Entities.Account
+       (Identity.Identifiers.From_String ("10000000-0000-0000-0000-000000000001"));
+   A3 : constant Identity.Identifiers.Entities.Account_Id :=
+     Identity.Identifiers.Entities.Account
+       (Identity.Identifiers.From_String ("10000000-0000-0000-0000-000000000003"));
+   B1 : constant Identity.Identifiers.Entities.Identity_Binding_Id :=
+     Identity.Identifiers.Entities.Identity_Binding
+       (Identity.Identifiers.From_String ("20000000-0000-0000-0000-000000000001"));
+   B2 : constant Identity.Identifiers.Entities.Identity_Binding_Id :=
+     Identity.Identifiers.Entities.Identity_Binding
+       (Identity.Identifiers.From_String ("20000000-0000-0000-0000-000000000002"));
+   B3 : constant Identity.Identifiers.Entities.Identity_Binding_Id :=
+     Identity.Identifiers.Entities.Identity_Binding
+       (Identity.Identifiers.From_String ("20000000-0000-0000-0000-000000000003"));
+   B4 : constant Identity.Identifiers.Entities.Identity_Binding_Id :=
+     Identity.Identifiers.Entities.Identity_Binding
+       (Identity.Identifiers.From_String ("20000000-0000-0000-0000-000000000004"));
+   B5 : constant Identity.Identifiers.Entities.Identity_Binding_Id :=
+     Identity.Identifiers.Entities.Identity_Binding
+       (Identity.Identifiers.From_String ("20000000-0000-0000-0000-000000000005"));
+   B6 : constant Identity.Identifiers.Entities.Identity_Binding_Id :=
+     Identity.Identifiers.Entities.Identity_Binding
+       (Identity.Identifiers.From_String ("20000000-0000-0000-0000-000000000006"));
+   B7 : constant Identity.Identifiers.Entities.Identity_Binding_Id :=
+     Identity.Identifiers.Entities.Identity_Binding
+       (Identity.Identifiers.From_String ("20000000-0000-0000-0000-000000000007"));
+   B8 : constant Identity.Identifiers.Entities.Identity_Binding_Id :=
+     Identity.Identifiers.Entities.Identity_Binding
+       (Identity.Identifiers.From_String ("20000000-0000-0000-0000-000000000008"));
+   B9 : constant Identity.Identifiers.Entities.Identity_Binding_Id :=
+     Identity.Identifiers.Entities.Identity_Binding
+       (Identity.Identifiers.From_String ("20000000-0000-0000-0000-000000000009"));
+   CB1 : constant Identity.Identifiers.Entities.Contact_Binding_Id :=
+     Identity.Identifiers.Entities.Contact_Binding
+       (Identity.Identifiers.From_String ("23000000-0000-0000-0000-000000000001"));
+   CB2 : constant Identity.Identifiers.Entities.Contact_Binding_Id :=
+     Identity.Identifiers.Entities.Contact_Binding
+       (Identity.Identifiers.From_String ("23000000-0000-0000-0000-000000000002"));
+   CB3 : constant Identity.Identifiers.Entities.Contact_Binding_Id :=
+     Identity.Identifiers.Entities.Contact_Binding
+       (Identity.Identifiers.From_String ("23000000-0000-0000-0000-000000000003"));
+   CB4 : constant Identity.Identifiers.Entities.Contact_Binding_Id :=
+     Identity.Identifiers.Entities.Contact_Binding
+       (Identity.Identifiers.From_String ("23000000-0000-0000-0000-000000000004"));
+   CB5 : constant Identity.Identifiers.Entities.Contact_Binding_Id :=
+     Identity.Identifiers.Entities.Contact_Binding
+       (Identity.Identifiers.From_String ("23000000-0000-0000-0000-000000000005"));
+   CB6 : constant Identity.Identifiers.Entities.Contact_Binding_Id :=
+     Identity.Identifiers.Entities.Contact_Binding
+       (Identity.Identifiers.From_String ("23000000-0000-0000-0000-000000000006"));
+   CB7 : constant Identity.Identifiers.Entities.Contact_Binding_Id :=
+     Identity.Identifiers.Entities.Contact_Binding
+       (Identity.Identifiers.From_String ("23000000-0000-0000-0000-000000000007"));
+   EB1 : constant Identity.Identifiers.Entities.External_Binding_Id :=
+     Identity.Identifiers.Entities.External_Binding
+       (Identity.Identifiers.From_String ("21000000-0000-0000-0000-000000000001"));
+   EB2 : constant Identity.Identifiers.Entities.External_Binding_Id :=
+     Identity.Identifiers.Entities.External_Binding
+       (Identity.Identifiers.From_String ("21000000-0000-0000-0000-000000000002"));
+   EB3 : constant Identity.Identifiers.Entities.External_Binding_Id :=
+     Identity.Identifiers.Entities.External_Binding
+       (Identity.Identifiers.From_String ("21000000-0000-0000-0000-000000000003"));
+   EB4 : constant Identity.Identifiers.Entities.External_Binding_Id :=
+     Identity.Identifiers.Entities.External_Binding
+       (Identity.Identifiers.From_String ("21000000-0000-0000-0000-000000000004"));
+   EP1 : constant Identity.Identifiers.Entities.External_Provider_Id :=
+     Identity.Identifiers.Entities.External_Provider
+       (Identity.Identifiers.From_String ("22000000-0000-0000-0000-000000000001"));
+   C1 : constant Identity.Identifiers.Entities.Credential_Id :=
+     Identity.Identifiers.Entities.Credential
+       (Identity.Identifiers.From_String ("30000000-0000-0000-0000-000000000001"));
+   C2 : constant Identity.Identifiers.Entities.Credential_Id :=
+     Identity.Identifiers.Entities.Credential
+       (Identity.Identifiers.From_String ("30000000-0000-0000-0000-000000000002"));
+   C3 : constant Identity.Identifiers.Entities.Credential_Id :=
+     Identity.Identifiers.Entities.Credential
+       (Identity.Identifiers.From_String ("30000000-0000-0000-0000-000000000003"));
+   CS1 : constant Identity.Identifiers.Entities.Credential_Set_Id :=
+     Identity.Identifiers.Entities.Credential_Set
+       (Identity.Identifiers.From_String ("31000000-0000-0000-0000-000000000001"));
+   CS2 : constant Identity.Identifiers.Entities.Credential_Set_Id :=
+     Identity.Identifiers.Entities.Credential_Set
+       (Identity.Identifiers.From_String ("31000000-0000-0000-0000-000000000002"));
+   CS3 : constant Identity.Identifiers.Entities.Credential_Set_Id :=
+     Identity.Identifiers.Entities.Credential_Set
+       (Identity.Identifiers.From_String ("31000000-0000-0000-0000-000000000003"));
+   CS4 : constant Identity.Identifiers.Entities.Credential_Set_Id :=
+     Identity.Identifiers.Entities.Credential_Set
+       (Identity.Identifiers.From_String ("31000000-0000-0000-0000-000000000004"));
+   CS5 : constant Identity.Identifiers.Entities.Credential_Set_Id :=
+     Identity.Identifiers.Entities.Credential_Set
+       (Identity.Identifiers.From_String ("31000000-0000-0000-0000-000000000005"));
+   CS6 : constant Identity.Identifiers.Entities.Credential_Set_Id :=
+     Identity.Identifiers.Entities.Credential_Set
+       (Identity.Identifiers.From_String ("31000000-0000-0000-0000-000000000006"));
+   C4 : constant Identity.Identifiers.Entities.Credential_Id :=
+     Identity.Identifiers.Entities.Credential
+       (Identity.Identifiers.From_String ("30000000-0000-0000-0000-000000000004"));
+   C5 : constant Identity.Identifiers.Entities.Credential_Id :=
+     Identity.Identifiers.Entities.Credential
+       (Identity.Identifiers.From_String ("30000000-0000-0000-0000-000000000005"));
+   C6 : constant Identity.Identifiers.Entities.Credential_Id :=
+     Identity.Identifiers.Entities.Credential
+       (Identity.Identifiers.From_String ("30000000-0000-0000-0000-000000000006"));
+   C7 : constant Identity.Identifiers.Entities.Credential_Id :=
+     Identity.Identifiers.Entities.Credential
+       (Identity.Identifiers.From_String ("30000000-0000-0000-0000-000000000007"));
+   C8 : constant Identity.Identifiers.Entities.Credential_Id :=
+     Identity.Identifiers.Entities.Credential
+       (Identity.Identifiers.From_String ("30000000-0000-0000-0000-000000000008"));
+   C9 : constant Identity.Identifiers.Entities.Credential_Id :=
+     Identity.Identifiers.Entities.Credential
+       (Identity.Identifiers.From_String ("30000000-0000-0000-0000-000000000009"));
+   C10 : constant Identity.Identifiers.Entities.Credential_Id :=
+     Identity.Identifiers.Entities.Credential
+       (Identity.Identifiers.From_String ("30000000-0000-0000-0000-000000000010"));
+   C11 : constant Identity.Identifiers.Entities.Credential_Id :=
+     Identity.Identifiers.Entities.Credential
+       (Identity.Identifiers.From_String ("30000000-0000-0000-0000-000000000011"));
+   C12 : constant Identity.Identifiers.Entities.Credential_Id :=
+     Identity.Identifiers.Entities.Credential
+       (Identity.Identifiers.From_String ("30000000-0000-0000-0000-000000000012"));
+   C13 : constant Identity.Identifiers.Entities.Credential_Id :=
+     Identity.Identifiers.Entities.Credential
+       (Identity.Identifiers.From_String ("30000000-0000-0000-0000-000000000013"));
+   C14 : constant Identity.Identifiers.Entities.Credential_Id :=
+     Identity.Identifiers.Entities.Credential
+       (Identity.Identifiers.From_String ("30000000-0000-0000-0000-000000000014"));
+   C15 : constant Identity.Identifiers.Entities.Credential_Id :=
+     Identity.Identifiers.Entities.Credential
+       (Identity.Identifiers.From_String ("30000000-0000-0000-0000-000000000015"));
+   C16 : constant Identity.Identifiers.Entities.Credential_Id :=
+     Identity.Identifiers.Entities.Credential
+       (Identity.Identifiers.From_String ("30000000-0000-0000-0000-000000000016"));
+   C17 : constant Identity.Identifiers.Entities.Credential_Id :=
+     Identity.Identifiers.Entities.Credential
+       (Identity.Identifiers.From_String ("30000000-0000-0000-0000-000000000017"));
+   C18 : constant Identity.Identifiers.Entities.Credential_Id :=
+     Identity.Identifiers.Entities.Credential
+       (Identity.Identifiers.From_String ("30000000-0000-0000-0000-000000000018"));
+   S1 : constant Identity.Identifiers.Entities.Session_Id :=
+     Identity.Identifiers.Entities.Session
+       (Identity.Identifiers.From_String ("40000000-0000-0000-0000-000000000001"));
+   S2 : constant Identity.Identifiers.Entities.Session_Id :=
+     Identity.Identifiers.Entities.Session
+       (Identity.Identifiers.From_String ("40000000-0000-0000-0000-000000000002"));
+   S3 : constant Identity.Identifiers.Entities.Session_Id :=
+     Identity.Identifiers.Entities.Session
+       (Identity.Identifiers.From_String ("40000000-0000-0000-0000-000000000003"));
+   S4 : constant Identity.Identifiers.Entities.Session_Id :=
+     Identity.Identifiers.Entities.Session
+       (Identity.Identifiers.From_String ("40000000-0000-0000-0000-000000000004"));
+   S5 : constant Identity.Identifiers.Entities.Session_Id :=
+     Identity.Identifiers.Entities.Session
+       (Identity.Identifiers.From_String ("40000000-0000-0000-0000-000000000005"));
+   S6 : constant Identity.Identifiers.Entities.Session_Id :=
+     Identity.Identifiers.Entities.Session
+       (Identity.Identifiers.From_String ("40000000-0000-0000-0000-000000000006"));
+   S7 : constant Identity.Identifiers.Entities.Session_Id :=
+     Identity.Identifiers.Entities.Session
+       (Identity.Identifiers.From_String ("40000000-0000-0000-0000-000000000007"));
+   S8 : constant Identity.Identifiers.Entities.Session_Id :=
+     Identity.Identifiers.Entities.Session
+       (Identity.Identifiers.From_String ("40000000-0000-0000-0000-000000000008"));
+   S9 : constant Identity.Identifiers.Entities.Session_Id :=
+     Identity.Identifiers.Entities.Session
+       (Identity.Identifiers.From_String ("40000000-0000-0000-0000-000000000009"));
+   S10 : constant Identity.Identifiers.Entities.Session_Id :=
+     Identity.Identifiers.Entities.Session
+       (Identity.Identifiers.From_String ("40000000-0000-0000-0000-000000000010"));
+   S11 : constant Identity.Identifiers.Entities.Session_Id :=
+     Identity.Identifiers.Entities.Session
+       (Identity.Identifiers.From_String ("40000000-0000-0000-0000-000000000011"));
+   F1 : constant Identity.Identifiers.Entities.Session_Family_Id :=
+     Identity.Identifiers.Entities.Session_Family
+       (Identity.Identifiers.From_String ("50000000-0000-0000-0000-000000000001"));
+   F2 : constant Identity.Identifiers.Entities.Session_Family_Id :=
+     Identity.Identifiers.Entities.Session_Family
+       (Identity.Identifiers.From_String ("50000000-0000-0000-0000-000000000002"));
+   T1 : constant Identity.Identifiers.Entities.Token_Id :=
+     Identity.Identifiers.Entities.Token
+       (Identity.Identifiers.From_String ("60000000-0000-0000-0000-000000000001"));
+   T2 : constant Identity.Identifiers.Entities.Token_Id :=
+     Identity.Identifiers.Entities.Token
+       (Identity.Identifiers.From_String ("60000000-0000-0000-0000-000000000002"));
+   T3 : constant Identity.Identifiers.Entities.Token_Id :=
+     Identity.Identifiers.Entities.Token
+       (Identity.Identifiers.From_String ("60000000-0000-0000-0000-000000000003"));
+   T4 : constant Identity.Identifiers.Entities.Token_Id :=
+     Identity.Identifiers.Entities.Token
+       (Identity.Identifiers.From_String ("60000000-0000-0000-0000-000000000004"));
+   T5 : constant Identity.Identifiers.Entities.Token_Id :=
+     Identity.Identifiers.Entities.Token
+       (Identity.Identifiers.From_String ("60000000-0000-0000-0000-000000000005"));
+   T6 : constant Identity.Identifiers.Entities.Token_Id :=
+     Identity.Identifiers.Entities.Token
+       (Identity.Identifiers.From_String ("60000000-0000-0000-0000-000000000006"));
+   T7 : constant Identity.Identifiers.Entities.Token_Id :=
+     Identity.Identifiers.Entities.Token
+       (Identity.Identifiers.From_String ("60000000-0000-0000-0000-000000000007"));
+   T8 : constant Identity.Identifiers.Entities.Token_Id :=
+     Identity.Identifiers.Entities.Token
+       (Identity.Identifiers.From_String ("60000000-0000-0000-0000-000000000008"));
+   T9 : constant Identity.Identifiers.Entities.Token_Id :=
+     Identity.Identifiers.Entities.Token
+       (Identity.Identifiers.From_String ("60000000-0000-0000-0000-000000000009"));
+   T10 : constant Identity.Identifiers.Entities.Token_Id :=
+     Identity.Identifiers.Entities.Token
+       (Identity.Identifiers.From_String ("60000000-0000-0000-0000-000000000010"));
+   T11 : constant Identity.Identifiers.Entities.Token_Id :=
+     Identity.Identifiers.Entities.Token
+       (Identity.Identifiers.From_String ("60000000-0000-0000-0000-000000000011"));
+   T12 : constant Identity.Identifiers.Entities.Token_Id :=
+     Identity.Identifiers.Entities.Token
+       (Identity.Identifiers.From_String ("60000000-0000-0000-0000-000000000012"));
+   E1 : constant Identity.Identifiers.Entities.Event_Id :=
+     Identity.Identifiers.Entities.Event
+       (Identity.Identifiers.From_String ("70000000-0000-0000-0000-000000000001"));
+   E2 : constant Identity.Identifiers.Entities.Event_Id :=
+     Identity.Identifiers.Entities.Event
+       (Identity.Identifiers.From_String ("70000000-0000-0000-0000-000000000002"));
+   O1 : constant Identity.Identifiers.Operations.Operation_Id :=
+     Identity.Identifiers.Operations.Operation
+       (Identity.Identifiers.From_String ("80000000-0000-0000-0000-000000000001"));
+   R1 : constant Identity.Identifiers.Operations.Correlation_Id :=
+     Identity.Identifiers.Operations.Correlation
+       (Identity.Identifiers.From_String ("90000000-0000-0000-0000-000000000001"));
+   AT1 : constant Identity.Identifiers.Entities.Attempt_Id :=
+     Identity.Identifiers.Entities.Attempt
+       (Identity.Identifiers.From_String ("a0000000-0000-0000-0000-000000000001"));
+   AT2 : constant Identity.Identifiers.Entities.Attempt_Id :=
+     Identity.Identifiers.Entities.Attempt
+       (Identity.Identifiers.From_String ("a0000000-0000-0000-0000-000000000002"));
+   AT3 : constant Identity.Identifiers.Entities.Attempt_Id :=
+     Identity.Identifiers.Entities.Attempt
+       (Identity.Identifiers.From_String ("a0000000-0000-0000-0000-000000000003"));
+   AT4 : constant Identity.Identifiers.Entities.Attempt_Id :=
+     Identity.Identifiers.Entities.Attempt
+       (Identity.Identifiers.From_String ("a0000000-0000-0000-0000-000000000004"));
+   AT5 : constant Identity.Identifiers.Entities.Attempt_Id :=
+     Identity.Identifiers.Entities.Attempt
+       (Identity.Identifiers.From_String ("a0000000-0000-0000-0000-000000000005"));
+   RT1 : constant Identity.Identifiers.Entities.Authentication_Transaction_Id :=
+     Identity.Identifiers.Entities.Authentication_Transaction
+       (Identity.Identifiers.From_String ("b0000000-0000-0000-0000-000000000001"));
+   RT2 : constant Identity.Identifiers.Entities.Authentication_Transaction_Id :=
+     Identity.Identifiers.Entities.Authentication_Transaction
+       (Identity.Identifiers.From_String ("b0000000-0000-0000-0000-000000000002"));
+   RT3 : constant Identity.Identifiers.Entities.Authentication_Transaction_Id :=
+     Identity.Identifiers.Entities.Authentication_Transaction
+       (Identity.Identifiers.From_String ("b0000000-0000-0000-0000-000000000003"));
+   MT1 : constant Identity.Identifiers.Entities.Authentication_Transaction_Id :=
+     Identity.Identifiers.Entities.Authentication_Transaction
+       (Identity.Identifiers.From_String ("c0000000-0000-0000-0000-000000000001"));
+   MT2 : constant Identity.Identifiers.Entities.Authentication_Transaction_Id :=
+     Identity.Identifiers.Entities.Authentication_Transaction
+       (Identity.Identifiers.From_String ("c0000000-0000-0000-0000-000000000002"));
+   MT3 : constant Identity.Identifiers.Entities.Authentication_Transaction_Id :=
+     Identity.Identifiers.Entities.Authentication_Transaction
+       (Identity.Identifiers.From_String ("c0000000-0000-0000-0000-000000000003"));
+   MT4 : constant Identity.Identifiers.Entities.Authentication_Transaction_Id :=
+     Identity.Identifiers.Entities.Authentication_Transaction
+       (Identity.Identifiers.From_String ("c0000000-0000-0000-0000-000000000004"));
+   CH1 : constant Identity.Identifiers.Entities.Challenge_Id :=
+     Identity.Identifiers.Entities.Challenge
+       (Identity.Identifiers.From_String ("d0000000-0000-0000-0000-000000000001"));
+   CH2 : constant Identity.Identifiers.Entities.Challenge_Id :=
+     Identity.Identifiers.Entities.Challenge
+       (Identity.Identifiers.From_String ("d0000000-0000-0000-0000-000000000002"));
+   CH3 : constant Identity.Identifiers.Entities.Challenge_Id :=
+     Identity.Identifiers.Entities.Challenge
+       (Identity.Identifiers.From_String ("d0000000-0000-0000-0000-000000000003"));
+   CH4 : constant Identity.Identifiers.Entities.Challenge_Id :=
+     Identity.Identifiers.Entities.Challenge
+       (Identity.Identifiers.From_String ("d0000000-0000-0000-0000-000000000004"));
+   EV1 : constant Identity.Identifiers.Entities.Evidence_Id :=
+     Identity.Identifiers.Entities.Evidence
+       (Identity.Identifiers.From_String ("e0000000-0000-0000-0000-000000000001"));
+   Login_Kind : constant Identity.Identifiers.Registry.Registry_Id :=
+     Identity.Identifiers.Registry.From_String ("login.username");
+   OIDC_Protocol : constant Identity.Identifiers.Registry.Registry_Id :=
+     Identity.Identifiers.Registry.From_String ("oidc");
+   Adapter_Profile : constant Identity.Identifiers.Registry.Registry_Id :=
+     Identity.Identifiers.Registry.From_String ("test.adapter.validated");
+   TOTP_Algorithm : constant Identity.Identifiers.Registry.Registry_Id :=
+     Identity.Identifiers.Registry.From_String ("totp.hmac-sha1");
+   Contact_Email : constant Identity.Identifiers.Registry.Registry_Id :=
+     Identity.Identifiers.Registry.From_String ("contact.email");
+   Alice : constant Identity.Text.Bounded.Bounded_Text :=
+     Identity.Text.Bounded.From_String ("alice");
+   Unknown_Login : constant Identity.Text.Bounded.Bounded_Text :=
+     Identity.Text.Bounded.From_String ("unknown.login");
+   Alias_One : constant Identity.Text.Bounded.Bounded_Text :=
+     Identity.Text.Bounded.From_String ("alice.alias.one");
+   Alias_Two : constant Identity.Text.Bounded.Bounded_Text :=
+     Identity.Text.Bounded.From_String ("alice.alias.two");
+   Alias_Three : constant Identity.Text.Bounded.Bounded_Text :=
+     Identity.Text.Bounded.From_String ("alice.alias.three");
+   Retired_User : constant Identity.Text.Bounded.Bounded_Text :=
+     Identity.Text.Bounded.From_String ("retired.user");
+   Retired_User_New_Binding : constant Identity.Text.Bounded.Bounded_Text :=
+     Identity.Text.Bounded.From_String ("retired.user.new");
+   Retired_User_Changed_Binding : constant Identity.Text.Bounded.Bounded_Text :=
+     Identity.Text.Bounded.From_String ("retired.user.changed");
+   External_Issuer : constant Identity.Text.Bounded.Bounded_Text :=
+     Identity.Text.Bounded.From_String ("https://issuer.example");
+   External_Subject : constant Identity.Text.Bounded.Bounded_Text :=
+     Identity.Text.Bounded.From_String ("provider-subject-123");
+   External_Fingerprint : constant Identity.Text.Bounded.Bounded_Text :=
+     Identity.Text.Bounded.From_String ("assertion-fingerprint-1");
+   External_Fingerprint_2 : constant Identity.Text.Bounded.Bounded_Text :=
+     Identity.Text.Bounded.From_String ("assertion-fingerprint-2");
+   External_Fingerprint_3 : constant Identity.Text.Bounded.Bounded_Text :=
+     Identity.Text.Bounded.From_String ("assertion-fingerprint-3");
+   External_Fingerprint_4 : constant Identity.Text.Bounded.Bounded_Text :=
+     Identity.Text.Bounded.From_String ("assertion-fingerprint-4");
+   External_Fingerprint_5 : constant Identity.Text.Bounded.Bounded_Text :=
+     Identity.Text.Bounded.From_String ("assertion-fingerprint-5");
+   External_Fingerprint_6 : constant Identity.Text.Bounded.Bounded_Text :=
+     Identity.Text.Bounded.From_String ("assertion-fingerprint-6");
+   Contact_Email_Value : constant Identity.Text.Bounded.Bounded_Text :=
+     Identity.Text.Bounded.From_String ("alice@example.test");
+   Contact_Email_Value_2 : constant Identity.Text.Bounded.Bounded_Text :=
+     Identity.Text.Bounded.From_String ("alice.changed@example.test");
+   Contact_Email_Value_3 : constant Identity.Text.Bounded.Bounded_Text :=
+     Identity.Text.Bounded.From_String ("alice.backup@example.test");
+   Contact_Email_Value_4 : constant Identity.Text.Bounded.Bounded_Text :=
+     Identity.Text.Bounded.From_String ("alice.future@example.test");
+   Contact_Email_Value_5 : constant Identity.Text.Bounded.Bounded_Text :=
+     Identity.Text.Bounded.From_String ("retired.contact@example.test");
+   Contact_Email_Value_6 : constant Identity.Text.Bounded.Bounded_Text :=
+     Identity.Text.Bounded.From_String ("retired.changed@example.test");
+   New_Password : constant Identity.Secrets.Passwords.New_Password :=
+     Identity.Secrets.Text.From_UTF_8 ("correct horse battery staple");
+   Presented_Password : constant Identity.Secrets.Passwords.Presented_Password :=
+     Identity.Secrets.Text.From_UTF_8 ("correct horse battery staple");
+   Wrong_Password : constant Identity.Secrets.Passwords.Presented_Password :=
+     Identity.Secrets.Text.From_UTF_8 ("incorrect horse battery staple");
+   Changed_Password : constant Identity.Secrets.Passwords.New_Password :=
+     Identity.Secrets.Text.From_UTF_8 ("new correct horse battery staple");
+   Presented_Changed_Password : constant Identity.Secrets.Passwords.Presented_Password :=
+     Identity.Secrets.Text.From_UTF_8 ("new correct horse battery staple");
+   Reset_Password : constant Identity.Secrets.Passwords.New_Password :=
+     Identity.Secrets.Text.From_UTF_8 ("reset correct horse battery staple");
+   Presented_Reset_Password : constant Identity.Secrets.Passwords.Presented_Password :=
+     Identity.Secrets.Text.From_UTF_8 ("reset correct horse battery staple");
+   Session_Secret : constant Identity.Secrets.Sessions.Session_Secret :=
+     Identity.Secrets.Text.From_UTF_8 ("session bearer secret");
+   Wrong_Session_Secret : constant Identity.Secrets.Sessions.Session_Secret :=
+     Identity.Secrets.Text.From_UTF_8 ("wrong session bearer secret");
+   Session_Reference : constant Identity.Text.Bounded.Bounded_Text :=
+     Identity.Text.Bounded.From_String ("session-public-reference-1");
+   Rotated_Session_Secret : constant Identity.Secrets.Sessions.Session_Secret :=
+     Identity.Secrets.Text.From_UTF_8 ("rotated session bearer secret");
+   Rotated_Session_Reference : constant Identity.Text.Bounded.Bounded_Text :=
+     Identity.Text.Bounded.From_String ("session-public-reference-2");
+   Request_Session_Secret : constant Identity.Secrets.Sessions.Session_Secret :=
+     Identity.Secrets.Text.From_UTF_8 ("request session bearer secret");
+   Request_Session_Reference : constant Identity.Text.Bounded.Bounded_Text :=
+     Identity.Text.Bounded.From_String ("session-public-reference-3");
+   Request_Rotated_Session_Secret : constant Identity.Secrets.Sessions.Session_Secret :=
+     Identity.Secrets.Text.From_UTF_8 ("request rotated session bearer secret");
+   Request_Rotated_Session_Reference : constant Identity.Text.Bounded.Bounded_Text :=
+     Identity.Text.Bounded.From_String ("session-public-reference-9");
+   Family_Session_Secret : constant Identity.Secrets.Sessions.Session_Secret :=
+     Identity.Secrets.Text.From_UTF_8 ("family session bearer secret");
+   Family_Session_Reference : constant Identity.Text.Bounded.Bounded_Text :=
+     Identity.Text.Bounded.From_String ("session-public-reference-4");
+   Principal_Session_Secret : constant Identity.Secrets.Sessions.Session_Secret :=
+     Identity.Secrets.Text.From_UTF_8 ("principal session bearer secret");
+   Principal_Session_Reference : constant Identity.Text.Bounded.Bounded_Text :=
+     Identity.Text.Bounded.From_String ("session-public-reference-5");
+   Expired_Session_Secret : constant Identity.Secrets.Sessions.Session_Secret :=
+     Identity.Secrets.Text.From_UTF_8 ("expired session bearer secret");
+   Expired_Session_Reference : constant Identity.Text.Bounded.Bounded_Text :=
+     Identity.Text.Bounded.From_String ("session-public-reference-6");
+   Step_Up_Session_Secret : constant Identity.Secrets.Sessions.Session_Secret :=
+     Identity.Secrets.Text.From_UTF_8 ("step up session bearer secret");
+   Step_Up_Session_Reference : constant Identity.Text.Bounded.Bounded_Text :=
+     Identity.Text.Bounded.From_String ("session-public-reference-7");
+   Provider_Session_Secret : constant Identity.Secrets.Sessions.Session_Secret :=
+     Identity.Secrets.Text.From_UTF_8 ("provider session bearer secret");
+   Provider_Session_Reference : constant Identity.Text.Bounded.Bounded_Text :=
+     Identity.Text.Bounded.From_String ("session-public-reference-8");
+   Retired_Principal_Session_Secret : constant Identity.Secrets.Sessions.Session_Secret :=
+     Identity.Secrets.Text.From_UTF_8 ("retired principal session bearer secret");
+   Retired_Principal_Session_Reference : constant Identity.Text.Bounded.Bounded_Text :=
+     Identity.Text.Bounded.From_String ("session-public-reference-retired-principal");
+   Retired_Principal_Rotated_Session_Secret : constant Identity.Secrets.Sessions.Session_Secret :=
+     Identity.Secrets.Text.From_UTF_8 ("retired principal rotated session bearer secret");
+   Retired_Principal_Rotated_Session_Reference : constant Identity.Text.Bounded.Bounded_Text :=
+     Identity.Text.Bounded.From_String ("session-public-reference-retired-principal-rotated");
+   Reset_Token_Secret : constant Identity.Secrets.Tokens.Reset_Token_Secret :=
+     Identity.Secrets.Text.From_UTF_8 ("reset token bearer secret");
+   Wrong_Reset_Token_Secret : constant Identity.Secrets.Tokens.Reset_Token_Secret :=
+     Identity.Secrets.Text.From_UTF_8 ("wrong reset token bearer secret");
+   Contact_Verification_Secret : constant Identity.Secrets.Tokens.Verification_Token_Secret :=
+     Identity.Secrets.Text.From_UTF_8 ("contact verification bearer secret");
+   Wrong_Contact_Verification_Secret : constant Identity.Secrets.Tokens.Verification_Token_Secret :=
+     Identity.Secrets.Text.From_UTF_8 ("wrong contact verification bearer secret");
+   Contact_Change_Secret : constant Identity.Secrets.Tokens.Verification_Token_Secret :=
+     Identity.Secrets.Text.From_UTF_8 ("contact change bearer secret");
+   Wrong_Contact_Change_Secret : constant Identity.Secrets.Tokens.Verification_Token_Secret :=
+     Identity.Secrets.Text.From_UTF_8 ("wrong contact change bearer secret");
+   API_Key_Id : constant Identity.Text.Bounded.Bounded_Text :=
+     Identity.Text.Bounded.From_String ("api-key-public-id-1");
+   API_Key_Secret : constant Identity.Secrets.API_Keys.API_Key_Secret :=
+     Identity.Secrets.Text.From_UTF_8 ("api key bearer secret");
+   Wrong_API_Key_Secret : constant Identity.Secrets.API_Keys.API_Key_Secret :=
+     Identity.Secrets.Text.From_UTF_8 ("wrong api key bearer secret");
+   Rotated_API_Key_Id : constant Identity.Text.Bounded.Bounded_Text :=
+     Identity.Text.Bounded.From_String ("api-key-public-id-2");
+   Rotated_API_Key_Secret : constant Identity.Secrets.API_Keys.API_Key_Secret :=
+     Identity.Secrets.Text.From_UTF_8 ("rotated api key bearer secret");
+   Issued_API_Key_Id : constant Identity.Text.Bounded.Bounded_Text :=
+     Identity.Text.Bounded.From_String ("api-key-public-id-3");
+   Issued_API_Key_Secret : constant Identity.Secrets.API_Keys.API_Key_Secret :=
+     Identity.Secrets.Text.From_UTF_8 ("issued api key bearer secret");
+   Request_Rotated_API_Key_Id : constant Identity.Text.Bounded.Bounded_Text :=
+     Identity.Text.Bounded.From_String ("api-key-public-id-4");
+   Request_Rotated_API_Key_Secret : constant Identity.Secrets.API_Keys.API_Key_Secret :=
+     Identity.Secrets.Text.From_UTF_8 ("request rotated api key bearer secret");
+   Expired_API_Key_Id : constant Identity.Text.Bounded.Bounded_Text :=
+     Identity.Text.Bounded.From_String ("api-key-public-id-expired");
+   Expired_API_Key_Secret : constant Identity.Secrets.API_Keys.API_Key_Secret :=
+     Identity.Secrets.Text.From_UTF_8 ("expired api key bearer secret");
+   Retired_Principal_API_Key_Id : constant Identity.Text.Bounded.Bounded_Text :=
+     Identity.Text.Bounded.From_String ("api-key-public-id-retired-principal");
+   Retired_Principal_API_Key_Secret : constant Identity.Secrets.API_Keys.API_Key_Secret :=
+     Identity.Secrets.Text.From_UTF_8 ("retired principal api key bearer secret");
+   Retired_Principal_Rotated_API_Key_Id : constant Identity.Text.Bounded.Bounded_Text :=
+     Identity.Text.Bounded.From_String ("api-key-public-id-retired-principal-rotated");
+   Retired_Principal_Rotated_API_Key_Secret : constant Identity.Secrets.API_Keys.API_Key_Secret :=
+     Identity.Secrets.Text.From_UTF_8 ("retired principal rotated api key bearer secret");
+   Recovery_Code : constant Identity.Secrets.Recovery_Codes.Recovery_Code :=
+     Identity.Secrets.Text.From_UTF_8 ("ABCD-EFGH-IJKL");
+   Recovery_Code_2 : constant Identity.Secrets.Recovery_Codes.Recovery_Code :=
+     Identity.Secrets.Text.From_UTF_8 ("MNOP-QRST-UVWX");
+   Recovery_Code_3 : constant Identity.Secrets.Recovery_Codes.Recovery_Code :=
+     Identity.Secrets.Text.From_UTF_8 ("YZAB-CDEF-GHIJ");
+   Wrong_Recovery_Code : constant Identity.Secrets.Recovery_Codes.Recovery_Code :=
+     Identity.Secrets.Text.From_UTF_8 ("ZZZZ-EFGH-IJKL");
+   TOTP_Seed : constant Identity.Secrets.One_Time_Passwords.TOTP_Secret :=
+     Identity.Secrets.Text.From_UTF_8 ("totp secret seed");
+   TOTP_Seed_2 : constant Identity.Secrets.One_Time_Passwords.TOTP_Secret :=
+     Identity.Secrets.Text.From_UTF_8 ("second totp secret seed");
+   Renewed_Handle : Identity.Sessions.Handles.Session_Handle;
+   Session_Summaries : Identity.Projections.Sessions.Session_Summary_List;
+
+   package Natural_Vectors is new Identity.Collections.Vectors
+     (Element_Type => Natural,
+      Max_Capacity => 2);
+   package Natural_Sets is new Identity.Collections.Sets
+     (Element_Type => Natural,
+      Max_Capacity => 2);
+   package Natural_Maps is new Identity.Collections.Maps
+     (Key_Type => Natural,
+      Value_Type => Natural,
+      Max_Capacity => 2);
+
+   Vector_Check : Natural_Vectors.Vector;
+   Set_Check : Natural_Sets.Set;
+   Map_Check : Natural_Maps.Map;
+   Map_Value : Natural := 0;
+   Canonical_Frame : constant Identity.Text.Bounded.Bounded_Text :=
+     Identity.Codecs.Canonical.Frame
+       (1,
+        Identity.Text.Bounded.From_String ("identity.test"),
+        Identity.Text.Bounded.From_String ("payload"));
+
+   procedure Test_01_identifier_encodeable (T : in out AUnit.Test_Cases.Test_Case'Class) is
+      pragma Unreferenced (T);
+   begin
+      Assert
+        (Identity.Identifiers.Is_Valid_Text ("01234567-89ab-cdef-0123-456789abcdef"),
+         "identifier encodeable");
+
+      Assert
+        (Identity.Secrets.Text.Validate_UTF_8 ("valid secret text")
+           = Identity.Secrets.Text.Valid
+         and then Identity.Secrets.Text.Accepted_Input
+           (Identity.Secrets.Text.Validate_UTF_8 ("valid secret text"))
+         and then Identity.Secrets.Text.Validate_UTF_8
+           ("bad" & Character'Val (16#80#))
+           = Identity.Secrets.Text.Invalid_UTF_8
+         and then Identity.Secrets.Text.Invalid_UTF_8_Rejected
+           (Identity.Secrets.Text.Validate_UTF_8
+              ("bad" & Character'Val (16#80#)))
+         and then Identity.Secrets.Text.Validate_UTF_8
+           ([1 .. Identity.Limits.Max_Secret_Bytes + 1 => 'a'])
+           = Identity.Secrets.Text.Too_Large
+         and then Identity.Secrets.Text.Size_Rejected
+           (Identity.Secrets.Text.Validate_UTF_8
+              ([1 .. Identity.Limits.Max_Secret_Bytes + 1 => 'a']))
+         and then Identity.Secrets.Text.Rejected_Input
+           (Identity.Secrets.Text.Invalid_UTF_8),
+         "IDENTITY-SECRET-001 secret text validates UTF-8 and bounded length before construction");
+
+      Assert
+        (Context.State = Identity.Authentication.Security_Contexts.Anonymous,
+         "anonymous security context is explicit");
+   end Test_01_identifier_encodeable;
+
+   procedure Test_02_identity_subject_usernam (T : in out AUnit.Test_Cases.Test_Case'Class) is
+      pragma Unreferenced (T);
+      Auth_Context : constant Identity.Authentication.Contexts.Authentication_Context :=
+        (Operation => O1,
+         Correlation => R1,
+         Requested_At => 5,
+         Risk_Key => Identity.Text.Bounded.From_String ("risk"),
+         Synthetic_Verification_Required => True);
+      Auth_Request : constant Identity.Authentication.Requests.Authentication_Request :=
+        (Subject =>
+           (Kind => Identity.Identifiers.Registry.From_String ("identity.subject.username"),
+            Value => Identity.Text.Bounded.From_String ("ada")),
+         Credential_Input_Present => True,
+         Requested_Profile => Identity.Assurance.Profiles.Administrative,
+         Session_Request => Identity.Sessions.Policies.Interactive_Session,
+         Context => Auth_Context);
+      Attributes : constant Identity.Assurance.Attributes.Assurance_Attributes :=
+        (Factor_Count => 2,
+         Independent_Factor_Count => 2,
+         Phishing_Resistant => False,
+         Hardware_Bound => False,
+         Device_Bound => False,
+         Federation => False,
+         Recovery_Used => False,
+         User_Presence => True,
+         User_Verification => True,
+         Managed_Credential => False,
+         Recent_Authentication => True);
+      Evaluation : constant Identity.Assurance.Evaluation.Assurance_Evaluation_Result :=
+        Identity.Assurance.Evaluation.Evaluate
+          (Identity.Assurance.Profiles.Administrative, Attributes);
+      Admin_Requirements : constant Identity.Assurance.Evaluation.Assurance_Profile_Requirements :=
+        Identity.Assurance.Evaluation.Requirements_For
+          (Identity.Assurance.Profiles.Administrative);
+      Unknown_Requirements : constant Identity.Assurance.Evaluation.Assurance_Profile_Requirements :=
+        Identity.Assurance.Evaluation.Requirements_For
+          (Identity.Identifiers.Registry.From_String ("identity.assurance.unknown"));
+      Recovery_Attributes : constant Identity.Assurance.Attributes.Assurance_Attributes :=
+        (Attributes with delta Recovery_Used => True);
+      Sensitive_With_Recovery : constant Identity.Assurance.Evaluation.Assurance_Evaluation_Result :=
+        Identity.Assurance.Evaluation.Evaluate
+          (Identity.Assurance.Profiles.Sensitive, Recovery_Attributes);
+      Recovery_Profile_Result : constant Identity.Assurance.Evaluation.Assurance_Evaluation_Result :=
+        Identity.Assurance.Evaluation.Evaluate
+          (Identity.Assurance.Profiles.Recovery_Restricted, Recovery_Attributes);
+      Inconsistent_Attributes : constant Identity.Assurance.Attributes.Assurance_Attributes :=
+        (Attributes with delta Independent_Factor_Count => 3);
+      Inconsistent_Evaluation : constant Identity.Assurance.Evaluation.Assurance_Evaluation_Result :=
+        Identity.Assurance.Evaluation.Evaluate
+          (Identity.Assurance.Profiles.Administrative, Inconsistent_Attributes);
+      Dependency : constant Identity.Assurance.Dependencies.Evidence_Dependency :=
+        (Domain => Identity.Identifiers.Registry.From_String ("identity.factor.totp"),
+         Independent => True);
+      Assurance_View : constant Identity.Assurance.Projections.Assurance_Projection :=
+        (Profile => Identity.Assurance.Profiles.Administrative,
+         Level => Evaluation.Level,
+         Attributes => Attributes,
+         Recovery_Restricted => Evaluation.Recovery_Restricted);
+      Auth_View : constant Identity.Authentication.Projections.Authentication_Projection :=
+        (Status => Identity.Results.Succeeded,
+         Principal => (Present => True, Value => P1),
+         Assurance => Evaluation.Level,
+         Attributes => Attributes,
+         Authenticated_At => 5,
+         Authentication_Revision => 1,
+         Evidence_Revision => 1);
+      Authenticated_Context : constant Identity.Authentication.Security_Contexts.Security_Context :=
+        (State => Identity.Authentication.Security_Contexts.Authenticated,
+         Principal => P1,
+         Kind => Identity.Principals.Kinds.Human,
+         Assurance => Evaluation.Level,
+         Attributes => Attributes,
+         Original_Authenticated_At => 5,
+         Primary_Authenticated_At => 5,
+         MFA_Completed_At => (Present => True, Value => 6),
+         Step_Up_At => (Present => False),
+         Session => (Present => True, Value => S1),
+         Validity_Boundary => (Present => True, Value => 12),
+         Authentication_Revision => 1,
+         Evidence_Revision => 1,
+         Session_Revision => 1,
+         Recovery_Restricted => False,
+         Eligible => True);
+      Baseline : constant Identity.Authentication.Security_Contexts.Revision_Baseline :=
+        Identity.Authentication.Security_Contexts.Current_Revisions (Authenticated_Context);
+      Changed_Authentication : constant Identity.Authentication.Security_Contexts.Revision_Baseline :=
+        (Baseline with delta Authentication => Baseline.Authentication + 1);
+      Changed_Evidence : constant Identity.Authentication.Security_Contexts.Revision_Baseline :=
+        (Baseline with delta Evidence => Baseline.Evidence + 1);
+      Changed_Session : constant Identity.Authentication.Security_Contexts.Revision_Baseline :=
+        (Baseline with delta Session => Baseline.Session + 1);
+      Missing_Session : constant Identity.Authentication.Security_Contexts.Revision_Baseline :=
+        (Baseline with delta Session_Present => False);
+      Expiring_Anonymous : constant Identity.Authentication.Security_Contexts.Security_Context :=
+        (State => Identity.Authentication.Security_Contexts.Anonymous,
+         Valid_Until => (Present => True, Value => 9));
+      Ineligible_Context : constant Identity.Authentication.Security_Contexts.Security_Context :=
+        (Authenticated_Context with delta Eligible => False);
+      Expired_Authenticated : constant Identity.Authentication.Security_Contexts.Security_Context :=
+        (Authenticated_Context with delta Validity_Boundary => (Present => True, Value => 6));
+      Step_Up_Context : constant Identity.Authentication.Security_Contexts.Security_Context :=
+        (Authenticated_Context with delta Step_Up_At => (Present => True, Value => 11));
+      Recent_Window : constant Identity.Times.Durations.Authentication_Maximum_Age := 5;
+   begin
+      Assert
+        (Identity.Authentication.Contexts.Enumeration_Safe (Auth_Context)
+         and then Identity.Authentication.Requests.Bounded_And_Complete (Auth_Request),
+         "IDENTITY-AUTH-002 authentication request context is bounded and enumeration-safe");
+
+      Assert
+        (Evaluation.Satisfied
+         and then Identity.Assurance.Evaluation.Evaluation_Satisfied (Evaluation)
+         and then Evaluation.Level = Identity.Assurance.Levels.Administrative
+         and then Identity.Assurance.Attributes.Consistent (Attributes)
+         and then Identity.Assurance.Attributes.Meets_Factor_Floor
+           (Attributes, 2, 2)
+         and then Identity.Assurance.Attributes.Has_Verified_User (Attributes)
+         and then not Identity.Assurance.Attributes.Recovery_Restricted
+           (Attributes)
+         and then not Identity.Assurance.Attributes.Consistent (Inconsistent_Attributes)
+         and then not Identity.Assurance.Attributes.Meets_Factor_Floor
+           (Inconsistent_Attributes, 2, 2)
+         and then not Inconsistent_Evaluation.Satisfied
+         and then Identity.Assurance.Evaluation.Evaluation_Rejected
+           (Inconsistent_Evaluation)
+         and then Identity.Assurance.Dependencies.Counts_As_Independent (Dependency)
+         and then Assurance_View.Level = Identity.Assurance.Levels.Administrative
+         and then Auth_View.Principal.Present,
+         "IDENTITY-ASSURANCE-002 assurance evaluation uses consistent attributes and dependency independence");
+
+      Assert
+        (Admin_Requirements.Known
+         and then Identity.Assurance.Evaluation.Requirements_Known
+           (Admin_Requirements)
+         and then Identity.Assurance.Evaluation.Requirements_Unknown
+           (Unknown_Requirements)
+         and then Admin_Requirements.Minimum_Factors = 2
+         and then Admin_Requirements.Minimum_Independent_Factors = 2
+         and then Admin_Requirements.Require_Recent
+         and then Admin_Requirements.Require_User_Verification
+         and then not Admin_Requirements.Permit_Recovery_Used,
+         "IDENTITY-ASSURANCE-002 assurance profile requirements are explicit");
+
+      Assert
+        (not Sensitive_With_Recovery.Satisfied
+         and then Identity.Assurance.Evaluation.Evaluation_Rejected
+           (Sensitive_With_Recovery)
+         and then Sensitive_With_Recovery.Recovery_Restricted
+         and then Identity.Assurance.Evaluation.Evaluation_Recovery_Restricted
+           (Sensitive_With_Recovery)
+         and then Recovery_Profile_Result.Satisfied
+         and then Identity.Assurance.Evaluation.Evaluation_Satisfied
+           (Recovery_Profile_Result)
+         and then Recovery_Profile_Result.Recovery_Restricted,
+         "IDENTITY-ASSURANCE-002 recovery-used evidence is restricted to recovery profile");
+
+      Assert
+        (not Identity.Authentication.Security_Contexts.Revision_Changed
+           (Authenticated_Context, Baseline)
+         and then Identity.Authentication.Security_Contexts.Revision_Changed
+           (Authenticated_Context, Changed_Authentication)
+         and then Identity.Authentication.Security_Contexts.Revision_Changed
+           (Authenticated_Context, Changed_Evidence)
+         and then Identity.Authentication.Security_Contexts.Revision_Changed
+           (Authenticated_Context, Changed_Session)
+         and then Identity.Authentication.Security_Contexts.Revision_Changed
+           (Authenticated_Context, Missing_Session),
+         "IDENTITY-SECCTX-001 security context detects stale authentication evidence and session revisions");
+
+      Assert
+        (Identity.Authentication.Security_Contexts.Usable_For_Downstream
+           (Authenticated_Context, Baseline, 7)
+         and then Identity.Authentication.Security_Contexts.Admission_Status
+           (Authenticated_Context, Baseline, 7)
+           = Identity.Authentication.Security_Contexts.Context_Usable
+         and then Identity.Authentication.Security_Contexts.Admission_Accepted
+           (Identity.Authentication.Security_Contexts.Admission_Status
+              (Authenticated_Context, Baseline, 7))
+         and then not Identity.Authentication.Security_Contexts.Admission_Rejected
+           (Identity.Authentication.Security_Contexts.Admission_Status
+              (Authenticated_Context, Baseline, 7))
+         and then Identity.Authentication.Security_Contexts.Has_Session
+           (Authenticated_Context)
+         and then not Identity.Authentication.Security_Contexts.Usable_For_Downstream
+           (Authenticated_Context, Changed_Evidence, 7)
+         and then Identity.Authentication.Security_Contexts.Admission_Status
+           (Authenticated_Context, Changed_Evidence, 7)
+           = Identity.Authentication.Security_Contexts.Stale_Revisions
+         and then Identity.Authentication.Security_Contexts.Stale_Revisions_Rejected
+           (Identity.Authentication.Security_Contexts.Admission_Status
+              (Authenticated_Context, Changed_Evidence, 7))
+         and then Identity.Authentication.Security_Contexts.Admission_Rejected
+           (Identity.Authentication.Security_Contexts.Admission_Status
+              (Authenticated_Context, Changed_Evidence, 7))
+         and then Identity.Authentication.Security_Contexts.Usable_For_Downstream
+           (Expiring_Anonymous,
+            Identity.Authentication.Security_Contexts.Current_Revisions (Expiring_Anonymous),
+            8)
+         and then not Identity.Authentication.Security_Contexts.Has_Session
+           (Expiring_Anonymous)
+         and then not Identity.Authentication.Security_Contexts.Usable_For_Downstream
+           (Expiring_Anonymous,
+            Identity.Authentication.Security_Contexts.Current_Revisions (Expiring_Anonymous),
+            10)
+         and then Identity.Authentication.Security_Contexts.Admission_Status
+           (Expiring_Anonymous,
+            Identity.Authentication.Security_Contexts.Current_Revisions (Expiring_Anonymous),
+            10)
+           = Identity.Authentication.Security_Contexts.Anonymous_Expired
+         and then Identity.Authentication.Security_Contexts.Anonymous_Expiration_Rejected
+           (Identity.Authentication.Security_Contexts.Admission_Status
+              (Expiring_Anonymous,
+               Identity.Authentication.Security_Contexts.Current_Revisions (Expiring_Anonymous),
+               10))
+         and then Identity.Authentication.Security_Contexts.Admission_Rejected
+           (Identity.Authentication.Security_Contexts.Admission_Status
+              (Expiring_Anonymous,
+               Identity.Authentication.Security_Contexts.Current_Revisions (Expiring_Anonymous),
+               10))
+         and then not Identity.Authentication.Security_Contexts.Usable_For_Downstream
+           (Ineligible_Context, Baseline, 7)
+         and then Identity.Authentication.Security_Contexts.Admission_Status
+           (Ineligible_Context, Baseline, 7)
+           = Identity.Authentication.Security_Contexts.Authenticated_Ineligible
+         and then Identity.Authentication.Security_Contexts.Authenticated_Eligibility_Rejected
+           (Identity.Authentication.Security_Contexts.Admission_Status
+              (Ineligible_Context, Baseline, 7))
+         and then Identity.Authentication.Security_Contexts.Admission_Rejected
+           (Identity.Authentication.Security_Contexts.Admission_Status
+              (Ineligible_Context, Baseline, 7)),
+         "IDENTITY-SECCTX-001 downstream security context admission classifies revisions validity and eligibility");
+
+      Assert
+        (not Identity.Authentication.Security_Contexts.Usable_For_Downstream
+           (Expired_Authenticated, Baseline, 7)
+         and then Identity.Authentication.Security_Contexts.Admission_Status
+           (Expired_Authenticated, Baseline, 7)
+           = Identity.Authentication.Security_Contexts.Authenticated_Expired
+         and then Identity.Authentication.Security_Contexts.Authenticated_Expiration_Rejected
+           (Identity.Authentication.Security_Contexts.Admission_Status
+              (Expired_Authenticated, Baseline, 7))
+         and then Identity.Authentication.Security_Contexts.Admission_Rejected
+           (Identity.Authentication.Security_Contexts.Admission_Status
+              (Expired_Authenticated, Baseline, 7)),
+         "IDENTITY-SECCTX-001 authenticated security context validity boundary is classified");
+
+      Assert
+        (Identity.Authentication.Security_Contexts.Original_Authentication_Recent
+           (Authenticated_Context, 10, Recent_Window)
+         and then not Identity.Authentication.Security_Contexts.Original_Authentication_Recent
+           (Authenticated_Context, 11, Recent_Window)
+         and then not Identity.Authentication.Security_Contexts.Original_Authentication_Recent
+           (Expiring_Anonymous, 5, Recent_Window)
+         and then Identity.Authentication.Security_Contexts.Primary_Authentication_Recent
+           (Authenticated_Context, 10, Recent_Window)
+         and then Identity.Authentication.Security_Contexts.MFA_Completion_Recent
+           (Authenticated_Context, 11, Recent_Window)
+         and then not Identity.Authentication.Security_Contexts.MFA_Completion_Recent
+           (Authenticated_Context, 12, Recent_Window)
+         and then Identity.Authentication.Security_Contexts.Step_Up_Recent
+           (Step_Up_Context, 16, Recent_Window)
+         and then not Identity.Authentication.Security_Contexts.Step_Up_Recent
+           (Authenticated_Context, 16, Recent_Window),
+         "IDENTITY-SECCTX-001 authentication age checks distinguish original primary MFA and step-up instants");
+
+      Assert
+        (Identity.Assurance.Evaluation.Requirements_Known (Admin_Requirements)
+         and then not Identity.Assurance.Evaluation.Requirements_Unknown
+           (Admin_Requirements)
+         and then Identity.Assurance.Evaluation.Requirements_Unknown
+           (Unknown_Requirements)
+         and then not Identity.Assurance.Evaluation.Requirements_Known
+           (Unknown_Requirements)
+         and then Identity.Assurance.Evaluation.Evaluation_Satisfied (Evaluation)
+         and then not Identity.Assurance.Evaluation.Evaluation_Rejected (Evaluation)
+         and then Identity.Assurance.Evaluation.Evaluation_Rejected
+           (Inconsistent_Evaluation)
+         and then not Identity.Assurance.Evaluation.Evaluation_Satisfied
+           (Inconsistent_Evaluation)
+         and then Identity.Assurance.Evaluation.Evaluation_Rejected
+           (Identity.Assurance.Evaluation.Evaluate
+              (Identity.Identifiers.Registry.From_String ("identity.assurance.unknown"),
+               Attributes))
+         and then Identity.Assurance.Evaluation.Evaluation_Rejected
+           (Sensitive_With_Recovery)
+         and then Identity.Assurance.Evaluation.Evaluation_Recovery_Restricted
+           (Sensitive_With_Recovery)
+         and then Identity.Assurance.Evaluation.Evaluation_Satisfied
+           (Recovery_Profile_Result)
+         and then Identity.Assurance.Evaluation.Evaluation_Recovery_Restricted
+           (Recovery_Profile_Result)
+         and then not Identity.Assurance.Evaluation.Evaluation_Recovery_Restricted
+           (Evaluation),
+         "assurance profile requirement and evaluation result predicates classify accepted "
+         & "rejected unknown and recovery-restricted outcomes");
+
+      Assert
+        (Identity.Authentication.Security_Contexts.Admission_Status
+           (Authenticated_Context, Baseline, 7)
+           = Identity.Authentication.Security_Contexts.Context_Usable
+         and then Identity.Authentication.Security_Contexts.Admission_Accepted
+           (Identity.Authentication.Security_Contexts.Admission_Status
+              (Authenticated_Context, Baseline, 7))
+         and then Identity.Authentication.Security_Contexts.Admission_Status
+           (Authenticated_Context, Changed_Authentication, 7)
+           = Identity.Authentication.Security_Contexts.Stale_Revisions
+         and then Identity.Authentication.Security_Contexts.Stale_Revisions_Rejected
+           (Identity.Authentication.Security_Contexts.Admission_Status
+              (Authenticated_Context, Changed_Session, 7))
+         and then Identity.Authentication.Security_Contexts.Admission_Status
+           (Expiring_Anonymous,
+            Identity.Authentication.Security_Contexts.Current_Revisions
+              (Expiring_Anonymous),
+            10)
+           = Identity.Authentication.Security_Contexts.Anonymous_Expired
+         and then Identity.Authentication.Security_Contexts.Anonymous_Expiration_Rejected
+           (Identity.Authentication.Security_Contexts.Admission_Status
+              (Expiring_Anonymous,
+               Identity.Authentication.Security_Contexts.Current_Revisions
+                 (Expiring_Anonymous),
+               10))
+         and then Identity.Authentication.Security_Contexts.Admission_Status
+           (Ineligible_Context, Baseline, 7)
+           = Identity.Authentication.Security_Contexts.Authenticated_Ineligible
+         and then Identity.Authentication.Security_Contexts
+           .Authenticated_Eligibility_Rejected
+           (Identity.Authentication.Security_Contexts.Admission_Status
+              (Ineligible_Context, Baseline, 7))
+         and then Identity.Authentication.Security_Contexts.Admission_Status
+           (Expired_Authenticated, Baseline, 7)
+           = Identity.Authentication.Security_Contexts.Authenticated_Expired
+         and then Identity.Authentication.Security_Contexts
+           .Authenticated_Expiration_Rejected
+           (Identity.Authentication.Security_Contexts.Admission_Status
+              (Expired_Authenticated, Baseline, 7))
+         and then not Identity.Authentication.Security_Contexts
+           .Authenticated_Expiration_Rejected
+           (Identity.Authentication.Security_Contexts.Admission_Status
+              (Ineligible_Context, Baseline, 7))
+         and then not Identity.Authentication.Security_Contexts.Admission_Rejected
+           (Identity.Authentication.Security_Contexts.Admission_Status
+              (Authenticated_Context, Baseline, 7)),
+         "downstream security context admission cause predicates cover accepted stale "
+         & "anonymous expired ineligible and authenticated expired states");
+   end Test_02_identity_subject_usernam;
+
+   procedure Test_03_IDENTITY_SECRET_001_foun (T : in out AUnit.Test_Cases.Test_Case'Class) is
+      pragma Unreferenced (T);
+   begin
+      Assert
+        (Identity.Secrets.Bytes.Redacted_Image (Secret_A) = "[identity-secret:redacted]",
+         "IDENTITY-SECRET-001 foundation_secret_redaction");
+   end Test_03_IDENTITY_SECRET_001_foun;
+
+   procedure Test_04_section (T : in out AUnit.Test_Cases.Test_Case'Class) is
+      pragma Unreferenced (T);
+      One_Time : Identity.Secrets.One_Time.One_Time_Secret :=
+        Identity.Secrets.One_Time.Create (Secret_A);
+      Extracted : Identity.Secrets.Bytes.Secret_Bytes;
+      Pepper : constant Identity.Secrets.Keys.Pepper_Material := Secret_B;
+      Empty_Present : constant Identity.Secrets.Bytes.Secret_Bytes :=
+        Identity.Secrets.Text.From_UTF_8 ("");
+      Absent_Secret : Identity.Secrets.Bytes.Secret_Bytes;
+      Cleared : Identity.Secrets.Bytes.Secret_Bytes := Secret_A;
+      Oversize_Bearer : constant Identity.Secrets.Bytes.Secret_Bytes :=
+        Identity.Secrets.Text.From_UTF_8
+          ([1 .. Identity.Limits.Max_Bearer_Secret_Bytes + 1 => 's']);
+      Oversize_Recovery : constant Identity.Secrets.Recovery_Codes.Recovery_Code :=
+        Identity.Secrets.Text.From_UTF_8
+          ([1 .. Identity.Limits.Max_Recovery_Code_Bytes + 1 => 'r']);
+   begin
+      Identity.Secrets.One_Time.Extract (One_Time, Extracted);
+      Identity.Secrets.Bytes.Clear (Cleared);
+      Assert
+        (Identity.Secrets.One_Time.Is_Consumed (One_Time)
+         and then Identity.Secrets.Bytes.Is_Present (Extracted)
+         and then Identity.Secrets.Bytes.Length (Extracted)
+           = Identity.Secrets.Bytes.Length (Secret_A)
+         and then Identity.Secrets.Bytes.Length (Pepper)
+           = Identity.Secrets.Bytes.Length (Secret_B)
+         and then Identity.Secrets.Bytes.Is_Present (Empty_Present)
+         and then Identity.Secrets.Bytes.Length (Empty_Present) = 0
+         and then not Identity.Secrets.Bytes.Is_Present (Cleared),
+         "IDENTITY-SECRET-002 one-time secret extraction pepper material and presence are bounded");
+
+      Assert
+        (Identity.Secrets.Sessions.Validate (Session_Secret)
+           = Identity.Secrets.Sessions.Accepted
+         and then Identity.Secrets.Sessions.Accepted_Input
+           (Identity.Secrets.Sessions.Validate (Session_Secret))
+         and then Identity.Secrets.Sessions.Validate (Absent_Secret)
+           = Identity.Secrets.Sessions.Absent
+         and then Identity.Secrets.Sessions.Missing_Input
+           (Identity.Secrets.Sessions.Validate (Absent_Secret))
+         and then Identity.Secrets.Sessions.Validate (Empty_Present)
+           = Identity.Secrets.Sessions.Empty
+         and then Identity.Secrets.Sessions.Missing_Input
+           (Identity.Secrets.Sessions.Validate (Empty_Present))
+         and then Identity.Secrets.Sessions.Validate (Oversize_Bearer)
+           = Identity.Secrets.Sessions.Too_Large
+         and then Identity.Secrets.Sessions.Size_Rejected
+           (Identity.Secrets.Sessions.Validate (Oversize_Bearer))
+         and then Identity.Secrets.Tokens.Validate_Reset (Reset_Token_Secret)
+           = Identity.Secrets.Tokens.Accepted
+         and then Identity.Secrets.Tokens.Accepted_Input
+           (Identity.Secrets.Tokens.Validate_Reset (Reset_Token_Secret))
+         and then Identity.Secrets.Tokens.Validate_Verification (Oversize_Bearer)
+           = Identity.Secrets.Tokens.Too_Large
+         and then Identity.Secrets.Tokens.Size_Rejected
+           (Identity.Secrets.Tokens.Validate_Verification (Oversize_Bearer))
+         and then Identity.Secrets.API_Keys.Validate (API_Key_Secret)
+           = Identity.Secrets.API_Keys.Accepted
+         and then Identity.Secrets.API_Keys.Accepted_Input
+           (Identity.Secrets.API_Keys.Validate (API_Key_Secret))
+         and then Identity.Secrets.API_Keys.Missing_Input
+           (Identity.Secrets.API_Keys.Validate (Empty_Present))
+         and then Identity.Secrets.API_Keys.Validate (Oversize_Bearer)
+           = Identity.Secrets.API_Keys.Too_Large
+         and then Identity.Secrets.API_Keys.Size_Rejected
+           (Identity.Secrets.API_Keys.Validate (Oversize_Bearer))
+         and then Identity.Secrets.Recovery_Codes.Validate (Recovery_Code)
+           = Identity.Secrets.Recovery_Codes.Accepted
+         and then Identity.Secrets.Recovery_Codes.Accepted_Input
+           (Identity.Secrets.Recovery_Codes.Validate (Recovery_Code))
+         and then Identity.Secrets.Recovery_Codes.Missing_Input
+           (Identity.Secrets.Recovery_Codes.Validate (Empty_Present))
+         and then Identity.Secrets.Recovery_Codes.Validate (Oversize_Recovery)
+           = Identity.Secrets.Recovery_Codes.Too_Large
+         and then Identity.Secrets.Recovery_Codes.Size_Rejected
+           (Identity.Secrets.Recovery_Codes.Validate (Oversize_Recovery)),
+         "IDENTITY-SECRET-002 semantic secret validators enforce hard family length limits");
+   end Test_04_section;
+
+   procedure Test_05_cryptolib_constant_time (T : in out AUnit.Test_Cases.Test_Case'Class) is
+      pragma Unreferenced (T);
+   begin
+      Assert
+        (Identity.Secrets.Comparison.Equal (Secret_A, Secret_B),
+         "cryptolib constant-time comparison contract");
+   end Test_05_cryptolib_constant_time;
+
+   procedure Test_06_identity_public (T : in out AUnit.Test_Cases.Test_Case'Class) is
+      pragma Unreferenced (T);
+      Public_Text : constant Identity.Text.Bounded.Bounded_Text :=
+        Identity.Text.UTF_8.From_String ("identity-public");
+      Hidden_Text : constant Identity.Text.Bounded.Bounded_Text :=
+        Identity.Text.Redacted.Public_Or_Redacted (Public_Text, False);
+      Expiration : constant Identity.Times.Expiration :=
+        Identity.Times.Expirations.At_Time (10);
+      Constructed_Expiration : constant Identity.Times.Expirations.Expiration_Construction :=
+        Identity.Times.Expirations.After (10, 30);
+      Overflow_Expiration : constant Identity.Times.Expirations.Expiration_Construction :=
+        Identity.Times.Expirations.After (Identity.Times.Instant'Last, 1);
+      Repository_Error : constant Identity.Errors.Error_Value :=
+        (Category => Identity.Errors.Operational_Failure,
+         Retry => Identity.Errors.Retry_After,
+         Cause => Identity.Errors.Repository,
+         Operation_Set => True,
+         Correlation_Set => True);
+      Crypto_Error : constant Identity.Errors.Error_Value :=
+        (Category => Identity.Errors.Operational_Failure,
+         Retry => Identity.Errors.Retry_Same_Request,
+         Cause => Identity.Errors.Cryptographic_Service,
+         Operation_Set => False,
+         Correlation_Set => False);
+      Rejection_Error : constant Identity.Errors.Error_Value :=
+        (Category => Identity.Errors.Rejection,
+         Retry => Identity.Errors.Do_Not_Retry,
+         Cause => Identity.Errors.Credential_State,
+         Operation_Set => True,
+         Correlation_Set => True);
+      Public_Repository_Error : constant Identity.Errors.Public.Public_Error_Projection :=
+        Identity.Errors.Public.To_Public (Repository_Error);
+      Diagnostic_Repository_Error : constant Identity.Errors.Public.Public_Error_Projection :=
+        Identity.Errors.Public.To_Public (Repository_Error, True);
+      Public_Crypto_Error : constant Identity.Errors.Public.Public_Error_Projection :=
+        Identity.Errors.Public.To_Public (Crypto_Error);
+      Public_Rejection_Error : constant Identity.Errors.Public.Public_Error_Projection :=
+        Identity.Errors.Public.To_Public (Rejection_Error);
+   begin
+      Assert
+        (Identity.Text.UTF_8.Validate ("identity") = Identity.Text.UTF_8.Valid
+         and then Identity.Text.UTF_8.Valid_Status
+           (Identity.Text.UTF_8.Validate ("identity"))
+         and then Identity.Text.UTF_8.Validate (Character'Val (16#80#) & "bad")
+           = Identity.Text.UTF_8.Invalid
+         and then Identity.Text.UTF_8.Invalid_Status
+           (Identity.Text.UTF_8.Validate (Character'Val (16#80#) & "bad"))
+         and then Identity.Text.UTF_8.Rejected
+           (Identity.Text.UTF_8.Validate (Character'Val (16#80#) & "bad"))
+         and then Identity.Text.UTF_8.Size_Rejected (Identity.Text.UTF_8.Too_Large)
+         and then Identity.Text.Bounded.Image (Hidden_Text) = "[identity-redacted]",
+         "IDENTITY-TEXT-001 UTF-8 validation and redacted text helpers are bounded");
+
+      Assert
+        (Identity.Errors.Messages.Message_For (Identity.Errors.Rejection)
+           = Identity.Text.Messages.Authentication_Rejected
+         and then Identity.Errors.Retry.Retryable (Identity.Errors.Retry_After)
+         and then Identity.Errors.Codes.Repository_Unavailable
+           /= Identity.Errors.Codes.Crypto_Unavailable
+         and then Identity.Errors.Diagnostics.Dependency_Failure
+           /= Identity.Errors.Diagnostics.Invariant_Failure,
+         "IDENTITY-ERROR-001 error codes messages retry and diagnostics are stable");
+
+      Assert
+        (Public_Repository_Error.Code = Identity.Errors.Codes.Repository_Unavailable
+         and then Public_Repository_Error.Retry = Repository_Error.Retry
+         and then Public_Repository_Error.Retry = Identity.Errors.Retry_After
+         and then Public_Crypto_Error.Code = Identity.Errors.Codes.Crypto_Unavailable
+         and then Public_Crypto_Error.Retry = Crypto_Error.Retry
+         and then Public_Crypto_Error.Retry = Identity.Errors.Retry_Same_Request
+         and then Public_Rejection_Error.Code
+           = Identity.Errors.Codes.Authentication_Rejected
+         and then Public_Rejection_Error.Retry = Rejection_Error.Retry
+         and then Public_Rejection_Error.Retry = Identity.Errors.Do_Not_Retry
+         and then Public_Repository_Error.Code /= Public_Crypto_Error.Code
+         and then Identity.Errors.Public.Code_For (Repository_Error)
+           = Public_Repository_Error.Code
+         and then Identity.Errors.Public.Code_For (Crypto_Error)
+           = Public_Crypto_Error.Code
+         and then Diagnostic_Repository_Error.Code = Public_Repository_Error.Code
+         and then Diagnostic_Repository_Error.Retry = Public_Repository_Error.Retry
+         and then Identity.Errors.Public.Retryable (Public_Repository_Error)
+         and then not Identity.Errors.Public.Retryable (Public_Rejection_Error),
+         "public error projection preserves stable code and retry class");
+
+      Assert
+        (Public_Repository_Error.Code = Identity.Errors.Codes.Repository_Unavailable
+         and then Public_Repository_Error.Message =
+           Identity.Text.Messages.Operational_Failure
+         and then Public_Repository_Error.Retry = Identity.Errors.Retry_After
+         and then Public_Repository_Error.Cause = Identity.Errors.Repository
+         and then Public_Repository_Error.Operation_Set
+         and then Public_Repository_Error.Correlation_Set
+         and then not Public_Repository_Error.Diagnostic_Allowed
+         and then not Identity.Errors.Public.Diagnostic_Disclosure_Allowed
+           (Public_Repository_Error)
+         and then Diagnostic_Repository_Error.Diagnostic_Allowed
+         and then Identity.Errors.Public.Diagnostic_Disclosure_Allowed
+           (Diagnostic_Repository_Error)
+         and then Identity.Errors.Public.Retryable (Public_Repository_Error)
+         and then Identity.Errors.Public.Operational (Public_Repository_Error)
+         and then Identity.Errors.Public.Repository_Unavailable (Public_Repository_Error)
+         and then Identity.Errors.Public.Dependency_Unavailable (Public_Repository_Error)
+         and then not Identity.Errors.Public.Crypto_Unavailable (Public_Repository_Error),
+         "IDENTITY-ERROR-001 public error projection redacts diagnostics "
+         & "by default and predicates classify retry diagnostics and "
+         & "operational status");
+
+      Assert
+        (Public_Crypto_Error.Code = Identity.Errors.Codes.Crypto_Unavailable
+         and then Public_Crypto_Error.Message =
+           Identity.Text.Messages.Operational_Failure
+         and then Public_Crypto_Error.Retry = Identity.Errors.Retry_Same_Request
+         and then not Public_Crypto_Error.Diagnostic_Allowed
+         and then not Identity.Errors.Public.Diagnostic_Disclosure_Allowed
+           (Public_Crypto_Error)
+         and then Identity.Errors.Public.Retryable (Public_Crypto_Error)
+         and then Identity.Errors.Public.Operational (Public_Crypto_Error)
+         and then Identity.Errors.Public.Crypto_Unavailable (Public_Crypto_Error)
+         and then Identity.Errors.Public.Dependency_Unavailable (Public_Crypto_Error)
+         and then not Identity.Errors.Public.Repository_Unavailable (Public_Crypto_Error),
+         "IDENTITY-ERROR-001 public error projection preserves stable code retry class and operational predicate");
+
+      Assert
+        (Identity.Errors.Public.Generic_Authentication_Rejection (Public_Rejection_Error)
+         and then not Identity.Errors.Public.Dependency_Unavailable (Public_Rejection_Error)
+         and then not Identity.Errors.Public.Operational (Public_Rejection_Error)
+         and then not Identity.Errors.Public.Retryable (Public_Rejection_Error),
+         "IDENTITY-ERROR-001 public error projection classifiers distinguish generic rejection "
+         & "from dependency failures");
+
+      Assert
+        (Identity.Times.Instants.Epoch = 0
+         and then Identity.Times.Durations.Seconds (5) = 5
+         and then Identity.Times.Durations.To_Base
+           (Identity.Times.Durations.Session_Idle_Timeout'(30)) = 30
+         and then Identity.Times.Durations.To_Base
+           (Identity.Times.Durations.Session_Absolute_Lifetime'(300)) = 300
+         and then Identity.Times.Durations.To_Base
+           (Identity.Times.Durations.Token_Lifetime'(60)) = 60
+         and then Identity.Times.Durations.To_Base
+           (Identity.Times.Durations.Lockout_Duration'(15)) = 15
+         and then Identity.Times.Expired (11, Expiration)
+         and then Constructed_Expiration.Status = Identity.Times.Expirations.Constructed
+         and then Identity.Times.Expirations.Construction_Succeeded
+           (Identity.Times.Expirations.Constructed)
+         and then Identity.Times.Expirations.Construction_Succeeded
+           (Constructed_Expiration)
+         and then Identity.Times.Expirations.Present_Expiration
+           (Constructed_Expiration)
+         and then Constructed_Expiration.Value.Present
+         and then Constructed_Expiration.Value.Time_Point = 40
+         and then Overflow_Expiration.Status = Identity.Times.Expirations.Time_Overflow
+         and then Identity.Times.Expirations.Overflow_Rejected
+           (Identity.Times.Expirations.Time_Overflow)
+         and then Identity.Times.Expirations.Overflow_Rejected
+           (Overflow_Expiration)
+         and then not Identity.Times.Expirations.Present_Expiration
+           (Overflow_Expiration)
+         and then not Overflow_Expiration.Value.Present,
+         "IDENTITY-TIME-001 semantic time helper constructors are explicit");
+
+      Assert
+        (Identity.Versions.Same_Entity_Version
+           (Identity.Versions.Entity_Version'(3),
+            Identity.Versions.Entity_Version'(3))
+         and then not Identity.Versions.Same_Entity_Version
+           (Identity.Versions.Entity_Version'(3),
+            Identity.Versions.Entity_Version'(4))
+         and then Identity.Versions.Next_Entity_Version
+           (Identity.Versions.Entity_Version'(3)) = 4
+         and then Identity.Versions.Next_Entity_Version
+           (Identity.Versions.Entity_Version'Last) = Identity.Versions.Entity_Version'Last
+         and then Identity.Contracts.Satisfied_Status
+           (Identity.Contracts.Require (True))
+         and then Identity.Contracts.Violated_Status
+           (Identity.Contracts.Require (False))
+         and then Identity.Contracts.Rejected
+           (Identity.Contracts.Require (False)),
+         "IDENTITY-FOUNDATION-001 entity version comparison and saturated advance are explicit");
+   end Test_06_identity_public;
+
+   procedure Test_07_budget_and_crypto_bindin (T : in out AUnit.Test_Cases.Test_Case'Class) is
+      pragma Unreferenced (T);
+      Orchestration_Status : Identity.Internal.Orchestration.Orchestration_Status;
+      Transition_Status : Identity.Internal.Transitions.Transition_Status;
+      Validation_Status : Identity.Internal.Validation.Validation_Status;
+      Encoding_Status : Identity.Internal.Encoding.Encoding_Status;
+      Event_Status : Identity.Internal.Events.Event_Status;
+      Budget_Status : Identity.Internal.Resource_Budgets.Budget_Status;
+      Crypto_Status : Identity.Internal.Crypto_Bindings.Crypto_Binding_Status;
+   begin
+      if Identity.Secrets.Bytes.Length (Secret_A) = 0 then
+         Orchestration_Status := Identity.Internal.Orchestration.Faulted;
+         Transition_Status := Identity.Internal.Transitions.Faulted;
+         Validation_Status := Identity.Internal.Validation.Invariant_Breach;
+         Encoding_Status := Identity.Internal.Encoding.Malformed;
+         Event_Status := Identity.Internal.Events.Rejected_Secret_Data;
+         Budget_Status := Identity.Internal.Resource_Budgets.Hard_Limit_Exceeded;
+         Crypto_Status := Identity.Internal.Crypto_Bindings.Failure;
+      else
+         Orchestration_Status := Identity.Internal.Orchestration.Ready;
+         Transition_Status := Identity.Internal.Transitions.Staged;
+         Validation_Status := Identity.Internal.Validation.Valid;
+         Encoding_Status := Identity.Internal.Encoding.Encoded;
+         Event_Status := Identity.Internal.Events.Accepted;
+         Budget_Status := Identity.Internal.Resource_Budgets.Within_Limit;
+         Crypto_Status := Identity.Internal.Crypto_Bindings.Available;
+      end if;
+
+      Assert
+        (Orchestration_Status = Identity.Internal.Orchestration.Ready
+         and then Transition_Status = Identity.Internal.Transitions.Staged
+         and then Validation_Status = Identity.Internal.Validation.Valid
+         and then Encoding_Status = Identity.Internal.Encoding.Encoded
+         and then Event_Status = Identity.Internal.Events.Accepted
+         and then Budget_Status = Identity.Internal.Resource_Budgets.Within_Limit
+         and then Crypto_Status = Identity.Internal.Crypto_Bindings.Available,
+         "IDENTITY-INTERNAL-001 internal orchestration transition validation encoding event "
+         & "budget and crypto binding boundaries are explicit");
+   end Test_07_budget_and_crypto_bindin;
+
+   procedure Test_08_Example_IdP (T : in out AUnit.Test_Cases.Test_Case'Class) is
+      pragma Unreferenced (T);
+      Provider_State : Identity.External_Providers.Definitions.Provider_State;
+      JIT_Mode : Identity.External_Providers.Definitions.JIT_Provisioning_Mode;
+      Mapping : Identity.External_Providers.Assurance.Mapping_Status;
+      Enrollment : Identity.External_Providers.Enrollment.Enrollment_Decision;
+      Provider_Definition : Identity.External_Providers.Definitions.External_Provider_Definition :=
+        (Provider => EP1,
+         Protocol => OIDC_Protocol,
+         Issuer => External_Issuer,
+         Display_Name => Identity.Text.Bounded.From_String ("Example IdP"),
+         State => Identity.External_Providers.Definitions.Active,
+         JIT_Mode => Identity.External_Providers.Definitions.Explicit_Allow,
+         Policy_Version => 1,
+         Version => 0);
+      Provider_Policy : constant Identity.External_Providers.Policies.External_Provider_Policy :=
+        (Require_Trusted_Provider => True,
+         Replay_Registration_Required => True,
+         Email_Auto_Link_Allowed => False,
+         Explicit_JIT_Required => True);
+      Invalid_Provider_Policy : constant Identity.External_Providers.Policies.External_Provider_Policy :=
+        (Require_Trusted_Provider => False,
+         Replay_Registration_Required => True,
+         Email_Auto_Link_Allowed => True,
+         Explicit_JIT_Required => False);
+      No_Replay_Provider_Policy : constant Identity.External_Providers.Policies.External_Provider_Policy :=
+        (Require_Trusted_Provider => True,
+         Replay_Registration_Required => False,
+         Email_Auto_Link_Allowed => False,
+         Explicit_JIT_Required => True);
+      Email_Link_Provider_Policy : constant Identity.External_Providers.Policies.External_Provider_Policy :=
+        (Require_Trusted_Provider => True,
+         Replay_Registration_Required => True,
+         Email_Auto_Link_Allowed => True,
+         Explicit_JIT_Required => True);
+      No_JIT_Provider_Policy : constant Identity.External_Providers.Policies.External_Provider_Policy :=
+        (Require_Trusted_Provider => True,
+         Replay_Registration_Required => True,
+         Email_Auto_Link_Allowed => False,
+         Explicit_JIT_Required => False);
+      Approval_Provider : constant Identity.External_Providers.Definitions.External_Provider_Definition :=
+        (Provider_Definition with delta
+           JIT_Mode => Identity.External_Providers.Definitions.Require_Local_Approval);
+      Binding_Only_Provider : constant Identity.External_Providers.Definitions.External_Provider_Definition :=
+        (Provider_Definition with delta
+           JIT_Mode => Identity.External_Providers.Definitions.Disabled);
+      Projection_Bits : Natural := 0;
+   begin
+      if Identity.Secrets.Bytes.Length (Secret_A) = 0 then
+         Provider_State := Identity.External_Providers.Definitions.Retired;
+         JIT_Mode := Identity.External_Providers.Definitions.Require_Local_Approval;
+         Mapping := Identity.External_Providers.Assurance.Untrusted_Provider;
+         Enrollment := Identity.External_Providers.Enrollment.Reject_Untrusted;
+      else
+         Provider_State := Identity.External_Providers.Definitions.Active;
+         JIT_Mode := Identity.External_Providers.Definitions.Explicit_Allow;
+         Mapping := Identity.External_Providers.Assurance.Mapped;
+         Enrollment := Identity.External_Providers.Enrollment.Allow_Explicit_Binding;
+      end if;
+      Projection_Bits :=
+        Identity.External_Providers.Projections.External_Binding_Projection'Size;
+
+      Assert
+        (Provider_State = Identity.External_Providers.Definitions.Active
+         and then JIT_Mode = Identity.External_Providers.Definitions.Explicit_Allow
+         and then Mapping = Identity.External_Providers.Assurance.Mapped
+         and then Enrollment = Identity.External_Providers.Enrollment.Allow_Explicit_Binding
+         and then Identity.External_Providers.Policies.Valid (Provider_Policy)
+         and then (Identity.External_Providers.Policies.Validate (Provider_Policy)
+                   = Identity.External_Providers.Policies.External_Provider_Policy_Valid)
+         and then Identity.External_Providers.Policies.Validation_Accepted
+           (Identity.External_Providers.Policies.Validate (Provider_Policy))
+         and then not Identity.External_Providers.Policies.Valid (Invalid_Provider_Policy)
+         and then (Identity.External_Providers.Policies.Validate (Invalid_Provider_Policy)
+                   = Identity.External_Providers.Policies.Trusted_Provider_Not_Required)
+         and then Identity.External_Providers.Policies.Trust_Rejected
+           (Identity.External_Providers.Policies.Validate (Invalid_Provider_Policy))
+         and then (Identity.External_Providers.Policies.Validate (No_Replay_Provider_Policy)
+                   = Identity.External_Providers.Policies.Replay_Registration_Not_Required)
+         and then Identity.External_Providers.Policies.Replay_Rejected
+           (Identity.External_Providers.Policies.Validate (No_Replay_Provider_Policy))
+         and then (Identity.External_Providers.Policies.Validate (Email_Link_Provider_Policy)
+                   = Identity.External_Providers.Policies.Email_Auto_Link_Allowed_By_Policy)
+         and then Identity.External_Providers.Policies.Email_Link_Rejected
+           (Identity.External_Providers.Policies.Validate (Email_Link_Provider_Policy))
+         and then (Identity.External_Providers.Policies.Validate (No_JIT_Provider_Policy)
+                   = Identity.External_Providers.Policies.Explicit_JIT_Not_Required)
+         and then Identity.External_Providers.Policies.JIT_Rejected
+           (Identity.External_Providers.Policies.Validate (No_JIT_Provider_Policy))
+         and then Identity.External_Providers.Definitions.Is_Active
+           (Provider_Definition.State)
+         and then Identity.External_Providers.Definitions.Can_Authenticate
+           (Provider_Definition.State)
+         and then (Identity.External_Providers.Definitions.Admission
+           (Provider_Definition.State)
+           = Identity.External_Providers.Definitions.Provider_State_Admitted)
+         and then Identity.External_Providers.Definitions.Admission_Accepted
+           (Identity.External_Providers.Definitions.Admission
+              (Provider_Definition.State))
+         and then not Identity.External_Providers.Definitions.Admission_Rejected
+           (Identity.External_Providers.Definitions.Admission
+              (Provider_Definition.State))
+         and then (Identity.External_Providers.Definitions.Admission
+           (Identity.External_Providers.Definitions.Suspended)
+           = Identity.External_Providers.Definitions.Provider_State_Suspended)
+         and then Identity.External_Providers.Definitions.Suspended_Rejection
+           (Identity.External_Providers.Definitions.Admission
+              (Identity.External_Providers.Definitions.Suspended))
+         and then Identity.External_Providers.Definitions.Admission_Rejected
+           (Identity.External_Providers.Definitions.Admission
+              (Identity.External_Providers.Definitions.Suspended))
+         and then (Identity.External_Providers.Definitions.Admission
+           (Identity.External_Providers.Definitions.Retired)
+           = Identity.External_Providers.Definitions.Provider_State_Retired)
+         and then Identity.External_Providers.Definitions.Retired_Rejection
+           (Identity.External_Providers.Definitions.Admission
+              (Identity.External_Providers.Definitions.Retired))
+         and then Identity.External_Providers.Definitions.Admission_Rejected
+           (Identity.External_Providers.Definitions.Admission
+              (Identity.External_Providers.Definitions.Retired))
+         and then Identity.External_Providers.Definitions.JIT_Allowed
+           (Provider_Definition.JIT_Mode)
+         and then not Identity.External_Providers.Definitions.Local_Approval_Required
+           (Provider_Definition.JIT_Mode)
+         and then Identity.External_Providers.Definitions.Can_Use_Policy_Controlled_JIT
+           (Provider_Definition)
+         and then Identity.External_Providers.Trust.Status_For (Provider_Definition)
+           = Identity.External_Providers.Trust.Trusted
+         and then Identity.External_Providers.Trust.Evaluate_Admission
+           (Provider_Definition, Provider_Policy, True, True)
+           = Identity.External_Providers.Trust.Admit_Explicit_Binding
+         and then Identity.External_Providers.Trust.Admitted
+           (Identity.External_Providers.Trust.Evaluate_Admission
+              (Provider_Definition, Provider_Policy, True, True))
+         and then Identity.External_Providers.Trust.Evaluate_Admission
+           (Provider_Definition, Provider_Policy, False, False)
+           = Identity.External_Providers.Trust.Reject_Replay_Not_Registered
+         and then Identity.External_Providers.Trust.Rejected
+           (Identity.External_Providers.Trust.Evaluate_Admission
+              (Provider_Definition, Provider_Policy, False, False))
+         and then Identity.External_Providers.Trust.Evaluate_Admission
+           (Provider_Definition, Provider_Policy, False, True, True)
+           = Identity.External_Providers.Trust.Reject_Email_Auto_Link
+         and then Identity.External_Providers.Trust.Rejected
+           (Identity.External_Providers.Trust.Evaluate_Admission
+              (Provider_Definition, Provider_Policy, False, True, True))
+         and then Identity.External_Providers.Trust.Evaluate_Admission
+           (Provider_Definition, Invalid_Provider_Policy, False, True, True)
+           = Identity.External_Providers.Trust.Reject_Invalid_Policy
+         and then Identity.External_Providers.Trust.Evaluate_Admission
+           (Provider_Definition, Provider_Policy, False, True)
+           = Identity.External_Providers.Trust.Allow_Policy_Controlled_JIT
+         and then Identity.External_Providers.Trust.JIT_Provisioning_Allowed
+           (Identity.External_Providers.Trust.Evaluate_Admission
+              (Provider_Definition, Provider_Policy, False, True))
+         and then Identity.External_Providers.Trust.Evaluate_Admission
+           (Binding_Only_Provider, Provider_Policy, False, True)
+           = Identity.External_Providers.Trust.Require_Explicit_Binding
+         and then Identity.External_Providers.Trust.Binding_Required
+           (Identity.External_Providers.Trust.Evaluate_Admission
+              (Binding_Only_Provider, Provider_Policy, False, True))
+         and then Identity.External_Providers.Definitions.Local_Approval_Required
+           (Approval_Provider.JIT_Mode)
+         and then not Identity.External_Providers.Definitions.Can_Use_Policy_Controlled_JIT
+           (Approval_Provider)
+         and then Identity.External_Providers.Trust.Evaluate_Admission
+           (Approval_Provider, Provider_Policy, False, True)
+           = Identity.External_Providers.Trust.Require_Local_Approval
+         and then Identity.External_Providers.Trust.Local_Approval_Required
+           (Identity.External_Providers.Trust.Evaluate_Admission
+              (Approval_Provider, Provider_Policy, False, True))
+         and then Projection_Bits > 0,
+         "IDENTITY-EXTERNAL-002 external provider definition assurance enrollment and "
+         & "projection contracts reject invalid policy admission");
+
+      Provider_Definition.State := Identity.External_Providers.Definitions.Suspended;
+      Assert
+        (Identity.External_Providers.Trust.Evaluate_Admission
+           (Provider_Definition, Provider_Policy, True, True)
+         = Identity.External_Providers.Trust.Reject_Suspended_Provider,
+         "IDENTITY-EXTERNAL-002 suspended external provider admission is rejected");
+
+      Assert
+        (Identity.External_Providers.Trust.Trusted_Status
+           (Identity.External_Providers.Trust.Status_For (Binding_Only_Provider))
+         and then Identity.External_Providers.Trust.Suspended_Status
+           (Identity.External_Providers.Trust.Status_For (Provider_Definition))
+         and then Identity.External_Providers.Trust.Untrusted_Status
+           (Identity.External_Providers.Trust.Status_For
+              ((Provider_Definition with delta
+                State => Identity.External_Providers.Definitions.Retired)))
+         and then Identity.External_Providers.Trust.Provider_Rejected
+           (Identity.External_Providers.Trust.Status_For (Provider_Definition))
+         and then Identity.External_Providers.Trust.Policy_Rejected
+           (Identity.External_Providers.Trust.Reject_Invalid_Policy)
+         and then Identity.External_Providers.Trust.Email_Auto_Link_Rejected
+           (Identity.External_Providers.Trust.Reject_Email_Auto_Link)
+         and then Identity.External_Providers.Trust.Replay_Rejected
+           (Identity.External_Providers.Trust.Reject_Replay_Not_Registered)
+         and then Identity.External_Providers.Trust.Provider_State_Rejected
+           (Identity.External_Providers.Trust.Reject_Suspended_Provider)
+         and then Identity.External_Providers.Trust.Suspended_Provider_Rejected
+           (Identity.External_Providers.Trust.Reject_Suspended_Provider)
+         and then Identity.External_Providers.Trust.Retired_Provider_Rejected
+           (Identity.External_Providers.Trust.Evaluate_Admission
+              ((Provider_Definition with delta
+                State => Identity.External_Providers.Definitions.Retired),
+               Provider_Policy,
+               True,
+               True))
+         and then Identity.External_Providers.Trust.Untrusted_Provider_Rejected
+           (Identity.External_Providers.Trust.Reject_Untrusted_Provider),
+         "IDENTITY-EXTERNAL-002 external provider trust and admission classifiers are explicit");
+
+      Assert
+        (Identity.External_Providers.Assurance.Mapping_Accepted
+           (Identity.External_Providers.Assurance.Mapped)
+         and then not Identity.External_Providers.Assurance.Mapping_Accepted
+           (Identity.External_Providers.Assurance.Additional_Factor_Required)
+         and then Identity.External_Providers.Assurance.Mapping_Rejected
+           (Identity.External_Providers.Assurance.Untrusted_Provider)
+         and then Identity.External_Providers.Assurance.Mapping_Rejected
+           (Identity.External_Providers.Assurance.Unsupported_Profile)
+         and then Identity.External_Providers.Assurance.Provider_Rejected
+           (Identity.External_Providers.Assurance.Untrusted_Provider)
+         and then Identity.External_Providers.Assurance.Profile_Rejected
+           (Identity.External_Providers.Assurance.Unsupported_Profile)
+         and then Identity.External_Providers.Assurance.Requires_Additional_Factor
+           (Identity.External_Providers.Assurance.Additional_Factor_Required),
+         "external assurance mapping status classification is explicit");
+
+      Assert
+        (Identity.External_Providers.Enrollment.Existing_Binding_Required
+           (Identity.External_Providers.Enrollment.Require_Existing_Binding)
+         and then Identity.External_Providers.Enrollment.Explicit_Binding_Allowed
+           (Identity.External_Providers.Enrollment.Allow_Explicit_Binding)
+         and then Identity.External_Providers.Enrollment.Policy_Controlled_JIT_Allowed
+           (Identity.External_Providers.Enrollment.Allow_Policy_Controlled_JIT)
+         and then Identity.External_Providers.Enrollment.Enrollment_Allowed
+           (Identity.External_Providers.Enrollment.Allow_Explicit_Binding)
+         and then Identity.External_Providers.Enrollment.Enrollment_Allowed
+           (Identity.External_Providers.Enrollment.Allow_Policy_Controlled_JIT)
+         and then not Identity.External_Providers.Enrollment.Enrollment_Allowed
+           (Identity.External_Providers.Enrollment.Require_Existing_Binding)
+         and then Identity.External_Providers.Enrollment.Enrollment_Rejected
+           (Identity.External_Providers.Enrollment.Reject_Ambiguous)
+         and then Identity.External_Providers.Enrollment.Enrollment_Rejected
+           (Identity.External_Providers.Enrollment.Reject_Untrusted)
+         and then Identity.External_Providers.Enrollment.Ambiguity_Rejected
+           (Identity.External_Providers.Enrollment.Reject_Ambiguous)
+         and then Identity.External_Providers.Enrollment.Provider_Rejected
+           (Identity.External_Providers.Enrollment.Reject_Untrusted),
+         "external enrollment decision classification is explicit");
+   end Test_08_Example_IdP;
+
+   procedure Test_09_IDENTITY_VERIFICATION_00 (T : in out AUnit.Test_Cases.Test_Case'Class) is
+      pragma Unreferenced (T);
+      Contact_State : Identity.Verification.Contacts.Contact_Control_State;
+      Confirmation : Identity.Verification.Policies.Old_Contact_Confirmation_Mode;
+      Verification_Result : Identity.Verification.Results.Verification_Result_Kind;
+      Verification_Policy : constant Identity.Verification.Policies.Contact_Verification_Policy :=
+        (Token_Lifetime => 600,
+         Maximum_Attempts => 5,
+         Supersede_Open_Tokens => True,
+         Old_Contact_Confirmation => Identity.Verification.Policies.Required_When_Verified,
+         Cooling_Off => 0);
+      Delayed_Verification_Policy : constant Identity.Verification.Policies.Contact_Verification_Policy :=
+        (Token_Lifetime => 600,
+         Maximum_Attempts => 5,
+         Supersede_Open_Tokens => True,
+         Old_Contact_Confirmation => Identity.Verification.Policies.Required_When_Verified,
+         Cooling_Off => 60);
+      Zero_Lifetime_Verification_Policy : constant
+        Identity.Verification.Policies.Contact_Verification_Policy :=
+        (Token_Lifetime => 0,
+         Maximum_Attempts => 5,
+         Supersede_Open_Tokens => True,
+         Old_Contact_Confirmation => Identity.Verification.Policies.Required_When_Verified,
+         Cooling_Off => 0);
+      Zero_Attempt_Verification_Policy : constant Identity.Verification.Policies.Contact_Verification_Policy :=
+        (Token_Lifetime => 600,
+         Maximum_Attempts => 0,
+         Supersede_Open_Tokens => True,
+         Old_Contact_Confirmation => Identity.Verification.Policies.Required_When_Verified,
+         Cooling_Off => 0);
+      No_Supersession_Verification_Policy : constant
+        Identity.Verification.Policies.Contact_Verification_Policy :=
+        (Token_Lifetime => 600,
+         Maximum_Attempts => 5,
+         Supersede_Open_Tokens => False,
+         Old_Contact_Confirmation => Identity.Verification.Policies.Required_When_Verified,
+         Cooling_Off => 0);
+   begin
+      if Identity.Secrets.Bytes.Length (Secret_A) = 0 then
+         Contact_State := Identity.Verification.Contacts.Reverification_Required;
+         Confirmation := Identity.Verification.Policies.Always_Required;
+         Verification_Result := Identity.Verification.Results.Operational_Failure;
+      else
+         Contact_State := Identity.Verification.Contacts.Verification_Requested;
+         Confirmation := Identity.Verification.Policies.Required_When_Verified;
+         Verification_Result := Identity.Verification.Results.Invalid_Or_Expired;
+      end if;
+
+      Assert
+        (Identity.Tokens.Kinds.Contact_Verification
+           /= Identity.Tokens.Kinds.Password_Reset
+         and then Contact_State = Identity.Verification.Contacts.Verification_Requested
+         and then Identity.Verification.Contacts.Request_In_Flight
+           (Contact_State)
+         and then Identity.Verification.Contacts.Verification_Requested_State
+           (Identity.Verification.Contacts.Verification_Requested)
+         and then not Identity.Verification.Contacts.Verification_Requested_State
+           (Identity.Verification.Contacts.Verified)
+         and then Identity.Verification.Contacts.Unverified_State
+           (Identity.Verification.Contacts.Unverified)
+         and then Identity.Verification.Contacts.Verified_State
+           (Identity.Verification.Contacts.Verified)
+         and then Identity.Verification.Contacts.Reverification_Required_State
+           (Identity.Verification.Contacts.Reverification_Required)
+         and then Identity.Verification.Contacts.Needs_Verification
+           (Identity.Verification.Contacts.Unverified)
+         and then Identity.Verification.Contacts.Needs_Verification
+           (Identity.Verification.Contacts.Reverification_Required)
+         and then not Identity.Verification.Contacts.Needs_Verification
+           (Identity.Verification.Contacts.Verification_Requested)
+         and then not Identity.Verification.Contacts.Request_In_Flight
+           (Identity.Verification.Contacts.Verified)
+         and then Confirmation = Identity.Verification.Policies.Required_When_Verified
+         and then Identity.Verification.Policies.Valid (Verification_Policy)
+         and then (Identity.Verification.Policies.Validate (Verification_Policy)
+                   = Identity.Verification.Policies.Contact_Verification_Policy_Valid)
+         and then Identity.Verification.Policies.Validation_Accepted
+           (Identity.Verification.Policies.Validate (Verification_Policy))
+         and then not Identity.Verification.Policies.Valid
+           (Zero_Lifetime_Verification_Policy)
+         and then (Identity.Verification.Policies.Validate
+             (Zero_Lifetime_Verification_Policy)
+           = Identity.Verification.Policies.Contact_Verification_Token_Lifetime_Non_Positive)
+         and then Identity.Verification.Policies.Token_Lifetime_Rejected
+           (Identity.Verification.Policies.Validate
+              (Zero_Lifetime_Verification_Policy))
+         and then not Identity.Verification.Policies.Valid
+           (Zero_Attempt_Verification_Policy)
+         and then (Identity.Verification.Policies.Validate
+             (Zero_Attempt_Verification_Policy)
+           = Identity.Verification.Policies.Contact_Verification_Attempt_Limit_Non_Positive)
+         and then Identity.Verification.Policies.Attempt_Limit_Rejected
+           (Identity.Verification.Policies.Validate
+              (Zero_Attempt_Verification_Policy))
+         and then not Identity.Verification.Policies.Valid
+           (No_Supersession_Verification_Policy)
+         and then (Identity.Verification.Policies.Validate
+             (No_Supersession_Verification_Policy)
+           = Identity.Verification.Policies.Contact_Verification_Supersession_Not_Required)
+         and then Identity.Verification.Policies.Supersession_Rejected
+           (Identity.Verification.Policies.Validate
+              (No_Supersession_Verification_Policy))
+         and then Identity.Verification.Policies.Requires_Old_Contact_Confirmation
+           (Identity.Verification.Policies.Always_Required, False)
+         and then Identity.Verification.Policies.Requires_Old_Contact_Confirmation
+           (Identity.Verification.Policies.Required_When_Verified, True)
+         and then not Identity.Verification.Policies.Requires_Old_Contact_Confirmation
+           (Identity.Verification.Policies.Required_When_Verified, False)
+         and then not Identity.Verification.Policies.Requires_Old_Contact_Confirmation
+           (Identity.Verification.Policies.Not_Required, True)
+         and then Identity.Verification.Policies.Cooling_Off_Satisfied
+           (Verification_Policy, 100, 100)
+         and then not Identity.Verification.Policies.Cooling_Off_Satisfied
+           (Delayed_Verification_Policy, 100, 159)
+         and then Identity.Verification.Policies.Cooling_Off_Satisfied
+         (Delayed_Verification_Policy, 100, 160)
+         and then not Identity.Verification.Policies.Cooling_Off_Satisfied
+           (Delayed_Verification_Policy, Identity.Times.Instant'Last, Identity.Times.Instant'Last)
+         and then Verification_Result = Identity.Verification.Results.Invalid_Or_Expired
+         and then Identity.Verification.Results.Successful
+           (Identity.Verification.Results.Completed)
+         and then Identity.Verification.Results.Request_Accepted
+           (Identity.Verification.Results.Requested)
+         and then Identity.Verification.Results.Completion_Accepted
+           (Identity.Verification.Results.Completed)
+         and then Identity.Verification.Results.From_Token_Outcome
+           (Identity.Tokens.Verification.Valid)
+           = Identity.Verification.Results.Completed
+         and then Identity.Verification.Results.From_Token_Outcome
+           (Identity.Tokens.Verification.Not_Verified)
+           = Identity.Verification.Results.Invalid_Or_Expired
+         and then Identity.Verification.Results.From_Token_Outcome
+           (Identity.Tokens.Verification.Purpose_Mismatch)
+           = Identity.Verification.Results.Invalid_Or_Expired
+         and then Identity.Verification.Results.From_Token_Outcome
+           (Identity.Tokens.Verification.Binding_Mismatch)
+           = Identity.Verification.Results.Binding_Mismatch
+         and then Identity.Verification.Results.From_Token_Outcome
+           (Identity.Tokens.Verification.Attempt_Limit_Reached)
+           = Identity.Verification.Results.Attempt_Limit_Reached
+         and then Identity.Verification.Results.From_Token_Outcome
+           (Identity.Tokens.Verification.State_Conflict)
+           = Identity.Verification.Results.Conflict
+         and then Identity.Verification.Results.From_Token_Outcome
+           (Identity.Tokens.Verification.Infrastructure_Failure)
+           = Identity.Verification.Results.Operational_Failure
+         and then Identity.Verification.Results.Requires_Generic_Token_Disclosure
+           (Verification_Result)
+         and then Identity.Verification.Results.Requires_Generic_Token_Disclosure
+           (Identity.Verification.Results.Binding_Mismatch)
+         and then Identity.Verification.Results.Invalid_Token_Rejection
+           (Verification_Result)
+         and then Identity.Verification.Results.Binding_Rejection
+           (Identity.Verification.Results.Binding_Mismatch)
+         and then Identity.Verification.Results.Attempt_Limit_Rejection
+           (Identity.Verification.Results.Attempt_Limit_Reached)
+         and then Identity.Verification.Results.Retryable_By_Presentation
+           (Identity.Verification.Results.Attempt_Limit_Reached)
+         and then Identity.Verification.Results.Conflict
+           (Identity.Verification.Results.Conflict)
+         and then Identity.Verification.Results.Operational
+         (Identity.Verification.Results.Operational_Failure),
+         "IDENTITY-VERIFICATION-001 verification policy gates contact "
+         & "workflow timing result classification and control-state predicates");
+   end Test_09_IDENTITY_VERIFICATION_00;
+
+   procedure Test_10_identity_recovery_code (T : in out AUnit.Test_Cases.Test_Case'Class) is
+      pragma Unreferenced (T);
+      Source : Identity.Recovery.Evidence.Recovery_Evidence_Source;
+      Reduced_Assurance : Boolean;
+      Recovery_Evidence : Identity.Recovery.Evidence.Recovery_Evidence_Record;
+   begin
+      if Identity.Secrets.Bytes.Length (Secret_A) = 0 then
+         Source := Identity.Recovery.Evidence.External_Proofing_Adapter;
+         Reduced_Assurance := False;
+      else
+         Source := Identity.Recovery.Evidence.Recovery_Code;
+         Reduced_Assurance := True;
+      end if;
+
+      Recovery_Evidence :=
+        (Principal => P1,
+         Transaction => RT1,
+         Evidence =>
+           (Id => EV1,
+            Principal => P1,
+            Transaction => RT1,
+            Challenge_Present => False,
+            Challenge => CH1,
+            Method => Identity.Identifiers.Registry.From_String
+              ("identity.recovery.code"),
+            Category => Identity.Authentication.Evidence.Recovery,
+            Verified_At => 40,
+            Schema_Version => 1,
+            Recovery_Used => True),
+         Source => Source,
+         Provider_Method => Identity.Identifiers.Registry.From_String
+           ("identity.recovery.code"),
+         Accepted_At => 40,
+         Reduced_Assurance => Reduced_Assurance);
+
+      Assert
+        (Source = Identity.Recovery.Evidence.Recovery_Code
+         and then Reduced_Assurance
+         and then Identity.Recovery.Evidence.Bound_To_Recovery_Transaction
+           (Recovery_Evidence)
+         and then Identity.Recovery.Evidence.Is_Recovery_Category
+           (Recovery_Evidence)
+         and then Identity.Recovery.Evidence.Restricted_Assurance
+           (Recovery_Evidence)
+         and then Identity.Recovery.Evidence.Summary
+           (Recovery_Evidence).Bound_To_Recovery_Transaction
+         and then Identity.Recovery.Evidence.Summary
+           (Recovery_Evidence).Reduced_Assurance
+         and then Identity.Recovery.Results.Started_Status
+           (Identity.Recovery.Results.Started)
+         and then Identity.Recovery.Results.In_Progress
+           (Identity.Recovery.Results.Evidence_Required)
+         and then Identity.Recovery.Results.Evidence_Required_Status
+           (Identity.Recovery.Results.Evidence_Required)
+         and then Identity.Recovery.Results.Approved_Status
+           (Identity.Recovery.Results.Approved)
+         and then Identity.Recovery.Results.Successful
+           (Identity.Recovery.Results.Restricted_Authentication_Established)
+         and then Identity.Recovery.Results.Restricted
+           (Identity.Recovery.Results.Restricted_Authentication_Established)
+         and then Identity.Recovery.Results.May_Issue_Restricted_Authentication
+           (Identity.Recovery.Results.Restricted_Authentication_Established)
+         and then not Identity.Recovery.Results.May_Issue_Restricted_Authentication
+           (Identity.Recovery.Results.Completed)
+         and then Identity.Recovery.Results.Final_Completion
+           (Identity.Recovery.Results.Completed)
+         and then not Identity.Recovery.Results.Final_Completion
+           (Identity.Recovery.Results.Restricted_Authentication_Established)
+         and then Identity.Recovery.Results.Failed
+           (Identity.Recovery.Results.Rejected)
+         and then Identity.Recovery.Results.Conflict
+           (Identity.Recovery.Results.Conflict)
+         and then Identity.Recovery.Results.Operational
+           (Identity.Recovery.Results.Operational_Failure),
+         "IDENTITY-RECOVERY-002 recovery evidence source reduced assurance "
+         & "and result classification are explicit");
+   end Test_10_identity_recovery_code;
+
+   procedure Test_11_bounded_vector_preserves (T : in out AUnit.Test_Cases.Test_Case'Class) is
+      pragma Unreferenced (T);
+   begin
+      Assert
+        (Natural_Vectors.Append (Vector_Check, 10) = Identity.Collections.Ok
+         and then Natural_Vectors.Append (Vector_Check, 20) = Identity.Collections.Ok
+         and then Natural_Vectors.Append (Vector_Check, 30) = Identity.Collections.Full
+         and then Natural_Vectors.Element (Vector_Check, 1) = 10
+         and then Natural_Vectors.Element (Vector_Check, 2) = 20,
+         "bounded vector preserves deterministic insertion order and capacity");
+
+      Assert
+        (Natural_Sets.Insert (Set_Check, 7) = Identity.Collections.Ok
+         and then Natural_Sets.Insert (Set_Check, 7) = Identity.Collections.Duplicate
+         and then Natural_Sets.Insert (Set_Check, 8) = Identity.Collections.Ok
+         and then Natural_Sets.Insert (Set_Check, 9) = Identity.Collections.Full
+         and then Natural_Sets.Element (Set_Check, 1) = 7
+         and then Natural_Sets.Element (Set_Check, 2) = 8,
+         "bounded set rejects duplicates and keeps deterministic order");
+
+      Assert
+        (Natural_Maps.Insert (Map_Check, 1, 100) = Identity.Collections.Ok
+         and then Natural_Maps.Insert (Map_Check, 1, 101) = Identity.Collections.Duplicate
+         and then Natural_Maps.Insert (Map_Check, 2, 200) = Identity.Collections.Ok
+         and then Natural_Maps.Replace (Map_Check, 2, 201) = Identity.Collections.Ok
+         and then Natural_Maps.Get (Map_Check, 2, Map_Value) = Identity.Collections.Ok
+         and then Map_Value = 201
+         and then Natural_Maps.Key_At (Map_Check, 1) = 1
+         and then Natural_Maps.Key_At (Map_Check, 2) = 2,
+         "bounded map provides deterministic key order and explicit duplicate results");
+
+      Assert
+        (Identity.Collections.Successful (Identity.Collections.Ok)
+         and then Identity.Collections.Capacity_Exhausted (Identity.Collections.Full)
+         and then Identity.Collections.Duplicate_Rejected (Identity.Collections.Duplicate)
+         and then Identity.Collections.Missing_Rejected (Identity.Collections.Missing)
+         and then Identity.Collections.Invalid_Index_Rejected (Identity.Collections.Invalid_Index)
+         and then Identity.Collections.No_Mutation (Identity.Collections.Full)
+         and then Identity.Collections.No_Mutation (Identity.Collections.Duplicate)
+         and then Identity.Collections.No_Mutation (Identity.Collections.Missing)
+         and then Identity.Collections.No_Mutation (Identity.Collections.Invalid_Index),
+         "IDENTITY-FOUNDATION-001 collection status predicates classify success and no-mutation failures");
+
+      Assert
+        (Identity.Codecs.Canonical.Is_Canonical_Frame (Canonical_Frame),
+         "canonical codec emits deterministic length-framed values");
+
+      Assert
+        (Identity.Codecs.Persisted.Validate_Canonical
+           (Canonical_Frame,
+            1,
+            (Current => 1, Minimum => 1, Maximum => 1)) = Identity.Codecs.Valid
+         and then Identity.Codecs.Accepted (Identity.Codecs.Valid)
+         and then Identity.Codecs.Persisted.Validate_Format
+           (2,
+            (Current => 1, Minimum => 1, Maximum => 1)) = Identity.Codecs.Unsupported_Version,
+         "persisted codec validates supported format windows explicitly");
+   end Test_11_bounded_vector_preserves;
+
+   procedure Test_12_missing_frame_prefix (T : in out AUnit.Test_Cases.Test_Case'Class) is
+      pragma Unreferenced (T);
+      Valid_Admission : constant Identity.Codecs.Persisted.Canonical_Admission :=
+        Identity.Codecs.Persisted.Admit_Canonical
+          (Canonical_Frame,
+           1,
+           (Current => 1, Minimum => 1, Maximum => 1));
+      Unsupported_Admission : constant Identity.Codecs.Persisted.Canonical_Admission :=
+        Identity.Codecs.Persisted.Admit_Canonical
+          (Canonical_Frame,
+           2,
+           (Current => 1, Minimum => 1, Maximum => 1));
+      Noncanonical_Admission : constant Identity.Codecs.Persisted.Canonical_Admission :=
+        Identity.Codecs.Persisted.Admit_Canonical
+          (Identity.Text.Bounded.From_String ("missing-frame-prefix"),
+           1,
+           (Current => 1, Minimum => 1, Maximum => 1));
+      Invalid_Window_Admission : constant Identity.Codecs.Persisted.Canonical_Admission :=
+        Identity.Codecs.Persisted.Admit_Canonical
+          (Canonical_Frame,
+           1,
+           (Current => 3, Minimum => 4, Maximum => 5));
+   begin
+      Assert
+        (Valid_Admission.Window_Valid
+         and then Valid_Admission.Version_Supported
+         and then Valid_Admission.Canonical
+         and then Valid_Admission.Status = Identity.Codecs.Valid
+         and then Unsupported_Admission.Window_Valid
+         and then not Unsupported_Admission.Version_Supported
+         and then not Unsupported_Admission.Canonical
+         and then Unsupported_Admission.Status = Identity.Codecs.Unsupported_Version
+         and then Identity.Codecs.Version_Unsupported (Unsupported_Admission.Status)
+         and then Noncanonical_Admission.Window_Valid
+         and then Noncanonical_Admission.Version_Supported
+         and then not Noncanonical_Admission.Canonical
+         and then Noncanonical_Admission.Status = Identity.Codecs.Noncanonical
+         and then Identity.Codecs.Noncanonical_Rejected (Noncanonical_Admission.Status)
+         and then not Invalid_Window_Admission.Window_Valid
+         and then Invalid_Window_Admission.Status = Identity.Codecs.Invalid
+         and then Identity.Codecs.Malformed (Invalid_Window_Admission.Status)
+         and then Identity.Codecs.Oversized (Identity.Codecs.Too_Large)
+         and then Identity.Codecs.Decoder_Rejected (Identity.Codecs.Invalid)
+         and then Identity.Codecs.Decoder_Rejected (Identity.Codecs.Too_Large)
+         and then Identity.Codecs.Decoder_Rejected (Identity.Codecs.Unsupported_Version)
+         and then Identity.Codecs.Decoder_Rejected (Identity.Codecs.Noncanonical),
+         "persisted codec admission reports structured format decisions");
+   end Test_12_missing_frame_prefix;
+
+   procedure Test_13_missing_frame_prefix (T : in out AUnit.Test_Cases.Test_Case'Class) is
+      pragma Unreferenced (T);
+   begin
+      Assert
+        (Identity.Codecs.Persisted.Validate_Canonical
+           (Identity.Text.Bounded.From_String ("missing-frame-prefix"),
+            1,
+            (Current => 1, Minimum => 1, Maximum => 1)) = Identity.Codecs.Noncanonical
+         and then Identity.Codecs.Persisted.Validate_Canonical
+           (Identity.Text.Bounded.From_String ("IF01#4:test#7:payload"),
+            1,
+            (Current => 1, Minimum => 1, Maximum => 1)) = Identity.Codecs.Noncanonical
+         and then Identity.Codecs.Persisted.Validate_Canonical
+           (Identity.Text.Bounded.From_String ("IF1#04:test#7:payload"),
+            1,
+            (Current => 1, Minimum => 1, Maximum => 1)) = Identity.Codecs.Noncanonical
+         and then Identity.Codecs.Persisted.Validate_Canonical
+           (Identity.Text.Bounded.From_String ("IF1#4:test#007:payload"),
+            1,
+            (Current => 1, Minimum => 1, Maximum => 1)) = Identity.Codecs.Noncanonical,
+         "noncanonical persisted values are rejected");
+   end Test_13_missing_frame_prefix;
+
+   procedure Test_14_identity_crypto_current (T : in out AUnit.Test_Cases.Test_Case'Class) is
+      pragma Unreferenced (T);
+      use type Ada.Streams.Stream_Element_Array;
+      Core_Capabilities : constant Identity.Crypto.Capabilities.Crypto_Capability_Set :=
+        (Entropy => Identity.Crypto.Capabilities.Available,
+         Password_Hashing => Identity.Crypto.Capabilities.Available,
+         Secret_Verifiers => Identity.Crypto.Capabilities.Available,
+         Constant_Time => Identity.Crypto.Capabilities.Available,
+         TOTP_HMAC => Identity.Crypto.Capabilities.Missing,
+         Event_Integrity => Identity.Crypto.Capabilities.Missing);
+      Current_Algorithm : constant Identity.Crypto.Algorithms.Algorithm_Descriptor :=
+        (Id => Identity.Identifiers.Registry.From_String ("identity.crypto.current"),
+         Class => Identity.Crypto.Algorithms.Secret_Verifier,
+         Implementation => 1,
+         Minimum_Format => 1,
+         Maximum_Format => 1,
+         Maximum_Output_Bytes => 64,
+         Constant_Time_Verify => True,
+         Creation_Allowed => True,
+         Verification_Allowed => True,
+         Deprecation => Identity.Crypto.Algorithms.Current);
+      Legacy_Algorithm : constant Identity.Crypto.Algorithms.Algorithm_Descriptor :=
+        (Current_Algorithm with delta
+           Id => Identity.Identifiers.Registry.From_String ("identity.crypto.legacy"),
+           Deprecation => Identity.Crypto.Algorithms.Deprecated);
+      Crypto_Input : constant Identity.Text.Bounded.Bounded_Text :=
+        Identity.Crypto.Encoding.Canonical_Input
+          (1,
+           Identity.Crypto.Domains.Session_Token,
+           Identity.Text.Bounded.From_String ("payload"));
+      Unsupported_MAC : constant Identity.Crypto.MACs.MAC_Result :=
+        Identity.Crypto.MACs.Unsupported (Identity.Crypto.Domains.Event_Integrity);
+      OTP_Capability : constant Identity.Crypto.One_Time_Passwords.OTP_Capability :=
+        (HMAC => Identity.Crypto.Capabilities.Missing,
+         Algorithm => Identity.Crypto.Domains.TOTP_Secret);
+      Event_Integrity_Service : constant Identity.Crypto.Event_Integrity.Event_Integrity_Service :=
+        (Capability => Identity.Crypto.Capabilities.Missing,
+         Algorithm => Identity.Crypto.Domains.Event_Integrity);
+      Creation_Key : constant Identity.Crypto.Keys.Key_Reference :=
+        (Key_Id => Identity.Text.Bounded.From_String ("key-active"),
+         Domain => Identity.Crypto.Domains.API_Key,
+         State => Identity.Crypto.Keys.Active);
+      Old_Key : constant Identity.Crypto.Keys.Key_Reference :=
+        (Key_Id => Identity.Text.Bounded.From_String ("key-old"),
+         Domain => Identity.Crypto.Domains.API_Key,
+         State => Identity.Crypto.Keys.Verification_Only);
+      CryptoLib_Entropy : Identity.Crypto.CryptoLib.Entropy.Unavailable_Source;
+      Entropy_Buffer : Ada.Streams.Stream_Element_Array (1 .. 4);
+      Entropy_Available : Boolean;
+      OS_Entropy : Identity.Crypto.CryptoLib.Entropy.OS_Source;
+      OS_Entropy_Buffer : Ada.Streams.Stream_Element_Array (1 .. 32);
+      OS_Entropy_Available : Boolean;
+      OS_Entropy_Repeat : Ada.Streams.Stream_Element_Array (1 .. 32);
+      OS_Entropy_Repeated : Boolean;
+      CryptoLib_MAC : constant Identity.Crypto.MACs.MAC_Result :=
+        Identity.Crypto.CryptoLib.MACs.Unsupported
+          (Identity.Crypto.Domains.Event_Integrity);
+      MAC_Key : constant Ada.Streams.Stream_Element_Array (1 .. 8) :=
+        [others => 16#4B#];
+      MAC_Data : constant Ada.Streams.Stream_Element_Array (1 .. 8) :=
+        [others => 16#4D#];
+      CryptoLib_HMAC : constant Identity.Crypto.MACs.MAC_Result :=
+        Identity.Crypto.CryptoLib.MACs.Compute
+          (Identity.Crypto.CryptoLib.MACs.HMAC_SHA256_Algorithm,
+           MAC_Key,
+           MAC_Data);
+      Probed_Capabilities : constant Identity.Crypto.Capabilities.Crypto_Capability_Set :=
+        Identity.Crypto.CryptoLib.Capabilities.Current;
+      CryptoLib_OTP : constant Identity.Crypto.One_Time_Passwords.OTP_Capability :=
+        Identity.Crypto.CryptoLib.One_Time_Passwords.Capability
+          (Identity.Crypto.Domains.TOTP_Secret);
+      CryptoLib_Event : constant Identity.Crypto.Event_Integrity.Event_Integrity_Service :=
+        Identity.Crypto.CryptoLib.Event_Integrity.Service
+          (Identity.Crypto.Domains.Event_Integrity);
+   begin
+      Entropy_Available :=
+        Identity.Crypto.CryptoLib.Entropy.Fill
+          (CryptoLib_Entropy, Entropy_Buffer);
+      OS_Entropy_Available :=
+        Identity.Crypto.CryptoLib.Entropy.Fill
+          (OS_Entropy, OS_Entropy_Buffer);
+      OS_Entropy_Repeated :=
+        Identity.Crypto.CryptoLib.Entropy.Fill
+          (OS_Entropy, OS_Entropy_Repeat);
+
+      Assert
+        (Identity.Crypto.Capabilities.Supports_Core_V1 (Core_Capabilities)
+         and then Identity.Crypto.Capabilities.Capability_Available
+           (Core_Capabilities.Entropy)
+         and then Identity.Crypto.Capabilities.Capability_Missing
+           (Core_Capabilities.Event_Integrity)
+         and then Identity.Crypto.Algorithms.Current_State
+           (Current_Algorithm.Deprecation)
+         and then Identity.Crypto.Algorithms.Deprecated_State
+           (Legacy_Algorithm.Deprecation)
+         and then Identity.Crypto.Algorithms.Creation_Allowed_By_State
+           (Current_Algorithm.Deprecation)
+         and then Identity.Crypto.Algorithms.Verification_Allowed_By_State
+           (Legacy_Algorithm.Deprecation)
+         and then Identity.Crypto.Registries.Creation_Status (Current_Algorithm)
+           = Identity.Crypto.Registries.Registered
+         and then Identity.Crypto.Registries.Registered_Status
+           (Identity.Crypto.Registries.Creation_Status (Current_Algorithm))
+         and then Identity.Crypto.Registries.Creation_Status (Legacy_Algorithm)
+           = Identity.Crypto.Registries.Creation_Disabled
+         and then Identity.Crypto.Registries.Creation_Disabled_Status
+           (Identity.Crypto.Registries.Creation_Status (Legacy_Algorithm))
+         and then Identity.Crypto.Registries.Admission_Rejected
+           (Identity.Crypto.Registries.Creation_Status (Legacy_Algorithm))
+         and then Identity.Crypto.Registries.Verification_Status (Legacy_Algorithm)
+           = Identity.Crypto.Registries.Registered,
+         "IDENTITY-CRYPTO-002 crypto capabilities and algorithm registry split creation from verification");
+
+      Assert
+        (Identity.Codecs.Canonical.Is_Canonical_Frame (Crypto_Input)
+         and then Unsupported_MAC.Capability = Identity.Crypto.Capabilities.Missing
+         and then not Identity.Crypto.One_Time_Passwords.Available (OTP_Capability)
+         and then not Identity.Crypto.Event_Integrity.Configured (Event_Integrity_Service)
+         and then Identity.Crypto.Event_Integrity.Verification_Accepted
+           (Identity.Crypto.Event_Integrity.Verified)
+         and then Identity.Crypto.Event_Integrity.Verification_Rejected
+           (Identity.Crypto.Event_Integrity.Not_Verified)
+         and then Identity.Crypto.Event_Integrity.Not_Configured_Status
+           (Identity.Crypto.Event_Integrity.Not_Configured)
+         and then Identity.Crypto.Event_Integrity.Missing_Cryptographic_Capability
+           (Identity.Crypto.Event_Integrity.Missing_Capability)
+         and then Identity.Crypto.Event_Integrity.Operational_Failure
+           (Identity.Crypto.Event_Integrity.Missing_Capability),
+         "IDENTITY-CRYPTO-003 crypto integrations report missing capabilities explicitly");
+
+      Assert
+        (not Entropy_Available
+         and then Entropy_Buffer = [Entropy_Buffer'Range => 0]
+         and then CryptoLib_MAC.Capability = Identity.Crypto.Capabilities.Missing
+         and then Identity.Text.Bounded.Length (CryptoLib_MAC.Output) = 0,
+         "IDENTITY-CRYPTO-003 unavailable cryptolib primitives fail closed and disclose no output");
+
+      Assert
+        (OS_Entropy_Available
+         and then OS_Entropy_Buffer /= [OS_Entropy_Buffer'Range => 0]
+         and then OS_Entropy_Repeated
+         and then OS_Entropy_Buffer /= OS_Entropy_Repeat
+         and then Identity.Crypto.CryptoLib.Entropy.Capability
+           = Identity.Crypto.Capabilities.Available,
+         "IDENTITY-CRYPTO-004 OS entropy source yields non-repeating unpredictable bytes");
+
+      Assert
+        (CryptoLib_HMAC.Capability = Identity.Crypto.Capabilities.Available
+         and then Identity.Text.Bounded.Length (CryptoLib_HMAC.Output) = 64
+         and then Identity.Crypto.One_Time_Passwords.Available (CryptoLib_OTP)
+         and then Identity.Crypto.Event_Integrity.Configured (CryptoLib_Event),
+         "IDENTITY-CRYPTO-004 bound cryptolib primitives report available capabilities");
+
+      Assert
+        (Identity.Crypto.CryptoLib.MACs.Capability
+           (Identity.Crypto.Domains.Event_Integrity)
+           = Identity.Crypto.Capabilities.Missing
+         and then Identity.Crypto.Capabilities.Capability_Missing
+           (Identity.Crypto.CryptoLib.MACs.Capability
+              (Identity.Crypto.Domains.Event_Integrity))
+         and then Identity.Crypto.CryptoLib.MACs.Capability
+           (Identity.Crypto.CryptoLib.MACs.HMAC_SHA256_Algorithm)
+           = Identity.Crypto.Capabilities.Available
+         and then Identity.Crypto.CryptoLib.MACs.Compute
+           (Identity.Crypto.Domains.Event_Integrity, MAC_Key, MAC_Data).Capability
+           = Identity.Crypto.Capabilities.Missing
+         and then Identity.Text.Bounded.Length
+           (Identity.Crypto.CryptoLib.MACs.Compute
+              (Identity.Crypto.Domains.Event_Integrity, MAC_Key, MAC_Data).Output) = 0
+         and then Identity.Crypto.CryptoLib.MACs.Unsupported
+           (Identity.Crypto.Domains.Event_Integrity).Capability
+           = Identity.Crypto.Capabilities.Missing
+         and then Identity.Crypto.CryptoLib.One_Time_Passwords.Capability
+           (Identity.Crypto.Domains.TOTP_Secret).HMAC
+           = Identity.Crypto.CryptoLib.MACs.Capability
+               (Identity.Crypto.CryptoLib.MACs.HMAC_SHA256_Algorithm)
+         and then Identity.Crypto.CryptoLib.Event_Integrity.Service
+           (Identity.Crypto.Domains.Event_Integrity).Capability
+           = Identity.Crypto.CryptoLib.MACs.Capability
+               (Identity.Crypto.CryptoLib.MACs.HMAC_SHA256_Algorithm)
+         and then not Entropy_Available
+         and then Entropy_Buffer = [Entropy_Buffer'Range => 0],
+         "cryptolib child packages report unavailable primitives explicitly");
+
+      Assert
+        (Identity.Crypto.Capabilities.Supports_Core_V1 (Probed_Capabilities)
+         and then Probed_Capabilities.Entropy = Identity.Crypto.Capabilities.Available
+         and then Probed_Capabilities.Password_Hashing
+           = Identity.Crypto.Capabilities.Available
+         and then Probed_Capabilities.Secret_Verifiers
+           = Identity.Crypto.Capabilities.Available
+         and then Probed_Capabilities.Constant_Time
+           = Identity.Crypto.Capabilities.Available
+         and then Probed_Capabilities.TOTP_HMAC = Identity.Crypto.Capabilities.Available
+         and then Probed_Capabilities.Event_Integrity
+           = Identity.Crypto.Capabilities.Available,
+         "IDENTITY-CRYPTO-004 probed capability set is established by exercising each primitive");
+
+      Assert
+        (Identity.Crypto.Keys.Can_Create (Creation_Key)
+         and then Identity.Crypto.Keys.Can_Verify (Creation_Key)
+         and then not Identity.Crypto.Keys.Can_Create (Old_Key)
+         and then Identity.Crypto.Keys.Can_Verify (Old_Key),
+         "IDENTITY-KEYS-001 key states separate creation and historical verification");
+
+      Assert
+        (Identity.Crypto.Keys.Can_Verify (Old_Key)
+         and then Old_Key.Domain = Identity.Crypto.Domains.API_Key
+         and then not Identity.Crypto.Keys.Can_Create (Old_Key),
+         "IDENTITY-KEYS-001 verification-only key remains domain-bound historical key material");
+   end Test_14_identity_crypto_current;
+
+   procedure Test_15_IDENTITY_CANARY_SECRET (T : in out AUnit.Test_Cases.Test_Case'Class) is
+      pragma Unreferenced (T);
+      Clock : Identity.Testing.Clocks.Manual_Clock := (Current => 10);
+      Entropy : constant Identity.Testing.Entropy.Entropy_Script :=
+        (Available => Identity.Crypto.Capabilities.Available,
+         Counter => 0,
+         Fail_Next => True);
+      Failure : Identity.Testing.Failures.Failure_Script :=
+        (Checkpoint => Identity.Testing.Failures.Before_Commit,
+         Armed => True,
+         Remaining => 1,
+         Consumed => 0);
+      Multi_Failure : Identity.Testing.Failures.Failure_Script :=
+        (Checkpoint => Identity.Testing.Failures.Crypto_Service,
+         Armed => True,
+         Remaining => 2,
+         Consumed => 0);
+      Triggered : Boolean := False;
+      Barrier : Identity.Testing.Concurrency.Checkpoint_Barrier :=
+        (Required => 2,
+         Arrived => 0);
+      Fixture_Set : constant Identity.Testing.Fixtures.Fixture_Set :=
+        Identity.Testing.Fixtures.Default_Set;
+      Key_Reference : constant Identity.Crypto.Keys.Key_Reference :=
+        Identity.Testing.Keys.Active_API_Key;
+   begin
+      Identity.Testing.Clocks.Advance (Clock, 5);
+      Identity.Testing.Concurrency.Arrive (Barrier);
+      Assert
+        (Identity.Testing.Clocks.Now (Clock) = 15
+         and then not Identity.Testing.Entropy.Can_Generate (Entropy)
+         and then Identity.Testing.Failures.Valid (Failure)
+         and then Identity.Testing.Failures.Should_Fail
+           (Failure, Identity.Testing.Failures.Before_Commit)
+         and then not Identity.Testing.Concurrency.Released (Barrier),
+         "IDENTITY-TESTING-001 deterministic clock entropy failure and barrier fixtures are explicit");
+
+      Identity.Testing.Failures.Consume
+        (Failure, Identity.Testing.Failures.Before_Commit, Triggered);
+      Assert
+        (Triggered
+         and then Identity.Testing.Failures.Exhausted (Failure)
+         and then not Identity.Testing.Failures.Should_Fail
+           (Failure, Identity.Testing.Failures.Before_Commit),
+         "IDENTITY-TESTING-001 failure scripts consume one-shot checkpoint failures");
+
+      Identity.Testing.Failures.Consume
+        (Multi_Failure, Identity.Testing.Failures.Crypto_Service, Triggered);
+      Assert
+        (Triggered
+         and then not Identity.Testing.Failures.Exhausted (Multi_Failure)
+         and then Identity.Testing.Failures.Should_Fail
+           (Multi_Failure, Identity.Testing.Failures.Crypto_Service),
+         "IDENTITY-TESTING-001 failure scripts support bounded repeated checkpoint failures");
+      Identity.Testing.Failures.Consume
+        (Multi_Failure, Identity.Testing.Failures.Crypto_Service, Triggered);
+      Assert
+        (Triggered
+         and then Identity.Testing.Failures.Exhausted (Multi_Failure)
+         and then not Identity.Testing.Failures.Should_Fail
+           (Multi_Failure, Identity.Testing.Failures.Crypto_Service),
+         "IDENTITY-TESTING-001 bounded repeated failure scripts exhaust deterministically");
+
+      Identity.Testing.Concurrency.Arrive (Barrier);
+      Assert
+        (Identity.Testing.Concurrency.Released (Barrier)
+         and then Identity.Identifiers.Entities.To_String
+           (Identity.Testing.Identifiers.Principal_One)
+           = Identity.Identifiers.Entities.To_String (P1)
+         and then Identity.Crypto.Keys.Can_Create (Key_Reference)
+         and then Identity.Testing.Repositories.Required_Memory_Capabilities.Security_Transitions
+         and then Identity.Text.Bounded.Image (Identity.Testing.Canaries.Distinctive_Text)
+           = "IDENTITY-CANARY-SECRET"
+         and then Identity.Text.Bounded.Image (Fixture_Set.Name) = "identity.default-fixtures",
+         "IDENTITY-FIXTURE-001 deterministic identifiers keys repository canaries and fixture metadata are stable");
+   end Test_15_IDENTITY_CANARY_SECRET;
+
+   procedure Test_16_history_verifier (T : in out AUnit.Test_Cases.Test_Case'Class) is
+      pragma Unreferenced (T);
+      Acceptance : constant Identity.Passwords.Policies.Password_Acceptance_Policy :=
+        (Minimum_Length => 12,
+         Maximum_Length => 128,
+         Quality_Checks_Enabled => True,
+         Compromised_Check_Enabled => False);
+      Zero_Minimum_Acceptance : constant
+        Identity.Passwords.Policies.Password_Acceptance_Policy :=
+        (Minimum_Length => 0,
+         Maximum_Length => 128,
+         Quality_Checks_Enabled => False,
+         Compromised_Check_Enabled => False);
+      Unordered_Acceptance : constant
+        Identity.Passwords.Policies.Password_Acceptance_Policy :=
+        (Minimum_Length => 20,
+         Maximum_Length => 12,
+         Quality_Checks_Enabled => False,
+         Compromised_Check_Enabled => False);
+      Hashing : constant Identity.Passwords.Policies.Password_Hashing_Policy :=
+        (Preferred_Format => 1,
+         Maximum_Verifier_Bytes => 256,
+         Accepted_Legacy_Formats => 1,
+         Pepper_Required => False);
+      Zero_Verifier_Hashing : constant
+        Identity.Passwords.Policies.Password_Hashing_Policy :=
+        (Preferred_Format => 1,
+         Maximum_Verifier_Bytes => 0,
+         Accepted_Legacy_Formats => 1,
+         Pepper_Required => False);
+      History_Policy : constant Identity.Passwords.History.History_Policy :=
+        (Depth => 4,
+         Maximum_Verifications => 4);
+      Invalid_History_Policy : constant Identity.Passwords.History.History_Policy :=
+        (Depth => 3,
+         Maximum_Verifications => 4);
+      History_Record : constant Identity.Passwords.History.History_Record :=
+        (Verifier => Identity.Text.Bounded.From_String ("history-verifier"),
+         Malformed => False);
+      Malformed_History_Record : constant Identity.Passwords.History.History_Record :=
+        (History_Record with delta Malformed => True);
+      Change_Authority : constant Identity.Passwords.Changes.Password_Change_Authority :=
+        (Authenticated => True,
+         Recent_Authentication => True,
+         Assurance => Identity.Assurance.Levels.Sensitive,
+         Current_Password_Required => True,
+         Recovery_Restricted => False);
+      Reset_Policy : constant Identity.Passwords.Resets.Reset_Policy :=
+        (Supersession => Identity.Passwords.Resets.Supersede_Prior_Unconsumed,
+         Sessions => Identity.Passwords.Resets.Revoke_Credential_Sessions,
+         Clear_Administrative_Restrictions => False);
+      Invalid_Reset_Policy : constant Identity.Passwords.Resets.Reset_Policy :=
+        (Supersession => Identity.Passwords.Resets.Supersede_Prior_Unconsumed,
+         Sessions => Identity.Passwords.Resets.Revoke_Credential_Sessions,
+         Clear_Administrative_Restrictions => True);
+      Keep_Sessions_Reset_Policy : constant Identity.Passwords.Resets.Reset_Policy :=
+        (Supersession => Identity.Passwords.Resets.Supersede_Prior_Unconsumed,
+         Sessions => Identity.Passwords.Resets.Keep_Sessions,
+         Clear_Administrative_Restrictions => False);
+      API_Key_Policy : constant Identity.API_Keys.Policies.API_Key_Policy :=
+        (Maximum_Active_Keys_Per_Principal => 8,
+         Maximum_Overlap => 3_600,
+         Expiration_Required => True);
+      Invalid_API_Key_Policy : constant Identity.API_Keys.Policies.API_Key_Policy :=
+        (Maximum_Active_Keys_Per_Principal => 8,
+         Maximum_Overlap => 0,
+         Expiration_Required => False);
+      Zero_Capacity_API_Key_Policy : constant
+        Identity.API_Keys.Policies.API_Key_Policy :=
+        (Maximum_Active_Keys_Per_Principal => 0,
+         Maximum_Overlap => 3_600,
+         Expiration_Required => True);
+      Zero_Overlap_API_Key_Policy : constant
+        Identity.API_Keys.Policies.API_Key_Policy :=
+        (Maximum_Active_Keys_Per_Principal => 8,
+         Maximum_Overlap => 0,
+         Expiration_Required => True);
+      No_Expiration_API_Key_Policy : constant
+        Identity.API_Keys.Policies.API_Key_Policy :=
+        (Maximum_Active_Keys_Per_Principal => 8,
+         Maximum_Overlap => 3_600,
+         Expiration_Required => False);
+      Rotation_Window : constant Identity.API_Keys.Rotation.Rotation_Window :=
+        (Generation => 2,
+         State => Identity.API_Keys.Rotation.Overlap_Active);
+      Exhausted_Rotation_Window : constant Identity.API_Keys.Rotation.Rotation_Window :=
+        (Generation => Identity.Versions.Rotation_Generation'Last,
+         State => Identity.API_Keys.Rotation.Overlap_Active);
+      TOTP_Policy : constant Identity.One_Time_Passwords.Policies.TOTP_Policy :=
+        (Time_Step_Seconds => 30,
+         Digit_Count => 6,
+         Accepted_Skew_Steps => 1,
+         Maximum_Attempts => 5,
+         Minimum_Secret_Bytes => 20,
+         Replay_Prevention_Required => True);
+      Zero_Attempt_TOTP_Policy : constant Identity.One_Time_Passwords.Policies.TOTP_Policy :=
+        (Time_Step_Seconds => 30,
+         Digit_Count => 6,
+         Accepted_Skew_Steps => 1,
+         Maximum_Attempts => 0,
+         Minimum_Secret_Bytes => 20,
+         Replay_Prevention_Required => True);
+      No_Replay_TOTP_Policy : constant Identity.One_Time_Passwords.Policies.TOTP_Policy :=
+        (Time_Step_Seconds => 30,
+         Digit_Count => 6,
+         Accepted_Skew_Steps => 1,
+         Maximum_Attempts => 5,
+         Minimum_Secret_Bytes => 20,
+         Replay_Prevention_Required => False);
+      Recovery_Code_Policy : constant Identity.Recovery_Codes.Policies.Recovery_Code_Policy :=
+        (Active_Set_Size => 10,
+         Display_Only_Once => True,
+         Replace_Set_On_Regeneration => True,
+         Reduced_Assurance_By_Default => True);
+      Repeat_Display_Recovery_Code_Policy : constant
+        Identity.Recovery_Codes.Policies.Recovery_Code_Policy :=
+        (Active_Set_Size => 10,
+         Display_Only_Once => False,
+         Replace_Set_On_Regeneration => True,
+         Reduced_Assurance_By_Default => True);
+      Keep_Set_Recovery_Code_Policy : constant
+        Identity.Recovery_Codes.Policies.Recovery_Code_Policy :=
+        (Active_Set_Size => 10,
+         Display_Only_Once => True,
+         Replace_Set_On_Regeneration => False,
+         Reduced_Assurance_By_Default => True);
+      Full_Assurance_Recovery_Code_Policy : constant
+        Identity.Recovery_Codes.Policies.Recovery_Code_Policy :=
+        (Active_Set_Size => 10,
+         Display_Only_Once => True,
+         Replace_Set_On_Regeneration => True,
+         Reduced_Assurance_By_Default => False);
+   begin
+      Assert
+        (Identity.Passwords.Policies.Valid (Acceptance)
+         and then Identity.Passwords.Policies.Validate (Acceptance)
+           = Identity.Passwords.Policies.Password_Acceptance_Policy_Valid
+         and then Identity.Passwords.Policies.Validation_Accepted
+           (Identity.Passwords.Policies.Validate (Acceptance))
+         and then Identity.Passwords.Policies.Validate (Zero_Minimum_Acceptance)
+           = Identity.Passwords.Policies.Password_Minimum_Length_Zero
+         and then Identity.Passwords.Policies.Acceptance_Length_Rejected
+           (Identity.Passwords.Policies.Validate (Zero_Minimum_Acceptance))
+         and then Identity.Passwords.Policies.Validate (Unordered_Acceptance)
+           = Identity.Passwords.Policies.Password_Maximum_Length_Below_Minimum
+         and then Identity.Passwords.Policies.Acceptance_Length_Rejected
+           (Identity.Passwords.Policies.Validate (Unordered_Acceptance))
+         and then Identity.Passwords.Policies.Valid (Hashing)
+         and then Identity.Passwords.Policies.Validate (Hashing)
+           = Identity.Passwords.Policies.Password_Hashing_Policy_Valid
+         and then Identity.Passwords.Policies.Validation_Accepted
+           (Identity.Passwords.Policies.Validate (Hashing))
+         and then Identity.Passwords.Policies.Validate (Zero_Verifier_Hashing)
+           = Identity.Passwords.Policies.Password_Maximum_Verifier_Bytes_Zero
+         and then Identity.Passwords.Policies.Verifier_Length_Rejected
+           (Identity.Passwords.Policies.Validate (Zero_Verifier_Hashing))
+         and then Identity.Passwords.Policies.Accepts_Length (Acceptance, 12)
+           = Identity.Passwords.Policies.Length_Accepted
+         and then Identity.Passwords.Policies.Length_Accepted_Input
+           (Identity.Passwords.Policies.Accepts_Length (Acceptance, 12))
+         and then Identity.Passwords.Policies.Accepts_Length (Acceptance, 11)
+           = Identity.Passwords.Policies.Too_Short
+         and then Identity.Passwords.Policies.Minimum_Length_Rejected
+           (Identity.Passwords.Policies.Accepts_Length (Acceptance, 11))
+         and then Identity.Passwords.Policies.Accepts_Length (Acceptance, 129)
+           = Identity.Passwords.Policies.Too_Long
+         and then Identity.Passwords.Policies.Maximum_Length_Rejected
+           (Identity.Passwords.Policies.Accepts_Length (Acceptance, 129))
+         and then Identity.Passwords.Policies.Accepts_Length
+           ((Minimum_Length => 20,
+             Maximum_Length => 12,
+             Quality_Checks_Enabled => False,
+             Compromised_Check_Enabled => False),
+            16) = Identity.Passwords.Policies.Invalid_Policy
+         and then Identity.Passwords.Policies.Policy_Rejected
+           (Identity.Passwords.Policies.Invalid_Policy)
+         and then Identity.Passwords.Policies.Length_Rejected
+           (Identity.Passwords.Policies.Too_Short)
+         and then Identity.Passwords.History.Check_Admission (History_Policy, 4)
+           = Identity.Passwords.History.Allowed
+         and then Identity.Passwords.History.History_Allowed
+           (Identity.Passwords.History.Allowed)
+         and then Identity.Passwords.History.Check_Admission (History_Policy, 5)
+           = Identity.Passwords.History.Work_Limit_Exceeded
+         and then Identity.Passwords.History.Work_Limit_Rejected
+           (Identity.Passwords.History.Work_Limit_Exceeded)
+         and then Identity.Passwords.History.Evaluate_Record
+           (History_Record, False) = Identity.Passwords.History.Allowed
+         and then Identity.Passwords.History.Evaluate_Record
+           (History_Record, True) = Identity.Passwords.History.Reused
+         and then Identity.Passwords.History.Evaluate_Record
+           (Malformed_History_Record, True) = Identity.Passwords.History.Malformed_History
+         and then Identity.Passwords.History.Reuse_Rejected
+           (Identity.Passwords.History.Reused)
+         and then Identity.Passwords.History.Malformed_History_Rejected
+           (Identity.Passwords.History.Malformed_History)
+         and then Identity.Passwords.History.No_Credential_Replacement
+           (Identity.Passwords.History.Reused)
+         and then Identity.Passwords.History.No_Credential_Replacement
+           (Identity.Passwords.History.Malformed_History)
+         and then Identity.Passwords.History.No_Credential_Replacement
+           (Identity.Passwords.History.Work_Limit_Exceeded)
+         and then Identity.Passwords.History.Valid (History_Policy)
+         and then Identity.Passwords.History.Validate (History_Policy)
+           = Identity.Passwords.History.History_Policy_Valid
+         and then Identity.Passwords.History.Validation_Accepted
+           (Identity.Passwords.History.Validate (History_Policy))
+         and then Identity.Passwords.History.Validate (Invalid_History_Policy)
+           = Identity.Passwords.History.History_Verifications_Exceed_Depth
+         and then Identity.Passwords.History.Verification_Budget_Rejected
+           (Identity.Passwords.History.Validate (Invalid_History_Policy))
+         and then not Identity.Passwords.History.Valid (Invalid_History_Policy)
+         and then Identity.Crypto.Password_Hashing.Verification_Accepted
+           (Identity.Crypto.Password_Hashing.Verified)
+         and then Identity.Crypto.Password_Hashing.Verification_Rejected
+           (Identity.Crypto.Password_Hashing.Not_Verified)
+         and then Identity.Crypto.Password_Hashing.Malformed_Verifier_Rejected
+           (Identity.Crypto.Password_Hashing.Malformed_Verifier)
+         and then Identity.Crypto.Password_Hashing.Unsupported_Format_Rejected
+           (Identity.Crypto.Password_Hashing.Unsupported_Format)
+         and then Identity.Crypto.Password_Hashing.Unsupported_Algorithm_Rejected
+           (Identity.Crypto.Password_Hashing.Unsupported_Algorithm)
+         and then Identity.Crypto.Password_Hashing.Resource_Limit_Rejected
+           (Identity.Crypto.Password_Hashing.Parameters_Outside_Limits)
+         and then Identity.Crypto.Password_Hashing.Cryptographic_Failed
+           (Identity.Crypto.Password_Hashing.Cryptographic_Failure)
+         and then Identity.Crypto.Password_Hashing.Operational_Failure
+           (Identity.Crypto.Password_Hashing.Parameters_Outside_Limits)
+         and then Identity.Crypto.Password_Hashing.Migration_Current
+           (Identity.Crypto.Password_Hashing.Current)
+         and then Identity.Crypto.Password_Hashing.Upgrade_Recommended_Status
+           (Identity.Crypto.Password_Hashing.Upgrade_Recommended)
+         and then Identity.Crypto.Password_Hashing.Upgrade_Required_Status
+           (Identity.Crypto.Password_Hashing.Upgrade_Required)
+         and then Identity.Crypto.Password_Hashing.Requires_Migration
+           (Identity.Crypto.Password_Hashing.Upgrade_Required),
+         "IDENTITY-PASSWORD-POLICY-001 password acceptance hashing and history policies are bounded");
+
+      Assert
+        (Identity.Passwords.Migrations.Decide
+           (Identity.Crypto.Password_Hashing.Upgrade_Required,
+            Identity.Passwords.Migrations.Restrict_Session_Issuance)
+         = Identity.Passwords.Migrations.Authentication_Restricted
+         and then Identity.Passwords.Migrations.Session_Issuance_Restricted
+           (Identity.Passwords.Migrations.Authentication_Restricted)
+         and then Identity.Passwords.Migrations.Authentication_May_Proceed
+           (Identity.Passwords.Migrations.Authentication_Restricted)
+         and then Identity.Passwords.Migrations.Migration_Not_Needed
+           (Identity.Passwords.Migrations.No_Migration)
+         and then Identity.Passwords.Migrations.Migration_Should_Be_Attempted
+           (Identity.Passwords.Migrations.Migration_Recommended)
+         and then Identity.Passwords.Migrations.Migration_Is_Mandatory
+           (Identity.Passwords.Migrations.Migration_Required)
+         and then Identity.Passwords.Migrations.Operational
+           (Identity.Passwords.Migrations.Operational_Failure)
+         and then not Identity.Passwords.Migrations.Authentication_May_Proceed
+         (Identity.Passwords.Migrations.Operational_Failure)
+         and then Identity.Passwords.Changes.May_Change
+           (Change_Authority, Identity.Assurance.Levels.Interactive)
+         and then (Identity.Passwords.Changes.Admission
+           (Change_Authority, Identity.Assurance.Levels.Interactive)
+           = Identity.Passwords.Changes.Password_Change_Admitted)
+         and then Identity.Passwords.Changes.Admission_Accepted
+           (Identity.Passwords.Changes.Admission
+              (Change_Authority, Identity.Assurance.Levels.Interactive))
+         and then not Identity.Passwords.Changes.Admission_Rejected
+           (Identity.Passwords.Changes.Admission
+              (Change_Authority, Identity.Assurance.Levels.Interactive))
+         and then (Identity.Passwords.Changes.Admission
+           ((Change_Authority with delta Authenticated => False),
+            Identity.Assurance.Levels.Interactive)
+           = Identity.Passwords.Changes.Password_Change_Unauthenticated)
+         and then Identity.Passwords.Changes.Admission_Rejected
+           (Identity.Passwords.Changes.Admission
+              ((Change_Authority with delta Authenticated => False),
+               Identity.Assurance.Levels.Interactive))
+         and then Identity.Passwords.Changes.Unauthenticated_Rejection
+           (Identity.Passwords.Changes.Admission
+              ((Change_Authority with delta Authenticated => False),
+               Identity.Assurance.Levels.Interactive))
+         and then (Identity.Passwords.Changes.Admission
+           ((Change_Authority with delta Recent_Authentication => False),
+            Identity.Assurance.Levels.Interactive)
+           = Identity.Passwords.Changes.Password_Change_Not_Recent)
+         and then Identity.Passwords.Changes.Admission_Rejected
+           (Identity.Passwords.Changes.Admission
+              ((Change_Authority with delta Recent_Authentication => False),
+               Identity.Assurance.Levels.Interactive))
+         and then Identity.Passwords.Changes.Recent_Authentication_Rejection
+           (Identity.Passwords.Changes.Admission
+              ((Change_Authority with delta Recent_Authentication => False),
+               Identity.Assurance.Levels.Interactive))
+         and then (Identity.Passwords.Changes.Admission
+           ((Change_Authority with delta Assurance => Identity.Assurance.Levels.Basic),
+            Identity.Assurance.Levels.Sensitive)
+           = Identity.Passwords.Changes.Password_Change_Insufficient_Assurance)
+         and then Identity.Passwords.Changes.Admission_Rejected
+           (Identity.Passwords.Changes.Admission
+              ((Change_Authority with delta Assurance => Identity.Assurance.Levels.Basic),
+               Identity.Assurance.Levels.Sensitive))
+         and then Identity.Passwords.Changes.Assurance_Rejection
+           (Identity.Passwords.Changes.Admission
+              ((Change_Authority with delta Assurance => Identity.Assurance.Levels.Basic),
+               Identity.Assurance.Levels.Sensitive))
+         and then (Identity.Passwords.Changes.Admission
+           ((Change_Authority with delta Recovery_Restricted => True),
+            Identity.Assurance.Levels.Interactive)
+           = Identity.Passwords.Changes.Password_Change_Recovery_Restricted)
+         and then Identity.Passwords.Changes.Admission_Rejected
+           (Identity.Passwords.Changes.Admission
+              ((Change_Authority with delta Recovery_Restricted => True),
+               Identity.Assurance.Levels.Interactive))
+         and then Identity.Passwords.Changes.Recovery_Restriction_Rejection
+           (Identity.Passwords.Changes.Admission
+              ((Change_Authority with delta Recovery_Restricted => True),
+               Identity.Assurance.Levels.Interactive))
+         and then Identity.Passwords.Resets.Valid (Reset_Policy)
+         and then Identity.Passwords.Resets.Validate (Reset_Policy)
+           = Identity.Passwords.Resets.Reset_Policy_Valid
+         and then Identity.Passwords.Resets.Validation_Accepted
+           (Identity.Passwords.Resets.Validate (Reset_Policy))
+         and then Identity.Passwords.Resets.Revokes_Sessions (Reset_Policy.Sessions)
+         and then Identity.Passwords.Resets.Validate (Keep_Sessions_Reset_Policy)
+           = Identity.Passwords.Resets.Reset_Session_Consequence_Missing
+         and then Identity.Passwords.Resets.Session_Consequence_Rejected
+           (Identity.Passwords.Resets.Validate (Keep_Sessions_Reset_Policy))
+         and then not Identity.Passwords.Resets.Valid (Keep_Sessions_Reset_Policy)
+         and then Identity.Passwords.Resets.Validate (Invalid_Reset_Policy)
+           = Identity.Passwords.Resets.Reset_Clears_Administrative_Restrictions
+         and then Identity.Passwords.Resets.Administrative_Clear_Rejected
+           (Identity.Passwords.Resets.Validate (Invalid_Reset_Policy))
+         and then not Identity.Passwords.Resets.Valid (Invalid_Reset_Policy),
+         "IDENTITY-PASSWORD-AUTHORITY-001 password migration change and reset "
+         & "authority require reset session consequences");
+
+      Assert
+        (Identity.API_Keys.Policies.Valid (API_Key_Policy)
+         and then Identity.API_Keys.Policies.Validate (API_Key_Policy)
+           = Identity.API_Keys.Policies.API_Key_Policy_Valid
+         and then Identity.API_Keys.Policies.Validation_Accepted
+           (Identity.API_Keys.Policies.Validate (API_Key_Policy))
+         and then Identity.API_Keys.Policies.Validate (Zero_Capacity_API_Key_Policy)
+           = Identity.API_Keys.Policies.API_Key_Active_Key_Capacity_Zero
+         and then Identity.API_Keys.Policies.Capacity_Rejected
+           (Identity.API_Keys.Policies.Validate (Zero_Capacity_API_Key_Policy))
+         and then Identity.API_Keys.Policies.Validate (Zero_Overlap_API_Key_Policy)
+           = Identity.API_Keys.Policies.API_Key_Overlap_Non_Positive
+         and then Identity.API_Keys.Policies.Overlap_Rejected
+           (Identity.API_Keys.Policies.Validate (Zero_Overlap_API_Key_Policy))
+         and then Identity.API_Keys.Policies.Validate (No_Expiration_API_Key_Policy)
+           = Identity.API_Keys.Policies.API_Key_Expiration_Not_Required
+         and then Identity.API_Keys.Policies.Expiration_Policy_Rejected
+           (Identity.API_Keys.Policies.Validate (No_Expiration_API_Key_Policy))
+         and then not Identity.API_Keys.Policies.Valid (Invalid_API_Key_Policy)
+         and then Identity.API_Keys.Policies.Evaluate_Issue_Lifetime
+           (API_Key_Policy, 10, (Present => True, Time_Point => 100))
+           = Identity.API_Keys.Policies.Issue_Lifetime_Allowed
+         and then Identity.API_Keys.Policies.Issue_Lifetime_Accepted
+           (Identity.API_Keys.Policies.Issue_Lifetime_Allowed)
+         and then Identity.API_Keys.Policies.Verifier_Derivation_Allowed
+           (Identity.API_Keys.Policies.Issue_Lifetime_Allowed)
+         and then Identity.API_Keys.Policies.Evaluate_Issue_Lifetime
+           (API_Key_Policy, 10, (Present => False, Time_Point => 0))
+           = Identity.API_Keys.Policies.Expiration_Missing
+         and then Identity.API_Keys.Policies.Expiration_Rejected
+           (Identity.API_Keys.Policies.Expiration_Missing)
+         and then Identity.API_Keys.Policies.Evaluate_Issue_Lifetime
+           (API_Key_Policy, 10, (Present => True, Time_Point => 10))
+           = Identity.API_Keys.Policies.Expiration_Not_After_Creation
+         and then Identity.API_Keys.Policies.Expiration_Rejected
+           (Identity.API_Keys.Policies.Expiration_Not_After_Creation)
+         and then Identity.API_Keys.Policies.Policy_Rejected
+           (Identity.API_Keys.Policies.Policy_Invalid)
+         and then not Identity.API_Keys.Policies.Verifier_Derivation_Allowed
+           (Identity.API_Keys.Policies.Expiration_Missing)
+         and then Identity.API_Keys.Rotation.Can_Rotate (Rotation_Window)
+           = Identity.API_Keys.Rotation.Allowed
+         and then Identity.API_Keys.Rotation.Rotation_Allowed
+           (Identity.API_Keys.Rotation.Allowed)
+         and then Identity.API_Keys.Rotation.Can_Rotate (Exhausted_Rotation_Window)
+           = Identity.API_Keys.Rotation.Generation_Exhausted
+         and then Identity.API_Keys.Rotation.Generation_Rejected
+           (Identity.API_Keys.Rotation.Generation_Exhausted)
+         and then Identity.API_Keys.Rotation.Overlap_Usable
+           (Identity.API_Keys.Rotation.No_Overlap)
+         and then Identity.API_Keys.Rotation.Overlap_Usable
+           (Identity.API_Keys.Rotation.Overlap_Active)
+         and then Identity.API_Keys.Rotation.Overlap_Terminal
+           (Identity.API_Keys.Rotation.Overlap_Expired)
+         and then not Identity.API_Keys.Rotation.Overlap_Usable
+           (Identity.API_Keys.Rotation.Overlap_Expired)
+         and then (Identity.API_Keys.Rotation.Admission (Rotation_Window)
+           = Identity.API_Keys.Rotation.Rotation_Admitted)
+         and then Identity.API_Keys.Rotation.Admission_Accepted
+           (Identity.API_Keys.Rotation.Rotation_Admitted)
+         and then not Identity.API_Keys.Rotation.Admission_Rejected
+           (Identity.API_Keys.Rotation.Rotation_Admitted)
+         and then (Identity.API_Keys.Rotation.Admission
+           (Exhausted_Rotation_Window)
+           = Identity.API_Keys.Rotation.Rotation_Generation_Exhausted)
+         and then Identity.API_Keys.Rotation.Admission_Rejected
+           (Identity.API_Keys.Rotation.Rotation_Generation_Exhausted)
+         and then Identity.API_Keys.Rotation.Admission_Generation_Rejected
+           (Identity.API_Keys.Rotation.Rotation_Generation_Exhausted)
+         and then (Identity.API_Keys.Rotation.Admission
+           (Identity.Versions.Rotation_Generation'(2),
+           Identity.API_Keys.Rotation.Overlap_Expired)
+           = Identity.API_Keys.Rotation.Rotation_Overlap_Expired)
+         and then Identity.API_Keys.Rotation.Admission_Rejected
+           (Identity.API_Keys.Rotation.Rotation_Overlap_Expired)
+         and then Identity.API_Keys.Rotation.Admission_Overlap_Rejected
+           (Identity.API_Keys.Rotation.Rotation_Overlap_Expired)
+         and then Identity.API_Keys.Rotation.Successor_Generation (Rotation_Window) = 3
+         and then Identity.API_Keys.Rotation.Successor_Generation
+           (Identity.Versions.Rotation_Generation'(2)) = 3
+         and then Identity.API_Keys.Rotation.Matches_Successor_Generation
+           (Identity.Versions.Rotation_Generation'(2),
+            Identity.Versions.Rotation_Generation'(3))
+         and then Identity.API_Keys.Rotation.Successor_Admission
+           (Identity.Versions.Rotation_Generation'(2),
+           Identity.Versions.Rotation_Generation'(3))
+           = Identity.API_Keys.Rotation.Successor_Generation_Admitted
+         and then Identity.API_Keys.Rotation.Successor_Admission_Accepted
+           (Identity.API_Keys.Rotation.Successor_Generation_Admitted)
+         and then not Identity.API_Keys.Rotation.Successor_Admission_Rejected
+           (Identity.API_Keys.Rotation.Successor_Generation_Admitted)
+         and then not Identity.API_Keys.Rotation.Matches_Successor_Generation
+           (Identity.Versions.Rotation_Generation'(2),
+            Identity.Versions.Rotation_Generation'(4))
+         and then Identity.API_Keys.Rotation.Successor_Admission
+           (Identity.Versions.Rotation_Generation'(2),
+           Identity.Versions.Rotation_Generation'(4))
+           = Identity.API_Keys.Rotation.Successor_Generation_Mismatched
+         and then Identity.API_Keys.Rotation.Successor_Admission_Rejected
+           (Identity.API_Keys.Rotation.Successor_Generation_Mismatched)
+         and then Identity.API_Keys.Rotation.Successor_Mismatch_Rejected
+           (Identity.API_Keys.Rotation.Successor_Generation_Mismatched)
+         and then not Identity.API_Keys.Rotation.Matches_Successor_Generation
+           (Identity.Versions.Rotation_Generation'Last,
+            Identity.Versions.Rotation_Generation'Last)
+         and then Identity.API_Keys.Rotation.Successor_Admission
+           (Identity.Versions.Rotation_Generation'Last,
+           Identity.Versions.Rotation_Generation'Last)
+           = Identity.API_Keys.Rotation.Successor_Predecessor_Generation_Exhausted
+         and then Identity.API_Keys.Rotation.Successor_Admission_Rejected
+           (Identity.API_Keys.Rotation.Successor_Predecessor_Generation_Exhausted)
+         and then Identity.API_Keys.Rotation.Successor_Predecessor_Rejected
+           (Identity.API_Keys.Rotation.Successor_Predecessor_Generation_Exhausted)
+         and then Identity.One_Time_Passwords.Policies.Valid (TOTP_Policy)
+         and then (Identity.One_Time_Passwords.Policies.Validate (TOTP_Policy)
+                   = Identity.One_Time_Passwords.Policies.TOTP_Policy_Valid)
+         and then Identity.One_Time_Passwords.Policies.Validation_Accepted
+           (Identity.One_Time_Passwords.Policies.Validate (TOTP_Policy))
+         and then not Identity.One_Time_Passwords.Policies.Valid
+           (Zero_Attempt_TOTP_Policy)
+         and then (Identity.One_Time_Passwords.Policies.Validate
+             (Zero_Attempt_TOTP_Policy)
+           = Identity.One_Time_Passwords.Policies.TOTP_Attempt_Limit_Non_Positive)
+         and then Identity.One_Time_Passwords.Policies.Attempt_Limit_Rejected
+           (Identity.One_Time_Passwords.Policies.Validate
+              (Zero_Attempt_TOTP_Policy))
+         and then not Identity.One_Time_Passwords.Policies.Valid
+           (No_Replay_TOTP_Policy)
+         and then (Identity.One_Time_Passwords.Policies.Validate
+             (No_Replay_TOTP_Policy)
+           = Identity.One_Time_Passwords.Policies.TOTP_Replay_Prevention_Not_Required)
+         and then Identity.One_Time_Passwords.Policies.Replay_Prevention_Rejected
+           (Identity.One_Time_Passwords.Policies.Validate
+              (No_Replay_TOTP_Policy))
+         and then Identity.Recovery_Codes.Policies.Valid (Recovery_Code_Policy)
+         and then (Identity.Recovery_Codes.Policies.Validate (Recovery_Code_Policy)
+                   = Identity.Recovery_Codes.Policies.Recovery_Code_Policy_Valid)
+         and then Identity.Recovery_Codes.Policies.Validation_Accepted
+           (Identity.Recovery_Codes.Policies.Validate (Recovery_Code_Policy))
+         and then not Identity.Recovery_Codes.Policies.Valid
+           (Repeat_Display_Recovery_Code_Policy)
+         and then (Identity.Recovery_Codes.Policies.Validate
+             (Repeat_Display_Recovery_Code_Policy)
+           = Identity.Recovery_Codes.Policies.Recovery_Code_Display_Not_One_Time)
+         and then Identity.Recovery_Codes.Policies.Display_Rejected
+           (Identity.Recovery_Codes.Policies.Validate
+              (Repeat_Display_Recovery_Code_Policy))
+         and then not Identity.Recovery_Codes.Policies.Valid
+           (Keep_Set_Recovery_Code_Policy)
+         and then (Identity.Recovery_Codes.Policies.Validate
+             (Keep_Set_Recovery_Code_Policy)
+           = Identity.Recovery_Codes.Policies.Recovery_Code_Regeneration_Does_Not_Replace_Set)
+         and then Identity.Recovery_Codes.Policies.Regeneration_Rejected
+           (Identity.Recovery_Codes.Policies.Validate
+              (Keep_Set_Recovery_Code_Policy))
+         and then not Identity.Recovery_Codes.Policies.Valid
+           (Full_Assurance_Recovery_Code_Policy)
+         and then (Identity.Recovery_Codes.Policies.Validate
+             (Full_Assurance_Recovery_Code_Policy)
+           = Identity.Recovery_Codes.Policies.Recovery_Code_Assurance_Not_Reduced)
+         and then Identity.Recovery_Codes.Policies.Assurance_Rejected
+           (Identity.Recovery_Codes.Policies.Validate
+              (Full_Assurance_Recovery_Code_Policy)),
+         "IDENTITY-CREDENTIAL-POLICY-001 API key TOTP and recovery-code policies are bounded");
+
+      Assert
+        (Identity.API_Keys.Policies.Valid (API_Key_Policy)
+         and then Identity.API_Keys.Policies.Validate (Zero_Capacity_API_Key_Policy)
+           = Identity.API_Keys.Policies.API_Key_Active_Key_Capacity_Zero
+         and then Identity.API_Keys.Policies.Capacity_Rejected
+           (Identity.API_Keys.Policies.Validate (Zero_Capacity_API_Key_Policy))
+         and then not Identity.API_Keys.Policies.Overlap_Rejected
+           (Identity.API_Keys.Policies.Validate (Zero_Capacity_API_Key_Policy))
+         and then Identity.API_Keys.Policies.Validate (Zero_Overlap_API_Key_Policy)
+           = Identity.API_Keys.Policies.API_Key_Overlap_Non_Positive
+         and then Identity.API_Keys.Policies.Overlap_Rejected
+           (Identity.API_Keys.Policies.Validate (Zero_Overlap_API_Key_Policy))
+         and then Identity.API_Keys.Policies.Validate (No_Expiration_API_Key_Policy)
+           = Identity.API_Keys.Policies.API_Key_Expiration_Not_Required
+         and then Identity.API_Keys.Policies.Expiration_Policy_Rejected
+           (Identity.API_Keys.Policies.Validate (No_Expiration_API_Key_Policy))
+         and then not Identity.API_Keys.Policies.Capacity_Rejected
+           (Identity.API_Keys.Policies.Validate (No_Expiration_API_Key_Policy))
+         and then Identity.API_Keys.Policies.Evaluate_Issue_Lifetime
+           (Invalid_API_Key_Policy, 100, (Present => True, Time_Point => 200))
+           = Identity.API_Keys.Policies.Policy_Invalid
+         and then Identity.API_Keys.Policies.Policy_Rejected
+           (Identity.API_Keys.Policies.Evaluate_Issue_Lifetime
+              (Invalid_API_Key_Policy, 100, (Present => True, Time_Point => 200)))
+         and then Identity.API_Keys.Policies.Evaluate_Issue_Lifetime
+           (API_Key_Policy, 100, (Present => False, Time_Point => 0))
+           = Identity.API_Keys.Policies.Expiration_Missing
+         and then Identity.API_Keys.Policies.Expiration_Rejected
+           (Identity.API_Keys.Policies.Evaluate_Issue_Lifetime
+              (API_Key_Policy, 100, (Present => False, Time_Point => 0)))
+         and then Identity.API_Keys.Policies.Evaluate_Issue_Lifetime
+           (API_Key_Policy, 100, (Present => True, Time_Point => 100))
+           = Identity.API_Keys.Policies.Expiration_Not_After_Creation
+         and then Identity.API_Keys.Policies.Verifier_Derivation_Allowed
+           (Identity.API_Keys.Policies.Evaluate_Issue_Lifetime
+              (API_Key_Policy, 100, (Present => True, Time_Point => 200))),
+         "API-key policy validation classifiers distinguish capacity overlap and "
+         & "expiration-policy rejection causes");
+
+      Assert
+        (Identity.API_Keys.Rotation.Can_Rotate (Rotation_Window)
+           = Identity.API_Keys.Rotation.Allowed
+         and then Identity.API_Keys.Rotation.Can_Rotate (Exhausted_Rotation_Window)
+           = Identity.API_Keys.Rotation.Generation_Exhausted
+         and then Identity.API_Keys.Rotation.Generation_Rejected
+           (Identity.API_Keys.Rotation.Can_Rotate (Exhausted_Rotation_Window))
+         and then Identity.API_Keys.Rotation.Admission (Rotation_Window)
+           = Identity.API_Keys.Rotation.Rotation_Admitted
+         and then Identity.API_Keys.Rotation.Admission (Exhausted_Rotation_Window)
+           = Identity.API_Keys.Rotation.Rotation_Generation_Exhausted
+         and then Identity.API_Keys.Rotation.Admission
+           (2, Identity.API_Keys.Rotation.Overlap_Expired)
+           = Identity.API_Keys.Rotation.Rotation_Overlap_Expired
+         and then Identity.API_Keys.Rotation.Admission_Overlap_Rejected
+           (Identity.API_Keys.Rotation.Admission
+              (2, Identity.API_Keys.Rotation.Overlap_Expired))
+         and then Identity.API_Keys.Rotation.Successor_Generation (Rotation_Window) = 3
+         and then Identity.API_Keys.Rotation.Successor_Generation
+           (Exhausted_Rotation_Window) = Identity.Versions.Rotation_Generation'Last
+         and then Identity.One_Time_Passwords.Policies.Valid (TOTP_Policy)
+         and then Identity.One_Time_Passwords.Policies.Valid
+           ((TOTP_Policy with delta
+               Maximum_Attempts => Identity.Limits.Max_Factor_Challenges))
+         and then not Identity.One_Time_Passwords.Policies.Valid
+           (Zero_Attempt_TOTP_Policy)
+         and then Identity.One_Time_Passwords.Policies.Attempt_Limit_Rejected
+           (Identity.One_Time_Passwords.Policies.Validate (Zero_Attempt_TOTP_Policy)),
+         "API key rotation and TOTP attempts are bounded");
+
+      Assert
+        (Identity.API_Keys.Rotation.Successor_Admission (2, 3)
+           = Identity.API_Keys.Rotation.Successor_Generation_Admitted
+         and then Identity.API_Keys.Rotation.Successor_Admission_Accepted
+           (Identity.API_Keys.Rotation.Successor_Admission (2, 3))
+         and then Identity.API_Keys.Rotation.Matches_Successor_Generation (2, 3)
+         and then Identity.API_Keys.Rotation.Successor_Admission (2, 4)
+           = Identity.API_Keys.Rotation.Successor_Generation_Mismatched
+         and then Identity.API_Keys.Rotation.Successor_Mismatch_Rejected
+           (Identity.API_Keys.Rotation.Successor_Admission (2, 4))
+         and then not Identity.API_Keys.Rotation.Matches_Successor_Generation (2, 4)
+         and then Identity.API_Keys.Rotation.Successor_Admission (2, 2)
+           = Identity.API_Keys.Rotation.Successor_Generation_Mismatched
+         and then Identity.API_Keys.Rotation.Successor_Admission
+           (Identity.Versions.Rotation_Generation'Last,
+            Identity.Versions.Rotation_Generation'Last)
+           = Identity.API_Keys.Rotation.Successor_Predecessor_Generation_Exhausted
+         and then Identity.API_Keys.Rotation.Successor_Predecessor_Rejected
+           (Identity.API_Keys.Rotation.Successor_Admission
+              (Identity.Versions.Rotation_Generation'Last,
+               Identity.Versions.Rotation_Generation'Last))
+         and then Identity.API_Keys.Rotation.Successor_Admission_Rejected
+           (Identity.API_Keys.Rotation.Successor_Admission
+              (Identity.Versions.Rotation_Generation'Last,
+               Identity.Versions.Rotation_Generation'Last)),
+         "API key successor generation classifier rejects mismatched or exhausted predecessors");
+
+      Assert
+        (Identity.One_Time_Passwords.Policies.Validate (Zero_Attempt_TOTP_Policy)
+           = Identity.One_Time_Passwords.Policies.TOTP_Attempt_Limit_Non_Positive
+         and then Identity.One_Time_Passwords.Policies.Attempt_Limit_Rejected
+           (Identity.One_Time_Passwords.Policies.Validate (Zero_Attempt_TOTP_Policy))
+         and then not Identity.One_Time_Passwords.Policies.Replay_Prevention_Rejected
+           (Identity.One_Time_Passwords.Policies.Validate (Zero_Attempt_TOTP_Policy))
+         and then Identity.One_Time_Passwords.Policies.Validate (No_Replay_TOTP_Policy)
+           = Identity.One_Time_Passwords.Policies.TOTP_Replay_Prevention_Not_Required
+         and then Identity.One_Time_Passwords.Policies.Replay_Prevention_Rejected
+           (Identity.One_Time_Passwords.Policies.Validate (No_Replay_TOTP_Policy))
+         and then not Identity.One_Time_Passwords.Policies.Attempt_Limit_Rejected
+           (Identity.One_Time_Passwords.Policies.Validate (No_Replay_TOTP_Policy))
+         and then Identity.One_Time_Passwords.Policies.Validation_Accepted
+           (Identity.One_Time_Passwords.Policies.Validate (TOTP_Policy)),
+         "TOTP policy validation classifiers distinguish retry budget and replay "
+         & "prevention rejection causes");
+
+      Assert
+        (Identity.Recovery_Codes.Policies.Display_Rejected
+           (Identity.Recovery_Codes.Policies.Validate
+              (Repeat_Display_Recovery_Code_Policy))
+         and then not Identity.Recovery_Codes.Policies.Regeneration_Rejected
+           (Identity.Recovery_Codes.Policies.Validate
+              (Repeat_Display_Recovery_Code_Policy))
+         and then Identity.Recovery_Codes.Policies.Regeneration_Rejected
+           (Identity.Recovery_Codes.Policies.Validate (Keep_Set_Recovery_Code_Policy))
+         and then not Identity.Recovery_Codes.Policies.Assurance_Rejected
+           (Identity.Recovery_Codes.Policies.Validate (Keep_Set_Recovery_Code_Policy))
+         and then Identity.Recovery_Codes.Policies.Assurance_Rejected
+           (Identity.Recovery_Codes.Policies.Validate
+              (Full_Assurance_Recovery_Code_Policy))
+         and then not Identity.Recovery_Codes.Policies.Display_Rejected
+           (Identity.Recovery_Codes.Policies.Validate
+              (Full_Assurance_Recovery_Code_Policy))
+         and then Identity.Recovery_Codes.Policies.Validation_Accepted
+           (Identity.Recovery_Codes.Policies.Validate (Recovery_Code_Policy)),
+         "recovery-code policy validation classifiers distinguish display regeneration "
+         & "and assurance rejection causes");
+
+      Assert
+        (Identity.Passwords.Policies.Validate (Zero_Minimum_Acceptance)
+           = Identity.Passwords.Policies.Password_Minimum_Length_Zero
+         and then Identity.Passwords.Policies.Acceptance_Length_Rejected
+           (Identity.Passwords.Policies.Validate (Zero_Minimum_Acceptance))
+         and then Identity.Passwords.Policies.Validate (Unordered_Acceptance)
+           = Identity.Passwords.Policies.Password_Maximum_Length_Below_Minimum
+         and then Identity.Passwords.Policies.Acceptance_Length_Rejected
+           (Identity.Passwords.Policies.Validate (Unordered_Acceptance))
+         and then not Identity.Passwords.Policies.Acceptance_Length_Rejected
+           (Identity.Passwords.Policies.Validate (Acceptance))
+         and then Identity.Passwords.Policies.Validate (Zero_Verifier_Hashing)
+           = Identity.Passwords.Policies.Password_Maximum_Verifier_Bytes_Zero
+         and then Identity.Passwords.Policies.Verifier_Length_Rejected
+           (Identity.Passwords.Policies.Validate (Zero_Verifier_Hashing))
+         and then not Identity.Passwords.Policies.Verifier_Length_Rejected
+           (Identity.Passwords.Policies.Validate (Hashing))
+         and then Identity.Passwords.History.Verification_Budget_Rejected
+           (Identity.Passwords.History.Validate (Invalid_History_Policy))
+         and then not Identity.Passwords.History.Verification_Budget_Rejected
+           (Identity.Passwords.History.Validate (History_Policy))
+         and then not Identity.Passwords.History.Valid (Invalid_History_Policy)
+         and then Identity.Passwords.History.Valid (History_Policy),
+         "password policy validation classifiers distinguish acceptance hashing and "
+         & "history work-bound rejection causes");
+
+      Assert
+        (Identity.Passwords.Migrations.Decide
+           (Identity.Crypto.Password_Hashing.Upgrade_Required,
+            Identity.Passwords.Migrations.Restrict_Session_Issuance)
+           = Identity.Passwords.Migrations.Authentication_Restricted
+         and then Identity.Passwords.Migrations.Decide
+           (Identity.Crypto.Password_Hashing.Current,
+            Identity.Passwords.Migrations.Require)
+           = Identity.Passwords.Migrations.No_Migration
+         and then Identity.Passwords.Changes.Admission_Rejected
+           (Identity.Passwords.Changes.Admission
+              ((Change_Authority with delta Recovery_Restricted => True),
+               Identity.Assurance.Levels.Interactive))
+         and then Identity.Passwords.Changes.Recovery_Restriction_Rejection
+           (Identity.Passwords.Changes.Admission
+              ((Change_Authority with delta Recovery_Restricted => True),
+               Identity.Assurance.Levels.Interactive))
+         and then Identity.Passwords.Resets.Valid (Reset_Policy)
+         and then Identity.Passwords.Resets.Revokes_Sessions (Reset_Policy.Sessions)
+         and then Identity.Passwords.Resets.Validate (Keep_Sessions_Reset_Policy)
+           = Identity.Passwords.Resets.Reset_Session_Consequence_Missing
+         and then Identity.Passwords.Resets.Session_Consequence_Rejected
+           (Identity.Passwords.Resets.Validate (Keep_Sessions_Reset_Policy))
+         and then not Identity.Passwords.Resets.Revokes_Sessions
+           (Keep_Sessions_Reset_Policy.Sessions)
+         and then Identity.Passwords.Resets.Validate (Invalid_Reset_Policy)
+           = Identity.Passwords.Resets.Reset_Clears_Administrative_Restrictions
+         and then Identity.Passwords.Resets.Administrative_Clear_Rejected
+           (Identity.Passwords.Resets.Validate (Invalid_Reset_Policy))
+         and then not Identity.Passwords.Resets.Session_Consequence_Rejected
+           (Identity.Passwords.Resets.Validate (Invalid_Reset_Policy)),
+         "password migration change and reset authority require reset session consequences "
+         & "and structured reset rejection causes");
+   end Test_16_history_verifier;
+
+   procedure Test_17_state_session_ref (T : in out AUnit.Test_Cases.Test_Case'Class) is
+      pragma Unreferenced (T);
+      Session_Policy : constant Identity.Sessions.Policies.Session_Policy :=
+        (Idle_Timeout => 60,
+         Absolute_Lifetime => 600,
+         Remember_Me_Lifetime => 1_200,
+         Rotation_Required => True,
+         Remember_Me_Allowed => True);
+      Zero_Idle_Session_Policy : constant Identity.Sessions.Policies.Session_Policy :=
+        (Idle_Timeout => 0,
+         Absolute_Lifetime => 600,
+         Remember_Me_Lifetime => 1_200,
+         Rotation_Required => True,
+         Remember_Me_Allowed => True);
+      Zero_Absolute_Session_Policy : constant Identity.Sessions.Policies.Session_Policy :=
+        (Idle_Timeout => 60,
+         Absolute_Lifetime => 0,
+         Remember_Me_Lifetime => 1_200,
+         Rotation_Required => True,
+         Remember_Me_Allowed => True);
+      Zero_Remember_Session_Policy : constant Identity.Sessions.Policies.Session_Policy :=
+        (Idle_Timeout => 60,
+         Absolute_Lifetime => 600,
+         Remember_Me_Lifetime => 0,
+         Rotation_Required => True,
+         Remember_Me_Allowed => True);
+      Idle_Exceeds_Session_Policy : constant Identity.Sessions.Policies.Session_Policy :=
+        (Idle_Timeout => 700,
+         Absolute_Lifetime => 600,
+         Remember_Me_Lifetime => 1_200,
+         Rotation_Required => True,
+         Remember_Me_Allowed => True);
+      Absolute_Exceeds_Session_Policy : constant Identity.Sessions.Policies.Session_Policy :=
+        (Idle_Timeout => 60,
+         Absolute_Lifetime => 1_300,
+         Remember_Me_Lifetime => 1_200,
+         Rotation_Required => True,
+         Remember_Me_Allowed => True);
+      Session_Record : constant Identity.Sessions.Definitions.Session_Record :=
+        (Id => S1,
+         Family => F1,
+         Principal => P1,
+         Credential => (Present => True, Value => C1),
+         External_Provider => (Present => False),
+         Public_Reference => Identity.Text.Bounded.From_String ("state-session-ref"),
+         Secret_Verifier => Identity.Text.Bounded.From_String ("state-session-verifier"),
+         Assurance => Identity.Assurance.Levels.Interactive,
+         Attributes => (Factor_Count => 1,
+                        Independent_Factor_Count => 1,
+                        Phishing_Resistant => False,
+                        Hardware_Bound => False,
+                        Device_Bound => False,
+                        Federation => False,
+                        Recovery_Used => False,
+                        User_Presence => True,
+                        User_Verification => False,
+                        Managed_Credential => False,
+                        Recent_Authentication => True),
+         Created_At => 10,
+         Original_Authenticated_At => 10,
+         Primary_Authenticated_At => 10,
+         MFA_Completed_At => (Present => False),
+         Step_Up_At => (Present => False),
+         Last_Seen_At => 20,
+         Idle_Expires_At => (Present => True, Time_Point => 80),
+         Absolute_Expires_At => (Present => True, Time_Point => 200),
+         Remembered => False,
+         Generation => 2,
+         State => Identity.Sessions.Definitions.Active,
+         Version => 0);
+      Absolute_Expired_Session_Record : constant Identity.Sessions.Definitions.Session_Record :=
+        (Id => S2,
+         Family => F1,
+         Principal => P1,
+         Credential => (Present => True, Value => C1),
+         External_Provider => (Present => False),
+         Public_Reference => Identity.Text.Bounded.From_String ("absolute-session-ref"),
+         Secret_Verifier => Identity.Text.Bounded.From_String ("absolute-session-verifier"),
+         Assurance => Identity.Assurance.Levels.Interactive,
+         Attributes => (Factor_Count => 1,
+                        Independent_Factor_Count => 1,
+                        Phishing_Resistant => False,
+                        Hardware_Bound => False,
+                        Device_Bound => False,
+                        Federation => False,
+                        Recovery_Used => False,
+                        User_Presence => True,
+                        User_Verification => False,
+                        Managed_Credential => False,
+                        Recent_Authentication => True),
+         Created_At => 10,
+         Original_Authenticated_At => 10,
+         Primary_Authenticated_At => 10,
+         MFA_Completed_At => (Present => False),
+         Step_Up_At => (Present => False),
+         Last_Seen_At => 20,
+         Idle_Expires_At => (Present => True, Time_Point => 300),
+         Absolute_Expires_At => (Present => True, Time_Point => 200),
+         Remembered => False,
+         Generation => 2,
+         State => Identity.Sessions.Definitions.Active,
+         Version => 0);
+      Exhausted_Generation_Session_Record : constant Identity.Sessions.Definitions.Session_Record :=
+        (Session_Record with delta
+           Generation => Identity.Versions.Rotation_Generation'Last);
+      Family_Record : constant Identity.Sessions.Families.Session_Family_Record :=
+        (Id => F1,
+         Principal => P1,
+         Generation => 2,
+         State => Identity.Sessions.Families.Active);
+      Token_Policy : constant Identity.Tokens.Policies.Token_Policy :=
+        (Lifetime => 600,
+         Maximum_Attempts => 5,
+         Supersede_Siblings => True);
+      Zero_Lifetime_Token_Policy : constant Identity.Tokens.Policies.Token_Policy :=
+        (Lifetime => 0,
+         Maximum_Attempts => 5,
+         Supersede_Siblings => True);
+      Zero_Attempt_Token_Policy : constant Identity.Tokens.Policies.Token_Policy :=
+        (Lifetime => 600,
+         Maximum_Attempts => 0,
+         Supersede_Siblings => True);
+      Split_Token : constant Identity.Tokens.Generation.Split_Token :=
+        (Public_Id => T1,
+         Encoded_Public_Part => Identity.Text.Bounded.From_String ("public-token-part"),
+         Secret_Returned_Once => True);
+      Parsed_Token : constant Identity.Tokens.Generation.Presented_Token :=
+        Identity.Tokens.Generation.Parse ("public-token-part.secret-token-part");
+      Token_View : constant Identity.Tokens.Projections.Token_Projection :=
+        (Id => T1,
+         Purpose => Identity.Tokens.Purposes.Password_Reset,
+         Principal => P1,
+         Verifier_Present => True,
+         Issued_At => 10,
+         Expires_At => (Present => True, Time_Point => 100),
+         State => Identity.Tokens.Definitions.Issued,
+         Attempts => 0,
+         Version => 0);
+      Token_Record : constant Identity.Tokens.Definitions.Action_Token_Record :=
+        (Id => T1,
+         Purpose => Identity.Tokens.Purposes.Password_Reset,
+         Principal => P1,
+         Secret_Verifier => Identity.Text.Bounded.From_String ("verifier-reference"),
+         Issued_At => 10,
+         Expires_At => (Present => True, Time_Point => 100),
+         State => Identity.Tokens.Definitions.Issued,
+         Attempts => 0,
+         Version => 0);
+      Consumed_Token_Record : constant Identity.Tokens.Definitions.Action_Token_Record :=
+        (Token_Record with delta State => Identity.Tokens.Definitions.Consumed);
+      Revoked_Token_Record : constant Identity.Tokens.Definitions.Action_Token_Record :=
+        (Token_Record with delta State => Identity.Tokens.Definitions.Revoked);
+      Authority : constant Identity.Recovery.Authority.Recovery_Authority_Record :=
+        (Principal => P1,
+         Expires_At => (Present => True, Time_Point => 100),
+         Short_Lived => True,
+         Password_Reestablishment_Required => True);
+      Restrictions : constant Identity.Recovery.Restrictions.Recovery_Restrictions :=
+        (Restricted_Session => True,
+         Credential_Reestablishment_Required => True,
+         MFA_Reenrollment_Required => True,
+         Remember_Me_Prohibited => True,
+         Limited_Lifetime => True);
+      Weak_Recovery_Restrictions : constant Identity.Recovery.Restrictions.Recovery_Restrictions :=
+        (Restricted_Session => True,
+         Credential_Reestablishment_Required => False,
+         MFA_Reenrollment_Required => False,
+         Remember_Me_Prohibited => False,
+         Limited_Lifetime => False);
+      Recovery_Policy : constant Identity.Recovery.Policies.Recovery_Policy :=
+        (Authority_Lifetime => 900,
+         Require_Credential_Reestablishment => True,
+         Require_MFA_Reenrollment => False,
+         Revoke_Existing_Sessions => True);
+      Zero_Lifetime_Recovery_Policy : constant Identity.Recovery.Policies.Recovery_Policy :=
+        (Authority_Lifetime => 0,
+         Require_Credential_Reestablishment => True,
+         Require_MFA_Reenrollment => False,
+         Revoke_Existing_Sessions => True);
+      No_Credential_Recovery_Policy : constant Identity.Recovery.Policies.Recovery_Policy :=
+        (Authority_Lifetime => 900,
+         Require_Credential_Reestablishment => False,
+         Require_MFA_Reenrollment => False,
+         Revoke_Existing_Sessions => True);
+      No_Session_Consequence_Recovery_Policy : constant Identity.Recovery.Policies.Recovery_Policy :=
+        (Authority_Lifetime => 900,
+         Require_Credential_Reestablishment => True,
+         Require_MFA_Reenrollment => False,
+         Revoke_Existing_Sessions => False);
+      Bucket : constant Identity.Attempts.Buckets.Failure_Bucket_Policy :=
+        (Kind => Identity.Attempts.Buckets.Password_Failures,
+         Window => 900,
+         Threshold => 5,
+         Saturation => 20);
+      Zero_Window_Bucket : constant Identity.Attempts.Buckets.Failure_Bucket_Policy :=
+        (Kind => Identity.Attempts.Buckets.Password_Failures,
+         Window => 0,
+         Threshold => 5,
+         Saturation => 20);
+      Zero_Threshold_Bucket : constant Identity.Attempts.Buckets.Failure_Bucket_Policy :=
+        (Kind => Identity.Attempts.Buckets.Password_Failures,
+         Window => 900,
+         Threshold => 0,
+         Saturation => 20);
+      Low_Saturation_Bucket : constant Identity.Attempts.Buckets.Failure_Bucket_Policy :=
+        (Kind => Identity.Attempts.Buckets.Password_Failures,
+         Window => 900,
+         Threshold => 5,
+         Saturation => 4);
+      Attempt_Policy : constant Identity.Attempts.Policies.Attempt_Policy :=
+        (Password => Bucket,
+         TOTP => (Bucket with delta Kind => Identity.Attempts.Buckets.TOTP_Failures),
+         Token => (Bucket with delta Kind => Identity.Attempts.Buckets.Token_Failures));
+      Invalid_Password_Attempt_Policy : constant Identity.Attempts.Policies.Attempt_Policy :=
+        (Password => Zero_Window_Bucket,
+         TOTP => (Bucket with delta Kind => Identity.Attempts.Buckets.TOTP_Failures),
+         Token => (Bucket with delta Kind => Identity.Attempts.Buckets.Token_Failures));
+      Invalid_TOTP_Attempt_Policy : constant Identity.Attempts.Policies.Attempt_Policy :=
+        (Password => Bucket,
+         TOTP => (Zero_Threshold_Bucket with delta
+           Kind => Identity.Attempts.Buckets.TOTP_Failures),
+         Token => (Bucket with delta Kind => Identity.Attempts.Buckets.Token_Failures));
+      Invalid_Token_Attempt_Policy : constant Identity.Attempts.Policies.Attempt_Policy :=
+        (Password => Bucket,
+         TOTP => (Bucket with delta Kind => Identity.Attempts.Buckets.TOTP_Failures),
+         Token => (Low_Saturation_Bucket with delta
+           Kind => Identity.Attempts.Buckets.Token_Failures));
+      Fingerprint : constant Identity.Attempts.Fingerprints.Subject_Fingerprint :=
+        (Value => Identity.Text.Bounded.From_String ("fingerprint"),
+         Keyed => True,
+         Domain_Separated => True);
+      Failed_Attempt : constant Identity.Attempts.Definitions.Attempt_Record :=
+        (Id => AT1,
+         Correlation => R1,
+         Principal => (Present => True, Value => P1),
+         Subject_Fingerprint => Identity.Text.Bounded.From_String ("fingerprint"),
+         Method => Identity.Identifiers.Registry.From_String ("identity.password"),
+         Started_At => 100,
+         Completed_At => 101,
+         Outcome => Identity.Attempts.Outcomes.Failed,
+         Failure => Identity.Attempts.Outcomes.Password_Failure,
+         Disclosure => Identity.Attempts.Outcomes.Generic_Rejection,
+         Version => 0);
+      Operational_Attempt : constant Identity.Attempts.Definitions.Attempt_Record :=
+        (Failed_Attempt with delta
+         Id => AT2,
+         Principal => (Present => False),
+         Outcome => Identity.Attempts.Outcomes.Operational_Failure,
+         Failure => Identity.Attempts.Outcomes.None,
+         Disclosure => Identity.Attempts.Outcomes.Hidden_Operational_Failure);
+      Successful_Attempt : constant Identity.Attempts.Definitions.Attempt_Record :=
+        (Failed_Attempt with delta
+         Id => AT3,
+         Outcome => Identity.Attempts.Outcomes.Succeeded,
+         Failure => Identity.Attempts.Outcomes.None,
+         Disclosure => Identity.Attempts.Outcomes.Public_Success);
+      Throttle_Policy : constant Identity.Throttling.Policies.Throttling_Policy :=
+        (Delay_After => 3,
+         Reject_After => 10,
+         Delay_Duration => 30);
+      Invalid_Throttle_Order_Policy : constant
+        Identity.Throttling.Policies.Throttling_Policy :=
+        (Delay_After => 10,
+         Reject_After => 10,
+         Delay_Duration => 30);
+      Invalid_Throttle_Duration_Policy : constant
+        Identity.Throttling.Policies.Throttling_Policy :=
+        (Delay_After => 3,
+         Reject_After => 10,
+         Delay_Duration => 0);
+      Throttle_Allow : constant Identity.Throttling.Decisions.Throttle_Decision :=
+        Identity.Throttling.Decisions.Evaluate (2, Throttle_Policy, 100);
+      Throttle_Delay : constant Identity.Throttling.Decisions.Throttle_Decision :=
+        Identity.Throttling.Decisions.Evaluate (3, Throttle_Policy, 100);
+      Throttle_Reject : constant Identity.Throttling.Decisions.Throttle_Decision :=
+        Identity.Throttling.Decisions.Evaluate (10, Throttle_Policy, 100);
+      Throttle_Overflow : constant Identity.Throttling.Decisions.Throttle_Decision :=
+        Identity.Throttling.Decisions.Evaluate
+          (3, Throttle_Policy, Identity.Times.Instant'Last);
+      Window : constant Identity.Throttling.Windows.Observation_Window :=
+        (Started_At => 10,
+         Ends_At => 20);
+      Lockout_Policy : constant Identity.Lockout.Policies.Lockout_Policy :=
+        (Temporary_Threshold => 5,
+         Indefinite_Threshold => 50,
+         Temporary_Duration => 900,
+         Permanent_Remote_Login_Disablement => False);
+      Zero_Threshold_Lockout_Policy : constant Identity.Lockout.Policies.Lockout_Policy :=
+        (Temporary_Threshold => 0,
+         Indefinite_Threshold => 50,
+         Temporary_Duration => 900,
+         Permanent_Remote_Login_Disablement => False);
+      Unordered_Lockout_Policy : constant Identity.Lockout.Policies.Lockout_Policy :=
+        (Temporary_Threshold => 50,
+         Indefinite_Threshold => 50,
+         Temporary_Duration => 900,
+         Permanent_Remote_Login_Disablement => False);
+      Zero_Duration_Lockout_Policy : constant Identity.Lockout.Policies.Lockout_Policy :=
+        (Temporary_Threshold => 5,
+         Indefinite_Threshold => 50,
+         Temporary_Duration => 0,
+         Permanent_Remote_Login_Disablement => False);
+      Permanent_Disablement_Lockout_Policy : constant
+        Identity.Lockout.Policies.Lockout_Policy :=
+        (Temporary_Threshold => 5,
+         Indefinite_Threshold => 50,
+         Temporary_Duration => 900,
+         Permanent_Remote_Login_Disablement => True);
+      Temporary_Lock : constant Identity.Lockout.Evaluation.Lockout_Transition :=
+        Identity.Lockout.Evaluation.Evaluate_With_Policy (5, Lockout_Policy, 100);
+      Indefinite_Lock : constant Identity.Lockout.Evaluation.Lockout_Transition :=
+        Identity.Lockout.Evaluation.Evaluate_With_Policy (50, Lockout_Policy, 100);
+      Overflow_Lock : constant Identity.Lockout.Evaluation.Lockout_Transition :=
+        Identity.Lockout.Evaluation.Evaluate_With_Policy
+          (5, Lockout_Policy, Identity.Times.Instant'Last);
+      Unlock_Context : constant Identity.Lockout.Administration.Administrative_Unlock_Context :=
+        (Actor_Present => True,
+         Reason => Identity.Identifiers.Registry.From_String ("identity.lockout.admin-unlock"),
+         Operation => O1,
+         Correlation => R1);
+   begin
+      Assert
+        (Identity.Sessions.Policies.Valid (Session_Policy)
+         and then not Identity.Sessions.Policies.Valid (Zero_Idle_Session_Policy)
+         and then (Identity.Sessions.Policies.Validate (Session_Policy)
+                   = Identity.Sessions.Policies.Session_Policy_Valid)
+         and then Identity.Sessions.Policies.Validation_Accepted
+           (Identity.Sessions.Policies.Validate (Session_Policy))
+         and then (Identity.Sessions.Policies.Validate (Zero_Idle_Session_Policy)
+                   = Identity.Sessions.Policies.Idle_Timeout_Non_Positive)
+         and then Identity.Sessions.Policies.Duration_Rejected
+           (Identity.Sessions.Policies.Validate (Zero_Idle_Session_Policy))
+         and then Identity.Sessions.Policies.Idle_Rejected
+           (Identity.Sessions.Policies.Validate (Zero_Idle_Session_Policy))
+         and then (Identity.Sessions.Policies.Validate (Zero_Absolute_Session_Policy)
+                   = Identity.Sessions.Policies.Absolute_Lifetime_Non_Positive)
+         and then Identity.Sessions.Policies.Absolute_Rejected
+           (Identity.Sessions.Policies.Validate (Zero_Absolute_Session_Policy))
+         and then (Identity.Sessions.Policies.Validate (Zero_Remember_Session_Policy)
+                   = Identity.Sessions.Policies.Remember_Me_Lifetime_Non_Positive)
+         and then Identity.Sessions.Policies.Remember_Me_Rejected
+           (Identity.Sessions.Policies.Validate (Zero_Remember_Session_Policy))
+         and then (Identity.Sessions.Policies.Validate (Idle_Exceeds_Session_Policy)
+                   = Identity.Sessions.Policies.Idle_Exceeds_Absolute_Lifetime)
+         and then Identity.Sessions.Policies.Ordering_Rejected
+           (Identity.Sessions.Policies.Validate (Idle_Exceeds_Session_Policy))
+         and then Identity.Sessions.Policies.Idle_Rejected
+           (Identity.Sessions.Policies.Validate (Idle_Exceeds_Session_Policy))
+         and then Identity.Sessions.Policies.Absolute_Rejected
+           (Identity.Sessions.Policies.Validate (Idle_Exceeds_Session_Policy))
+         and then (Identity.Sessions.Policies.Validate (Absolute_Exceeds_Session_Policy)
+                   = Identity.Sessions.Policies.Absolute_Exceeds_Remember_Me_Lifetime)
+         and then Identity.Sessions.Policies.Ordering_Rejected
+           (Identity.Sessions.Policies.Validate (Absolute_Exceeds_Session_Policy))
+         and then Identity.Sessions.Policies.Absolute_Rejected
+           (Identity.Sessions.Policies.Validate (Absolute_Exceeds_Session_Policy))
+         and then Identity.Sessions.Policies.Remember_Me_Rejected
+           (Identity.Sessions.Policies.Validate (Absolute_Exceeds_Session_Policy))
+         and then Identity.Times.Durations.To_Base (Session_Policy.Idle_Timeout) = 60
+         and then Identity.Times.Durations.To_Base (Session_Policy.Absolute_Lifetime) = 600
+         and then Identity.Sessions.Expiration.Evaluate (Session_Record, 30)
+           = Identity.Sessions.Expiration.Current
+         and then not Identity.Sessions.Expiration.Blocks_Continuity
+           (Identity.Sessions.Expiration.Evaluate_Detail (Session_Record, 30))
+         and then Identity.Sessions.Expiration.Allows_Continuity
+           (Identity.Sessions.Expiration.Evaluate (Session_Record, 30))
+         and then Identity.Sessions.Expiration.Usable (Session_Record, 30)
+         and then Identity.Sessions.Expiration.Evaluate (Session_Record, 90)
+           = Identity.Sessions.Expiration.Idle_Expired
+         and then Identity.Sessions.Expiration.Idle_Timeout_Expired
+           (Identity.Sessions.Expiration.Evaluate (Session_Record, 90))
+         and then Identity.Sessions.Expiration.Evaluate_Detail
+           (Session_Record, 90).Idle_Expired
+         and then not Identity.Sessions.Expiration.Evaluate_Detail
+           (Session_Record, 90).Absolute_Expired
+         and then Identity.Sessions.Expiration.Blocks_Continuity
+           (Identity.Sessions.Expiration.Evaluate_Detail (Session_Record, 90))
+         and then Identity.Sessions.Expiration.Expiration_Blocks_Continuity
+           (Identity.Sessions.Expiration.Evaluate (Session_Record, 90))
+         and then Identity.Sessions.Expiration.Rejects_Continuity
+           (Identity.Sessions.Expiration.Evaluate (Session_Record, 90))
+         and then not Identity.Sessions.Expiration.Usable (Session_Record, 90)
+         and then Identity.Sessions.Expiration.Evaluate (Absolute_Expired_Session_Record, 201)
+           = Identity.Sessions.Expiration.Absolute_Expired
+         and then Identity.Sessions.Expiration.Absolute_Lifetime_Expired
+           (Identity.Sessions.Expiration.Evaluate (Absolute_Expired_Session_Record, 201))
+         and then Identity.Sessions.Expiration.Evaluate_Detail
+           (Absolute_Expired_Session_Record, 201).Absolute_Expired
+         and then Identity.Sessions.Expiration.Expiration_Blocks_Continuity
+           (Identity.Sessions.Expiration.Evaluate (Absolute_Expired_Session_Record, 201))
+         and then not Identity.Sessions.Expiration.Usable
+           (Absolute_Expired_Session_Record, 201)
+         and then Identity.Sessions.Expiration.Revocation_Blocks_Continuity
+           (Identity.Sessions.Expiration.Evaluate
+              ((Session_Record with delta State => Identity.Sessions.Definitions.Revoked),
+               30))
+         and then Identity.Sessions.Expiration.Evaluate_Detail
+           ((Session_Record with delta State => Identity.Sessions.Definitions.Revoked),
+            30).Revoked
+         and then not Identity.Sessions.Expiration.Usable
+           ((Session_Record with delta State => Identity.Sessions.Definitions.Revoked),
+            30)
+         and then Identity.Sessions.Activity.May_Update_Activity (Session_Record, 30)
+         and then Identity.Sessions.Rotation.Can_Rotate (Session_Record)
+           = Identity.Sessions.Rotation.Allowed
+         and then Identity.Sessions.Rotation.Rotation_Allowed
+           (Identity.Sessions.Rotation.Allowed)
+         and then Identity.Sessions.Rotation.Can_Rotate
+           (Exhausted_Generation_Session_Record)
+           = Identity.Sessions.Rotation.Generation_Exhausted
+         and then Identity.Sessions.Rotation.Generation_Rejected
+           (Identity.Sessions.Rotation.Generation_Exhausted)
+         and then Identity.Sessions.Rotation.State_Rejected
+           (Identity.Sessions.Rotation.Not_Active)
+         and then Identity.Sessions.Rotation.Rotation_Rejected
+           (Identity.Sessions.Rotation.Not_Active)
+         and then Identity.Sessions.Rotation.Rotation_Rejected
+           (Identity.Sessions.Rotation.Generation_Exhausted)
+         and then not Identity.Sessions.Rotation.Rotation_Rejected
+           (Identity.Sessions.Rotation.Allowed)
+         and then Identity.Sessions.Rotation.Successor_Generation (Session_Record) = 3
+         and then Identity.Sessions.Rotation.Matches_Successor_Generation
+           (Session_Record,
+            (Session_Record with delta
+               Id => S2,
+               Public_Reference => Rotated_Session_Reference,
+               Generation => 3))
+         and then Identity.Sessions.Rotation.Same_Rotation_Lineage
+           (Session_Record,
+            (Session_Record with delta
+               Id => S2,
+               Public_Reference => Rotated_Session_Reference,
+               Generation => 3))
+         and then not Identity.Sessions.Rotation.Same_Rotation_Lineage
+           (Session_Record,
+            (Session_Record with delta
+               Id => S2,
+               Family => F2,
+               Public_Reference => Rotated_Session_Reference,
+               Generation => 3))
+         and then not Identity.Sessions.Rotation.Same_Rotation_Lineage
+           (Session_Record,
+            (Session_Record with delta
+               Id => S2,
+               Principal => P2,
+               Public_Reference => Rotated_Session_Reference,
+               Generation => 3))
+         and then not Identity.Sessions.Rotation.Matches_Successor_Generation
+           (Session_Record,
+            (Session_Record with delta
+               Id => S2,
+               Public_Reference => Rotated_Session_Reference,
+               Generation => 4))
+         and then not Identity.Sessions.Rotation.Matches_Successor_Generation
+           (Exhausted_Generation_Session_Record,
+            (Exhausted_Generation_Session_Record with delta
+               Id => S2,
+               Public_Reference => Rotated_Session_Reference))
+         and then Identity.Sessions.Definitions.Is_Active
+           (Identity.Sessions.Definitions.Active)
+         and then Identity.Sessions.Definitions.Is_Unusable
+           (Identity.Sessions.Definitions.Rotated)
+         and then Identity.Sessions.Definitions.Lookup_Reports_Revoked
+           (Identity.Sessions.Definitions.Rotated)
+         and then Identity.Sessions.Definitions.Lookup_Reports_Expired
+           (Identity.Sessions.Definitions.Expired)
+         and then Identity.Sessions.Definitions.Can_Revoke
+         (Identity.Sessions.Definitions.Rotated)
+         and then not Identity.Sessions.Definitions.Can_Revoke
+           (Identity.Sessions.Definitions.Expired)
+         and then (Identity.Sessions.Definitions.Admission
+           (Identity.Sessions.Definitions.Active,
+            Identity.Sessions.Definitions.Continuity_Lookup)
+           = Identity.Sessions.Definitions.Session_State_Admitted)
+         and then Identity.Sessions.Definitions.Admission_Accepted
+           (Identity.Sessions.Definitions.Session_State_Admitted)
+         and then not Identity.Sessions.Definitions.Admission_Rejected
+           (Identity.Sessions.Definitions.Session_State_Admitted)
+         and then not Identity.Sessions.Definitions.No_Mutation
+           (Identity.Sessions.Definitions.Session_State_Admitted)
+         and then (Identity.Sessions.Definitions.Admission
+           (Identity.Sessions.Definitions.Rotated,
+            Identity.Sessions.Definitions.Continuity_Lookup)
+           = Identity.Sessions.Definitions.Active_Required)
+         and then Identity.Sessions.Definitions.Active_Required_Rejection
+           (Identity.Sessions.Definitions.Active_Required)
+         and then Identity.Sessions.Definitions.Admission_Rejected
+           (Identity.Sessions.Definitions.Active_Required)
+         and then Identity.Sessions.Definitions.No_Mutation
+           (Identity.Sessions.Definitions.Active_Required)
+         and then (Identity.Sessions.Definitions.Admission
+           (Identity.Sessions.Definitions.Revoked,
+            Identity.Sessions.Definitions.Rejection_Lookup)
+           = Identity.Sessions.Definitions.Session_State_Admitted)
+         and then (Identity.Sessions.Definitions.Admission
+           (Identity.Sessions.Definitions.Active,
+            Identity.Sessions.Definitions.Rejection_Lookup)
+           = Identity.Sessions.Definitions.Unusable_Required)
+         and then Identity.Sessions.Definitions.Unusable_Required_Rejection
+           (Identity.Sessions.Definitions.Unusable_Required)
+         and then Identity.Sessions.Definitions.Admission_Rejected
+           (Identity.Sessions.Definitions.Unusable_Required)
+         and then (Identity.Sessions.Definitions.Admission
+           (Identity.Sessions.Definitions.Expired,
+            Identity.Sessions.Definitions.Session_Revocation)
+           = Identity.Sessions.Definitions.Revocable_Required)
+         and then Identity.Sessions.Definitions.Revocable_Required_Rejection
+           (Identity.Sessions.Definitions.Revocable_Required)
+         and then Identity.Sessions.Definitions.Admission_Rejected
+           (Identity.Sessions.Definitions.Revocable_Required)
+         and then (Identity.Sessions.Definitions.Admission
+           (Identity.Sessions.Definitions.Rotated,
+            Identity.Sessions.Definitions.Session_Expiration)
+           = Identity.Sessions.Definitions.Active_Required)
+         and then (Identity.Sessions.Definitions.Admission
+           (Identity.Sessions.Definitions.Active,
+            Identity.Sessions.Definitions.Session_Retention)
+           = Identity.Sessions.Definitions.Retained_State_Required)
+         and then Identity.Sessions.Definitions.Retained_State_Required_Rejection
+           (Identity.Sessions.Definitions.Retained_State_Required)
+         and then Identity.Sessions.Definitions.Admission_Rejected
+           (Identity.Sessions.Definitions.Retained_State_Required)
+         and then Identity.Sessions.Definitions.No_Mutation
+           (Identity.Sessions.Definitions.Retained_State_Required)
+         and then Identity.Sessions.Definitions.Can_Expire
+           (Identity.Sessions.Definitions.Active)
+         and then Identity.Sessions.Definitions.Retainable
+           (Identity.Sessions.Definitions.Revoked)
+         and then Identity.Sessions.Definitions.Same_Public_Reference
+           (Session_Record,
+            (Session_Record with delta
+               Id => S2,
+               Public_Reference => Session_Record.Public_Reference))
+         and then not Identity.Sessions.Definitions.Same_Public_Reference
+           (Session_Record,
+            (Session_Record with delta
+               Id => S2,
+               Public_Reference => Rotated_Session_Reference)),
+         "IDENTITY-SESSION-003 session policy rejects zero durations and exhausted rotation");
+
+      Assert
+        (Identity.Sessions.Activity.Admit_Update
+           (Session_Record, 30, (Present => True, Time_Point => 120))
+         = Identity.Sessions.Activity.Admitted
+         and then Identity.Sessions.Activity.Activity_Update_Admitted
+           (Identity.Sessions.Activity.Admitted)
+         and then not Identity.Sessions.Activity.Activity_Update_Rejected
+           (Identity.Sessions.Activity.Admitted)
+         and then Identity.Sessions.Activity.Admit_Update
+           (Session_Record, 30, (Present => True, Time_Point => 29))
+         = Identity.Sessions.Activity.Invalid_Idle_Extension
+         and then Identity.Sessions.Activity.Invalid_Extension_Rejected
+           (Identity.Sessions.Activity.Invalid_Idle_Extension)
+         and then Identity.Sessions.Activity.No_Activity_Mutation
+           (Identity.Sessions.Activity.Invalid_Idle_Extension)
+         and then Identity.Sessions.Activity.Admit_Update
+           (Session_Record, 30, (Present => True, Time_Point => 201))
+         = Identity.Sessions.Activity.Invalid_Idle_Extension,
+         "session activity admission rejects invalid renewal boundaries");
+
+      Assert
+        (Identity.Sessions.Activity.Admit_Update
+           (Session_Record, 90, (Present => True, Time_Point => 120))
+         = Identity.Sessions.Activity.Idle_Expired
+         and then Identity.Sessions.Activity.Expiration_Rejected
+           (Identity.Sessions.Activity.Idle_Expired)
+         and then Identity.Sessions.Activity.Idle_Expiration_Rejected
+           (Identity.Sessions.Activity.Idle_Expired)
+         and then Identity.Sessions.Activity.Activity_Update_Rejected
+           (Identity.Sessions.Activity.Idle_Expired)
+         and then Identity.Sessions.Expiration.Idle_Timeout_Expired
+           (Identity.Sessions.Expiration.Evaluate (Session_Record, 90))
+         and then Identity.Sessions.Activity.Admit_Update
+           (Session_Record, 201, (Present => True, Time_Point => 220))
+         = Identity.Sessions.Activity.Absolute_Expired
+         and then Identity.Sessions.Activity.Expiration_Rejected
+           (Identity.Sessions.Activity.Absolute_Expired)
+         and then Identity.Sessions.Activity.Absolute_Expiration_Rejected
+           (Identity.Sessions.Activity.Absolute_Expired)
+         and then Identity.Sessions.Activity.Revocation_Rejected
+           (Identity.Sessions.Activity.Admit_Update
+              ((Session_Record with delta State => Identity.Sessions.Definitions.Revoked),
+               30,
+               (Present => True, Time_Point => 120)))
+         and then Identity.Sessions.Expiration.Absolute_Lifetime_Expired
+           (Identity.Sessions.Expiration.Evaluate (Session_Record, 201)),
+         "session activity admission reports current expiration cause");
+
+      Assert
+        (Identity.Sessions.Families.Usable (Family_Record)
+         and then (Identity.Sessions.Families.Admission (Family_Record)
+           = Identity.Sessions.Families.Session_Family_Admitted)
+         and then Identity.Sessions.Families.Admission_Accepted
+           (Identity.Sessions.Families.Admission (Family_Record))
+         and then not Identity.Sessions.Families.Admission_Rejected
+           (Identity.Sessions.Families.Admission (Family_Record))
+         and then not Identity.Sessions.Families.No_Mutation
+           (Identity.Sessions.Families.Admission (Family_Record))
+         and then (Identity.Sessions.Families.Admission
+           (Identity.Sessions.Families.Revoking)
+           = Identity.Sessions.Families.Session_Family_Revoking)
+         and then Identity.Sessions.Families.Revoking_Rejection
+           (Identity.Sessions.Families.Admission
+              (Identity.Sessions.Families.Revoking))
+         and then Identity.Sessions.Families.Admission_Rejected
+           (Identity.Sessions.Families.Admission
+              (Identity.Sessions.Families.Revoking))
+         and then Identity.Sessions.Families.No_Mutation
+           (Identity.Sessions.Families.Admission
+              (Identity.Sessions.Families.Revoking))
+         and then (Identity.Sessions.Families.Admission
+           (Identity.Sessions.Families.Revoked)
+           = Identity.Sessions.Families.Session_Family_Revoked)
+        and then Identity.Sessions.Families.Revoked_Rejection
+          (Identity.Sessions.Families.Admission
+             (Identity.Sessions.Families.Revoked))
+        and then Identity.Sessions.Families.Admission_Rejected
+          (Identity.Sessions.Families.Admission
+             (Identity.Sessions.Families.Revoked))
+        and then Identity.Sessions.Families.No_Mutation
+          (Identity.Sessions.Families.Admission
+             (Identity.Sessions.Families.Revoked))
+        and then Identity.Sessions.Families.Active_State
+          (Identity.Sessions.Families.Active)
+        and then Identity.Sessions.Families.Revoking_State
+          (Identity.Sessions.Families.Revoking)
+        and then Identity.Sessions.Families.Revoked_State
+          (Identity.Sessions.Families.Revoked)
+        and then Identity.Sessions.Families.Terminal_State
+          (Identity.Sessions.Families.Revoked)
+        and then not Identity.Sessions.Families.Terminal_State
+          (Identity.Sessions.Families.Revoking)
+        and then Identity.Sessions.Replay.High_Severity (Identity.Sessions.Replay.Revoke_Family)
+         and then Identity.Sessions.Replay.Rejects_Presented (Identity.Sessions.Replay.Reject_Only)
+         and then Identity.Sessions.Replay.Revokes_Successor
+           (Identity.Sessions.Replay.Revoke_Successor)
+         and then Identity.Sessions.Replay.Revokes_Family
+           (Identity.Sessions.Replay.Revoke_Family)
+         and then Identity.Sessions.Replay.Revokes_Principal_Sessions
+           (Identity.Sessions.Replay.Revoke_Principal_Sessions)
+         and then Identity.Sessions.Replay.Revocation_Required
+           (Identity.Sessions.Replay.Revoke_Successor)
+         and then Identity.Sessions.Replay.Revocation_Required
+           (Identity.Sessions.Replay.Revoke_Family)
+         and then Identity.Sessions.Replay.Revocation_Required
+           (Identity.Sessions.Replay.Revoke_Principal_Sessions)
+         and then Identity.Sessions.Replay.Requires_Reauthentication
+           (Identity.Sessions.Replay.Require_Reauthentication)
+         and then not Identity.Sessions.Replay.Revokes_Successor
+           (Identity.Sessions.Replay.Reject_Only)
+         and then not Identity.Sessions.Replay.Revocation_Required
+           (Identity.Sessions.Replay.Reject_Only)
+         and then not Identity.Sessions.Replay.Revocation_Required
+           (Identity.Sessions.Replay.Require_Reauthentication)
+         and then Identity.Sessions.Revocation.Revocation_Target'Pos
+           (Identity.Sessions.Revocation.Credential_Derived_Sessions) > 0
+         and then Identity.Sessions.Revocation.Applied_Result
+           (Identity.Sessions.Revocation.Applied)
+         and then not Identity.Sessions.Revocation.Revocation_Rejected
+           (Identity.Sessions.Revocation.Applied)
+         and then Identity.Sessions.Revocation.Already_Final
+           (Identity.Sessions.Revocation.Already_Revoked)
+         and then Identity.Sessions.Revocation.Revocation_Rejected
+           (Identity.Sessions.Revocation.Already_Revoked)
+         and then Identity.Sessions.Revocation.Missing_Target
+           (Identity.Sessions.Revocation.Not_Found)
+         and then Identity.Sessions.Revocation.Revocation_Rejected
+           (Identity.Sessions.Revocation.Not_Found)
+         and then Identity.Sessions.Revocation.Conflict_Result
+           (Identity.Sessions.Revocation.Conflict)
+         and then Identity.Sessions.Revocation.Revocation_Rejected
+           (Identity.Sessions.Revocation.Conflict)
+         and then Identity.Sessions.Revocation.No_Mutation
+           (Identity.Sessions.Revocation.Already_Revoked)
+         and then Identity.Sessions.Revocation.No_Mutation
+           (Identity.Sessions.Revocation.Not_Found)
+         and then Identity.Sessions.Revocation.No_Mutation
+           (Identity.Sessions.Revocation.Conflict)
+         and then not Identity.Sessions.Revocation.No_Mutation
+           (Identity.Sessions.Revocation.Applied)
+         and then Identity.Sessions.Assurance.Satisfies
+           (Session_Record, Identity.Assurance.Levels.Basic),
+         "IDENTITY-SESSION-004 session replay response consequences are explicit");
+
+      Assert
+        (Identity.Tokens.Policies.Valid (Token_Policy)
+         and then (Identity.Tokens.Policies.Validate (Token_Policy)
+                   = Identity.Tokens.Policies.Token_Policy_Valid)
+         and then Identity.Tokens.Policies.Validation_Accepted
+           (Identity.Tokens.Policies.Validate (Token_Policy))
+         and then not Identity.Tokens.Policies.Valid (Zero_Lifetime_Token_Policy)
+         and then (Identity.Tokens.Policies.Validate (Zero_Lifetime_Token_Policy)
+                   = Identity.Tokens.Policies.Token_Lifetime_Non_Positive)
+         and then Identity.Tokens.Policies.Lifetime_Rejected
+           (Identity.Tokens.Policies.Validate (Zero_Lifetime_Token_Policy))
+         and then not Identity.Tokens.Policies.Valid (Zero_Attempt_Token_Policy)
+         and then (Identity.Tokens.Policies.Validate (Zero_Attempt_Token_Policy)
+                   = Identity.Tokens.Policies.Token_Attempt_Limit_Non_Positive)
+         and then Identity.Tokens.Policies.Attempt_Limit_Rejected
+           (Identity.Tokens.Policies.Validate (Zero_Attempt_Token_Policy))
+         and then Identity.Times.Durations.To_Base (Token_Policy.Lifetime) = 600
+         and then Identity.Tokens.Generation.Safe_To_Return (Split_Token)
+         and then Identity.Tokens.Generation.Accepted_Input (Parsed_Token.Status)
+         and then Identity.Text.Bounded.Image (Parsed_Token.Public_Part)
+           = "public-token-part"
+         and then Identity.Text.Bounded.Image (Parsed_Token.Secret_Part)
+           = "secret-token-part"
+         and then Identity.Tokens.Generation.Parse ("").Status
+           = Identity.Tokens.Generation.Empty_Input
+         and then Identity.Tokens.Generation.Parse ("public-only").Status
+           = Identity.Tokens.Generation.Missing_Separator
+         and then Identity.Tokens.Generation.Parse (".secret").Status
+           = Identity.Tokens.Generation.Missing_Public_Part
+         and then Identity.Tokens.Generation.Parse ("public.").Status
+           = Identity.Tokens.Generation.Missing_Secret_Part
+         and then Identity.Tokens.Generation.Parse ("a.b.c").Status
+           = Identity.Tokens.Generation.Multiple_Separators
+         and then Identity.Tokens.Generation.Empty_Rejection
+           (Identity.Tokens.Generation.Parse ("").Status)
+         and then Identity.Tokens.Generation.Public_Part_Rejection
+           (Identity.Tokens.Generation.Parse (".secret").Status)
+         and then Identity.Tokens.Generation.Secret_Part_Rejection
+           (Identity.Tokens.Generation.Parse ("public.").Status)
+         and then Identity.Tokens.Generation.Size_Rejection
+           (Identity.Tokens.Generation.Too_Large)
+         and then Identity.Tokens.Generation.Structural_Rejection
+           (Identity.Tokens.Generation.Missing_Secret_Part)
+         and then Identity.Tokens.Generation.Rejected_Input
+           (Identity.Tokens.Generation.Missing_Separator)
+         and then not Identity.Tokens.Generation.Size_Rejection
+           (Parsed_Token.Status)
+         and then Identity.Tokens.Consumption.Evaluate (Token_View.State)
+           = Identity.Tokens.Consumption.Can_Consume
+         and then Identity.Tokens.Consumption.Consumable
+           (Identity.Tokens.Consumption.Evaluate (Token_View.State))
+         and then not Identity.Tokens.Consumption.Consumption_Rejected
+           (Identity.Tokens.Consumption.Can_Consume)
+         and then Identity.Tokens.Consumption.Evaluate (Token_Record, 50)
+           = Identity.Tokens.Consumption.Can_Consume
+         and then Identity.Tokens.Consumption.Evaluate (Token_Record, 101)
+           = Identity.Tokens.Consumption.Expired
+         and then Identity.Tokens.Consumption.Expired_Rejection
+           (Identity.Tokens.Consumption.Evaluate (Token_Record, 101))
+         and then Identity.Tokens.Consumption.Evaluate (Identity.Tokens.Definitions.Consumed)
+           = Identity.Tokens.Consumption.Already_Consumed
+         and then Identity.Tokens.Consumption.Already_Consumed_Rejection
+           (Identity.Tokens.Consumption.Already_Consumed)
+         and then Identity.Tokens.Consumption.Consumption_Rejected
+           (Identity.Tokens.Consumption.Already_Consumed)
+         and then Identity.Tokens.Consumption.Revoked_Rejection
+           (Identity.Tokens.Consumption.Revoked)
+         and then Identity.Tokens.Consumption.Attempt_Limit_Rejection
+           (Identity.Tokens.Consumption.Attempt_Limit_Reached)
+         and then Identity.Tokens.Consumption.Conflict
+           (Identity.Tokens.Consumption.State_Conflict)
+         and then Identity.Tokens.Consumption.Consumption_Rejected
+           (Identity.Tokens.Consumption.State_Conflict)
+         and then Identity.Tokens.Consumption.Terminal_Rejection
+           (Identity.Tokens.Consumption.Attempt_Limit_Reached)
+         and then Identity.Tokens.Consumption.No_Protected_Mutation
+           (Identity.Tokens.Consumption.State_Conflict)
+         and then Identity.Tokens.Projections.Summary (Token_Record).Verifier_Present
+         and then Identity.Tokens.Projections.Summary (Token_Record).Attempts = 0
+         and then Identity.Tokens.Projections.Summary (Token_Record).Version = 0
+         and then Identity.Tokens.Projections.Can_Verify
+           (Identity.Tokens.Projections.Summary (Token_Record), 50)
+         and then not Identity.Tokens.Projections.Can_Verify
+           (Identity.Tokens.Projections.Summary (Token_Record), 101)
+         and then Identity.Tokens.Projections.Can_Complete
+           (Identity.Tokens.Projections.Summary (Token_Record), 50)
+         and then Identity.Tokens.Projections.Terminal
+           (Identity.Tokens.Projections.Summary (Consumed_Token_Record))
+         and then Identity.Tokens.Projections.Terminal
+           (Identity.Tokens.Projections.Summary (Revoked_Token_Record))
+         and then Identity.Tokens.Definitions.Can_Issue (Identity.Tokens.Definitions.Issued)
+         and then not Identity.Tokens.Definitions.Can_Issue (Identity.Tokens.Definitions.Consumed)
+         and then Identity.Tokens.Definitions.Can_Verify (Identity.Tokens.Definitions.Presented)
+         and then Identity.Tokens.Definitions.Can_Complete (Identity.Tokens.Definitions.Verified)
+         and then
+           (Identity.Tokens.Definitions.Admission
+              (Identity.Tokens.Definitions.Issued,
+               Identity.Tokens.Definitions.Issue_Token)
+            = Identity.Tokens.Definitions.Token_Action_Admitted)
+         and then Identity.Tokens.Definitions.Admission_Accepted
+           (Identity.Tokens.Definitions.Token_Action_Admitted)
+         and then not Identity.Tokens.Definitions.Admission_Rejected
+           (Identity.Tokens.Definitions.Token_Action_Admitted)
+         and then not Identity.Tokens.Definitions.Action_Rejected
+           (Identity.Tokens.Definitions.Token_Action_Admitted)
+         and then not Identity.Tokens.Definitions.No_Mutation
+           (Identity.Tokens.Definitions.Token_Action_Admitted)
+         and then
+           (Identity.Tokens.Definitions.Admission
+              (Identity.Tokens.Definitions.Presented,
+               Identity.Tokens.Definitions.Issue_Token)
+            = Identity.Tokens.Definitions.Token_State_Rejected)
+         and then Identity.Tokens.Definitions.Action_State_Rejected
+           (Identity.Tokens.Definitions.Token_State_Rejected)
+         and then Identity.Tokens.Definitions.Admission_Rejected
+           (Identity.Tokens.Definitions.Token_State_Rejected)
+         and then Identity.Tokens.Definitions.Action_Rejected
+           (Identity.Tokens.Definitions.Token_State_Rejected)
+         and then Identity.Tokens.Definitions.No_Mutation
+           (Identity.Tokens.Definitions.Token_State_Rejected)
+         and then
+           (Identity.Tokens.Definitions.Admission
+              (Identity.Tokens.Definitions.Consumed,
+               Identity.Tokens.Definitions.Verify_Token)
+            = Identity.Tokens.Definitions.Token_Terminal_Rejected)
+         and then Identity.Tokens.Definitions.Action_Terminal_Rejected
+           (Identity.Tokens.Definitions.Token_Terminal_Rejected)
+         and then Identity.Tokens.Definitions.Admission_Rejected
+           (Identity.Tokens.Definitions.Token_Terminal_Rejected)
+         and then Identity.Tokens.Definitions.Action_Rejected
+           (Identity.Tokens.Definitions.Token_Terminal_Rejected)
+         and then Identity.Tokens.Definitions.No_Mutation
+           (Identity.Tokens.Definitions.Token_Terminal_Rejected)
+         and then
+           (Identity.Tokens.Definitions.Admission
+              (Identity.Tokens.Definitions.Verified,
+               Identity.Tokens.Definitions.Advance_Token,
+               Identity.Tokens.Definitions.Presented)
+            = Identity.Tokens.Definitions.Token_Advance_Rejected)
+         and then Identity.Tokens.Definitions.Action_Advance_Rejected
+           (Identity.Tokens.Definitions.Token_Advance_Rejected)
+         and then Identity.Tokens.Definitions.Admission_Rejected
+           (Identity.Tokens.Definitions.Token_Advance_Rejected)
+         and then Identity.Tokens.Definitions.Action_Rejected
+           (Identity.Tokens.Definitions.Token_Advance_Rejected)
+         and then Identity.Tokens.Definitions.No_Mutation
+           (Identity.Tokens.Definitions.Token_Advance_Rejected)
+         and then
+           (Identity.Tokens.Definitions.Admission
+              (Identity.Tokens.Definitions.Issued,
+               Identity.Tokens.Definitions.Advance_Token,
+               Identity.Tokens.Definitions.Presented)
+            = Identity.Tokens.Definitions.Token_Action_Admitted)
+         and then Identity.Tokens.Definitions.Is_Consumed_State
+           (Identity.Tokens.Definitions.Completed)
+         and then Identity.Tokens.Definitions.Is_Terminal
+           (Identity.Tokens.Definitions.Attempt_Limit_Reached)
+         and then Identity.Tokens.Definitions.Can_Advance
+           (Identity.Tokens.Definitions.Issued, Identity.Tokens.Definitions.Presented)
+         and then Identity.Tokens.Definitions.Can_Advance
+           (Identity.Tokens.Definitions.Presented, Identity.Tokens.Definitions.Verified)
+         and then Identity.Tokens.Definitions.Can_Advance
+           (Identity.Tokens.Definitions.Verified, Identity.Tokens.Definitions.Consumed)
+         and then not Identity.Tokens.Definitions.Can_Advance
+           (Identity.Tokens.Definitions.Consumed, Identity.Tokens.Definitions.Issued)
+         and then not Identity.Tokens.Definitions.Can_Advance
+           (Identity.Tokens.Definitions.Revoked, Identity.Tokens.Definitions.Verified)
+         and then not Identity.Tokens.Definitions.Expired_At (Token_Record, 50)
+         and then Identity.Tokens.Definitions.Expired_At (Token_Record, 101)
+         and then Identity.Tokens.Definitions.Purpose_Matches
+           (Token_Record, Identity.Tokens.Purposes.Password_Reset)
+         and then not Identity.Tokens.Definitions.Purpose_Matches
+           (Token_Record, Identity.Tokens.Purposes.Contact_Verification)
+         and then Identity.Tokens.Definitions.Bound_To_Principal
+           (Token_Record, P1)
+         and then not Identity.Tokens.Definitions.Bound_To_Principal
+           (Token_Record, P2)
+         and then Identity.Tokens.Definitions.Verifiable_For
+           (Token_Record, Identity.Tokens.Purposes.Password_Reset, P1, 50)
+         and then Identity.Tokens.Definitions.Verifiability
+           (Token_Record, Identity.Tokens.Purposes.Password_Reset, P1, 50)
+           = Identity.Tokens.Definitions.Token_Verifiable
+         and then Identity.Tokens.Definitions.Verifiability_Accepted
+           (Identity.Tokens.Definitions.Token_Verifiable)
+         and then not Identity.Tokens.Definitions.Verifiability_Rejected
+           (Identity.Tokens.Definitions.Token_Verifiable)
+         and then not Identity.Tokens.Definitions.Verifiable_For
+           (Token_Record, Identity.Tokens.Purposes.Password_Reset, P2, 50)
+         and then Identity.Tokens.Definitions.Verifiability
+           (Token_Record, Identity.Tokens.Purposes.Password_Reset, P2, 50)
+           = Identity.Tokens.Definitions.Principal_Different
+         and then Identity.Tokens.Definitions.Principal_Rejected
+           (Identity.Tokens.Definitions.Principal_Different)
+         and then Identity.Tokens.Definitions.Verifiability_Rejected
+           (Identity.Tokens.Definitions.Principal_Different)
+         and then not Identity.Tokens.Definitions.Verifiable_For
+           (Token_Record, Identity.Tokens.Purposes.Contact_Verification, P1, 50)
+         and then Identity.Tokens.Definitions.Verifiability
+           (Token_Record, Identity.Tokens.Purposes.Contact_Verification, P1, 50)
+           = Identity.Tokens.Definitions.Purpose_Different
+         and then Identity.Tokens.Definitions.Purpose_Rejected
+           (Identity.Tokens.Definitions.Purpose_Different)
+         and then Identity.Tokens.Definitions.Verifiability_Rejected
+           (Identity.Tokens.Definitions.Purpose_Different)
+         and then not Identity.Tokens.Definitions.Verifiable_For
+           (Token_Record, Identity.Tokens.Purposes.Password_Reset, P1, 101)
+         and then Identity.Tokens.Definitions.Verifiability
+           (Token_Record, Identity.Tokens.Purposes.Password_Reset, P1, 101)
+           = Identity.Tokens.Definitions.Token_Expired
+         and then Identity.Tokens.Definitions.Expiration_Rejected
+           (Identity.Tokens.Definitions.Token_Expired)
+         and then Identity.Tokens.Definitions.Verifiability_Rejected
+           (Identity.Tokens.Definitions.Token_Expired)
+         and then Identity.Tokens.Definitions.Verifiability
+           (Consumed_Token_Record, Identity.Tokens.Purposes.Password_Reset, P1, 50)
+           = Identity.Tokens.Definitions.State_Not_Verifiable
+         and then Identity.Tokens.Definitions.State_Rejected
+           (Identity.Tokens.Definitions.State_Not_Verifiable)
+         and then Identity.Tokens.Definitions.Verifiability_Rejected
+           (Identity.Tokens.Definitions.State_Not_Verifiable)
+         and then Identity.Tokens.Verification.Evaluate_State_First
+           (Identity.Tokens.Definitions.Issued, False)
+           = Identity.Tokens.Verification.Valid
+         and then Identity.Tokens.Verification.Evaluate_State_First
+           (Identity.Tokens.Definitions.Issued, True)
+           = Identity.Tokens.Verification.Expired
+         and then Identity.Tokens.Verification.Evaluate_State_First
+           (Identity.Tokens.Definitions.Superseded, False)
+           = Identity.Tokens.Verification.State_Conflict
+         and then Identity.Tokens.Verification.Evaluate_State_First
+           (Identity.Tokens.Definitions.Superseded, True)
+           = Identity.Tokens.Verification.State_Conflict,
+         "IDENTITY-TOKEN-003 token lifecycle helpers reject terminal-state reactivation");
+
+      Assert
+        (Identity.Tokens.Verification.Evaluate
+           (Token_Record, Identity.Tokens.Purposes.Password_Reset, True, True, 50)
+         = Identity.Tokens.Verification.Valid
+         and then Identity.Tokens.Verification.Is_Valid
+           (Identity.Tokens.Verification.Evaluate
+              (Token_Record, Identity.Tokens.Purposes.Password_Reset, True, True, 50))
+         and then Identity.Tokens.Verification.Evaluate
+           (Token_Record, Identity.Tokens.Purposes.Contact_Verification, True, True, 50)
+           = Identity.Tokens.Verification.Purpose_Mismatch
+         and then Identity.Tokens.Verification.Disclosure_Collapsed_Invalid
+           (Identity.Tokens.Verification.Purpose_Mismatch)
+         and then Identity.Tokens.Verification.Evaluate
+           (Token_Record, Identity.Tokens.Purposes.Password_Reset, True, False, 50)
+           = Identity.Tokens.Verification.Binding_Mismatch
+         and then Identity.Tokens.Verification.Disclosure_Collapsed_Invalid
+           (Identity.Tokens.Verification.Binding_Mismatch)
+         and then Identity.Tokens.Verification.Evaluate
+           (Token_Record, Identity.Tokens.Purposes.Password_Reset, False, True, 50)
+           = Identity.Tokens.Verification.Not_Verified
+         and then Identity.Tokens.Verification.Retryable
+           (Identity.Tokens.Verification.Not_Verified)
+         and then Identity.Tokens.Verification.Infrastructure
+           (Identity.Tokens.Verification.Infrastructure_Failure),
+         "IDENTITY-TOKEN-003 token verification helper reports purpose binding and verifier outcomes");
+
+      Assert
+        (Identity.Tokens.Verification.Evaluate
+           (Consumed_Token_Record, Identity.Tokens.Purposes.Password_Reset, True, True, 50)
+         = Identity.Tokens.Verification.Already_Consumed
+         and then Identity.Tokens.Verification.Evaluate
+           (Consumed_Token_Record, Identity.Tokens.Purposes.Contact_Verification, True, False, 50)
+         = Identity.Tokens.Verification.Already_Consumed
+         and then Identity.Tokens.Verification.Evaluate
+           (Revoked_Token_Record, Identity.Tokens.Purposes.Password_Reset, True, True, 50)
+           = Identity.Tokens.Verification.Revoked
+         and then Identity.Tokens.Verification.Evaluate
+           (Revoked_Token_Record, Identity.Tokens.Purposes.Contact_Verification, True, False, 50)
+           = Identity.Tokens.Verification.Revoked
+         and then Identity.Tokens.Verification.Evaluate
+           (Token_Record, Identity.Tokens.Purposes.Password_Reset, True, True, 101)
+           = Identity.Tokens.Verification.Expired
+         and then Identity.Tokens.Verification.Terminal_Invalid
+           (Identity.Tokens.Verification.Already_Consumed)
+         and then Identity.Tokens.Verification.Terminal_Invalid
+           (Identity.Tokens.Verification.Revoked)
+         and then Identity.Tokens.Verification.Terminal_Invalid
+           (Identity.Tokens.Verification.Expired)
+         and then not Identity.Tokens.Verification.Terminal_Invalid
+           (Identity.Tokens.Verification.Purpose_Mismatch)
+         and then Identity.Tokens.Verification.Disclosure_Collapsed_Invalid
+           (Identity.Tokens.Verification.State_Conflict)
+         and then not Identity.Tokens.Verification.Disclosure_Collapsed_Invalid
+           (Identity.Tokens.Verification.Infrastructure_Failure),
+         "IDENTITY-TOKEN-003 token verification helper reports terminal states before mismatch detail");
+
+      Assert
+        (Identity.Recovery.Authority.Usable (Authority, 50)
+         and then (Identity.Recovery.Authority.Usability (Authority, 50)
+           = Identity.Recovery.Authority.Recovery_Authority_Usable)
+         and then Identity.Recovery.Authority.Usability_Accepted
+           (Identity.Recovery.Authority.Usability (Authority, 50))
+         and then (Identity.Recovery.Authority.Usability (Authority, 101)
+           = Identity.Recovery.Authority.Recovery_Authority_Expired)
+         and then Identity.Recovery.Authority.Expired_Rejection
+           (Identity.Recovery.Authority.Usability (Authority, 101))
+         and then (Identity.Recovery.Authority.Usability
+           ((Authority with delta Short_Lived => False), 50)
+           = Identity.Recovery.Authority.Recovery_Authority_Not_Short_Lived)
+         and then Identity.Recovery.Authority.Short_Lived_Rejection
+           (Identity.Recovery.Authority.Usability
+              ((Authority with delta Short_Lived => False), 50))
+         and then (Identity.Recovery.Authority.Usability
+           ((Authority with delta Password_Reestablishment_Required => False), 50)
+           = Identity.Recovery.Authority.Recovery_Authority_Password_Reestablishment_Not_Required)
+         and then Identity.Recovery.Authority.Password_Reestablishment_Rejection
+           (Identity.Recovery.Authority.Usability
+              ((Authority with delta Password_Reestablishment_Required => False), 50))
+         and then Identity.Recovery.Authority.Usable
+           (Identity.Recovery.Authority.Summary (Authority, 50))
+         and then Identity.Recovery.Authority.Projection_Usability_Rejection
+           (Identity.Recovery.Authority.Usability
+              ((Identity.Recovery.Authority.Summary (Authority, 50)
+                with delta Usable_Now => False)))
+         and then not Identity.Recovery.Authority.Usable
+           (Identity.Recovery.Authority.Summary (Authority, 101))
+         and then Identity.Recovery.Authority.Expired
+           (Identity.Recovery.Authority.Summary (Authority, 101))
+         and then Identity.Recovery.Authority.Requires_Password_Reestablishment
+           (Identity.Recovery.Authority.Summary (Authority, 50))
+         and then Identity.Recovery.Authority.Requires_Restricted_Authentication
+           (Identity.Recovery.Authority.Summary (Authority, 50), Restrictions)
+         and then not Identity.Recovery.Authority.Requires_Restricted_Authentication
+           (Identity.Recovery.Authority.Summary (Authority, 50),
+            Weak_Recovery_Restrictions)
+         and then Identity.Recovery.Authority.Can_Issue_Restricted_Authentication
+           (Identity.Recovery.Authority.Summary (Authority, 50),
+            Restrictions,
+            Identity.Sessions.Policies.Interactive_Session)
+         and then Identity.Recovery.Authority.Issuance
+           (Identity.Recovery.Authority.Summary (Authority, 50),
+            Restrictions,
+            Identity.Sessions.Policies.Interactive_Session)
+           = Identity.Recovery.Authority.Restricted_Authentication_Issuable
+         and then Identity.Recovery.Authority.Issuance_Accepted
+           (Identity.Recovery.Authority.Restricted_Authentication_Issuable)
+         and then not Identity.Recovery.Authority.Can_Issue_Restricted_Authentication
+           (Identity.Recovery.Authority.Summary (Authority, 50),
+            Restrictions,
+            Identity.Sessions.Policies.Persistent_Session)
+         and then Identity.Recovery.Authority.Issuance
+           (Identity.Recovery.Authority.Summary (Authority, 50),
+            Restrictions,
+            Identity.Sessions.Policies.Persistent_Session)
+           = Identity.Recovery.Authority.Recovery_Session_Request_Rejected
+         and then Identity.Recovery.Authority.Issuance_Session_Request_Rejected
+           (Identity.Recovery.Authority.Recovery_Session_Request_Rejected)
+         and then not Identity.Recovery.Authority.Can_Issue_Restricted_Authentication
+           (Identity.Recovery.Authority.Summary (Authority, 101),
+            Restrictions,
+            Identity.Sessions.Policies.Interactive_Session)
+         and then Identity.Recovery.Authority.Issuance
+           (Identity.Recovery.Authority.Summary (Authority, 101),
+            Restrictions,
+            Identity.Sessions.Policies.Interactive_Session)
+           = Identity.Recovery.Authority.Recovery_Authority_Unusable
+         and then Identity.Recovery.Authority.Issuance_Authority_Rejected
+           (Identity.Recovery.Authority.Recovery_Authority_Unusable)
+         and then Identity.Recovery.Authority.Issuance
+           (Identity.Recovery.Authority.Summary (Authority, 50),
+            Weak_Recovery_Restrictions,
+            Identity.Sessions.Policies.Interactive_Session)
+           = Identity.Recovery.Authority.Recovery_Restrictions_Insufficient
+         and then Identity.Recovery.Authority.Issuance_Restrictions_Rejected
+           (Identity.Recovery.Authority.Recovery_Restrictions_Insufficient)
+         and then Identity.Recovery.Restrictions.Restricted (Restrictions)
+         and then Identity.Recovery.Restrictions.Recovery_Authentication_Restricted
+           (Restrictions)
+         and then Identity.Recovery.Restrictions.Restricted (Weak_Recovery_Restrictions)
+         and then not Identity.Recovery.Restrictions.Recovery_Authentication_Restricted
+           (Weak_Recovery_Restrictions)
+         and then Identity.Recovery.Restrictions.Downstream_Recovery_Restricted
+           (Restrictions)
+         and then Identity.Recovery.Restrictions.Downstream_Recovery_Restricted
+           (Weak_Recovery_Restrictions)
+         and then Identity.Recovery.Restrictions.Allows_Session_Request
+           (Restrictions, Identity.Sessions.Policies.Interactive_Session)
+         and then
+           (Identity.Recovery.Restrictions.Session_Request_Admission
+              (Restrictions,
+               Identity.Sessions.Policies.Interactive_Session)
+            = Identity.Recovery.Restrictions.Session_Request_Admitted)
+         and then Identity.Recovery.Restrictions.Admission_Accepted
+           (Identity.Recovery.Restrictions.Session_Request_Admitted)
+         and then not Identity.Recovery.Restrictions.Admission_Rejected
+           (Identity.Recovery.Restrictions.Session_Request_Admitted)
+         and then not Identity.Recovery.Restrictions.Allows_Session_Request
+           (Restrictions, Identity.Sessions.Policies.Persistent_Session)
+         and then
+           (Identity.Recovery.Restrictions.Session_Request_Admission
+              (Restrictions,
+               Identity.Sessions.Policies.Persistent_Session)
+            = Identity.Recovery.Restrictions.Persistent_Session_Reduced)
+         and then Identity.Recovery.Restrictions.Admission_Accepted
+           (Identity.Recovery.Restrictions.Persistent_Session_Reduced)
+         and then not Identity.Recovery.Restrictions.Admission_Rejected
+           (Identity.Recovery.Restrictions.Persistent_Session_Reduced)
+         and then Identity.Recovery.Restrictions.Reduced_To_Interactive
+           (Identity.Recovery.Restrictions.Persistent_Session_Reduced)
+         and then
+           (Identity.Recovery.Restrictions.Session_Request_Admission
+              (Restrictions,
+               Identity.Sessions.Policies.Persistent_Session,
+               Identity.Recovery.Restrictions.Require_Exact_Request)
+            = Identity.Recovery.Restrictions.Persistent_Session_Rejected)
+         and then not Identity.Recovery.Restrictions.Admission_Accepted
+           (Identity.Recovery.Restrictions.Persistent_Session_Rejected)
+         and then Identity.Recovery.Restrictions.Admission_Rejected
+           (Identity.Recovery.Restrictions.Persistent_Session_Rejected)
+         and then Identity.Recovery.Restrictions.Persistent_Rejection
+           (Identity.Recovery.Restrictions.Persistent_Session_Rejected)
+         and then Identity.Recovery.Restrictions.Allows_Session_Request
+           (Weak_Recovery_Restrictions, Identity.Sessions.Policies.Persistent_Session)
+         and then Identity.Recovery.Restrictions.Effective_Session_Request
+           (Restrictions, Identity.Sessions.Policies.Persistent_Session)
+           = Identity.Sessions.Policies.Interactive_Session
+         and then Identity.Recovery.Restrictions.Effective_Session_Request
+           (Restrictions, Identity.Sessions.Policies.No_Session)
+           = Identity.Sessions.Policies.No_Session
+         and then Identity.Recovery.Restrictions.Effective_Session_Request
+           (Weak_Recovery_Restrictions, Identity.Sessions.Policies.Persistent_Session)
+           = Identity.Sessions.Policies.Persistent_Session
+         and then Identity.Recovery.Restrictions.Requires_Limited_Session_Lifetime
+           (Restrictions)
+         and then not Identity.Recovery.Restrictions.Requires_Limited_Session_Lifetime
+           (Weak_Recovery_Restrictions)
+         and then Identity.Recovery.Policies.Valid (Recovery_Policy)
+         and then (Identity.Recovery.Policies.Validate (Recovery_Policy)
+                   = Identity.Recovery.Policies.Recovery_Policy_Valid)
+         and then Identity.Recovery.Policies.Validation_Accepted
+           (Identity.Recovery.Policies.Validate (Recovery_Policy))
+         and then not Identity.Recovery.Policies.Valid (Zero_Lifetime_Recovery_Policy)
+         and then (Identity.Recovery.Policies.Validate (Zero_Lifetime_Recovery_Policy)
+                   = Identity.Recovery.Policies.Recovery_Authority_Lifetime_Non_Positive)
+         and then Identity.Recovery.Policies.Authority_Lifetime_Rejected
+           (Identity.Recovery.Policies.Validate (Zero_Lifetime_Recovery_Policy))
+         and then not Identity.Recovery.Policies.Valid (No_Credential_Recovery_Policy)
+         and then (Identity.Recovery.Policies.Validate (No_Credential_Recovery_Policy)
+                   = Identity.Recovery.Policies.Credential_Reestablishment_Not_Required)
+         and then Identity.Recovery.Policies.Credential_Reestablishment_Rejected
+           (Identity.Recovery.Policies.Validate (No_Credential_Recovery_Policy))
+         and then not Identity.Recovery.Policies.Valid
+           (No_Session_Consequence_Recovery_Policy)
+         and then (Identity.Recovery.Policies.Validate
+             (No_Session_Consequence_Recovery_Policy)
+           = Identity.Recovery.Policies.Existing_Session_Consequence_Not_Required)
+         and then Identity.Recovery.Policies.Existing_Session_Consequence_Rejected
+           (Identity.Recovery.Policies.Validate
+              (No_Session_Consequence_Recovery_Policy))
+         and then Identity.Times.Durations.To_Base
+           (Recovery_Policy.Authority_Lifetime) = 900
+         and then Identity.Recovery.Results.Recovery_Result_Status'Pos
+           (Identity.Recovery.Results.Restricted_Authentication_Established) > 0,
+         "IDENTITY-RECOVERY-003 recovery authority requires restricted session consequences");
+
+      Assert
+        (Identity.Attempts.Buckets.Valid (Bucket)
+         and then Identity.Attempts.Buckets.Validate (Bucket)
+           = Identity.Attempts.Buckets.Failure_Bucket_Policy_Valid
+         and then Identity.Attempts.Buckets.Validation_Accepted
+           (Identity.Attempts.Buckets.Validate (Bucket))
+         and then Identity.Attempts.Buckets.Validate (Zero_Window_Bucket)
+           = Identity.Attempts.Buckets.Failure_Bucket_Window_Non_Positive
+         and then Identity.Attempts.Buckets.Window_Rejected
+           (Identity.Attempts.Buckets.Validate (Zero_Window_Bucket))
+         and then Identity.Attempts.Buckets.Validate (Zero_Threshold_Bucket)
+           = Identity.Attempts.Buckets.Failure_Bucket_Threshold_Zero
+         and then Identity.Attempts.Buckets.Threshold_Rejected
+           (Identity.Attempts.Buckets.Validate (Zero_Threshold_Bucket))
+         and then Identity.Attempts.Buckets.Validate (Low_Saturation_Bucket)
+           = Identity.Attempts.Buckets.Failure_Bucket_Saturation_Below_Threshold
+         and then Identity.Attempts.Buckets.Saturation_Rejected
+           (Identity.Attempts.Buckets.Validate (Low_Saturation_Bucket))
+         and then Identity.Attempts.Policies.Valid (Attempt_Policy)
+         and then Identity.Attempts.Policies.Validate (Attempt_Policy)
+           = Identity.Attempts.Policies.Attempt_Policy_Valid
+         and then Identity.Attempts.Policies.Validation_Accepted
+           (Identity.Attempts.Policies.Validate (Attempt_Policy))
+         and then Identity.Attempts.Policies.Validate (Invalid_Password_Attempt_Policy)
+           = Identity.Attempts.Policies.Attempt_Password_Bucket_Invalid
+         and then Identity.Attempts.Policies.Password_Bucket_Rejected
+           (Identity.Attempts.Policies.Validate (Invalid_Password_Attempt_Policy))
+         and then Identity.Attempts.Policies.Validate (Invalid_TOTP_Attempt_Policy)
+           = Identity.Attempts.Policies.Attempt_TOTP_Bucket_Invalid
+         and then Identity.Attempts.Policies.TOTP_Bucket_Rejected
+           (Identity.Attempts.Policies.Validate (Invalid_TOTP_Attempt_Policy))
+         and then Identity.Attempts.Policies.Validate (Invalid_Token_Attempt_Policy)
+           = Identity.Attempts.Policies.Attempt_Token_Bucket_Invalid
+         and then Identity.Attempts.Policies.Token_Bucket_Rejected
+           (Identity.Attempts.Policies.Validate (Invalid_Token_Attempt_Policy))
+         and then Identity.Attempts.Fingerprints.Safe_To_Persist (Fingerprint)
+         and then Identity.Attempts.Definitions.Completed (Failed_Attempt)
+         and then Identity.Attempts.Definitions.Has_Resolved_Principal (Failed_Attempt)
+         and then Identity.Attempts.Definitions.Counts_As_Credential_Failure
+           (Failed_Attempt)
+         and then Identity.Attempts.Definitions.Disclosure_Is_Generic (Failed_Attempt)
+         and then not Identity.Attempts.Definitions.Counts_As_Credential_Failure
+           (Operational_Attempt)
+         and then not Identity.Attempts.Definitions.Has_Resolved_Principal
+           (Operational_Attempt)
+         and then not Identity.Attempts.Definitions.Disclosure_Is_Generic
+           (Operational_Attempt)
+         and then Identity.Attempts.Outcomes.Successful (Successful_Attempt.Outcome)
+         and then Identity.Attempts.Outcomes.Failed (Failed_Attempt.Outcome)
+         and then Identity.Attempts.Outcomes.Throttled
+           (Identity.Attempts.Outcomes.Throttled)
+         and then Identity.Attempts.Outcomes.Conflict
+           (Identity.Attempts.Outcomes.Conflict)
+         and then Identity.Attempts.Outcomes.Password_Failed
+           (Identity.Attempts.Outcomes.Password_Failure)
+         and then Identity.Attempts.Outcomes.TOTP_Failed
+           (Identity.Attempts.Outcomes.TOTP_Failure)
+         and then Identity.Attempts.Outcomes.Recovery_Failed
+           (Identity.Attempts.Outcomes.Recovery_Failure)
+         and then Identity.Attempts.Outcomes.Token_Failed
+           (Identity.Attempts.Outcomes.Token_Failure)
+         and then Identity.Attempts.Outcomes.Provider_Failed
+           (Identity.Attempts.Outcomes.Provider_Failure)
+         and then Identity.Attempts.Outcomes.Session_Replay_Detected
+           (Identity.Attempts.Outcomes.Session_Replay)
+         and then Identity.Attempts.Outcomes.No_Failure
+           (Identity.Attempts.Outcomes.None)
+         and then Identity.Attempts.Outcomes.Security_Response_Failure
+           (Identity.Attempts.Outcomes.Session_Replay)
+         and then Identity.Attempts.Outcomes.Counts_In_Failure_Bucket
+           (Identity.Attempts.Outcomes.Failed,
+            Identity.Attempts.Outcomes.Password_Failure)
+         and then not Identity.Attempts.Outcomes.Counts_In_Failure_Bucket
+           (Identity.Attempts.Outcomes.Operational_Failure,
+            Identity.Attempts.Outcomes.Password_Failure)
+         and then Identity.Attempts.Outcomes.Public_Success
+           (Successful_Attempt.Disclosure)
+         and then Identity.Attempts.Outcomes.Hidden_Operational_Failure
+           (Operational_Attempt.Disclosure)
+         and then not Identity.Attempts.Definitions.Counts_As_Credential_Failure
+           (Successful_Attempt)
+         and then Identity.Throttling.Policies.Valid (Throttle_Policy)
+         and then Identity.Throttling.Policies.Validate (Throttle_Policy)
+           = Identity.Throttling.Policies.Throttling_Policy_Valid
+         and then Identity.Throttling.Policies.Validation_Accepted
+           (Identity.Throttling.Policies.Validate (Throttle_Policy))
+         and then Identity.Throttling.Policies.Validate
+           (Invalid_Throttle_Order_Policy)
+           = Identity.Throttling.Policies.Throttling_Reject_Not_After_Delay
+         and then Identity.Throttling.Policies.Threshold_Rejected
+           (Identity.Throttling.Policies.Validate
+              (Invalid_Throttle_Order_Policy))
+         and then Identity.Throttling.Policies.Validate
+           (Invalid_Throttle_Duration_Policy)
+           = Identity.Throttling.Policies.Throttling_Delay_Duration_Non_Positive
+         and then Identity.Throttling.Policies.Duration_Rejected
+           (Identity.Throttling.Policies.Validate
+              (Invalid_Throttle_Duration_Policy))
+         and then Identity.Times.Durations.To_Base
+           (Throttle_Policy.Delay_Duration) = 30
+         and then Identity.Throttling.Windows.Active (Window, 15)
+         and then Identity.Lockout.Policies.Valid (Lockout_Policy)
+         and then Identity.Lockout.Policies.Validate (Lockout_Policy)
+           = Identity.Lockout.Policies.Lockout_Policy_Valid
+         and then Identity.Lockout.Policies.Validation_Accepted
+           (Identity.Lockout.Policies.Validate (Lockout_Policy))
+         and then Identity.Lockout.Policies.Validate (Zero_Threshold_Lockout_Policy)
+           = Identity.Lockout.Policies.Lockout_Temporary_Threshold_Zero
+         and then Identity.Lockout.Policies.Threshold_Rejected
+           (Identity.Lockout.Policies.Validate (Zero_Threshold_Lockout_Policy))
+         and then not Identity.Lockout.Policies.Valid (Zero_Threshold_Lockout_Policy)
+         and then Identity.Lockout.Policies.Validate (Unordered_Lockout_Policy)
+           = Identity.Lockout.Policies.Lockout_Indefinite_Not_After_Temporary
+         and then Identity.Lockout.Policies.Threshold_Rejected
+           (Identity.Lockout.Policies.Validate (Unordered_Lockout_Policy))
+         and then Identity.Lockout.Policies.Validate (Zero_Duration_Lockout_Policy)
+           = Identity.Lockout.Policies.Lockout_Temporary_Duration_Non_Positive
+         and then Identity.Lockout.Policies.Duration_Rejected
+           (Identity.Lockout.Policies.Validate (Zero_Duration_Lockout_Policy))
+         and then Identity.Lockout.Policies.Validate
+           (Permanent_Disablement_Lockout_Policy)
+           = Identity.Lockout.Policies.Lockout_Permanent_Remote_Login_Disablement
+         and then Identity.Lockout.Policies.Permanent_Remote_Disablement_Rejected
+           (Identity.Lockout.Policies.Validate
+              (Permanent_Disablement_Lockout_Policy))
+         and then Identity.Times.Durations.To_Base
+           (Lockout_Policy.Temporary_Duration) = 900
+         and then Identity.Lockout.States.Can_Attempt (Identity.Lockout.States.Not_Locked)
+         and then
+           (Identity.Lockout.States.Attempt_Admission
+              (Identity.Lockout.States.Not_Locked,
+               (Present => False, Time_Point => 0),
+               199)
+            = Identity.Lockout.States.Attempt_Admitted)
+         and then Identity.Lockout.States.Admission_Accepted
+           (Identity.Lockout.States.Attempt_Admitted)
+         and then not Identity.Lockout.States.Admission_Rejected
+           (Identity.Lockout.States.Attempt_Admitted)
+         and then not Identity.Lockout.States.Can_Attempt_At
+           (Identity.Lockout.States.Temporarily_Locked,
+            (Present => True, Time_Point => 200),
+            199)
+         and then
+           (Identity.Lockout.States.Attempt_Admission
+              (Identity.Lockout.States.Temporarily_Locked,
+               (Present => True, Time_Point => 200),
+               199)
+            = Identity.Lockout.States.Temporary_Lock_Active)
+         and then Identity.Lockout.States.Temporary_Rejection
+           (Identity.Lockout.States.Temporary_Lock_Active)
+         and then Identity.Lockout.States.Admission_Rejected
+           (Identity.Lockout.States.Temporary_Lock_Active)
+         and then Identity.Lockout.States.Can_Attempt_At
+           (Identity.Lockout.States.Temporarily_Locked,
+            (Present => True, Time_Point => 200),
+            201)
+         and then Identity.Lockout.States.Effective_State_At
+           (Identity.Lockout.States.Temporarily_Locked,
+            (Present => True, Time_Point => 200),
+            199) = Identity.Lockout.States.Temporarily_Locked
+         and then Identity.Lockout.States.Effective_State_At
+           (Identity.Lockout.States.Temporarily_Locked,
+            (Present => True, Time_Point => 200),
+            201) = Identity.Lockout.States.Not_Locked
+         and then not Identity.Lockout.States.Can_Attempt_At
+           (Identity.Lockout.States.Indefinitely_Locked,
+            (Present => False, Time_Point => 0),
+            201)
+         and then
+           (Identity.Lockout.States.Attempt_Admission
+              (Identity.Lockout.States.Indefinitely_Locked,
+               (Present => False, Time_Point => 0),
+               201)
+            = Identity.Lockout.States.Indefinite_Lock_Active)
+         and then Identity.Lockout.States.Indefinite_Rejection
+           (Identity.Lockout.States.Indefinite_Lock_Active)
+         and then Identity.Lockout.States.Admission_Rejected
+           (Identity.Lockout.States.Indefinite_Lock_Active)
+         and then
+           (Identity.Lockout.States.Attempt_Admission
+              (Identity.Lockout.States.Unlock_Pending,
+               (Present => False, Time_Point => 0),
+               201)
+            = Identity.Lockout.States.Unlock_Pending_Active)
+         and then Identity.Lockout.States.Unlock_Pending_Rejection
+           (Identity.Lockout.States.Unlock_Pending_Active)
+         and then Identity.Lockout.States.Admission_Rejected
+           (Identity.Lockout.States.Unlock_Pending_Active)
+         and then Identity.Lockout.States.Effective_State_At
+           (Identity.Lockout.States.Indefinitely_Locked,
+            (Present => False, Time_Point => 0),
+            201) = Identity.Lockout.States.Indefinitely_Locked
+         and then Identity.Lockout.Administration.Structurally_Valid (Unlock_Context),
+         "IDENTITY-ATTEMPT-002 cleanup-independent lockout state helpers reject zero thresholds");
+
+      Assert
+        (Throttle_Allow.Kind = Identity.Throttling.Decisions.Allow
+         and then Identity.Throttling.Decisions.Allows_Request (Throttle_Allow)
+         and then Throttle_Delay.Kind = Identity.Throttling.Decisions.Delay_Until
+         and then Identity.Throttling.Decisions.Delays_Request (Throttle_Delay)
+         and then Identity.Throttling.Decisions.Has_Boundary (Throttle_Delay)
+         and then Throttle_Delay.Boundary = 130
+         and then Throttle_Reject.Kind = Identity.Throttling.Decisions.Reject_Until
+         and then Identity.Throttling.Decisions.Rejects_Request (Throttle_Reject)
+         and then Identity.Throttling.Decisions.Has_Boundary (Throttle_Reject)
+         and then Throttle_Reject.Boundary = 130,
+         "IDENTITY-ATTEMPT-002 throttling policy produces bounded delay and reject decisions");
+
+      Assert
+        (Throttle_Overflow.Kind = Identity.Throttling.Decisions.Operational_Failure
+         and then Identity.Throttling.Decisions.Operational (Throttle_Overflow)
+         and then Identity.Throttling.Decisions.Requires_Challenge
+           ((Kind => Identity.Throttling.Decisions.Challenge_Required)),
+         "IDENTITY-ATTEMPT-002 throttling time overflow is operational failure");
+
+      Assert
+        (Temporary_Lock.Decision = Identity.Lockout.Evaluation.Temporarily_Lock
+         and then Identity.Lockout.Evaluation.Temporarily_Locks (Temporary_Lock)
+         and then Identity.Lockout.Evaluation.Temporarily_Locks
+           (Temporary_Lock.Decision)
+         and then Temporary_Lock.Result_State = Identity.Lockout.States.Temporarily_Locked
+         and then Temporary_Lock.Locked_Until.Present
+         and then Temporary_Lock.Locked_Until.Time_Point = 1000
+         and then not Temporary_Lock.Time_Overflow
+         and then Indefinite_Lock.Decision = Identity.Lockout.Evaluation.Indefinitely_Lock
+         and then Identity.Lockout.Evaluation.Indefinitely_Locks (Indefinite_Lock)
+         and then Identity.Lockout.Evaluation.Indefinitely_Locks
+           (Indefinite_Lock.Decision)
+         and then Identity.Lockout.Evaluation.Allows_Attempt
+           (Identity.Lockout.Evaluation.Allow)
+         and then Indefinite_Lock.Result_State = Identity.Lockout.States.Indefinitely_Locked,
+         "IDENTITY-ATTEMPT-002 policy lockout transition computes temporary and indefinite states");
+
+      Assert
+        (Overflow_Lock.Decision = Identity.Lockout.Evaluation.Indefinitely_Lock
+         and then Overflow_Lock.Result_State = Identity.Lockout.States.Indefinitely_Locked
+         and then Overflow_Lock.Time_Overflow
+         and then Identity.Lockout.Evaluation.Overflowed_To_Indefinite
+           (Overflow_Lock),
+         "IDENTITY-ATTEMPT-002 lockout time overflow is explicit");
+
+      Assert
+        (Identity.Sessions.Policies.Valid (Session_Policy)
+         and then Identity.Sessions.Policies.Validate (Zero_Idle_Session_Policy)
+           = Identity.Sessions.Policies.Idle_Timeout_Non_Positive
+         and then Identity.Sessions.Policies.Validate (Zero_Absolute_Session_Policy)
+           = Identity.Sessions.Policies.Absolute_Lifetime_Non_Positive
+         and then Identity.Sessions.Policies.Validate (Zero_Remember_Session_Policy)
+           = Identity.Sessions.Policies.Remember_Me_Lifetime_Non_Positive
+         and then Identity.Sessions.Policies.Validate (Idle_Exceeds_Session_Policy)
+           = Identity.Sessions.Policies.Idle_Exceeds_Absolute_Lifetime
+         and then Identity.Sessions.Policies.Validate (Absolute_Exceeds_Session_Policy)
+           = Identity.Sessions.Policies.Absolute_Exceeds_Remember_Me_Lifetime,
+         "session policy rejects zero durations and invalid duration ordering");
+
+      Assert
+        (not Identity.Sessions.Policies.Valid (Zero_Idle_Session_Policy)
+         and then not Identity.Sessions.Policies.Valid (Zero_Absolute_Session_Policy)
+         and then not Identity.Sessions.Policies.Valid (Zero_Remember_Session_Policy)
+         and then Identity.Sessions.Definitions.Is_Active
+           (Identity.Sessions.Definitions.Active)
+         and then not Identity.Sessions.Definitions.Is_Active
+           (Identity.Sessions.Definitions.Rotated)
+         and then Identity.Sessions.Definitions.Is_Unusable
+           (Identity.Sessions.Definitions.Expired)
+         and then not Identity.Sessions.Definitions.Is_Unusable
+           (Identity.Sessions.Definitions.Active)
+         and then Identity.Sessions.Definitions.Can_Revoke
+           (Identity.Sessions.Definitions.Active)
+         and then not Identity.Sessions.Definitions.Can_Revoke
+           (Identity.Sessions.Definitions.Expired),
+         "session policy rejects zero durations and keeps state helpers bounded");
+
+      Assert
+        (Identity.Sessions.Policies.Duration_Rejected
+           (Identity.Sessions.Policies.Validate (Zero_Idle_Session_Policy))
+         and then Identity.Sessions.Policies.Duration_Rejected
+           (Identity.Sessions.Policies.Validate (Zero_Absolute_Session_Policy))
+         and then Identity.Sessions.Policies.Duration_Rejected
+           (Identity.Sessions.Policies.Validate (Zero_Remember_Session_Policy))
+         and then not Identity.Sessions.Policies.Ordering_Rejected
+           (Identity.Sessions.Policies.Validate (Zero_Idle_Session_Policy))
+         and then Identity.Sessions.Policies.Ordering_Rejected
+           (Identity.Sessions.Policies.Validate (Idle_Exceeds_Session_Policy))
+         and then Identity.Sessions.Policies.Ordering_Rejected
+           (Identity.Sessions.Policies.Validate (Absolute_Exceeds_Session_Policy))
+         and then not Identity.Sessions.Policies.Duration_Rejected
+           (Identity.Sessions.Policies.Validate (Idle_Exceeds_Session_Policy))
+         and then not Identity.Sessions.Policies.Duration_Rejected
+           (Identity.Sessions.Policies.Validate (Session_Policy))
+         and then not Identity.Sessions.Policies.Ordering_Rejected
+           (Identity.Sessions.Policies.Validate (Session_Policy)),
+         "session policy validation classifiers distinguish duration and ordering rejection causes");
+
+      Assert
+        (Identity.Sessions.Expiration.Evaluate_Detail (Session_Record, 250).Idle_Expired
+         and then Identity.Sessions.Expiration.Evaluate_Detail
+           (Session_Record, 250).Absolute_Expired
+         and then not Identity.Sessions.Expiration.Evaluate_Detail
+           (Session_Record, 250).Revoked
+         and then Identity.Sessions.Expiration.Evaluate_Detail (Session_Record, 250).Status
+           = Identity.Sessions.Expiration.Absolute_Expired
+         and then Identity.Sessions.Expiration.Evaluate_Detail
+           ((Session_Record with delta State => Identity.Sessions.Definitions.Revoked),
+            30).Revoked
+         and then not Identity.Sessions.Expiration.Evaluate_Detail
+           ((Session_Record with delta State => Identity.Sessions.Definitions.Revoked),
+            30).Idle_Expired
+         and then not Identity.Sessions.Expiration.Evaluate_Detail
+           ((Session_Record with delta State => Identity.Sessions.Definitions.Revoked),
+            30).Absolute_Expired
+         and then not Identity.Sessions.Expiration.Evaluate_Detail
+           (Session_Record, 30).Idle_Expired,
+         "session expiration detail projection reports independent blockers");
+
+      Assert
+        (Identity.Sessions.Activity.Admit_Update
+           (Session_Record, 30, (Present => True, Time_Point => 100))
+           = Identity.Sessions.Activity.Admitted
+         and then Identity.Sessions.Activity.Activity_Update_Admitted
+           (Identity.Sessions.Activity.Admit_Update
+              (Session_Record, 30, (Present => True, Time_Point => 100)))
+         and then Identity.Sessions.Activity.Admit_Update
+           (Session_Record, 90, (Present => True, Time_Point => 150))
+           = Identity.Sessions.Activity.Idle_Expired
+         and then Identity.Sessions.Activity.Idle_Expiration_Rejected
+           (Identity.Sessions.Activity.Admit_Update
+              (Session_Record, 90, (Present => True, Time_Point => 150)))
+         and then Identity.Sessions.Activity.Admit_Update
+           (Absolute_Expired_Session_Record, 201, (Present => True, Time_Point => 250))
+           = Identity.Sessions.Activity.Absolute_Expired
+         and then Identity.Sessions.Activity.Absolute_Expiration_Rejected
+           (Identity.Sessions.Activity.Admit_Update
+              (Absolute_Expired_Session_Record, 201, (Present => True, Time_Point => 250)))
+         and then Identity.Sessions.Activity.Admit_Update
+           ((Session_Record with delta State => Identity.Sessions.Definitions.Revoked),
+            30,
+            (Present => True, Time_Point => 100))
+           = Identity.Sessions.Activity.Revoked
+         and then Identity.Sessions.Activity.Admit_Update
+           (Session_Record, 30, (Present => True, Time_Point => 250))
+           = Identity.Sessions.Activity.Invalid_Idle_Extension
+         and then Identity.Sessions.Activity.Invalid_Extension_Rejected
+           (Identity.Sessions.Activity.Admit_Update
+              (Session_Record, 30, (Present => True, Time_Point => 250)))
+         and then Identity.Sessions.Activity.No_Activity_Mutation
+           (Identity.Sessions.Activity.Admit_Update
+              (Session_Record, 30, (Present => True, Time_Point => 250)))
+         and then not Identity.Sessions.Activity.No_Activity_Mutation
+           (Identity.Sessions.Activity.Admit_Update
+              (Session_Record, 30, (Present => True, Time_Point => 100))),
+         "session activity admission classifiers distinguish idle absolute mutation "
+         & "and rejection causes");
+
+      Assert
+        (Identity.Sessions.Rotation.Same_Rotation_Lineage
+           (Session_Record,
+            (Session_Record with delta
+               Id => S2,
+               Public_Reference => Rotated_Session_Reference,
+               Generation => 3))
+         and then not Identity.Sessions.Rotation.Same_Rotation_Lineage
+           (Session_Record,
+            (Session_Record with delta
+               Id => S2,
+               Family => F2,
+               Public_Reference => Rotated_Session_Reference,
+               Generation => 3))
+         and then not Identity.Sessions.Rotation.Same_Rotation_Lineage
+           (Session_Record,
+            (Session_Record with delta
+               Id => S2,
+               Principal => P2,
+               Public_Reference => Rotated_Session_Reference,
+               Generation => 3)),
+         "session rotation lineage predicate rejects family or principal mismatch");
+
+      Assert
+        (Identity.Tokens.Policies.Valid (Token_Policy)
+         and then Identity.Tokens.Policies.Validate (Zero_Lifetime_Token_Policy)
+           = Identity.Tokens.Policies.Token_Lifetime_Non_Positive
+         and then Identity.Tokens.Policies.Lifetime_Rejected
+           (Identity.Tokens.Policies.Validate (Zero_Lifetime_Token_Policy))
+         and then not Identity.Tokens.Policies.Attempt_Limit_Rejected
+           (Identity.Tokens.Policies.Validate (Zero_Lifetime_Token_Policy))
+         and then Identity.Tokens.Policies.Validate (Zero_Attempt_Token_Policy)
+           = Identity.Tokens.Policies.Token_Attempt_Limit_Non_Positive
+         and then Identity.Tokens.Policies.Attempt_Limit_Rejected
+           (Identity.Tokens.Policies.Validate (Zero_Attempt_Token_Policy))
+         and then not Identity.Tokens.Policies.Lifetime_Rejected
+           (Identity.Tokens.Policies.Validate (Zero_Attempt_Token_Policy))
+         and then not Identity.Tokens.Policies.Lifetime_Rejected
+           (Identity.Tokens.Policies.Validate (Token_Policy)),
+         "token policy validation classifiers distinguish lifetime and attempt-limit rejection causes");
+
+      Assert
+        (Identity.Tokens.Generation.Parse ("no-separator-here").Status
+           = Identity.Tokens.Generation.Missing_Separator
+         and then Identity.Tokens.Generation.Parse ("public.secret.extra").Status
+           = Identity.Tokens.Generation.Multiple_Separators
+         and then Identity.Tokens.Generation.Parse (".secret-only").Status
+           = Identity.Tokens.Generation.Missing_Public_Part
+         and then Identity.Tokens.Generation.Parse ("public-only.").Status
+           = Identity.Tokens.Generation.Missing_Secret_Part
+         and then Identity.Tokens.Generation.Parse ("").Status
+           = Identity.Tokens.Generation.Empty_Input
+         and then Identity.Tokens.Generation.Structural_Rejection
+           (Identity.Tokens.Generation.Parse ("no-separator-here").Status)
+         and then Identity.Tokens.Generation.Structural_Rejection
+           (Identity.Tokens.Generation.Parse ("public.secret.extra").Status)
+         and then Identity.Tokens.Generation.Public_Part_Rejection
+           (Identity.Tokens.Generation.Parse (".secret-only").Status)
+         and then Identity.Tokens.Generation.Secret_Part_Rejection
+           (Identity.Tokens.Generation.Parse ("public-only.").Status)
+         and then Identity.Tokens.Generation.Empty_Rejection
+           (Identity.Tokens.Generation.Parse ("").Status)
+         and then not Identity.Tokens.Generation.Structural_Rejection
+           (Identity.Tokens.Generation.Parse ("").Status)
+         and then Identity.Tokens.Generation.Rejected_Input
+           (Identity.Tokens.Generation.Parse ("no-separator-here").Status)
+         and then Identity.Tokens.Generation.Accepted_Input (Parsed_Token.Status),
+         "split-token parser rejects malformed presentation structure before verifier work");
+
+      Assert
+        (not Identity.Tokens.Definitions.Is_Terminal (Token_Record.State)
+         and then Identity.Tokens.Definitions.Is_Terminal (Consumed_Token_Record.State)
+         and then Identity.Tokens.Definitions.Is_Terminal (Revoked_Token_Record.State)
+         and then Identity.Tokens.Definitions.Is_Consumed_State
+           (Consumed_Token_Record.State)
+         and then not Identity.Tokens.Definitions.Is_Consumed_State
+           (Revoked_Token_Record.State)
+         and then not Identity.Tokens.Definitions.Expired_At (Token_Record, 50)
+         and then Identity.Tokens.Definitions.Expired_At (Token_Record, 150)
+         and then Identity.Tokens.Definitions.Purpose_Matches
+           (Token_Record, Identity.Tokens.Purposes.Password_Reset)
+         and then not Identity.Tokens.Definitions.Purpose_Matches
+           (Token_Record, Identity.Tokens.Purposes.Contact_Verification)
+         and then Identity.Tokens.Definitions.Bound_To_Principal (Token_Record, P1)
+         and then not Identity.Tokens.Definitions.Bound_To_Principal (Token_Record, P2)
+         and then Identity.Tokens.Definitions.Verifiable_For
+           (Token_Record, Identity.Tokens.Purposes.Password_Reset, P1, 50)
+         and then Identity.Tokens.Definitions.Verifiability
+           (Token_Record, Identity.Tokens.Purposes.Password_Reset, P1, 150)
+           = Identity.Tokens.Definitions.Token_Expired
+         and then Identity.Tokens.Definitions.Expiration_Rejected
+           (Identity.Tokens.Definitions.Verifiability
+              (Token_Record, Identity.Tokens.Purposes.Password_Reset, P1, 150))
+         and then Identity.Tokens.Definitions.Verifiability
+           (Token_Record, Identity.Tokens.Purposes.Contact_Verification, P1, 50)
+           = Identity.Tokens.Definitions.Purpose_Different
+         and then Identity.Tokens.Definitions.Purpose_Rejected
+           (Identity.Tokens.Definitions.Verifiability
+              (Token_Record, Identity.Tokens.Purposes.Contact_Verification, P1, 50))
+         and then Identity.Tokens.Definitions.Verifiability
+           (Token_Record, Identity.Tokens.Purposes.Password_Reset, P2, 50)
+           = Identity.Tokens.Definitions.Principal_Different
+         and then Identity.Tokens.Definitions.Principal_Rejected
+           (Identity.Tokens.Definitions.Verifiability
+              (Token_Record, Identity.Tokens.Purposes.Password_Reset, P2, 50))
+         and then Identity.Tokens.Definitions.Verifiability
+           (Consumed_Token_Record, Identity.Tokens.Purposes.Password_Reset, P1, 50)
+           = Identity.Tokens.Definitions.State_Not_Verifiable
+         and then Identity.Tokens.Definitions.State_Rejected
+           (Identity.Tokens.Definitions.Verifiability
+              (Consumed_Token_Record, Identity.Tokens.Purposes.Password_Reset, P1, 50))
+         and then Identity.Tokens.Projections.Terminal
+           (Identity.Tokens.Projections.Summary (Consumed_Token_Record))
+         and then not Identity.Tokens.Projections.Terminal (Token_View)
+         and then Identity.Tokens.Projections.Can_Verify (Token_View, 50)
+         and then not Identity.Tokens.Projections.Can_Verify (Token_View, 150),
+         "token lifecycle helpers classify state expiry purpose and principal verifiability");
+
+      Assert
+        (Identity.Tokens.Verification.Evaluate
+           (Token_Record, Identity.Tokens.Purposes.Password_Reset, True, True, 50)
+           = Identity.Tokens.Verification.Valid
+         and then Identity.Tokens.Verification.Is_Valid
+           (Identity.Tokens.Verification.Evaluate
+              (Token_Record, Identity.Tokens.Purposes.Password_Reset, True, True, 50))
+         and then not Identity.Tokens.Verification.Disclosure_Collapsed_Invalid
+           (Identity.Tokens.Verification.Evaluate
+              (Token_Record, Identity.Tokens.Purposes.Password_Reset, True, True, 50))
+         and then Identity.Tokens.Verification.Evaluate
+           (Token_Record, Identity.Tokens.Purposes.Password_Reset, False, True, 50)
+           = Identity.Tokens.Verification.Not_Verified
+         and then Identity.Tokens.Verification.Retryable
+           (Identity.Tokens.Verification.Evaluate
+              (Token_Record, Identity.Tokens.Purposes.Password_Reset, False, True, 50))
+         and then Identity.Tokens.Verification.Disclosure_Collapsed_Invalid
+           (Identity.Tokens.Verification.Evaluate
+              (Token_Record, Identity.Tokens.Purposes.Password_Reset, False, True, 50))
+         and then Identity.Tokens.Verification.Evaluate
+           (Token_Record, Identity.Tokens.Purposes.Password_Reset, True, False, 50)
+           = Identity.Tokens.Verification.Binding_Mismatch
+         and then Identity.Tokens.Verification.Disclosure_Collapsed_Invalid
+           (Identity.Tokens.Verification.Evaluate
+              (Token_Record, Identity.Tokens.Purposes.Password_Reset, True, False, 50))
+         and then not Identity.Tokens.Verification.Retryable
+           (Identity.Tokens.Verification.Evaluate
+              (Token_Record, Identity.Tokens.Purposes.Password_Reset, True, False, 50))
+         and then Identity.Tokens.Verification.Evaluate
+           (Consumed_Token_Record, Identity.Tokens.Purposes.Password_Reset, True, True, 50)
+           = Identity.Tokens.Verification.Already_Consumed
+         and then Identity.Tokens.Verification.Terminal_Invalid
+           (Identity.Tokens.Verification.Evaluate
+              (Consumed_Token_Record,
+               Identity.Tokens.Purposes.Password_Reset,
+               True,
+               True,
+               50))
+         and then Identity.Tokens.Verification.Evaluate
+           (Revoked_Token_Record, Identity.Tokens.Purposes.Password_Reset, True, True, 50)
+           = Identity.Tokens.Verification.Revoked
+         and then Identity.Tokens.Verification.Terminal_Invalid
+           (Identity.Tokens.Verification.Evaluate
+              (Revoked_Token_Record, Identity.Tokens.Purposes.Password_Reset, True, True, 50))
+         and then Identity.Tokens.Verification.Retryable
+           (Identity.Tokens.Verification.Infrastructure_Failure)
+         and then Identity.Tokens.Verification.Infrastructure
+           (Identity.Tokens.Verification.Infrastructure_Failure)
+         and then not Identity.Tokens.Verification.Disclosure_Collapsed_Invalid
+           (Identity.Tokens.Verification.Infrastructure_Failure),
+         "token verification outcome predicates classify disclosure and retry behavior");
+
+      Assert
+        (Identity.Attempts.Buckets.Valid (Bucket)
+         and then Identity.Attempts.Buckets.Validate (Zero_Window_Bucket)
+           = Identity.Attempts.Buckets.Failure_Bucket_Window_Non_Positive
+         and then Identity.Attempts.Buckets.Window_Rejected
+           (Identity.Attempts.Buckets.Validate (Zero_Window_Bucket))
+         and then Identity.Attempts.Buckets.Validate (Zero_Threshold_Bucket)
+           = Identity.Attempts.Buckets.Failure_Bucket_Threshold_Zero
+         and then Identity.Attempts.Buckets.Threshold_Rejected
+           (Identity.Attempts.Buckets.Validate (Zero_Threshold_Bucket))
+         and then Identity.Attempts.Buckets.Validate (Low_Saturation_Bucket)
+           = Identity.Attempts.Buckets.Failure_Bucket_Saturation_Below_Threshold
+         and then Identity.Attempts.Buckets.Saturation_Rejected
+           (Identity.Attempts.Buckets.Validate (Low_Saturation_Bucket))
+         and then not Identity.Attempts.Buckets.Window_Rejected
+           (Identity.Attempts.Buckets.Validate (Low_Saturation_Bucket))
+         and then not Identity.Attempts.Buckets.Valid (Zero_Window_Bucket)
+         and then not Identity.Attempts.Buckets.Valid (Zero_Threshold_Bucket)
+         and then not Identity.Attempts.Buckets.Valid (Low_Saturation_Bucket),
+         "failure bucket policy validation rejects zero windows zero thresholds and "
+         & "saturation below threshold");
+
+      Assert
+        (Identity.Attempts.Policies.Valid (Attempt_Policy)
+         and then Identity.Attempts.Policies.Validate (Invalid_Password_Attempt_Policy)
+           = Identity.Attempts.Policies.Attempt_Password_Bucket_Invalid
+         and then Identity.Attempts.Policies.Password_Bucket_Rejected
+           (Identity.Attempts.Policies.Validate (Invalid_Password_Attempt_Policy))
+         and then Identity.Attempts.Policies.Validate (Invalid_TOTP_Attempt_Policy)
+           = Identity.Attempts.Policies.Attempt_TOTP_Bucket_Invalid
+         and then Identity.Attempts.Policies.TOTP_Bucket_Rejected
+           (Identity.Attempts.Policies.Validate (Invalid_TOTP_Attempt_Policy))
+         and then Identity.Attempts.Policies.Validate (Invalid_Token_Attempt_Policy)
+           = Identity.Attempts.Policies.Attempt_Token_Bucket_Invalid
+         and then Identity.Attempts.Policies.Token_Bucket_Rejected
+           (Identity.Attempts.Policies.Validate (Invalid_Token_Attempt_Policy))
+         and then not Identity.Attempts.Policies.Password_Bucket_Rejected
+           (Identity.Attempts.Policies.Validate (Invalid_Token_Attempt_Policy)),
+         "aggregate attempt policy validation identifies invalid password totp and token buckets");
+
+      Assert
+        (Identity.Attempts.Outcomes.Counts_As_Credential_Failure
+           (Failed_Attempt.Outcome, Failed_Attempt.Failure)
+         and then not Identity.Attempts.Outcomes.Counts_As_Credential_Failure
+           (Operational_Attempt.Outcome, Operational_Attempt.Failure)
+         and then not Identity.Attempts.Outcomes.Counts_In_Failure_Bucket
+           (Operational_Attempt.Outcome, Operational_Attempt.Failure)
+         and then not Identity.Attempts.Outcomes.Counts_As_Credential_Failure
+           (Identity.Attempts.Outcomes.Operational_Failure,
+            Identity.Attempts.Outcomes.Password_Failure)
+         and then not Identity.Attempts.Outcomes.Counts_As_Credential_Failure
+           (Successful_Attempt.Outcome, Successful_Attempt.Failure)
+         and then Identity.Attempts.Outcomes.Operational
+           (Operational_Attempt.Outcome)
+         and then Identity.Attempts.Outcomes.No_Failure (Operational_Attempt.Failure)
+         and then Identity.Attempts.Outcomes.Hidden_Operational_Failure
+           (Operational_Attempt.Disclosure)
+         and then Identity.Attempts.Outcomes.Generic_Public_Rejection
+           (Failed_Attempt.Disclosure),
+         "attempt predicates keep operational failures out of credential failure counts");
+
+      Assert
+        (Identity.Throttling.Policies.Valid (Throttle_Policy)
+         and then Identity.Throttling.Policies.Validate (Invalid_Throttle_Order_Policy)
+           = Identity.Throttling.Policies.Throttling_Reject_Not_After_Delay
+         and then Identity.Throttling.Policies.Threshold_Rejected
+           (Identity.Throttling.Policies.Validate (Invalid_Throttle_Order_Policy))
+         and then Identity.Throttling.Policies.Validate (Invalid_Throttle_Duration_Policy)
+           = Identity.Throttling.Policies.Throttling_Delay_Duration_Non_Positive
+         and then Identity.Throttling.Policies.Duration_Rejected
+           (Identity.Throttling.Policies.Validate (Invalid_Throttle_Duration_Policy))
+         and then not Identity.Throttling.Policies.Threshold_Rejected
+           (Identity.Throttling.Policies.Validate (Invalid_Throttle_Duration_Policy))
+         and then not Identity.Throttling.Policies.Valid (Invalid_Throttle_Order_Policy)
+         and then not Identity.Throttling.Policies.Valid (Invalid_Throttle_Duration_Policy),
+         "throttling policy validation rejects unordered thresholds and zero delay duration");
+
+      Assert
+        (Identity.Lockout.Policies.Valid (Lockout_Policy)
+         and then Identity.Lockout.Policies.Validate (Zero_Threshold_Lockout_Policy)
+           = Identity.Lockout.Policies.Lockout_Temporary_Threshold_Zero
+         and then Identity.Lockout.Policies.Threshold_Rejected
+           (Identity.Lockout.Policies.Validate (Zero_Threshold_Lockout_Policy))
+         and then Identity.Lockout.Policies.Validate (Unordered_Lockout_Policy)
+           = Identity.Lockout.Policies.Lockout_Indefinite_Not_After_Temporary
+         and then Identity.Lockout.Policies.Threshold_Rejected
+           (Identity.Lockout.Policies.Validate (Unordered_Lockout_Policy))
+         and then Identity.Lockout.Policies.Validate (Zero_Duration_Lockout_Policy)
+           = Identity.Lockout.Policies.Lockout_Temporary_Duration_Non_Positive
+         and then Identity.Lockout.Policies.Duration_Rejected
+           (Identity.Lockout.Policies.Validate (Zero_Duration_Lockout_Policy))
+         and then Identity.Lockout.Policies.Validate (Permanent_Disablement_Lockout_Policy)
+           = Identity.Lockout.Policies.Lockout_Permanent_Remote_Login_Disablement
+         and then Identity.Lockout.Policies.Permanent_Remote_Disablement_Rejected
+           (Identity.Lockout.Policies.Validate (Permanent_Disablement_Lockout_Policy))
+         and then not Identity.Lockout.Policies.Threshold_Rejected
+           (Identity.Lockout.Policies.Validate (Zero_Duration_Lockout_Policy)),
+         "lockout policy validation rejects zero thresholds unordered thresholds zero "
+         & "duration and permanent remote-login disablement");
+
+      Assert
+        (Identity.Recovery.Policies.Valid (Recovery_Policy)
+         and then Identity.Recovery.Policies.Validate (Zero_Lifetime_Recovery_Policy)
+           = Identity.Recovery.Policies.Recovery_Authority_Lifetime_Non_Positive
+         and then Identity.Recovery.Policies.Authority_Lifetime_Rejected
+           (Identity.Recovery.Policies.Validate (Zero_Lifetime_Recovery_Policy))
+         and then Identity.Recovery.Policies.Validate (No_Credential_Recovery_Policy)
+           = Identity.Recovery.Policies.Credential_Reestablishment_Not_Required
+         and then Identity.Recovery.Policies.Credential_Reestablishment_Rejected
+           (Identity.Recovery.Policies.Validate (No_Credential_Recovery_Policy))
+         and then Identity.Recovery.Policies.Validate
+           (No_Session_Consequence_Recovery_Policy)
+           = Identity.Recovery.Policies.Existing_Session_Consequence_Not_Required
+         and then Identity.Recovery.Policies.Existing_Session_Consequence_Rejected
+           (Identity.Recovery.Policies.Validate (No_Session_Consequence_Recovery_Policy))
+         and then not Identity.Recovery.Policies.Authority_Lifetime_Rejected
+           (Identity.Recovery.Policies.Validate (No_Credential_Recovery_Policy)),
+         "recovery policy validation classifiers distinguish authority lifetime credential "
+         & "reestablishment and session consequence rejection causes");
+
+      Assert
+        (Identity.Recovery.Authority.Issuance
+           (Identity.Recovery.Authority.Summary (Authority, 50),
+            Restrictions,
+            Identity.Sessions.Policies.Interactive_Session)
+           = Identity.Recovery.Authority.Restricted_Authentication_Issuable
+         and then Identity.Recovery.Authority.Issuance
+           (Identity.Recovery.Authority.Summary (Authority, 150),
+            Restrictions,
+            Identity.Sessions.Policies.Interactive_Session)
+           = Identity.Recovery.Authority.Recovery_Authority_Unusable
+         and then Identity.Recovery.Authority.Issuance_Authority_Rejected
+           (Identity.Recovery.Authority.Issuance
+              (Identity.Recovery.Authority.Summary (Authority, 150),
+               Restrictions,
+               Identity.Sessions.Policies.Interactive_Session))
+         and then Identity.Recovery.Authority.Issuance
+           (Identity.Recovery.Authority.Summary (Authority, 50),
+            Weak_Recovery_Restrictions,
+            Identity.Sessions.Policies.Interactive_Session)
+           = Identity.Recovery.Authority.Recovery_Restrictions_Insufficient
+         and then Identity.Recovery.Authority.Issuance_Restrictions_Rejected
+           (Identity.Recovery.Authority.Issuance
+              (Identity.Recovery.Authority.Summary (Authority, 50),
+               Weak_Recovery_Restrictions,
+               Identity.Sessions.Policies.Interactive_Session))
+         and then Identity.Recovery.Authority.Issuance
+           (Identity.Recovery.Authority.Summary (Authority, 50),
+            Restrictions,
+            Identity.Sessions.Policies.Persistent_Session)
+           = Identity.Recovery.Authority.Recovery_Session_Request_Rejected
+         and then Identity.Recovery.Authority.Issuance_Session_Request_Rejected
+           (Identity.Recovery.Authority.Issuance
+              (Identity.Recovery.Authority.Summary (Authority, 50),
+               Restrictions,
+               Identity.Sessions.Policies.Persistent_Session))
+         and then Identity.Recovery.Authority.Can_Issue_Restricted_Authentication
+           (Identity.Recovery.Authority.Summary (Authority, 50),
+            Restrictions,
+            Identity.Sessions.Policies.Interactive_Session)
+         and then not Identity.Recovery.Authority.Can_Issue_Restricted_Authentication
+           (Identity.Recovery.Authority.Summary (Authority, 150),
+            Restrictions,
+            Identity.Sessions.Policies.Interactive_Session),
+         "recovery authority issuance classifier rejects expired insufficient-restriction "
+         & "or prohibited session requests");
+
+      Assert
+        (Identity.Recovery.Results.Restricted
+           (Identity.Recovery.Results.Restricted_Authentication_Established)
+         and then not Identity.Recovery.Results.Restricted
+           (Identity.Recovery.Results.Completed)
+         and then Identity.Recovery.Results.May_Issue_Restricted_Authentication
+           (Identity.Recovery.Results.Restricted_Authentication_Established)
+         and then not Identity.Recovery.Results.May_Issue_Restricted_Authentication
+           (Identity.Recovery.Results.Completed)
+         and then Identity.Recovery.Results.Final_Completion
+           (Identity.Recovery.Results.Completed)
+         and then not Identity.Recovery.Results.Final_Completion
+           (Identity.Recovery.Results.Restricted_Authentication_Established)
+         and then Identity.Recovery.Results.Successful
+           (Identity.Recovery.Results.Restricted_Authentication_Established)
+         and then Identity.Recovery.Results.Successful
+           (Identity.Recovery.Results.Completed)
+         and then not Identity.Recovery.Results.Successful
+           (Identity.Recovery.Results.Rejected)
+         and then Identity.Recovery.Results.In_Progress
+           (Identity.Recovery.Results.Evidence_Required)
+         and then not Identity.Recovery.Results.In_Progress
+           (Identity.Recovery.Results.Completed),
+         "recovery result classifiers separate restricted authentication from final completion");
+   end Test_17_state_session_ref;
+
+   procedure Test_18_identity_account_disable (T : in out AUnit.Test_Cases.Test_Case'Class) is
+      pragma Unreferenced (T);
+      Requirement_Flags : constant Identity.Accounts.States.Credential_Requirement_Flags :=
+        (Password_Change_Required => True,
+         MFA_Enrollment_Required => False,
+         Credential_Reestablishment_Required => False,
+         Recent_Authentication_Required => False);
+      Lock : constant Identity.Accounts.Security_Locks.Lock_Evaluation :=
+        (State => Identity.Accounts.States.Temporarily_Locked,
+         Temporary_Until => (Present => True, Time_Point => 50));
+      Account_View : constant Identity.Accounts.States.Account_State_View :=
+        (Administrative => Identity.Accounts.States.Enabled,
+         Lifecycle => Identity.Accounts.States.Active,
+         Verification => Identity.Accounts.States.Verified,
+         Lock_State => Identity.Accounts.States.Not_Locked,
+         Requirements => Requirement_Flags,
+         Recovery => (others => False));
+      Eligible_Account_View : constant Identity.Accounts.States.Account_State_View :=
+        (Account_View with delta
+         Requirements => (others => False));
+      Administrative_Disable : constant Identity.Accounts.Administrative.Administrative_Transition_Request :=
+        (Actor => (Kind => Identity.Events.Envelopes.Authenticated_Principal,
+                   Principal => (Present => True, Value => P1)),
+         Reason => Identity.Identifiers.Registry.From_String ("identity.account.disable"),
+         Operation => O1,
+         Correlation => R1,
+         Requested_At => 30,
+         Expected_Version => 0,
+         Previous_State => Identity.Accounts.States.Enabled,
+         New_State => Identity.Accounts.States.Disabled,
+         Mandatory_Audit => True);
+      Anonymous_Disable : constant Identity.Accounts.Administrative.Administrative_Transition_Request :=
+        (Administrative_Disable with delta
+           Actor => (Kind => Identity.Events.Envelopes.Unauthenticated,
+                     Principal => (Present => False)));
+      Missing_Audit_Disable : constant Identity.Accounts.Administrative.Administrative_Transition_Request :=
+        (Administrative_Disable with delta Mandatory_Audit => False);
+      Same_State_Disable : constant Identity.Accounts.Administrative.Administrative_Transition_Request :=
+        (Administrative_Disable with delta
+           New_State => Identity.Accounts.States.Enabled);
+      Closed_State_Disable : constant Identity.Accounts.Administrative.Administrative_Transition_Request :=
+        (Administrative_Disable with delta
+           Previous_State => Identity.Accounts.States.Closed);
+      Account_Projection : constant Identity.Accounts.Projections.Account_Projection :=
+        (Id => A1,
+         Principal => P1,
+         State => Account_View,
+         Version => 0);
+      Account_Summary : constant Identity.Accounts.Projections.Account_Projection :=
+        Identity.Accounts.Projections.Summary
+          ((Id => A1,
+            Principal => P1,
+            State => Account_View,
+            Version => 0));
+      Restricted_Account_Summary : constant Identity.Accounts.Projections.Account_Projection :=
+        (Id => A1,
+         Principal => P1,
+         State => (Administrative => Identity.Accounts.States.Disabled,
+                   Lifecycle => Identity.Accounts.States.Active,
+                   Verification => Identity.Accounts.States.Verified,
+                   Lock_State => Identity.Accounts.States.Indefinitely_Locked,
+                   Requirements => (others => False),
+                   Recovery => (Restricted_Session => True,
+                                others => False)),
+         Version => 1);
+      Principal_Record : constant Identity.Principals.Definitions.Principal_Record :=
+        (Id => P1,
+         Kind => Identity.Principals.Kinds.Human,
+         State => Identity.Principals.Definitions.Active,
+         Version => 0);
+      Principal_View : constant Identity.Principals.Projections.Principal_Projection :=
+        (Id => P1,
+         Kind => Identity.Principals.Kinds.Human,
+         State => Identity.Principals.Definitions.Active,
+         Version => 0);
+      Principal_Summary : constant Identity.Principals.Projections.Principal_Projection :=
+        Identity.Principals.Projections.Summary (Principal_Record);
+      Credential : constant Identity.Credentials.Definitions.Credential_Record :=
+        (Id => C1,
+         Principal => P1,
+         Kind => Identity.Credentials.Kinds.Password,
+         State => Identity.Credentials.States.Created,
+         Version => 0);
+      Credential_View : constant Identity.Credentials.Projections.Credential_Projection :=
+        (Id => C1,
+         Principal => P1,
+         Kind => Identity.Credentials.Kinds.Password,
+         State => Identity.Credentials.States.Active,
+         Version => 0);
+      Credential_Summary : constant Identity.Credentials.Projections.Credential_Projection :=
+        Identity.Credentials.Projections.Summary (Credential);
+      Dependency : constant Identity.Credentials.Dependencies.Dependency_Domain :=
+        (Id => Identity.Identifiers.Registry.From_String ("identity.dependency.password"),
+         Independent => True);
+      Same_Dependency : constant Identity.Credentials.Dependencies.Dependency_Domain :=
+        (Id => Identity.Identifiers.Registry.From_String ("identity.dependency.password"),
+         Independent => True);
+      Device_Dependency : constant Identity.Credentials.Dependencies.Dependency_Domain :=
+        (Id => Identity.Identifiers.Registry.From_String ("identity.dependency.device"),
+         Independent => True);
+      Shared_Dependency : constant Identity.Credentials.Dependencies.Dependency_Domain :=
+        (Id => Identity.Identifiers.Registry.From_String ("identity.dependency.managed-platform"),
+         Independent => False);
+   begin
+      Assert
+        (Identity.Accounts.Administrative.Allows_Authentication (Account_View.Administrative)
+         and then Identity.Accounts.Administrative.May_Transition
+           (Identity.Accounts.States.Enabled, Identity.Accounts.States.Disabled)
+         and then Identity.Accounts.Administrative.Valid_Transition_Request
+           (Administrative_Disable)
+         and then
+           (Identity.Accounts.Administrative.Admission (Administrative_Disable)
+            = Identity.Accounts.Administrative.Administrative_Transition_Admitted)
+         and then Identity.Accounts.Administrative.Admission_Accepted
+           (Identity.Accounts.Administrative.Administrative_Transition_Admitted)
+         and then not Identity.Accounts.Administrative.Admission_Rejected
+           (Identity.Accounts.Administrative.Administrative_Transition_Admitted)
+         and then not Identity.Accounts.Administrative.Valid_Transition_Request
+           (Anonymous_Disable)
+         and then
+           (Identity.Accounts.Administrative.Admission (Anonymous_Disable)
+            = Identity.Accounts.Administrative.Invalid_Administrative_Actor)
+         and then Identity.Accounts.Administrative.Admission_Rejected
+           (Identity.Accounts.Administrative.Invalid_Administrative_Actor)
+         and then Identity.Accounts.Administrative.Actor_Rejected
+           (Identity.Accounts.Administrative.Invalid_Administrative_Actor)
+         and then not Identity.Accounts.Administrative.Valid_Transition_Request
+           (Missing_Audit_Disable)
+         and then
+           (Identity.Accounts.Administrative.Admission (Missing_Audit_Disable)
+            = Identity.Accounts.Administrative.Missing_Mandatory_Audit)
+         and then Identity.Accounts.Administrative.Admission_Rejected
+           (Identity.Accounts.Administrative.Missing_Mandatory_Audit)
+         and then Identity.Accounts.Administrative.Mandatory_Audit_Rejected
+           (Identity.Accounts.Administrative.Missing_Mandatory_Audit)
+         and then
+           (Identity.Accounts.Administrative.Admission (Same_State_Disable)
+            = Identity.Accounts.Administrative.Same_Administrative_State)
+         and then Identity.Accounts.Administrative.Admission_Rejected
+           (Identity.Accounts.Administrative.Same_Administrative_State)
+         and then Identity.Accounts.Administrative.Same_State_Rejected
+           (Identity.Accounts.Administrative.Same_Administrative_State)
+         and then
+           (Identity.Accounts.Administrative.Admission (Closed_State_Disable)
+            = Identity.Accounts.Administrative.Closed_Administrative_State)
+         and then Identity.Accounts.Administrative.Admission_Rejected
+           (Identity.Accounts.Administrative.Closed_Administrative_State)
+         and then Identity.Accounts.Administrative.Closed_State_Rejected
+           (Identity.Accounts.Administrative.Closed_Administrative_State)
+         and then Identity.Accounts.Lifecycle.Allows_Authentication (Account_View.Lifecycle)
+         and then
+           (Identity.Accounts.Lifecycle.Admission
+              (Identity.Accounts.States.Active,
+               Identity.Accounts.Lifecycle.Lifecycle_Authentication)
+            = Identity.Accounts.Lifecycle.Lifecycle_Admitted)
+         and then Identity.Accounts.Lifecycle.Admission_Accepted
+           (Identity.Accounts.Lifecycle.Lifecycle_Admitted)
+         and then not Identity.Accounts.Lifecycle.Admission_Rejected
+           (Identity.Accounts.Lifecycle.Lifecycle_Admitted)
+         and then
+           (Identity.Accounts.Lifecycle.Admission
+              (Identity.Accounts.States.Pending_Activation,
+               Identity.Accounts.Lifecycle.Lifecycle_Authentication)
+            = Identity.Accounts.Lifecycle.Lifecycle_Pending_Rejected)
+         and then Identity.Accounts.Lifecycle.Pending_Rejection
+           (Identity.Accounts.Lifecycle.Lifecycle_Pending_Rejected)
+         and then Identity.Accounts.Lifecycle.Admission_Rejected
+           (Identity.Accounts.Lifecycle.Lifecycle_Pending_Rejected)
+         and then
+           (Identity.Accounts.Lifecycle.Admission
+              (Identity.Accounts.States.Expired,
+               Identity.Accounts.Lifecycle.Lifecycle_Authentication)
+            = Identity.Accounts.Lifecycle.Lifecycle_Expired_Rejected)
+         and then Identity.Accounts.Lifecycle.Expired_Rejection
+           (Identity.Accounts.Lifecycle.Lifecycle_Expired_Rejected)
+         and then Identity.Accounts.Lifecycle.Admission_Rejected
+           (Identity.Accounts.Lifecycle.Lifecycle_Expired_Rejected)
+         and then
+           (Identity.Accounts.Lifecycle.Admission
+              (Identity.Accounts.States.Retired,
+               Identity.Accounts.Lifecycle.Lifecycle_Mutation)
+            = Identity.Accounts.Lifecycle.Lifecycle_Retired_Rejected)
+         and then Identity.Accounts.Lifecycle.Retired_Rejection
+           (Identity.Accounts.Lifecycle.Lifecycle_Retired_Rejected)
+         and then Identity.Accounts.Lifecycle.Admission_Rejected
+           (Identity.Accounts.Lifecycle.Lifecycle_Retired_Rejected)
+         and then Identity.Accounts.Lifecycle.Terminal
+           (Identity.Accounts.States.Retired)
+         and then Identity.Accounts.Verification.Satisfies_Requirement (Account_View.Verification)
+         and then
+           (Identity.Accounts.Verification.Admission
+              (Identity.Accounts.States.No_Verification_Required,
+               Identity.Accounts.Verification.Verification_Authentication)
+            = Identity.Accounts.Verification.Verification_Admitted)
+         and then Identity.Accounts.Verification.Admission_Accepted
+           (Identity.Accounts.Verification.Verification_Admitted)
+         and then not Identity.Accounts.Verification.Admission_Rejected
+           (Identity.Accounts.Verification.Verification_Admitted)
+         and then
+           (Identity.Accounts.Verification.Admission
+              (Identity.Accounts.States.No_Verification_Required,
+               Identity.Accounts.Verification.Verification_Protected_Workflow)
+            = Identity.Accounts.Verification.Verification_Not_Required)
+         and then Identity.Accounts.Verification.Verification_Not_Required_Status
+           (Identity.Accounts.Verification.Verification_Not_Required)
+         and then not Identity.Accounts.Verification.Admission_Rejected
+           (Identity.Accounts.Verification.Verification_Not_Required)
+         and then
+           (Identity.Accounts.Verification.Admission
+              (Identity.Accounts.States.Verification_Pending,
+               Identity.Accounts.Verification.Verification_Authentication)
+            = Identity.Accounts.Verification.Verification_Pending_Rejected)
+         and then Identity.Accounts.Verification.Pending_Rejection
+           (Identity.Accounts.Verification.Verification_Pending_Rejected)
+         and then Identity.Accounts.Verification.Admission_Rejected
+           (Identity.Accounts.Verification.Verification_Pending_Rejected)
+         and then
+           (Identity.Accounts.Verification.Admission
+              (Identity.Accounts.States.Reverification_Required,
+               Identity.Accounts.Verification.Verification_Authentication)
+            = Identity.Accounts.Verification.Reverification_Required_Rejected)
+         and then Identity.Accounts.Verification.Reverification_Rejection
+           (Identity.Accounts.Verification.Reverification_Required_Rejected)
+         and then Identity.Accounts.Verification.Admission_Rejected
+           (Identity.Accounts.Verification.Reverification_Required_Rejected)
+         and then Identity.Accounts.Verification.Satisfies_Requirement
+           (Identity.Accounts.States.Verified)
+         and then Identity.Accounts.Verification.Requires_Action
+           (Identity.Accounts.States.Verification_Pending)
+         and then Identity.Accounts.Requirements.Any (Requirement_Flags)
+         and then Identity.Accounts.Security_Locks.Allows_Attempt (Lock, 60)
+         and then Identity.Accounts.Security_Locks.Effective_State_At (Lock, 40)
+           = Identity.Accounts.States.Temporarily_Locked
+         and then Identity.Accounts.Security_Locks.Effective_State_At (Lock, 60)
+           = Identity.Accounts.States.Not_Locked
+         and then Identity.Accounts.Evaluation.Evaluate (Account_View) = Identity.Accounts.States.Restricted
+         and then Identity.Accounts.States.Restricted_State
+           (Identity.Accounts.Evaluation.Evaluate (Account_View))
+         and then Identity.Accounts.States.Eligible_State
+           (Identity.Accounts.Evaluation.Evaluate (Eligible_Account_View))
+         and then Identity.Accounts.States.Ineligible_State
+           (Identity.Accounts.Evaluation.Evaluate (Restricted_Account_Summary.State))
+         and then Identity.Accounts.States.Authentication_Blocked
+           (Identity.Accounts.Evaluation.Evaluate (Restricted_Account_Summary.State))
+         and then Identity.Accounts.Projections.Evaluate (Account_Summary)
+           = Identity.Accounts.States.Restricted
+         and then not Identity.Accounts.Projections.Eligible (Account_Summary)
+         and then Identity.Accounts.Projections.Requires_Credential_Action
+           (Account_Summary)
+         and then not Identity.Accounts.Projections.Recovery_Restricted
+           (Account_Summary)
+         and then not Identity.Accounts.Projections.Lock_Restricted
+           (Account_Summary)
+         and then Identity.Accounts.Projections.Ineligible
+           (Restricted_Account_Summary)
+         and then Identity.Accounts.Projections.Administratively_Restricted
+           (Restricted_Account_Summary)
+         and then Identity.Accounts.Projections.Recovery_Restricted
+           (Restricted_Account_Summary)
+         and then Identity.Accounts.Projections.Lock_Restricted
+           (Restricted_Account_Summary)
+         and then Identity.Identifiers.Entities.To_String (Account_Projection.Principal)
+           = Identity.Identifiers.Entities.To_String (P1),
+         "IDENTITY-ACCOUNT-002 account dimension helpers and administrative "
+         & "transition contracts remain independent and bounded");
+
+      Assert
+        (Identity.Principals.Lifecycle.Active (Principal_View.State)
+         and then Identity.Principals.Projections.Active (Principal_Summary)
+         and then not Identity.Principals.Projections.Retired (Principal_Summary)
+         and then Identity.Principals.Lifecycle.May_Retire (Principal_View.State)
+         and then
+           (Identity.Principals.Lifecycle.Admission
+              (Principal_View.State,
+               Identity.Principals.Lifecycle.Retire_Principal)
+            = Identity.Principals.Lifecycle.Principal_Lifecycle_Admitted)
+         and then Identity.Principals.Lifecycle.Admission_Accepted
+           (Identity.Principals.Lifecycle.Principal_Lifecycle_Admitted)
+         and then not Identity.Principals.Lifecycle.Admission_Rejected
+           (Identity.Principals.Lifecycle.Principal_Lifecycle_Admitted)
+         and then not Identity.Principals.Lifecycle.Active
+           (Identity.Principals.Definitions.Retired)
+         and then not Identity.Principals.Lifecycle.May_Retire
+           (Identity.Principals.Definitions.Retired)
+         and then
+           (Identity.Principals.Lifecycle.Admission
+              (Identity.Principals.Definitions.Retired,
+               Identity.Principals.Lifecycle.Use_Principal)
+            = Identity.Principals.Lifecycle.Principal_Retired_Rejected)
+         and then Identity.Principals.Lifecycle.Retired_Rejection
+           (Identity.Principals.Lifecycle.Principal_Retired_Rejected)
+         and then Identity.Principals.Lifecycle.Admission_Rejected
+           (Identity.Principals.Lifecycle.Principal_Retired_Rejected)
+         and then Identity.Principals.Lifecycle.May_Reactivate
+           (Identity.Principals.Definitions.Retired, True)
+         and then not Identity.Principals.Lifecycle.May_Reactivate
+           (Identity.Principals.Definitions.Retired, False)
+         and then
+           (Identity.Principals.Lifecycle.Admission
+              (Identity.Principals.Definitions.Retired,
+               Identity.Principals.Lifecycle.Reactivate_Principal,
+               False)
+            = Identity.Principals.Lifecycle.Principal_Reactivation_Policy_Rejected)
+         and then Identity.Principals.Lifecycle.Reactivation_Policy_Rejection
+           (Identity.Principals.Lifecycle.Principal_Reactivation_Policy_Rejected)
+         and then Identity.Principals.Lifecycle.Admission_Rejected
+           (Identity.Principals.Lifecycle.Principal_Reactivation_Policy_Rejected)
+         and then not Identity.Principals.Lifecycle.May_Reactivate
+           (Identity.Principals.Definitions.Active, True)
+         and then Identity.Contacts.Verification_State.Verified (Identity.Contacts.Bindings.Verified)
+         and then Identity.Contacts.Verification_State.Mutable (Identity.Contacts.Bindings.Pending_Verification)
+         and then Identity.Contacts.Bindings.Can_Request_Verification
+           (Identity.Contacts.Bindings.Pending_Verification)
+         and then Identity.Contacts.Bindings.Can_Complete_Verification
+           (Identity.Contacts.Bindings.Pending_Verification)
+         and then Identity.Contacts.Bindings.Can_Be_Change_Predecessor
+           (Identity.Contacts.Bindings.Verified)
+         and then Identity.Contacts.Bindings.Can_Be_Change_Successor
+           (Identity.Contacts.Bindings.Pending_Verification)
+         and then Identity.Verification.Changes.Can_Begin
+           (Identity.Verification.Changes.Change_Requested)
+         and then not Identity.Verification.Changes.Can_Begin
+           (Identity.Verification.Changes.Activated)
+         and then Identity.Verification.Changes.Can_Complete
+           (Identity.Verification.Changes.New_Contact_Verification)
+         and then not Identity.Verification.Changes.Can_Complete
+           (Identity.Verification.Changes.Cancelled)
+         and then Identity.Verification.Changes.Can_Record_Old_Contact_Confirmation
+           (Identity.Verification.Changes.New_Contact_Verification)
+         and then Identity.Verification.Changes.Can_Start_Cooling_Off
+           (Identity.Verification.Changes.Old_Contact_Confirmation)
+         and then Identity.Verification.Changes.Can_Activate_After_Gates
+           (Identity.Verification.Changes.Cooling_Off)
+         and then not Identity.Verification.Changes.Can_Activate_After_Gates
+           (Identity.Verification.Changes.Expired)
+         and then Identity.Contacts.Bindings.Occupies_Contact_Value
+           (Identity.Contacts.Bindings.Verified)
+         and then not Identity.Contacts.Bindings.Occupies_Contact_Value
+           (Identity.Contacts.Bindings.Retired)
+         and then Identity.Contacts.Bindings.Same_Occupied_Contact_Value
+           ((Id => CB1,
+             Principal => P1,
+             Kind => Contact_Email,
+             Normalized_Value => Contact_Email_Value,
+             State => Identity.Contacts.Bindings.Verified,
+             Version => 0),
+            (Id => CB2,
+             Principal => P1,
+             Kind => Contact_Email,
+             Normalized_Value => Contact_Email_Value,
+             State => Identity.Contacts.Bindings.Pending_Verification,
+             Version => 0))
+         and then not Identity.Contacts.Bindings.Same_Occupied_Contact_Value
+           ((Id => CB1,
+             Principal => P1,
+             Kind => Contact_Email,
+             Normalized_Value => Contact_Email_Value,
+             State => Identity.Contacts.Bindings.Retired,
+             Version => 0),
+            (Id => CB2,
+             Principal => P1,
+             Kind => Contact_Email,
+             Normalized_Value => Contact_Email_Value,
+             State => Identity.Contacts.Bindings.Pending_Verification,
+             Version => 0)),
+         "IDENTITY-PRINCIPAL-002 principal lifecycle and contact verification helpers are explicit");
+
+      Assert
+        (Identity.Credentials.Lifecycle.Can_Activate (Credential.State)
+         and then Identity.Credentials.States.Can_Authenticate (Credential_View.State)
+         and then (Identity.Credentials.States.Authentication_Admission
+           (Identity.Credentials.States.Active)
+           = Identity.Credentials.States.Credential_Authentication_Admitted)
+         and then Identity.Credentials.States.Authentication_Accepted
+           (Identity.Credentials.States.Authentication_Admission
+              (Identity.Credentials.States.Active))
+         and then not Identity.Credentials.States.Authentication_Rejected
+           (Identity.Credentials.States.Authentication_Admission
+              (Identity.Credentials.States.Active))
+         and then not Identity.Credentials.States.No_Mutation
+           (Identity.Credentials.States.Authentication_Admission
+              (Identity.Credentials.States.Active))
+         and then (Identity.Credentials.States.Authentication_Admission
+           (Identity.Credentials.States.Created)
+           = Identity.Credentials.States.Credential_Not_Activated)
+         and then Identity.Credentials.States.Created_Rejection
+           (Identity.Credentials.States.Authentication_Admission
+              (Identity.Credentials.States.Created))
+         and then Identity.Credentials.States.Authentication_Rejected
+           (Identity.Credentials.States.Authentication_Admission
+              (Identity.Credentials.States.Created))
+         and then Identity.Credentials.States.No_Mutation
+           (Identity.Credentials.States.Authentication_Admission
+              (Identity.Credentials.States.Created))
+         and then (Identity.Credentials.States.Authentication_Admission
+           (Identity.Credentials.States.Replacement_Pending)
+           = Identity.Credentials.States.Credential_Replacement_Pending)
+         and then Identity.Credentials.States.Replacement_Pending_Rejection
+           (Identity.Credentials.States.Authentication_Admission
+              (Identity.Credentials.States.Replacement_Pending))
+         and then (Identity.Credentials.States.Authentication_Admission
+           (Identity.Credentials.States.Migrating)
+           = Identity.Credentials.States.Credential_Migration_Pending)
+         and then Identity.Credentials.States.Migration_Pending_Rejection
+           (Identity.Credentials.States.Authentication_Admission
+              (Identity.Credentials.States.Migrating))
+         and then (Identity.Credentials.States.Authentication_Admission
+           (Identity.Credentials.States.Expired)
+           = Identity.Credentials.States.Credential_Expired)
+         and then Identity.Credentials.States.Expired_Rejection
+           (Identity.Credentials.States.Authentication_Admission
+              (Identity.Credentials.States.Expired))
+         and then (Identity.Credentials.States.Authentication_Admission
+           (Identity.Credentials.States.Locked)
+           = Identity.Credentials.States.Credential_Locked)
+         and then Identity.Credentials.States.Locked_Rejection
+           (Identity.Credentials.States.Authentication_Admission
+              (Identity.Credentials.States.Locked))
+         and then (Identity.Credentials.States.Authentication_Admission
+           (Identity.Credentials.States.Retired)
+           = Identity.Credentials.States.Credential_Retired)
+         and then Identity.Credentials.States.Retired_Rejection
+           (Identity.Credentials.States.Authentication_Admission
+              (Identity.Credentials.States.Retired))
+         and then (Identity.Credentials.States.Authentication_Admission
+           (Identity.Credentials.States.Revoked)
+           = Identity.Credentials.States.Credential_Revoked)
+         and then Identity.Credentials.States.Revoked_Rejection
+           (Identity.Credentials.States.Authentication_Admission
+              (Identity.Credentials.States.Revoked))
+         and then Identity.Credentials.States.Authentication_Rejected
+           (Identity.Credentials.States.Authentication_Admission
+              (Identity.Credentials.States.Revoked))
+         and then Identity.Credentials.States.No_Mutation
+           (Identity.Credentials.States.Authentication_Admission
+              (Identity.Credentials.States.Revoked))
+         and then Identity.Credentials.Projections.Can_Authenticate (Credential_View)
+         and then not Identity.Credentials.Projections.Can_Authenticate (Credential_Summary)
+         and then not Identity.Credentials.Projections.Terminal (Credential_Summary)
+         and then Identity.Credentials.Lifecycle.Can_Begin_Factor_Enrollment
+           (Identity.Credentials.States.Created)
+         and then not Identity.Credentials.Lifecycle.Can_Begin_Factor_Enrollment
+           (Identity.Credentials.States.Revoked)
+         and then not Identity.Credentials.Lifecycle.Can_Begin_Factor_Enrollment
+           (Identity.Credentials.States.Retired)
+         and then Identity.Credentials.Lifecycle.Can_Complete_Factor_Enrollment
+           (Identity.Credentials.States.Created, Identity.Credentials.States.Active)
+         and then not Identity.Credentials.Lifecycle.Can_Complete_Factor_Enrollment
+           (Identity.Credentials.States.Revoked, Identity.Credentials.States.Active)
+         and then Identity.Credentials.Lifecycle.Can_Remove_Factor
+           (Identity.Credentials.States.Active)
+         and then not Identity.Credentials.Lifecycle.Can_Remove_Factor
+           (Identity.Credentials.States.Retired)
+         and then Identity.Credentials.Lifecycle.Occupies_Active_Slot
+           (Identity.Credentials.States.Active)
+         and then Identity.Credentials.Lifecycle.Can_Issue_As_Active
+           (Identity.Credentials.States.Active)
+         and then Identity.Credentials.Lifecycle.Can_Be_Replacement_Predecessor
+           (Identity.Credentials.States.Active)
+         and then Identity.Credentials.Lifecycle.Can_Be_Replacement_Successor
+           (Identity.Credentials.States.Active)
+         and then not Identity.Credentials.Lifecycle.Can_Be_Replacement_Predecessor
+           (Identity.Credentials.States.Retired)
+         and then Identity.Credentials.Lifecycle.Can_Begin_Migration
+           (Identity.Credentials.States.Active)
+         and then not Identity.Credentials.Lifecycle.Can_Begin_Migration
+           (Identity.Credentials.States.Locked)
+         and then Identity.Credentials.Lifecycle.Can_Complete_Migration
+           (Identity.Credentials.States.Migrating, Identity.Credentials.States.Active)
+         and then not Identity.Credentials.Lifecycle.Can_Complete_Migration
+           (Identity.Credentials.States.Active, Identity.Credentials.States.Active)
+         and then not Identity.Credentials.Lifecycle.Can_Complete_Migration
+           (Identity.Credentials.States.Migrating, Identity.Credentials.States.Revoked)
+         and then Identity.Credentials.Lifecycle.Can_Revoke
+           (Identity.Credentials.States.Active)
+         and then not Identity.Credentials.Lifecycle.Can_Revoke
+           (Identity.Credentials.States.Revoked)
+         and then (Identity.Credentials.Lifecycle.Admission
+           (Identity.Credentials.States.Active,
+            Identity.Credentials.Lifecycle.Revoke_Credential)
+           = Identity.Credentials.Lifecycle.Credential_Lifecycle_Admitted)
+         and then Identity.Credentials.Lifecycle.Admission_Accepted
+           (Identity.Credentials.Lifecycle.Credential_Lifecycle_Admitted)
+         and then not Identity.Credentials.Lifecycle.Admission_Rejected
+           (Identity.Credentials.Lifecycle.Credential_Lifecycle_Admitted)
+         and then not Identity.Credentials.Lifecycle.No_Mutation
+           (Identity.Credentials.Lifecycle.Credential_Lifecycle_Admitted)
+         and then (Identity.Credentials.Lifecycle.Admission
+           (Identity.Credentials.States.Locked,
+            Identity.Credentials.Lifecycle.Begin_Migration)
+           = Identity.Credentials.Lifecycle.Credential_Active_Required)
+         and then Identity.Credentials.Lifecycle.Active_Required_Rejection
+           (Identity.Credentials.Lifecycle.Credential_Active_Required)
+         and then Identity.Credentials.Lifecycle.Admission_Rejected
+           (Identity.Credentials.Lifecycle.Credential_Active_Required)
+         and then Identity.Credentials.Lifecycle.No_Mutation
+           (Identity.Credentials.Lifecycle.Credential_Active_Required)
+         and then (Identity.Credentials.Lifecycle.Admission
+           (Identity.Credentials.States.Active,
+            Identity.Credentials.Lifecycle.Begin_Factor_Enrollment)
+           = Identity.Credentials.Lifecycle.Credential_Inactive_Slot_Required)
+         and then Identity.Credentials.Lifecycle.Inactive_Slot_Rejection
+           (Identity.Credentials.Lifecycle.Credential_Inactive_Slot_Required)
+         and then Identity.Credentials.Lifecycle.Admission_Rejected
+           (Identity.Credentials.Lifecycle.Credential_Inactive_Slot_Required)
+         and then Identity.Credentials.Lifecycle.No_Mutation
+           (Identity.Credentials.Lifecycle.Credential_Inactive_Slot_Required)
+         and then (Identity.Credentials.Lifecycle.Admission
+           (Identity.Credentials.States.Revoked,
+            Identity.Credentials.Lifecycle.Remove_Factor)
+           = Identity.Credentials.Lifecycle.Credential_Terminal_Rejected)
+         and then Identity.Credentials.Lifecycle.Terminal_Rejection
+           (Identity.Credentials.Lifecycle.Credential_Terminal_Rejected)
+         and then Identity.Credentials.Lifecycle.Admission_Rejected
+           (Identity.Credentials.Lifecycle.Credential_Terminal_Rejected)
+         and then Identity.Credentials.Lifecycle.No_Mutation
+           (Identity.Credentials.Lifecycle.Credential_Terminal_Rejected)
+         and then (Identity.Credentials.Lifecycle.Admission
+           (Identity.Credentials.States.Created,
+            Identity.Credentials.Lifecycle.Complete_Factor_Enrollment,
+            Identity.Credentials.States.Revoked)
+           = Identity.Credentials.Lifecycle.Credential_Successor_State_Rejected)
+         and then Identity.Credentials.Lifecycle.Successor_State_Rejection
+           (Identity.Credentials.Lifecycle.Credential_Successor_State_Rejected)
+         and then Identity.Credentials.Lifecycle.Admission_Rejected
+           (Identity.Credentials.Lifecycle.Credential_Successor_State_Rejected)
+         and then Identity.Credentials.Lifecycle.No_Mutation
+           (Identity.Credentials.Lifecycle.Credential_Successor_State_Rejected)
+         and then (Identity.Credentials.Lifecycle.Admission
+           (Identity.Credentials.States.Active,
+            Identity.Credentials.Lifecycle.Complete_Migration,
+            Identity.Credentials.States.Active)
+           = Identity.Credentials.Lifecycle.Credential_Migration_State_Rejected)
+         and then Identity.Credentials.Lifecycle.Migration_State_Rejection
+           (Identity.Credentials.Lifecycle.Credential_Migration_State_Rejected)
+         and then Identity.Credentials.Lifecycle.Admission_Rejected
+           (Identity.Credentials.Lifecycle.Credential_Migration_State_Rejected)
+         and then Identity.Credentials.Lifecycle.No_Mutation
+           (Identity.Credentials.Lifecycle.Credential_Migration_State_Rejected)
+         and then Identity.Credentials.Dependencies.Independent (Dependency)
+         and then Identity.Credentials.Dependencies.Same_Domain
+           (Dependency, Same_Dependency)
+         and then not Identity.Credentials.Dependencies.Same_Domain
+           (Dependency, Device_Dependency)
+         and then Identity.Credentials.Dependencies.Independent_From
+           (Dependency, Device_Dependency)
+         and then not Identity.Credentials.Dependencies.Independent_From
+           (Dependency, Same_Dependency)
+         and then not Identity.Credentials.Dependencies.Independent_From
+           (Dependency, Shared_Dependency),
+         "IDENTITY-CREDENTIAL-002 credential lifecycle rejects terminal factor enrollment");
+   end Test_18_identity_account_disable;
+
+   procedure Test_19_secret_verifier_accepts (T : in out AUnit.Test_Cases.Test_Case'Class) is
+      pragma Unreferenced (T);
+   begin
+      Assert
+        (Identity.Crypto.Secret_Verifiers.Verify
+           (Identity.Crypto.Domains.Session_Token, Secret_B, Verifier)
+         = Identity.Crypto.Secret_Verifiers.Verified
+         and then Identity.Crypto.Secret_Verifiers.Verification_Accepted
+           (Identity.Crypto.Secret_Verifiers.Verified)
+         and then Identity.Crypto.Secret_Verifiers.Malformed_Verifier_Rejected
+           (Identity.Crypto.Secret_Verifiers.Malformed_Verifier)
+         and then Identity.Crypto.Secret_Verifiers.Unsupported_Format_Rejected
+           (Identity.Crypto.Secret_Verifiers.Unsupported_Format)
+         and then Identity.Crypto.Secret_Verifiers.Unsupported_Algorithm_Rejected
+           (Identity.Crypto.Secret_Verifiers.Unsupported_Algorithm)
+         and then Identity.Crypto.Secret_Verifiers.Resource_Limit_Rejected
+           (Identity.Crypto.Secret_Verifiers.Parameters_Outside_Limits)
+         and then Identity.Crypto.Secret_Verifiers.Cryptographic_Failed
+           (Identity.Crypto.Secret_Verifiers.Cryptographic_Failure)
+         and then Identity.Crypto.Secret_Verifiers.Operational_Failure
+           (Identity.Crypto.Secret_Verifiers.Cryptographic_Failure),
+         "secret verifier accepts same domain");
+
+      Assert
+        (Identity.Crypto.Secret_Verifiers.Verify
+           (Identity.Crypto.Domains.Password_Reset_Token, Secret_B, Verifier)
+         = Identity.Crypto.Secret_Verifiers.Not_Verified
+         and then Identity.Crypto.Secret_Verifiers.Verification_Rejected
+           (Identity.Crypto.Secret_Verifiers.Not_Verified),
+         "IDENTITY-TOKEN-001 secret_verifier_domain_separation");
+
+      Assert
+        (Identity.Operations.Disclosure.To_Disclosure_Safe_Result
+           (Identity.Results.Password_Change_Required,
+            Identity.Operations.Disclosure.Untrusted_API)
+         = Identity.Operations.Disclosure.Authentication_Rejected
+         and then Identity.Operations.Disclosure.To_Disclosure_Safe_Result
+           (Identity.Results.Resource_Limit,
+            Identity.Operations.Disclosure.Untrusted_API)
+           = Identity.Operations.Disclosure.Operational_Failure
+         and then Identity.Operations.Disclosure.To_Disclosure_Safe_Result
+           (Identity.Results.Internal_Invariant_Failure,
+            Identity.Operations.Disclosure.Internal_Operations)
+           = Identity.Operations.Disclosure.Operational_Failure
+         and then Identity.Operations.Disclosure.To_Disclosure_Safe_Result
+           (Identity.Results.Conflict,
+            Identity.Operations.Disclosure.Untrusted_API)
+           = Identity.Operations.Disclosure.Authentication_Rejected
+         and then Identity.Operations.Disclosure.To_Disclosure_Safe_Result
+           (Identity.Results.Conflict,
+            Identity.Operations.Disclosure.Trusted_Administrative)
+           = Identity.Operations.Disclosure.Conflict_Detailed
+         and then Identity.Operations.Disclosure.Successful
+           (Identity.Operations.Disclosure.Success)
+         and then Identity.Operations.Disclosure.Public_Rejection
+           (Identity.Operations.Disclosure.Authentication_Rejected)
+         and then Identity.Operations.Disclosure.Public_Rejection
+           (Identity.Operations.Disclosure.Authentication_Throttled)
+         and then Identity.Operations.Disclosure.Public_Rejection
+           (Identity.Operations.Disclosure.Token_Invalid_Or_Expired)
+         and then Identity.Operations.Disclosure.Additional_Action
+           (Identity.Operations.Disclosure.Additional_Action_Required)
+         and then Identity.Operations.Disclosure.Token_Invalid
+           (Identity.Operations.Disclosure.Token_Invalid_Or_Expired)
+         and then Identity.Operations.Disclosure.Conflict_Detail_Hidden
+           (Identity.Operations.Disclosure.Conflict_Hidden)
+         and then Identity.Operations.Disclosure.Conflict_Detail_Visible
+           (Identity.Operations.Disclosure.Conflict_Detailed)
+         and then Identity.Operations.Disclosure.Invalid_Input_Status
+           (Identity.Operations.Disclosure.Invalid_Input)
+         and then Identity.Operations.Disclosure.Operational_Status
+           (Identity.Operations.Disclosure.Operational_Failure)
+         and then Identity.Results.Successful (Identity.Results.Succeeded)
+         and then Identity.Results.Ordinary_Rejection (Identity.Results.Rejected)
+         and then Identity.Results.Additional_Action_Required
+           (Identity.Results.Password_Change_Required)
+         and then Identity.Results.Throttle_Rejection (Identity.Results.Throttled)
+         and then Identity.Results.Conflict_Status (Identity.Results.Conflict)
+         and then Identity.Results.Invalid_Input_Status (Identity.Results.Invalid_Input)
+         and then Identity.Results.Unsupported_Status (Identity.Results.Unsupported)
+         and then Identity.Results.Operational (Identity.Results.Operational_Failure)
+         and then Identity.Results.Operational (Identity.Results.Resource_Limit)
+         and then Identity.Results.Operational
+           (Identity.Results.Internal_Invariant_Failure)
+         and then Identity.Results.Resource_Limited (Identity.Results.Resource_Limit)
+         and then Identity.Results.Internal_Invariant
+           (Identity.Results.Internal_Invariant_Failure)
+         and then Identity.Results.Disclosure_Generic_Rejection
+           (Identity.Results.Password_Change_Required)
+         and then not Identity.Results.Disclosure_Generic_Rejection
+           (Identity.Results.Resource_Limit),
+         "IDENTITY-DISCLOSURE-001 disclosure_generic_rejection_and_non_rejection_failures");
+
+      Assert
+        (Identity.Operations.Disclosure.To_Disclosure_Safe_Result
+           (Identity.Results.Conflict,
+            Identity.Operations.Disclosure.Untrusted_Interactive)
+           = Identity.Operations.Disclosure.Authentication_Rejected
+         and then Identity.Operations.Disclosure.To_Disclosure_Safe_Result
+           (Identity.Results.Conflict,
+            Identity.Operations.Disclosure.Untrusted_API)
+           = Identity.Operations.Disclosure.Authentication_Rejected
+         and then Identity.Operations.Disclosure.To_Disclosure_Safe_Result
+           (Identity.Results.Conflict,
+            Identity.Operations.Disclosure.Authenticated_Self_Service)
+           = Identity.Operations.Disclosure.Authentication_Rejected
+         and then Identity.Operations.Disclosure.Public_Rejection
+           (Identity.Operations.Disclosure.To_Disclosure_Safe_Result
+              (Identity.Results.Conflict,
+               Identity.Operations.Disclosure.Untrusted_Interactive))
+         and then not Identity.Operations.Disclosure.Conflict_Detail_Visible
+           (Identity.Operations.Disclosure.To_Disclosure_Safe_Result
+              (Identity.Results.Conflict,
+               Identity.Operations.Disclosure.Untrusted_Interactive))
+         and then Identity.Operations.Disclosure.To_Disclosure_Safe_Result
+           (Identity.Results.Conflict,
+            Identity.Operations.Disclosure.Trusted_Administrative)
+           = Identity.Operations.Disclosure.Conflict_Detailed
+         and then Identity.Operations.Disclosure.To_Disclosure_Safe_Result
+           (Identity.Results.Conflict,
+            Identity.Operations.Disclosure.Internal_Operations)
+           = Identity.Operations.Disclosure.Conflict_Detailed
+         and then Identity.Operations.Disclosure.Conflict_Detail_Visible
+           (Identity.Operations.Disclosure.To_Disclosure_Safe_Result
+              (Identity.Results.Conflict,
+               Identity.Operations.Disclosure.Trusted_Administrative))
+         and then Identity.Operations.Disclosure.To_Disclosure_Safe_Result
+           (Identity.Tokens.Verification.State_Conflict,
+            Identity.Operations.Disclosure.Untrusted_Interactive)
+           = Identity.Operations.Disclosure.Token_Invalid_Or_Expired
+         and then Identity.Operations.Disclosure.To_Disclosure_Safe_Result
+           (Identity.Tokens.Verification.State_Conflict,
+            Identity.Operations.Disclosure.Trusted_Administrative)
+           = Identity.Operations.Disclosure.Conflict_Detailed
+         and then Identity.Operations.Disclosure.Reveals_No_More_Than
+           (Identity.Operations.Disclosure.Untrusted_Interactive,
+            Identity.Operations.Disclosure.Trusted_Administrative)
+         and then not Identity.Operations.Disclosure.Reveals_No_More_Than
+           (Identity.Operations.Disclosure.Trusted_Administrative,
+            Identity.Operations.Disclosure.Untrusted_Interactive),
+         "operation conflicts collapse for untrusted disclosure and remain structured "
+         & "for trusted disclosure");
+
+      Assert
+        (Identity.Operations.Budgets.Within_Hard_Limits
+           (Identity.Operations.Budgets.Hard_Limits)
+         and then Identity.Operations.Budgets.Accepted
+           (Identity.Operations.Budgets.Admit_Hard_Limits
+              (Identity.Operations.Budgets.Hard_Limits))
+         and then Identity.Operations.Budgets.Accepted
+           (Identity.Operations.Budgets.Admit_Hard_Limits
+              (Identity.Operations.Budgets.Hard_Limits).Status)
+         and then not Identity.Operations.Budgets.Rejected
+           (Identity.Operations.Budgets.Admit_Hard_Limits
+              (Identity.Operations.Budgets.Hard_Limits))
+         and then Identity.Operations.Budgets.Has_Bounded_Detail
+           (Identity.Operations.Budgets.Admit_Hard_Limits
+              (Identity.Operations.Budgets.Hard_Limits))
+         and then Identity.Operations.Budgets.Rejected
+           (Identity.Operations.Budgets.Admit
+              ((Identity.Operations.Budgets.Hard_Limits with delta
+                  Repository_Reads =>
+                    Identity.Operations.Budgets.Hard_Limits.Repository_Reads + 1),
+               Identity.Operations.Budgets.Hard_Limits))
+         and then Identity.Operations.Budgets.Rejected
+           (Identity.Operations.Budgets.Admit
+              ((Identity.Operations.Budgets.Hard_Limits with delta
+                  Repository_Reads =>
+                    Identity.Operations.Budgets.Hard_Limits.Repository_Reads + 1),
+               Identity.Operations.Budgets.Hard_Limits).Status)
+         and then Identity.Operations.Budgets.Exceeded
+           (Identity.Operations.Budgets.Admit
+              ((Identity.Operations.Budgets.Hard_Limits with delta
+                  Repository_Reads =>
+                    Identity.Operations.Budgets.Hard_Limits.Repository_Reads + 1),
+               Identity.Operations.Budgets.Hard_Limits),
+            Identity.Operations.Budgets.Repository_Reads)
+         and then not Identity.Operations.Budgets.Exceeded
+           (Identity.Operations.Budgets.Admit
+              ((Identity.Operations.Budgets.Hard_Limits with delta
+                  Repository_Reads =>
+                    Identity.Operations.Budgets.Hard_Limits.Repository_Reads + 1),
+               Identity.Operations.Budgets.Hard_Limits),
+            Identity.Operations.Budgets.Output_Bytes)
+         and then Identity.Operations.Budgets.Has_Bounded_Detail
+           (Identity.Operations.Budgets.Admit
+              ((Identity.Operations.Budgets.Hard_Limits with delta
+                  Repository_Reads =>
+                    Identity.Operations.Budgets.Hard_Limits.Repository_Reads + 1),
+               Identity.Operations.Budgets.Hard_Limits)),
+         "operation budget admission predicates classify accepted and rejected budgets");
+
+      Assert
+        (Identity.Operations.Budgets.Exceeds_Hard_Limit
+           ((Identity.Operations.Budgets.Hard_Limits with delta
+               Cryptographic_Operations =>
+                 Identity.Limits.Max_Cryptographic_Operations + 1),
+            Identity.Operations.Budgets.Cryptographic_Operations)
+         and then Identity.Operations.Budgets.Exceeds_Hard_Limit
+           ((Identity.Operations.Budgets.Hard_Limits with delta
+               Event_Attributes => Identity.Limits.Max_Event_Attributes + 1),
+            Identity.Operations.Budgets.Event_Attributes)
+         and then Identity.Operations.Budgets.Exceeds_Hard_Limit
+           ((Identity.Operations.Budgets.Hard_Limits with delta
+               Retry_Count => Identity.Limits.Max_Operation_Retries + 1),
+            Identity.Operations.Budgets.Retry_Count)
+         and then not Identity.Operations.Budgets.Within_Hard_Limits
+           ((Identity.Operations.Budgets.Hard_Limits with delta
+               Output_Bytes => Identity.Limits.Max_Output_Bytes + 1))
+         and then Identity.Operations.Budgets.Within_Hard_Limits
+           (Identity.Policies.Defaults.Default_Snapshot.Budget),
+         "operation hard-limit budget admission rejects policy values above implementation maxima");
+
+      Assert
+        (Identity.Identities.Bindings.Admission
+           (Identity.Identities.Bindings.Active,
+            Identity.Identities.Bindings.Subject_Resolution)
+           = Identity.Identities.Bindings.Binding_Admitted
+         and then Identity.Identities.Bindings.Usable_For_Resolution
+           (Identity.Identities.Bindings.Active)
+         and then Identity.Identities.Bindings.Admission
+           (Identity.Identities.Bindings.Suspended,
+            Identity.Identities.Bindings.Subject_Resolution)
+           = Identity.Identities.Bindings.Active_Required
+         and then Identity.Identities.Bindings.Active_Rejected
+           (Identity.Identities.Bindings.Admission
+              (Identity.Identities.Bindings.Suspended,
+               Identity.Identities.Bindings.Subject_Resolution))
+         and then not Identity.Identities.Bindings.Usable_For_Resolution
+           (Identity.Identities.Bindings.Rebinding_Required)
+         and then Identity.Identities.Bindings.Admission
+           (Identity.Identities.Bindings.Active,
+            Identity.Identities.Bindings.Binding_Revocation)
+           = Identity.Identities.Bindings.Binding_Admitted
+         and then Identity.Identities.Bindings.Can_Revoke
+           (Identity.Identities.Bindings.Pending)
+         and then Identity.Identities.Bindings.Admission
+           (Identity.Identities.Bindings.Revoked,
+            Identity.Identities.Bindings.Binding_Revocation)
+           = Identity.Identities.Bindings.Not_Revoked_Required
+         and then Identity.Identities.Bindings.Revoked_Rejected
+           (Identity.Identities.Bindings.Admission
+              (Identity.Identities.Bindings.Revoked,
+               Identity.Identities.Bindings.Binding_Revocation))
+         and then not Identity.Identities.Bindings.Can_Revoke
+           (Identity.Identities.Bindings.Revoked)
+         and then Identity.Identities.Bindings.Can_Replace
+           (Identity.Identities.Bindings.Active)
+         and then not Identity.Identities.Bindings.Can_Replace
+           (Identity.Identities.Bindings.Pending)
+         and then Identity.Identities.Bindings.Active_Rejected
+           (Identity.Identities.Bindings.Admission
+              (Identity.Identities.Bindings.Pending,
+               Identity.Identities.Bindings.Binding_Replacement))
+         and then Identity.Identities.Bindings.No_Mutation
+           (Identity.Identities.Bindings.Admission
+              (Identity.Identities.Bindings.Revoked,
+               Identity.Identities.Bindings.Binding_Revocation))
+         and then not Identity.Identities.Bindings.No_Mutation
+           (Identity.Identities.Bindings.Admission
+              (Identity.Identities.Bindings.Active,
+               Identity.Identities.Bindings.Subject_Resolution)),
+         "identity binding lifecycle admission classifies resolution revocation and replacement");
+   end Test_19_secret_verifier_accepts;
+
+   procedure Test_20_section (T : in out AUnit.Test_Cases.Test_Case'Class) is
+      pragma Unreferenced (T);
+      Untrusted_Rules : constant Identity.Operations.Disclosure.Disclosure_Profile_Rules :=
+        Identity.Operations.Disclosure.Rules_For
+          (Identity.Operations.Disclosure.Untrusted_API);
+      Self_Service_Rules : constant Identity.Operations.Disclosure.Disclosure_Profile_Rules :=
+        Identity.Operations.Disclosure.Rules_For
+          (Identity.Operations.Disclosure.Authenticated_Self_Service);
+      Administrative_Rules : constant Identity.Operations.Disclosure.Disclosure_Profile_Rules :=
+        Identity.Operations.Disclosure.Rules_For
+          (Identity.Operations.Disclosure.Trusted_Administrative);
+      Internal_Rules : constant Identity.Operations.Disclosure.Disclosure_Profile_Rules :=
+        Identity.Operations.Disclosure.Rules_For
+          (Identity.Operations.Disclosure.Internal_Operations);
+   begin
+      Assert
+        (not Untrusted_Rules.Subject_Existence_Detail
+         and then not Untrusted_Rules.Factor_Enrollment_Detail
+         and then not Untrusted_Rules.Lockout_Detail
+         and then not Untrusted_Rules.Retry_Timing_Detail
+         and then not Untrusted_Rules.Contact_Destination_Detail
+         and then not Untrusted_Rules.Diagnostic_Identifiers
+         and then not Untrusted_Rules.Conflict_Detail
+         and then not Untrusted_Rules.Token_State_Detail
+         and then Self_Service_Rules.Factor_Enrollment_Detail
+         and then Self_Service_Rules.Contact_Destination_Detail
+         and then not Self_Service_Rules.Subject_Existence_Detail
+         and then not Self_Service_Rules.Diagnostic_Identifiers
+         and then Administrative_Rules.Subject_Existence_Detail
+         and then Administrative_Rules.Conflict_Detail
+         and then not Administrative_Rules.Token_State_Detail
+         and then Internal_Rules.Token_State_Detail
+         and then Identity.Operations.Disclosure.Reveals_No_More_Than
+           (Untrusted_Rules, Self_Service_Rules)
+         and then Identity.Operations.Disclosure.Reveals_No_More_Than
+           (Identity.Operations.Disclosure.Untrusted_API,
+            Identity.Operations.Disclosure.Internal_Operations)
+         and then Identity.Operations.Disclosure.Reveals_No_More_Than
+           (Identity.Operations.Disclosure.Trusted_Administrative,
+            Identity.Operations.Disclosure.Internal_Operations)
+         and then not Identity.Operations.Disclosure.Reveals_No_More_Than
+           (Identity.Operations.Disclosure.Internal_Operations,
+            Identity.Operations.Disclosure.Untrusted_API),
+         "IDENTITY-DISCLOSURE-001 disclosure profile rules expose bounded detail controls");
+   end Test_20_section;
+
+   procedure Test_21_invalid_token_outcomes_c (T : in out AUnit.Test_Cases.Test_Case'Class) is
+      pragma Unreferenced (T);
+   begin
+      Assert
+        (Identity.Operations.Disclosure.To_Disclosure_Safe_Result
+           (Identity.Tokens.Verification.Not_Verified,
+            Identity.Operations.Disclosure.Untrusted_API)
+         = Identity.Operations.Disclosure.Token_Invalid_Or_Expired
+         and then Identity.Operations.Disclosure.To_Disclosure_Safe_Result
+           (Identity.Tokens.Verification.Expired,
+            Identity.Operations.Disclosure.Untrusted_API)
+           = Identity.Operations.Disclosure.Token_Invalid_Or_Expired
+         and then Identity.Operations.Disclosure.To_Disclosure_Safe_Result
+           (Identity.Tokens.Verification.Purpose_Mismatch,
+            Identity.Operations.Disclosure.Untrusted_API)
+           = Identity.Operations.Disclosure.Token_Invalid_Or_Expired
+         and then Identity.Operations.Disclosure.To_Disclosure_Safe_Result
+           (Identity.Tokens.Verification.Already_Consumed,
+            Identity.Operations.Disclosure.Untrusted_API)
+           = Identity.Operations.Disclosure.Token_Invalid_Or_Expired
+         and then Identity.Operations.Disclosure.To_Disclosure_Safe_Result
+           (Identity.Tokens.Verification.Revoked,
+            Identity.Operations.Disclosure.Untrusted_API)
+           = Identity.Operations.Disclosure.Token_Invalid_Or_Expired,
+         "invalid token outcomes collapse for untrusted disclosure");
+
+      Assert
+        (Identity.Operations.Disclosure.To_Disclosure_Safe_Result
+           (Identity.Tokens.Verification.State_Conflict,
+            Identity.Operations.Disclosure.Internal_Operations)
+         = Identity.Operations.Disclosure.Conflict_Detailed
+         and then Identity.Operations.Disclosure.To_Disclosure_Safe_Result
+           (Identity.Tokens.Verification.State_Conflict,
+            Identity.Operations.Disclosure.Untrusted_API)
+           = Identity.Operations.Disclosure.Token_Invalid_Or_Expired,
+         "trusted token conflict disclosure remains structured");
+   end Test_21_invalid_token_outcomes_c;
+
+   procedure Test_22_identity_protocol_test (T : in out AUnit.Test_Cases.Test_Case'Class) is
+      pragma Unreferenced (T);
+      Assertion : constant Identity.External_Providers.Assertions.Normalized_Assertion :=
+        (Provider => EP1,
+         Protocol => Identity.Identifiers.Registry.From_String ("identity.protocol.test"),
+         Issuer => External_Issuer,
+         External_Subject => External_Subject,
+         Issued_At => 50,
+         Authentication_Time => 50,
+         Expires_At => (Present => True, Time_Point => 100),
+         Nonce => Identity.External_Providers.Assertions.Validated,
+         Assertion_Fingerprint => Identity.Text.Bounded.From_String ("assertion-fingerprint"),
+         Validation_Profile => Identity.Identifiers.Registry.From_String ("identity.provider.profile"));
+      Assertion_Result : constant Identity.Adapters.External_Providers.Assertion_Adapter_Result :=
+        (Status => Identity.Adapters.External_Providers.Validated,
+         Profile => Identity.Identifiers.Registry.From_String ("identity.provider.profile"),
+         Issuer => External_Issuer,
+         Subject => External_Subject,
+         Assertion => Assertion);
+      Expired_Assertion : constant Identity.External_Providers.Assertions.Normalized_Assertion :=
+        (Assertion with delta Expires_At => (Present => True, Time_Point => 40));
+      Invalid_Nonce_Assertion : constant Identity.External_Providers.Assertions.Normalized_Assertion :=
+        (Assertion with delta Nonce => Identity.External_Providers.Assertions.Invalid);
+      Key_Result : constant Identity.Adapters.Keys.Key_Lookup_Result :=
+        Identity.Adapters.Keys.Active_Creation_Key
+          (Identity.Text.Bounded.From_String ("adapter-key"),
+           Identity.Crypto.Domains.API_Key);
+      Historical_Key_Result : constant Identity.Adapters.Keys.Key_Lookup_Result :=
+        (Status => Identity.Adapters.Keys.Verification_Only,
+         Key =>
+           (Key_Id => Identity.Text.Bounded.From_String ("adapter-key-old"),
+            Domain => Identity.Crypto.Domains.API_Key,
+            State => Identity.Crypto.Keys.Verification_Only));
+      Wrong_Domain_Key_Result : constant Identity.Adapters.Keys.Key_Lookup_Result :=
+        (Status => Identity.Adapters.Keys.Found,
+         Key =>
+           (Key_Id => Identity.Text.Bounded.From_String ("adapter-key-session"),
+            Domain => Identity.Crypto.Domains.Session_Token,
+            State => Identity.Crypto.Keys.Active));
+      Missing_Key_Result : constant Identity.Adapters.Keys.Key_Lookup_Result :=
+        (Status => Identity.Adapters.Keys.Missing,
+         Key =>
+           (Key_Id => Identity.Text.Bounded.From_String ("adapter-key-missing"),
+            Domain => Identity.Crypto.Domains.API_Key,
+            State => Identity.Crypto.Keys.Unavailable));
+      Retired_Key_Result : constant Identity.Adapters.Keys.Key_Lookup_Result :=
+        (Status => Identity.Adapters.Keys.Retired,
+         Key =>
+           (Key_Id => Identity.Text.Bounded.From_String ("adapter-key-retired"),
+            Domain => Identity.Crypto.Domains.API_Key,
+            State => Identity.Crypto.Keys.Retired));
+      Revoked_Key_Result : constant Identity.Adapters.Keys.Key_Lookup_Result :=
+        (Status => Identity.Adapters.Keys.Revoked,
+         Key =>
+           (Key_Id => Identity.Text.Bounded.From_String ("adapter-key-revoked"),
+            Domain => Identity.Crypto.Domains.API_Key,
+            State => Identity.Crypto.Keys.Revoked));
+      Delivery : constant Identity.Adapters.Notifications.Delivery_Request :=
+        (Purpose => Identity.Tokens.Purposes.Password_Reset,
+         Correlation => R1,
+         Principal => P1,
+         Channel => Identity.Adapters.Notifications.Email,
+         Destination_Label => Identity.Text.Bounded.From_String ("verified-contact"),
+         Secret_Included => False);
+      Unsafe_Delivery : constant Identity.Adapters.Notifications.Delivery_Request :=
+        (Delivery with delta Secret_Included => True);
+      Delivery_Success : constant Identity.Adapters.Notifications.Delivery_Result :=
+        (Status => Identity.Adapters.Notifications.Queued,
+         Request => Delivery);
+      Secret_Delivery_Failure : constant Identity.Adapters.Notifications.Delivery_Result :=
+        (Status => Identity.Adapters.Notifications.Rejected,
+         Request => Unsafe_Delivery);
+      Infrastructure_Delivery_Failure : constant Identity.Adapters.Notifications.Delivery_Result :=
+        (Status => Identity.Adapters.Notifications.Infrastructure_Failure,
+         Request => Delivery);
+      Unsupported_Delivery_Failure : constant Identity.Adapters.Notifications.Delivery_Result :=
+        (Status => Identity.Adapters.Notifications.Unsupported_Channel,
+         Request => Delivery);
+      Rejected_Delivery_Failure : constant Identity.Adapters.Notifications.Delivery_Result :=
+        (Status => Identity.Adapters.Notifications.Rejected,
+         Request => Delivery);
+      Event : constant Identity.Events.Envelopes.Event_Envelope :=
+        (Id => E1,
+         Type_Id => Identity.Events.Types.Authentication_Succeeded,
+         Schema => 1,
+         Occurred_At => 60,
+         Recorded_At => 60,
+         Severity => Identity.Events.Envelopes.Notice,
+         Correlation => R1,
+         Operation => O1,
+         Actor => (Kind => Identity.Events.Envelopes.Authenticated_Principal,
+                   Principal => (Present => True, Value => P1)),
+         Subject => (Present => True, Value => P1),
+         Target => Identity.Text.Bounded.From_String ("identity.adapter.event"),
+         Outcome => Identity.Events.Envelopes.Succeeded);
+      Publication : constant Identity.Adapters.Event_Sinks.Event_Publication :=
+        (Event => Event,
+         Status => Identity.Adapters.Event_Sinks.Accepted,
+         After_Commit => True);
+      Pre_Commit_Publication : constant Identity.Adapters.Event_Sinks.Event_Publication :=
+        (Publication with delta After_Commit => False);
+      Failed_Publication : constant Identity.Adapters.Event_Sinks.Event_Publication :=
+        (Publication with delta
+         Status => Identity.Adapters.Event_Sinks.Retryable_Failure);
+      Event_Policy : constant Identity.Events.Policies.Event_Policy :=
+        (Maximum_Attributes => Identity.Limits.Max_Event_Attributes,
+         Secret_Event_Attributes_Allowed => False,
+         Derived_Event_Attributes_Allowed => False,
+         Post_Commit_Publication_Only => True);
+      Invalid_Event_Policy : constant Identity.Events.Policies.Event_Policy :=
+        (Event_Policy with delta Post_Commit_Publication_Only => False);
+      Split_Token_Output : constant Identity.Tokens.Generation.Split_Token :=
+        (Public_Id => T1,
+         Encoded_Public_Part => Identity.Text.Bounded.From_String ("reset-token-public"),
+         Secret_Returned_Once => True);
+      Valid_Post_Commit : constant Identity.Operations.Post_Commit.Post_Commit_Output :=
+        (Events =>
+           (Count => 1,
+            References => [1 => (Present => True, Value => E1), others => (Present => False)]),
+         Publications =>
+           (Count => 1,
+            Publications => [1 => (Present => True, Value => Publication), others => (Present => False)]),
+         Notification_Handoff =>
+           (Count => 1,
+            Deliveries => [1 => (Present => True, Value => Delivery), others => (Present => False)]),
+         One_Time_Outputs =>
+           (Count => 1,
+            Outputs => [1 => (Present => True, Value => Split_Token_Output), others => (Present => False)]),
+         Session_Issuance => (Status => Identity.Sessions.Handles.Unknown));
+      Pre_Commit_Output : constant Identity.Operations.Post_Commit.Post_Commit_Output :=
+        (Valid_Post_Commit with delta
+         Publications =>
+           (Count => 1,
+            Publications => [1 => (Present => True, Value => Pre_Commit_Publication),
+                             others => (Present => False)]));
+      Secret_Delivery_Output : constant Identity.Operations.Post_Commit.Post_Commit_Output :=
+        (Valid_Post_Commit with delta
+         Notification_Handoff =>
+           (Count => 1,
+            Deliveries => [1 => (Present => True, Value => Unsafe_Delivery), others => (Present => False)]));
+      Mismatched_Output : constant Identity.Operations.Post_Commit.Post_Commit_Output :=
+        (Valid_Post_Commit with delta
+         Events =>
+           (Count => 1,
+            References => [others => (Present => False)]));
+      Unsafe_One_Time_Token : constant Identity.Tokens.Generation.Split_Token :=
+        (Split_Token_Output with delta Secret_Returned_Once => False);
+      Unsafe_One_Time_Output : constant Identity.Operations.Post_Commit.Post_Commit_Output :=
+        (Valid_Post_Commit with delta
+         One_Time_Outputs =>
+           (Count => 1,
+            Outputs => [1 => (Present => True, Value => Unsafe_One_Time_Token),
+                        others => (Present => False)]));
+      Valid_Admission : constant Identity.Operations.Post_Commit.Release_Admission :=
+        Identity.Operations.Post_Commit.Admit_For_Release (Valid_Post_Commit);
+      Pre_Commit_Admission : constant Identity.Operations.Post_Commit.Release_Admission :=
+        Identity.Operations.Post_Commit.Admit_For_Release (Pre_Commit_Output);
+      Secret_Delivery_Admission : constant Identity.Operations.Post_Commit.Release_Admission :=
+        Identity.Operations.Post_Commit.Admit_For_Release (Secret_Delivery_Output);
+      Mismatched_Admission : constant Identity.Operations.Post_Commit.Release_Admission :=
+        Identity.Operations.Post_Commit.Admit_For_Release (Mismatched_Output);
+      Unsafe_One_Time_Admission : constant Identity.Operations.Post_Commit.Release_Admission :=
+        Identity.Operations.Post_Commit.Admit_For_Release (Unsafe_One_Time_Output);
+      Diagnostic : constant Identity.Diagnostics.Diagnostic_Record :=
+        (Id => Identity.Identifiers.Registry.From_String ("identity.adapter.diagnostic"),
+         Error =>
+           (Category => Identity.Errors.Operational_Failure,
+            Retry => Identity.Errors.Retry_Same_Request,
+            Cause => Identity.Errors.Repository,
+            Operation_Set => True,
+            Correlation_Set => True),
+         Message => Identity.Text.Bounded.From_String ("identity.adapter.failure"));
+      Diagnostic_Submission : constant Identity.Adapters.Diagnostics.Diagnostic_Submission :=
+        (Diagnostic => Diagnostic,
+         Class => Identity.Events.Classification.Sensitive);
+      Transport : constant Identity.Adapters.Transport_Context.Transport_Context :=
+        (Request => Identity.Identifiers.Operations.Request_Context
+           (Identity.Identifiers.From_String ("81000000-0000-0000-0000-000000000001")),
+         Risk_Key => Identity.Text.Bounded.From_String ("risk-key"),
+         Transport_Name => Identity.Text.Bounded.From_String ("test-transport"),
+         Supplies_Bearer_Secret => False,
+         Owns_Cookie_State => False);
+   begin
+      Assert
+        (Identity.Adapters.External_Providers.Accepts_For_Core (Assertion_Result.Status)
+         and then not Identity.Adapters.External_Providers.Accepts_For_Core
+           (Identity.Adapters.External_Providers.Provider_Untrusted)
+         and then Identity.External_Providers.Assertions.Admit_For_Core (Assertion, 60)
+           = Identity.External_Providers.Assertions.Admitted
+         and then Identity.External_Providers.Assertions.Assertion_Admitted
+           (Identity.External_Providers.Assertions.Admitted)
+         and then Identity.External_Providers.Assertions.Replay_Registration_Eligible
+           (Identity.External_Providers.Assertions.Admitted)
+         and then Identity.External_Providers.Assertions.Admit_For_Core (Expired_Assertion, 60)
+           = Identity.External_Providers.Assertions.Expired
+         and then Identity.External_Providers.Assertions.Assertion_Expired
+           (Identity.External_Providers.Assertions.Expired)
+         and then Identity.External_Providers.Assertions.Assertion_Rejected
+           (Identity.External_Providers.Assertions.Expired)
+         and then not Identity.External_Providers.Assertions.Replay_Registration_Eligible
+           (Identity.External_Providers.Assertions.Expired)
+         and then Identity.External_Providers.Assertions.Admit_For_Core
+           (Invalid_Nonce_Assertion, 60)
+           = Identity.External_Providers.Assertions.Nonce_Not_Validated
+         and then Identity.External_Providers.Assertions.Nonce_Rejected
+           (Identity.External_Providers.Assertions.Nonce_Not_Validated)
+         and then Identity.External_Providers.Assertions.Assertion_Rejected
+           (Identity.External_Providers.Assertions.Nonce_Not_Validated)
+         and then not Identity.External_Providers.Assertions.Replay_Registration_Eligible
+           (Identity.External_Providers.Assertions.Nonce_Not_Validated)
+         and then Identity.Text.Bounded.Equal (Assertion_Result.Assertion.External_Subject, External_Subject),
+         "IDENTITY-EXTERNAL-001 external assertion core admission is explicit");
+
+      Assert
+        (Identity.External_Providers.Assertions.Has_Replay_Fingerprint (Assertion)
+         and then Identity.External_Providers.Assertions.Ready_For_Replay_Registration
+           (Assertion, 60)
+         and then not Identity.External_Providers.Assertions
+           .Ready_For_Replay_Registration
+             ((Assertion with delta
+                 Assertion_Fingerprint => Identity.Text.Bounded.From_String ("")),
+              60)
+         and then not Identity.External_Providers.Assertions.Has_Replay_Fingerprint
+           ((Assertion with delta
+               Assertion_Fingerprint => Identity.Text.Bounded.From_String ("")))
+         and then not Identity.External_Providers.Assertions
+           .Ready_For_Replay_Registration (Expired_Assertion, 60)
+         and then not Identity.External_Providers.Assertions
+           .Ready_For_Replay_Registration (Invalid_Nonce_Assertion, 60)
+         and then Identity.External_Providers.Assertions.Replay_Registration_Eligible
+           (Identity.External_Providers.Assertions.Admit_For_Core (Assertion, 60))
+         and then not Identity.External_Providers.Assertions
+           .Replay_Registration_Eligible
+             (Identity.External_Providers.Assertions.Admit_For_Core
+                (Expired_Assertion, 60)),
+         "external assertion replay readiness is explicit");
+
+      Assert
+        (Identity.Adapters.External_Providers.Accepts_For_Core
+           (Assertion_Result.Status)
+         and then Identity.Adapters.External_Providers.Validated_Status
+           (Assertion_Result.Status)
+         and then Identity.External_Providers.Assertions.Admit_For_Core
+           (Assertion_Result.Assertion, 60)
+           = Identity.External_Providers.Assertions.Admitted
+         and then Identity.Text.Bounded.Equal
+           (Assertion_Result.Assertion.Issuer, Assertion_Result.Issuer)
+         and then Identity.Text.Bounded.Equal
+           (Assertion_Result.Assertion.External_Subject, Assertion_Result.Subject)
+         and then Identity.Identifiers.Registry.Image
+           (Assertion_Result.Assertion.Validation_Profile)
+           = Identity.Identifiers.Registry.Image (Assertion_Result.Profile)
+         and then Identity.External_Providers.Assertions.Nonce_Acceptable
+           (Assertion_Result.Assertion.Nonce)
+         and then not Identity.Adapters.External_Providers.Accepts_For_Core
+           (Identity.Adapters.External_Providers.Provider_Untrusted)
+         and then Identity.Adapters.External_Providers.Adapter_Rejected
+           (Identity.Adapters.External_Providers.Nonce_Mismatch)
+         and then Identity.Adapters.External_Providers.Adapter_Rejected
+           (Identity.Adapters.External_Providers.Replay_Suspected)
+         and then not Identity.Adapters.External_Providers.Accepts_For_Core
+           (Identity.Adapters.External_Providers.Missing_Capability)
+         and then Identity.Adapters.External_Providers.Operational_Failure
+           (Identity.Adapters.External_Providers.Infrastructure_Failure),
+         "external adapters pass only normalized validated assertions");
+
+      Assert
+        (Identity.External_Providers.Assertions.Assertion_Admitted
+           (Identity.External_Providers.Assertions.Admitted)
+         and then not Identity.External_Providers.Assertions.Assertion_Rejected
+           (Identity.External_Providers.Assertions.Admitted)
+         and then Identity.External_Providers.Assertions.Nonce_Not_Required
+           (Identity.External_Providers.Assertions.Not_Required)
+         and then Identity.External_Providers.Assertions.Nonce_Validated
+           (Identity.External_Providers.Assertions.Validated)
+         and then Identity.External_Providers.Assertions.Nonce_Missing
+           (Identity.External_Providers.Assertions.Missing)
+         and then Identity.External_Providers.Assertions.Nonce_Invalid
+           (Identity.External_Providers.Assertions.Invalid)
+         and then Identity.External_Providers.Assertions.Nonce_Unacceptable
+           (Identity.External_Providers.Assertions.Missing)
+         and then Identity.External_Providers.Assertions.Assertion_Expired
+           (Identity.External_Providers.Assertions.Expired)
+         and then Identity.External_Providers.Assertions.Assertion_Rejected
+           (Identity.External_Providers.Assertions.Expired)
+         and then Identity.External_Providers.Assertions.Nonce_Rejected
+           (Identity.External_Providers.Assertions.Nonce_Not_Validated)
+         and then Identity.External_Providers.Assertions.Assertion_Rejected
+           (Identity.External_Providers.Assertions.Nonce_Not_Validated)
+         and then Identity.External_Providers.Assertions.Replay_Registration_Eligible
+           (Identity.External_Providers.Assertions.Admitted)
+         and then not Identity.External_Providers.Assertions.Replay_Registration_Eligible
+           (Identity.External_Providers.Assertions.Expired)
+         and then not Identity.External_Providers.Assertions.Replay_Registration_Eligible
+           (Identity.External_Providers.Assertions.Nonce_Not_Validated),
+         "IDENTITY-EXTERNAL-001 external assertion admission predicates classify "
+         & "admitted, rejected, expired, nonce-rejected, and "
+         & "replay-registration-eligible outcomes");
+
+      Assert
+        (Identity.Adapters.External_Providers.Validated_Status
+           (Identity.Adapters.External_Providers.Validated)
+         and then Identity.Adapters.External_Providers.Accepts_For_Core
+           (Identity.Adapters.External_Providers.Validated)
+         and then Identity.Adapters.External_Providers.Invalid_Status
+           (Identity.Adapters.External_Providers.Invalid)
+         and then Identity.Adapters.External_Providers.Expired_Status
+           (Identity.Adapters.External_Providers.Expired)
+         and then Identity.Adapters.External_Providers.Audience_Rejected
+           (Identity.Adapters.External_Providers.Audience_Mismatch)
+         and then Identity.Adapters.External_Providers.Nonce_Rejected
+           (Identity.Adapters.External_Providers.Nonce_Mismatch)
+         and then Identity.Adapters.External_Providers.Provider_Rejected
+           (Identity.Adapters.External_Providers.Provider_Untrusted)
+         and then Identity.Adapters.External_Providers.Replay_Rejected
+           (Identity.Adapters.External_Providers.Replay_Suspected)
+         and then Identity.Adapters.External_Providers.Adapter_Rejected
+           (Identity.Adapters.External_Providers.Replay_Suspected)
+         and then Identity.Adapters.External_Providers.Missing_Capability_Status
+           (Identity.Adapters.External_Providers.Missing_Capability)
+         and then Identity.Adapters.External_Providers.Infrastructure_Failed
+           (Identity.Adapters.External_Providers.Infrastructure_Failure)
+         and then Identity.Adapters.External_Providers.Operational_Failure
+           (Identity.Adapters.External_Providers.Missing_Capability),
+         "IDENTITY-EXTERNAL-001 external assertion adapter status classifiers are explicit");
+
+      Assert
+        (Key_Result.Status = Identity.Adapters.Keys.Found
+         and then Identity.Adapters.Keys.May_Verify (Key_Result)
+         and then Identity.Adapters.Keys.Admit_For_Creation
+           (Key_Result, Identity.Crypto.Domains.API_Key)
+           = Identity.Adapters.Keys.Allow_Creation
+         and then Identity.Adapters.Keys.Admit_For_Verification
+           (Key_Result, Identity.Crypto.Domains.API_Key)
+           = Identity.Adapters.Keys.Allow_Verification
+         and then Identity.Adapters.Keys.Admit_For_Creation
+           (Historical_Key_Result, Identity.Crypto.Domains.API_Key)
+           = Identity.Adapters.Keys.Reject_Verification_Only_For_Creation
+         and then Identity.Adapters.Keys.Admit_For_Verification
+           (Historical_Key_Result, Identity.Crypto.Domains.API_Key)
+           = Identity.Adapters.Keys.Allow_Verification,
+         "IDENTITY-ADAPTER-KEYS-001 key adapters expose non-secret lookup state");
+
+      Assert
+        (Identity.Adapters.Keys.Admit_For_Creation
+           (Wrong_Domain_Key_Result, Identity.Crypto.Domains.API_Key)
+         = Identity.Adapters.Keys.Reject_Domain_Mismatch
+         and then Identity.Adapters.Keys.Admit_For_Verification
+           (Missing_Key_Result, Identity.Crypto.Domains.API_Key)
+           = Identity.Adapters.Keys.Reject_Missing
+         and then Identity.Adapters.Keys.Admit_For_Verification
+           (Retired_Key_Result, Identity.Crypto.Domains.API_Key)
+           = Identity.Adapters.Keys.Reject_Retired
+         and then Identity.Adapters.Keys.Admit_For_Verification
+           (Revoked_Key_Result, Identity.Crypto.Domains.API_Key)
+           = Identity.Adapters.Keys.Reject_Revoked,
+         "IDENTITY-ADAPTER-KEYS-001 key admission rejects domain and lifecycle mismatches");
+
+      Assert
+        (Identity.Adapters.Keys.Found_Status (Identity.Adapters.Keys.Found)
+         and then Identity.Adapters.Keys.Verification_Only_Status
+           (Identity.Adapters.Keys.Verification_Only)
+         and then Identity.Adapters.Keys.Retired_Status (Identity.Adapters.Keys.Retired)
+         and then Identity.Adapters.Keys.Revoked_Status (Identity.Adapters.Keys.Revoked)
+         and then Identity.Adapters.Keys.Unavailable_Status
+           (Identity.Adapters.Keys.Unavailable)
+         and then Identity.Adapters.Keys.Missing_Status (Identity.Adapters.Keys.Missing)
+         and then Identity.Adapters.Keys.Lookup_Usable_For_Verification
+           (Identity.Adapters.Keys.Found)
+         and then Identity.Adapters.Keys.Lookup_Usable_For_Verification
+           (Identity.Adapters.Keys.Verification_Only)
+         and then Identity.Adapters.Keys.Lookup_Rejected (Identity.Adapters.Keys.Retired)
+         and then Identity.Adapters.Keys.Lookup_Rejected (Identity.Adapters.Keys.Revoked)
+         and then Identity.Adapters.Keys.Lookup_Rejected (Identity.Adapters.Keys.Unavailable)
+         and then Identity.Adapters.Keys.Lookup_Rejected (Identity.Adapters.Keys.Missing)
+         and then Identity.Adapters.Keys.Creation_Allowed
+           (Identity.Adapters.Keys.Allow_Creation)
+         and then Identity.Adapters.Keys.Verification_Allowed
+           (Identity.Adapters.Keys.Allow_Verification)
+         and then Identity.Adapters.Keys.Admission_Rejected
+           (Identity.Adapters.Keys.Reject_Missing)
+         and then Identity.Adapters.Keys.Lifecycle_Rejected
+           (Identity.Adapters.Keys.Reject_Retired)
+         and then Identity.Adapters.Keys.Lifecycle_Rejected
+           (Identity.Adapters.Keys.Reject_Revoked)
+         and then Identity.Adapters.Keys.Availability_Rejected
+           (Identity.Adapters.Keys.Reject_Unavailable)
+         and then Identity.Adapters.Keys.Domain_Rejected
+           (Identity.Adapters.Keys.Reject_Domain_Mismatch)
+         and then not Identity.Adapters.Keys.Admission_Rejected
+           (Identity.Adapters.Keys.Allow_Verification),
+         "IDENTITY-ADAPTER-KEYS-001 key lookup and admission status classification is explicit");
+
+      Assert
+        (Identity.Adapters.Notifications.Safe_For_Adapter (Delivery)
+         and then not Identity.Adapters.Notifications.Safe_For_Adapter (Unsafe_Delivery),
+         "IDENTITY-ADAPTER-NOTIFY-001 notification adapters never receive secret-bearing requests");
+
+      Assert
+        (Identity.Adapters.Notifications.Delivery_Succeeded (Delivery_Success)
+         and then Identity.Adapters.Notifications.Failure_Action (Delivery_Success)
+           = Identity.Adapters.Notifications.No_Action
+         and then Identity.Adapters.Notifications.Failure_Action (Secret_Delivery_Failure)
+           = Identity.Adapters.Notifications.Revoke_Issued_Authority
+         and then Identity.Adapters.Notifications.Failure_Action (Infrastructure_Delivery_Failure)
+           = Identity.Adapters.Notifications.Retry_Without_Secret
+         and then Identity.Adapters.Notifications.Failure_Action (Unsupported_Delivery_Failure)
+           = Identity.Adapters.Notifications.Issue_Replacement_Authority
+         and then Identity.Adapters.Notifications.Failure_Action (Rejected_Delivery_Failure)
+           = Identity.Adapters.Notifications.Manual_Review,
+         "IDENTITY-ADAPTER-NOTIFY-001 notification delivery failures use explicit compensation actions");
+
+      Assert
+        (Identity.Adapters.Notifications.Queued_Status
+           (Identity.Adapters.Notifications.Queued)
+         and then Identity.Adapters.Notifications.Rejected_Status
+           (Identity.Adapters.Notifications.Rejected)
+         and then Identity.Adapters.Notifications.Unsupported_Status
+           (Identity.Adapters.Notifications.Unsupported_Channel)
+         and then Identity.Adapters.Notifications.Infrastructure_Failed
+           (Identity.Adapters.Notifications.Infrastructure_Failure)
+         and then Identity.Adapters.Notifications.Delivery_Failed
+           (Identity.Adapters.Notifications.Rejected)
+         and then Identity.Adapters.Notifications.Delivery_Failed
+           (Identity.Adapters.Notifications.Unsupported_Channel)
+         and then Identity.Adapters.Notifications.Delivery_Failed
+           (Identity.Adapters.Notifications.Infrastructure_Failure)
+         and then Identity.Adapters.Notifications.Retryable_Delivery
+           (Identity.Adapters.Notifications.Infrastructure_Failure)
+         and then not Identity.Adapters.Notifications.Delivery_Failed
+           (Identity.Adapters.Notifications.Queued)
+         and then not Identity.Adapters.Notifications.Retryable_Delivery
+           (Identity.Adapters.Notifications.Rejected),
+         "IDENTITY-ADAPTER-NOTIFY-001 notification delivery status classification is explicit");
+
+      Assert
+        (Identity.Adapters.Event_Sinks.Publishable (Publication)
+         and then Identity.Adapters.Diagnostics.Accepts (Diagnostic_Submission)
+           = Identity.Adapters.Diagnostics.Redacted
+         and then Identity.Adapters.Transport_Context.Core_Neutral (Transport),
+         "IDENTITY-ADAPTER-SINK-001 event diagnostic and transport adapters preserve core boundaries");
+
+      Assert
+        (Identity.Adapters.Event_Sinks.Accepted_Status
+           (Identity.Adapters.Event_Sinks.Accepted)
+         and then Identity.Adapters.Event_Sinks.Retryable
+           (Identity.Adapters.Event_Sinks.Retryable_Failure)
+         and then Identity.Adapters.Event_Sinks.Permanent
+           (Identity.Adapters.Event_Sinks.Permanent_Failure)
+         and then Identity.Adapters.Event_Sinks.Publication_Failed
+           (Identity.Adapters.Event_Sinks.Retryable_Failure)
+         and then Identity.Adapters.Event_Sinks.Publication_Failed
+           (Identity.Adapters.Event_Sinks.Permanent_Failure)
+         and then not Identity.Adapters.Event_Sinks.Publication_Failed
+           (Identity.Adapters.Event_Sinks.Accepted)
+         and then Identity.Adapters.Event_Sinks.Admission_Accepted
+           (Identity.Adapters.Event_Sinks.Admit_For_Publication
+              (Publication, Event_Policy))
+         and then Identity.Adapters.Event_Sinks.Status_Rejected
+           (Identity.Adapters.Event_Sinks.Admit_For_Publication
+              (Failed_Publication, Event_Policy))
+         and then Identity.Adapters.Event_Sinks.Timing_Rejected
+           (Identity.Adapters.Event_Sinks.Admit_For_Publication
+              (Pre_Commit_Publication, Event_Policy))
+         and then Identity.Adapters.Event_Sinks.Policy_Rejected
+           (Identity.Adapters.Event_Sinks.Admit_For_Publication
+              (Publication, Invalid_Event_Policy))
+         and then Identity.Adapters.Diagnostics.Accepted_Status
+           (Identity.Adapters.Diagnostics.Accepted)
+         and then Identity.Adapters.Diagnostics.Redacted_Status
+           (Identity.Adapters.Diagnostics.Redacted)
+         and then Identity.Adapters.Diagnostics.Rejected_Status
+           (Identity.Adapters.Diagnostics.Rejected)
+         and then Identity.Adapters.Diagnostics.Sink_Received
+           (Identity.Adapters.Diagnostics.Accepted)
+         and then Identity.Adapters.Diagnostics.Sink_Received
+           (Identity.Adapters.Diagnostics.Redacted)
+         and then not Identity.Adapters.Diagnostics.Sink_Received
+           (Identity.Adapters.Diagnostics.Rejected),
+         "IDENTITY-ADAPTER-SINK-001 event publication admission and diagnostic "
+         & "status classification is explicit");
+
+      Assert
+        (Identity.Operations.Post_Commit.Ready_For_Release (Valid_Post_Commit)
+         and then Identity.Operations.Post_Commit.Has_Post_Commit_Work
+           (Valid_Post_Commit)
+         and then not Identity.Operations.Post_Commit.Ready_For_Release (Pre_Commit_Output)
+         and then not Identity.Operations.Post_Commit.Ready_For_Release (Secret_Delivery_Output)
+         and then not Identity.Operations.Post_Commit.Ready_For_Release (Mismatched_Output),
+         "post-commit output releases only counted safe after-commit handoffs");
+
+      Assert
+        (Valid_Admission.Ready
+         and then Identity.Operations.Post_Commit.Accepted (Valid_Admission)
+         and then Valid_Admission.Reason = Identity.Operations.Post_Commit.None
+         and then not Mismatched_Admission.Ready
+         and then Identity.Operations.Post_Commit.Rejected (Mismatched_Admission)
+         and then Mismatched_Admission.Reason =
+           Identity.Operations.Post_Commit.Count_Mismatch
+         and then Identity.Operations.Post_Commit.Count_Mismatch_Rejection
+           (Mismatched_Admission.Reason)
+         and then not Pre_Commit_Admission.Ready
+         and then Pre_Commit_Admission.Reason =
+           Identity.Operations.Post_Commit.Publication_Not_Post_Commit
+         and then Identity.Operations.Post_Commit.Publication_Timing_Rejection
+           (Pre_Commit_Admission.Reason)
+         and then Identity.Operations.Post_Commit.Safety_Rejection
+           (Pre_Commit_Admission.Reason)
+         and then not Secret_Delivery_Admission.Ready
+         and then Secret_Delivery_Admission.Reason =
+           Identity.Operations.Post_Commit.Unsafe_Notification
+         and then Identity.Operations.Post_Commit.Notification_Rejection
+           (Secret_Delivery_Admission.Reason)
+         and then Identity.Operations.Post_Commit.Safety_Rejection
+           (Secret_Delivery_Admission.Reason)
+         and then not Unsafe_One_Time_Admission.Ready
+         and then Unsafe_One_Time_Admission.Reason =
+           Identity.Operations.Post_Commit.Unsafe_One_Time_Output
+         and then Identity.Operations.Post_Commit.One_Time_Output_Rejection
+           (Unsafe_One_Time_Admission.Reason)
+         and then Identity.Operations.Post_Commit.Safety_Rejection
+           (Unsafe_One_Time_Admission.Reason)
+         and then not Identity.Operations.Post_Commit.Safety_Rejection
+           (Identity.Operations.Post_Commit.Count_Mismatch),
+         "post-commit release admission reports structured rejection reason");
+
+      Assert
+        (Identity.Operations.Post_Commit.Count_Mismatch_Rejection
+           (Identity.Operations.Post_Commit.Count_Mismatch)
+         and then not Identity.Operations.Post_Commit.Count_Mismatch_Rejection
+           (Identity.Operations.Post_Commit.None)
+         and then not Identity.Operations.Post_Commit.Safety_Rejection
+           (Identity.Operations.Post_Commit.Count_Mismatch)
+         and then Identity.Operations.Post_Commit.Publication_Timing_Rejection
+           (Identity.Operations.Post_Commit.Publication_Not_Post_Commit)
+         and then Identity.Operations.Post_Commit.Safety_Rejection
+           (Identity.Operations.Post_Commit.Publication_Not_Post_Commit)
+         and then Identity.Operations.Post_Commit.Notification_Rejection
+           (Identity.Operations.Post_Commit.Unsafe_Notification)
+         and then not Identity.Operations.Post_Commit.Notification_Rejection
+           (Identity.Operations.Post_Commit.Unsafe_One_Time_Output)
+         and then Identity.Operations.Post_Commit.One_Time_Output_Rejection
+           (Identity.Operations.Post_Commit.Unsafe_One_Time_Output)
+         and then Identity.Operations.Post_Commit.Safety_Rejection
+           (Identity.Operations.Post_Commit.Unsafe_One_Time_Output)
+         and then not Identity.Operations.Post_Commit.Safety_Rejection
+           (Identity.Operations.Post_Commit.None)
+         and then Identity.Operations.Post_Commit.Accepted
+           ((Ready => True, Reason => Identity.Operations.Post_Commit.None))
+         and then not Identity.Operations.Post_Commit.Accepted
+           ((Ready => True,
+             Reason => Identity.Operations.Post_Commit.Count_Mismatch))
+         and then Identity.Operations.Post_Commit.Rejected
+           ((Ready => False, Reason => Identity.Operations.Post_Commit.Count_Mismatch))
+         and then not Identity.Operations.Post_Commit.Rejected
+           ((Ready => True, Reason => Identity.Operations.Post_Commit.None)),
+         "post-commit release admission reason classifiers are explicit");
+   end Test_22_identity_protocol_test;
+
+   procedure Test_23_credential_password (T : in out AUnit.Test_Cases.Test_Case'Class) is
+      pragma Unreferenced (T);
+      Principal_View : constant Identity.Projections.Principals.Principal_Projection :=
+        (Id => P1,
+         Kind => Identity.Principals.Kinds.Human,
+         State => Identity.Principals.Definitions.Active,
+         Version => 0);
+      Retired_Principal_View : constant Identity.Projections.Principals.Principal_Projection :=
+        Identity.Projections.Principals.Summary
+          ((Id => P2,
+            Kind => Identity.Principals.Kinds.Service,
+            State => Identity.Principals.Definitions.Retired,
+            Version => 4));
+      Account_View : constant Identity.Projections.Accounts.Account_State_Projection :=
+        (Account => A1,
+         Principal => P1,
+         State => (Administrative => Identity.Accounts.States.Enabled,
+                   Lifecycle => Identity.Accounts.States.Active,
+                   Verification => Identity.Accounts.States.Verified,
+                   Lock_State => Identity.Accounts.States.Not_Locked,
+                   Requirements => (others => False),
+                   Recovery => (others => False)),
+         Version => 0);
+      Account_Record_View : constant Identity.Accounts.Definitions.Account_Record :=
+        (Id => A1,
+         Principal => P1,
+         State => (Administrative => Identity.Accounts.States.Enabled,
+                   Lifecycle => Identity.Accounts.States.Active,
+                   Verification => Identity.Accounts.States.Verified,
+                   Lock_State => Identity.Accounts.States.Not_Locked,
+                   Requirements => (others => False),
+                   Recovery => (others => False)),
+         Version => 5);
+      General_Account_Summary : constant Identity.Projections.Accounts.Account_State_Projection :=
+        Identity.Projections.Accounts.Summary (Account_Record_View);
+      Credential_View : constant Identity.Projections.Credentials.Credential_Projection :=
+        (Id => C1,
+         Principal => P1,
+         Kind => Identity.Identifiers.Registry.From_String ("credential.password"),
+         State => Identity.Credentials.States.Active,
+         Version => 0);
+      Credential_Record_View : constant Identity.Credentials.Definitions.Credential_Record :=
+        (Id => C1,
+         Principal => P1,
+         Kind => Identity.Credentials.Kinds.Password,
+         State => Identity.Credentials.States.Retired,
+         Version => 8);
+      General_Credential_Summary : constant Identity.Projections.Credentials.Credential_Projection :=
+        Identity.Projections.Credentials.Summary (Credential_Record_View);
+      Session_View : constant Identity.Projections.Sessions.Session_Summary_Projection :=
+        (Id => S1,
+         Family => F1,
+         Principal => P1,
+         Assurance => Identity.Assurance.Levels.Basic,
+         Attributes => (others => <>),
+         Created_At => 1,
+         Original_Authenticated_At => 1,
+         Primary_Authenticated_At => 1,
+         MFA_Completed_At => (Present => True, Value => 2),
+         Step_Up_At => (Present => True, Value => 3),
+         Last_Seen_At => 2,
+         Idle_Expires_At => (Present => True, Time_Point => 30),
+         Absolute_Expires_At => (Present => True, Time_Point => 300),
+         Remembered => False,
+         Generation => 0,
+         State => Identity.Sessions.Definitions.Active,
+         Verifier_Present => True,
+         Revision => 0);
+      Session_Record_View : constant Identity.Sessions.Definitions.Session_Record :=
+        (Id => S1,
+         Family => F1,
+         Principal => P1,
+         Credential => (Present => False),
+         External_Provider => (Present => False),
+         Public_Reference => Identity.Text.Bounded.From_String ("session.public.reference"),
+         Secret_Verifier => Identity.Text.Bounded.From_String ("session.verifier.envelope"),
+         Assurance => Identity.Assurance.Levels.Basic,
+         Attributes => (others => <>),
+         Created_At => 1,
+         Original_Authenticated_At => 1,
+         Primary_Authenticated_At => 1,
+         MFA_Completed_At => (Present => True, Value => 2),
+         Step_Up_At => (Present => True, Value => 3),
+         Last_Seen_At => 2,
+         Idle_Expires_At => (Present => True, Time_Point => 30),
+         Absolute_Expires_At => (Present => True, Time_Point => 300),
+         Remembered => False,
+         Generation => 0,
+         State => Identity.Sessions.Definitions.Active,
+         Version => 7);
+      Domain_Session_View : constant Identity.Sessions.Projections.Session_Summary_Projection :=
+        Identity.Sessions.Projections.Summary (Session_Record_View);
+      Authentication_View : constant Identity.Projections.Authentication.Authentication_Projection :=
+        (Status => Identity.Results.Succeeded,
+         Principal => (Present => True, Value => P1),
+         Authentication_Revision => 1,
+         Evidence_Revision => 1);
+      External_View : constant Identity.Projections.External_Bindings.External_Binding_Projection :=
+        (Id => EB1,
+         Principal => P1,
+         Provider => EP1,
+         Issuer => External_Issuer,
+         External_Subject => External_Subject,
+         State => Identity.External_Providers.Bindings.Active,
+         Created_At => 1,
+         Version => 0);
+      Event_View : constant Identity.Projections.Events.Event_Projection :=
+        (Id => E1,
+         Type_Id => Identity.Events.Types.Authentication_Succeeded,
+         Schema => 1,
+         Occurred_At => 1,
+         Recorded_At => 1,
+         Severity => Identity.Events.Envelopes.Informational,
+         Correlation => R1,
+         Operation => O1,
+         Actor => (Kind => Identity.Events.Envelopes.Authenticated_Principal,
+                   Principal => (Present => True, Value => P1)),
+         Subject => (Present => True, Value => P1),
+         Target => Identity.Text.Bounded.From_String ("identity.projection"),
+         Outcome => Identity.Events.Envelopes.Succeeded);
+      Unauthenticated_Event_View : constant Identity.Projections.Events.Event_Projection :=
+        (Id => E2,
+         Type_Id => Identity.Events.Types.Authentication_Rejected,
+         Schema => 1,
+         Occurred_At => 1,
+         Recorded_At => 1,
+         Severity => Identity.Events.Envelopes.Error,
+         Correlation => R1,
+         Operation => O1,
+         Actor => (Kind => Identity.Events.Envelopes.Unauthenticated,
+                   Principal => (Present => False)),
+         Subject => (Present => False),
+         Target => Identity.Text.Bounded.From_String ("identity.projection"),
+         Outcome => Identity.Events.Envelopes.Rejected);
+   begin
+      Assert
+        (Identity.Identifiers.Entities.To_String (Principal_View.Id)
+         = Identity.Identifiers.Entities.To_String (P1)
+         and then Identity.Projections.Principals.Active (Principal_View)
+         and then Identity.Projections.Principals.Retired (Retired_Principal_View)
+         and then Retired_Principal_View.Version = 4
+         and then Identity.Identifiers.Entities.To_String (Account_View.Principal)
+         = Identity.Identifiers.Entities.To_String (P1)
+         and then Identity.Projections.Accounts.Eligible (General_Account_Summary)
+         and then not Identity.Projections.Accounts.Ineligible
+           (General_Account_Summary)
+         and then not Identity.Projections.Accounts.Administratively_Restricted
+           (General_Account_Summary)
+         and then not Identity.Projections.Accounts.Requires_Credential_Action
+           (General_Account_Summary)
+         and then not Identity.Projections.Accounts.Recovery_Restricted
+           (General_Account_Summary)
+         and then not Identity.Projections.Accounts.Lock_Restricted
+           (General_Account_Summary)
+         and then General_Account_Summary.Version = 5
+         and then Identity.Credentials.States.Can_Authenticate (Credential_View.State)
+         and then Identity.Projections.Credentials.Can_Authenticate (Credential_View)
+         and then not Identity.Projections.Credentials.Can_Authenticate
+           (General_Credential_Summary)
+         and then Identity.Projections.Credentials.Terminal
+           (General_Credential_Summary)
+         and then General_Credential_Summary.Version = 8,
+         "identity projections expose bounded safe identity facts");
+      Assert
+        (Identity.Identifiers.Entities.To_String (Session_View.Principal)
+         = Identity.Identifiers.Entities.To_String (P1)
+         and then Identity.Identifiers.Entities.To_String (Domain_Session_View.Principal)
+           = Identity.Identifiers.Entities.To_String (P1)
+         and then Domain_Session_View.Revision = 7
+         and then Domain_Session_View.Verifier_Present
+         and then Identity.Projections.Sessions.Lookup_Usable
+           (Domain_Session_View, 2)
+         and then not Identity.Projections.Sessions.Lookup_Usable
+           (Domain_Session_View, 301)
+         and then not Identity.Projections.Sessions.Terminal
+           (Domain_Session_View)
+         and then Identity.Projections.Sessions.Terminal
+           (Identity.Projections.Sessions.Summary
+              ((Session_Record_View with delta
+                   State => Identity.Sessions.Definitions.Revoked)))
+         and then Domain_Session_View.Original_Authenticated_At = 1
+         and then Domain_Session_View.Primary_Authenticated_At = 1
+         and then Domain_Session_View.MFA_Completed_At.Present
+         and then Domain_Session_View.MFA_Completed_At.Value = 2
+         and then Domain_Session_View.Step_Up_At.Present
+         and then Domain_Session_View.Step_Up_At.Value = 3
+         and then Authentication_View.Principal.Present
+         and then Identity.Identifiers.Entities.To_String (External_View.Provider)
+         = Identity.Identifiers.Entities.To_String (EP1)
+         and then Event_View.Actor.Principal.Present
+         and then Identity.Projections.Events.Actor_Is_Authenticated (Event_View)
+         and then not Identity.Projections.Events.Actor_Is_Unauthenticated (Event_View)
+         and then Identity.Projections.Events.Has_Subject_Principal (Event_View)
+         and then Identity.Projections.Events.Successful (Event_View)
+         and then not Identity.Projections.Events.Rejected (Event_View)
+         and then not Identity.Projections.Events.Failed (Event_View)
+         and then Identity.Projections.Events.Actor_Matches_Subject (Event_View)
+         and then not Identity.Projections.Events.Requires_Operational_Attention
+           (Event_View)
+         and then not Identity.Projections.Events.High_Severity (Event_View)
+         and then Identity.Projections.Events.Actor_Is_Unauthenticated
+           (Unauthenticated_Event_View)
+         and then not Identity.Projections.Events.Actor_Is_Authenticated
+           (Unauthenticated_Event_View)
+         and then not Identity.Projections.Events.Has_Subject_Principal
+           (Unauthenticated_Event_View)
+         and then not Identity.Projections.Events.Successful
+           (Unauthenticated_Event_View)
+         and then Identity.Projections.Events.Rejected
+           (Unauthenticated_Event_View)
+         and then not Identity.Projections.Events.Failed
+           (Unauthenticated_Event_View)
+         and then not Identity.Projections.Events.Actor_Matches_Subject
+           (Unauthenticated_Event_View)
+         and then Identity.Projections.Events.Requires_Operational_Attention
+           (Unauthenticated_Event_View)
+         and then Identity.Projections.Events.High_Severity
+           (Unauthenticated_Event_View),
+         "IDENTITY-PROJECTION-001 projections exclude secret verifier fields through session domain projections");
+
+      Assert
+        (Identity.Identifiers.Entities.To_String (General_Credential_Summary.Id)
+           = Identity.Identifiers.Entities.To_String (Credential_Record_View.Id)
+         and then Identity.Identifiers.Entities.To_String
+           (General_Credential_Summary.Principal)
+           = Identity.Identifiers.Entities.To_String (Credential_Record_View.Principal)
+         and then Identity.Identifiers.Registry.Image (General_Credential_Summary.Kind)
+           = Identity.Identifiers.Registry.Image (Credential_Record_View.Kind)
+         and then General_Credential_Summary.State = Credential_Record_View.State
+         and then General_Credential_Summary.Version = Credential_Record_View.Version
+         and then Identity.Projections.Credentials.Terminal
+           (General_Credential_Summary)
+         and then not Identity.Projections.Credentials.Can_Authenticate
+           (General_Credential_Summary)
+         and then Identity.Projections.Credentials.Can_Authenticate
+           (Identity.Projections.Credentials.Summary
+              ((Credential_Record_View with delta
+                  State => Identity.Credentials.States.Active)))
+         and then not Identity.Projections.Credentials.Terminal
+           (Identity.Projections.Credentials.Summary
+              ((Credential_Record_View with delta
+                  State => Identity.Credentials.States.Active)))
+         and then Identity.Projections.Credentials.Terminal
+           (Identity.Projections.Credentials.Summary
+              ((Credential_Record_View with delta
+                  State => Identity.Credentials.States.Revoked))),
+         "credential projection summary conversion exposes lifecycle facts only");
+
+      Assert
+        (Identity.Identifiers.Entities.To_String (Retired_Principal_View.Id)
+           = Identity.Identifiers.Entities.To_String (P2)
+         and then not Identity.Principals.Lifecycle.Active
+           (Retired_Principal_View.State)
+         and then Retired_Principal_View.Version = 4
+         and then Identity.Projections.Principals.Retired (Retired_Principal_View)
+         and then not Identity.Projections.Principals.Active (Retired_Principal_View)
+         and then Identity.Projections.Principals.Active (Principal_View)
+         and then Identity.Identifiers.Entities.To_String
+           (General_Account_Summary.Account)
+           = Identity.Identifiers.Entities.To_String (Account_Record_View.Id)
+         and then Identity.Identifiers.Entities.To_String
+           (General_Account_Summary.Principal)
+           = Identity.Identifiers.Entities.To_String (Account_Record_View.Principal)
+         and then General_Account_Summary.Version = Account_Record_View.Version
+         and then Identity.Projections.Accounts.Evaluate (General_Account_Summary)
+           = Identity.Accounts.States.Eligible
+         and then Identity.Projections.Accounts.Eligible (General_Account_Summary)
+         and then Identity.Projections.Accounts.Administratively_Restricted
+           (Identity.Projections.Accounts.Summary
+              ((Account_Record_View with delta
+                  State => (Account_Record_View.State with delta
+                              Administrative =>
+                                Identity.Accounts.States.Suspended))))
+         and then Identity.Projections.Accounts.Lock_Restricted
+           (Identity.Projections.Accounts.Summary
+              ((Account_Record_View with delta
+                  State => (Account_Record_View.State with delta
+                              Lock_State =>
+                                Identity.Accounts.States.Temporarily_Locked)))),
+         "principal and account projection summary conversions expose lifecycle and "
+         & "eligibility facts only");
+
+      Assert
+        (Identity.Projections.Events.Actor_Is_Authenticated (Event_View)
+         and then not Identity.Projections.Events.Actor_Is_Unauthenticated (Event_View)
+         and then Identity.Projections.Events.Has_Subject_Principal (Event_View)
+         and then Identity.Projections.Events.Successful (Event_View)
+         and then not Identity.Projections.Events.High_Severity (Event_View)
+         and then Identity.Projections.Events.Actor_Is_Unauthenticated
+           (Unauthenticated_Event_View)
+         and then not Identity.Projections.Events.Actor_Is_Authenticated
+           (Unauthenticated_Event_View)
+         and then not Identity.Projections.Events.Has_Subject_Principal
+           (Unauthenticated_Event_View)
+         and then not Identity.Projections.Events.Successful
+           (Unauthenticated_Event_View)
+         and then Identity.Projections.Events.High_Severity
+           (Unauthenticated_Event_View)
+         and then Identity.Projections.Events.High_Severity
+           (Identity.Projections.Events.Event_Projection'
+              (Event_View with delta
+                 Severity => Identity.Events.Envelopes.Critical))
+         and then not Identity.Projections.Events.Successful
+           (Identity.Projections.Events.Event_Projection'
+              (Event_View with delta
+                 Outcome => Identity.Events.Envelopes.Failed)),
+         "event projection predicates classify actor subject outcome and severity");
+
+      Assert
+        (Identity.Projections.Events.Rejected (Unauthenticated_Event_View)
+         and then not Identity.Projections.Events.Rejected (Event_View)
+         and then Identity.Projections.Events.Failed
+           (Identity.Projections.Events.Event_Projection'
+              (Event_View with delta
+                 Outcome => Identity.Events.Envelopes.Failed))
+         and then not Identity.Projections.Events.Failed (Unauthenticated_Event_View)
+         and then Identity.Projections.Events.Actor_Matches_Subject (Event_View)
+         and then not Identity.Projections.Events.Actor_Matches_Subject
+           (Identity.Projections.Events.Event_Projection'
+              (Event_View with delta Subject => (Present => True, Value => P2)))
+         and then not Identity.Projections.Events.Actor_Matches_Subject
+           (Unauthenticated_Event_View)
+         and then Identity.Projections.Events.Requires_Operational_Attention
+           (Identity.Projections.Events.Event_Projection'
+              (Event_View with delta
+                 Outcome => Identity.Events.Envelopes.Failed))
+         and then Identity.Projections.Events.Requires_Operational_Attention
+           (Identity.Projections.Events.Event_Projection'
+              (Event_View with delta
+                 Outcome => Identity.Events.Envelopes.Conflict))
+         and then Identity.Projections.Events.Requires_Operational_Attention
+           (Unauthenticated_Event_View)
+         and then not Identity.Projections.Events.Requires_Operational_Attention
+           (Event_View),
+         "event projection predicates classify rejected failed actor-subject and "
+         & "attention outcomes");
+   end Test_23_credential_password;
+
+   procedure Test_24_identity_test_attribute (T : in out AUnit.Test_Cases.Test_Case'Class) is
+      pragma Unreferenced (T);
+      Unset_Attribute_Key : Identity.Identifiers.Registry.Registry_Id;
+      Attribute_Key : constant Identity.Identifiers.Registry.Registry_Id :=
+        Identity.Identifiers.Registry.From_String ("identity.test.attribute");
+      Invalid_Attribute_Key : constant Identity.Identifiers.Registry.Registry_Id :=
+        Identity.Identifiers.Registry.From_String ("Identity.Test.Attribute");
+      Public_Attribute : constant Identity.Events.Attributes.Attribute_Result :=
+        Identity.Events.Attributes.From_Text
+          (Attribute_Key,
+           Identity.Events.Classification.Public,
+           Identity.Text.Bounded.From_String ("visible"));
+      Unset_Key_Attribute : constant Identity.Events.Attributes.Attribute_Result :=
+        Identity.Events.Attributes.From_Text
+          (Unset_Attribute_Key,
+           Identity.Events.Classification.Public,
+           Identity.Text.Bounded.From_String ("visible"));
+      Invalid_Key_Attribute : constant Identity.Events.Attributes.Attribute_Result :=
+        Identity.Events.Attributes.From_Text
+          (Invalid_Attribute_Key,
+           Identity.Events.Classification.Public,
+           Identity.Text.Bounded.From_String ("visible"));
+      Rejected_Attribute : constant Identity.Events.Attributes.Attribute_Result :=
+        Identity.Events.Attributes.From_Text
+          (Attribute_Key,
+           Identity.Events.Classification.Secret,
+           Identity.Text.Bounded.From_String ("CANARY-attribute-secret"));
+      Diagnostic : constant Identity.Diagnostics.Diagnostic_Record :=
+        (Id => Identity.Identifiers.Registry.From_String ("identity.diagnostic.repository"),
+         Error =>
+           (Category => Identity.Errors.Operational_Failure,
+            Retry => Identity.Errors.Retry_Same_Request,
+            Cause => Identity.Errors.Repository,
+            Operation_Set => True,
+            Correlation_Set => True),
+         Message => Identity.Text.Bounded.From_String ("identity.repository.failure"));
+      Success_Diagnostic : constant Identity.Diagnostics.Diagnostic_Record :=
+        (Id => Identity.Identifiers.Registry.From_String ("identity.diagnostic.success"),
+         Error =>
+           (Category => Identity.Errors.Success,
+            Retry => Identity.Errors.Do_Not_Retry,
+            Cause => Identity.Errors.Caller_Input,
+            Operation_Set => True,
+            Correlation_Set => True),
+         Message => Identity.Text.Bounded.From_String ("identity.success.ignored"));
+      Link : constant Identity.Correlation.Correlation_Link :=
+        (Operation => O1,
+         Correlation => R1,
+         Causation => (Present => False));
+      Event : constant Identity.Events.Envelopes.Event_Envelope :=
+        (Id => E1,
+         Type_Id => Identity.Events.Types.Authentication_Rejected,
+         Schema => 1,
+         Occurred_At => 70,
+         Recorded_At => 70,
+         Severity => Identity.Events.Envelopes.Warning,
+         Correlation => R1,
+         Operation => O1,
+         Actor => (Kind => Identity.Events.Envelopes.Unauthenticated,
+                   Principal => (Present => False)),
+         Subject => (Present => False),
+         Target => Identity.Text.Bounded.From_String ("identity.audit"),
+         Outcome => Identity.Events.Envelopes.Rejected);
+      Audit_Record : constant Identity.Audit.Records.Audit_Record :=
+        (Id => E1,
+         Event => Event,
+         Durability => Identity.Audit.Durable,
+         Integrity => Identity.Audit.Records.Verified);
+      Event_Policy : constant Identity.Events.Policies.Event_Policy :=
+        (Maximum_Attributes => Identity.Limits.Max_Event_Attributes,
+         Secret_Event_Attributes_Allowed => False,
+         Derived_Event_Attributes_Allowed => False,
+         Post_Commit_Publication_Only => True);
+      Invalid_Event_Policy : constant Identity.Events.Policies.Event_Policy :=
+        (Maximum_Attributes => Identity.Limits.Max_Event_Attributes + 1,
+         Secret_Event_Attributes_Allowed => True,
+         Derived_Event_Attributes_Allowed => False,
+         Post_Commit_Publication_Only => False);
+      Secret_Event_Policy : constant Identity.Events.Policies.Event_Policy :=
+        (Maximum_Attributes => Identity.Limits.Max_Event_Attributes,
+         Secret_Event_Attributes_Allowed => True,
+         Derived_Event_Attributes_Allowed => False,
+         Post_Commit_Publication_Only => True);
+      Derived_Secret_Event_Policy : constant Identity.Events.Policies.Event_Policy :=
+        (Maximum_Attributes => Identity.Limits.Max_Event_Attributes,
+         Secret_Event_Attributes_Allowed => False,
+         Derived_Event_Attributes_Allowed => True,
+         Post_Commit_Publication_Only => True);
+      Early_Publication_Event_Policy : constant Identity.Events.Policies.Event_Policy :=
+        (Maximum_Attributes => Identity.Limits.Max_Event_Attributes,
+         Secret_Event_Attributes_Allowed => False,
+         Derived_Event_Attributes_Allowed => False,
+         Post_Commit_Publication_Only => False);
+      Policy_Public_Attribute : constant Identity.Events.Attributes.Attribute_Result :=
+        Identity.Events.Attributes.From_Text
+          (Attribute_Key,
+           Identity.Events.Classification.Public,
+           Identity.Text.Bounded.From_String ("visible"),
+           Event_Policy);
+      Policy_Rejected_Attribute : constant Identity.Events.Attributes.Attribute_Result :=
+        Identity.Events.Attributes.From_Text
+          (Attribute_Key,
+           Identity.Events.Classification.Public,
+           Identity.Text.Bounded.From_String ("visible"),
+           Invalid_Event_Policy);
+      Policy_Secret_Attribute : constant Identity.Events.Attributes.Attribute_Result :=
+        Identity.Events.Attributes.From_Text
+          (Attribute_Key,
+           Identity.Events.Classification.Secret,
+           Identity.Text.Bounded.From_String ("CANARY-policy-secret"),
+           Invalid_Event_Policy);
+      Policy_Integer_Attribute : constant Identity.Events.Attributes.Attribute_Result :=
+        Identity.Events.Attributes.From_Integer
+          (Attribute_Key,
+           Identity.Events.Classification.Operational,
+           42,
+           Event_Policy);
+      Policy_Boolean_Attribute : constant Identity.Events.Attributes.Attribute_Result :=
+        Identity.Events.Attributes.From_Boolean
+          (Attribute_Key,
+           Identity.Events.Classification.Personal,
+           True,
+           Event_Policy);
+      Policy_Rejected_Integer : constant Identity.Events.Attributes.Attribute_Result :=
+        Identity.Events.Attributes.From_Integer
+          (Attribute_Key,
+           Identity.Events.Classification.Operational,
+           42,
+           Invalid_Event_Policy);
+      Policy_Rejected_Boolean : constant Identity.Events.Attributes.Attribute_Result :=
+        Identity.Events.Attributes.From_Boolean
+          (Attribute_Key,
+           Identity.Events.Classification.Personal,
+           True,
+           Invalid_Event_Policy);
+      Policy_Invalid_Key_Attribute : constant Identity.Events.Attributes.Attribute_Result :=
+        Identity.Events.Attributes.From_Boolean
+          (Invalid_Attribute_Key,
+           Identity.Events.Classification.Public,
+           True,
+           Event_Policy);
+      Redacted_Text : constant Identity.Text.Bounded.Bounded_Text :=
+        Identity.Redaction.Public_Image
+          (Identity.Events.Classification.Sensitive,
+           Identity.Text.Bounded.From_String ("CANARY-redaction-secret"));
+      Audit_Policy : constant Identity.Audit.Policies.Audit_Policy :=
+        (Sensitive_Events => Identity.Audit.Policies.Required,
+         Personal_Events => Identity.Audit.Policies.Required,
+         Integrity_Required => True);
+      Invalid_Audit_Policy : constant Identity.Audit.Policies.Audit_Policy :=
+        (Sensitive_Events => Identity.Audit.Policies.Optional,
+         Personal_Events => Identity.Audit.Policies.Required,
+         Integrity_Required => False);
+      Personal_Optional_Audit_Policy : constant Identity.Audit.Policies.Audit_Policy :=
+        (Sensitive_Events => Identity.Audit.Policies.Required,
+         Personal_Events => Identity.Audit.Policies.Optional,
+         Integrity_Required => True);
+      Integrity_Optional_Audit_Policy : constant Identity.Audit.Policies.Audit_Policy :=
+        (Sensitive_Events => Identity.Audit.Policies.Required,
+         Personal_Events => Identity.Audit.Policies.Required,
+         Integrity_Required => False);
+      Session_Rotation_Schema : constant Identity.Events.Schemas.Event_Type_Registration :=
+        Identity.Events.Schemas.Registration_For (Identity.Events.Types.Session_Rotated);
+      Unknown_Schema : constant Identity.Events.Schemas.Event_Type_Registration :=
+        Identity.Events.Schemas.Registration_For
+          (Identity.Identifiers.Registry.From_String ("identity.test.unknown-event"));
+   begin
+      Assert
+        (Public_Attribute.Status = Identity.Events.Attributes.Accepted
+         and then Identity.Events.Attributes.Accepted_Status
+           (Public_Attribute.Status)
+         and then Public_Attribute.Value.Kind = Identity.Events.Attributes.Text_Value
+         and then Unset_Key_Attribute.Status =
+           Identity.Events.Attributes.Rejected_Key
+         and then Identity.Events.Attributes.Key_Rejected
+           (Unset_Key_Attribute.Status)
+         and then Invalid_Key_Attribute.Status =
+           Identity.Events.Attributes.Rejected_Key
+         and then Rejected_Attribute.Status = Identity.Events.Attributes.Rejected_Class
+         and then Identity.Events.Attributes.Class_Rejected
+           (Rejected_Attribute.Status)
+         and then Identity.Events.Attributes.Attribute_Rejected
+           (Rejected_Attribute.Status)
+         and then Identity.Events.Policies.Valid (Event_Policy)
+         and then Identity.Events.Policies.Validate (Event_Policy)
+           = Identity.Events.Policies.Event_Policy_Valid
+         and then Identity.Events.Policies.Validation_Accepted
+           (Identity.Events.Policies.Validate (Event_Policy))
+         and then Identity.Events.Policies.Validate (Invalid_Event_Policy)
+           = Identity.Events.Policies.Event_Maximum_Attributes_Too_High
+         and then Identity.Events.Policies.Attribute_Capacity_Rejected
+           (Identity.Events.Policies.Validate (Invalid_Event_Policy))
+         and then Identity.Events.Policies.Validate (Secret_Event_Policy)
+           = Identity.Events.Policies.Event_Secret_Attributes_Allowed
+         and then Identity.Events.Policies.Secret_Attribute_Rejected
+           (Identity.Events.Policies.Validate (Secret_Event_Policy))
+         and then Identity.Events.Policies.Validate (Derived_Secret_Event_Policy)
+           = Identity.Events.Policies.Event_Derived_Secret_Attributes_Allowed
+         and then Identity.Events.Policies.Secret_Attribute_Rejected
+           (Identity.Events.Policies.Validate (Derived_Secret_Event_Policy))
+         and then Identity.Events.Policies.Validate (Early_Publication_Event_Policy)
+           = Identity.Events.Policies.Event_Publication_Before_Commit_Allowed
+         and then Identity.Events.Policies.Publication_Timing_Rejected
+           (Identity.Events.Policies.Validate (Early_Publication_Event_Policy))
+         and then not Identity.Events.Policies.Valid (Invalid_Event_Policy)
+         and then not Identity.Events.Policies.Attribute_Class_Allowed
+           (Event_Policy, Identity.Events.Classification.Secret),
+         "IDENTITY-EVENT-002 ordinary event attributes reject invalid keys and secret classes");
+
+      Assert
+        (Policy_Public_Attribute.Status = Identity.Events.Attributes.Accepted
+         and then Policy_Rejected_Attribute.Status =
+           Identity.Events.Attributes.Rejected_Policy
+         and then Identity.Events.Attributes.Policy_Rejected
+           (Policy_Rejected_Attribute.Status)
+         and then Policy_Secret_Attribute.Status =
+           Identity.Events.Attributes.Rejected_Policy
+         and then Policy_Integer_Attribute.Status = Identity.Events.Attributes.Accepted
+         and then Policy_Integer_Attribute.Value.Kind =
+           Identity.Events.Attributes.Integer_Value
+         and then Policy_Boolean_Attribute.Status = Identity.Events.Attributes.Accepted
+         and then Policy_Boolean_Attribute.Value.Kind =
+           Identity.Events.Attributes.Boolean_Value
+         and then Policy_Rejected_Integer.Status =
+           Identity.Events.Attributes.Rejected_Policy
+         and then Policy_Rejected_Boolean.Status =
+           Identity.Events.Attributes.Rejected_Policy
+         and then Policy_Invalid_Key_Attribute.Status =
+           Identity.Events.Attributes.Rejected_Key,
+         "IDENTITY-EVENT-002 event attribute policy gate covers all value kinds");
+
+      Assert
+        (Identity.Events.Envelopes.Low_Severity
+           (Identity.Events.Envelopes.Informational)
+         and then Identity.Events.Envelopes.Warning_Severity
+           (Identity.Events.Envelopes.Warning)
+         and then Identity.Events.Envelopes.High_Severity
+           (Identity.Events.Envelopes.Error)
+         and then Identity.Events.Envelopes.Critical_Severity
+           (Identity.Events.Envelopes.Critical)
+         and then Identity.Events.Envelopes.Succeeded_Outcome
+           (Identity.Events.Envelopes.Succeeded)
+         and then Identity.Events.Envelopes.Rejected_Outcome
+           (Identity.Events.Envelopes.Rejected)
+         and then Identity.Events.Envelopes.Conflict_Outcome
+           (Identity.Events.Envelopes.Conflict)
+         and then Identity.Events.Envelopes.Failed_Outcome
+           (Identity.Events.Envelopes.Failed)
+         and then Identity.Events.Envelopes.Requires_Operational_Attention
+           (Identity.Events.Envelopes.Conflict)
+         and then Identity.Events.Envelopes.Unauthenticated_Actor
+           (Identity.Events.Envelopes.Unauthenticated)
+         and then Identity.Events.Envelopes.Authenticated_Actor
+           (Identity.Events.Envelopes.Service_Principal)
+         and then Identity.Events.Envelopes.Human_Actor
+           (Identity.Events.Envelopes.Authenticated_Principal)
+         and then Identity.Events.Envelopes.Service_Actor
+           (Identity.Events.Envelopes.Service_Principal)
+         and then Identity.Events.Envelopes.System_Actor
+           (Identity.Events.Envelopes.System_Principal),
+         "IDENTITY-EVENT-001 event envelope severity outcome and actor classifiers are explicit");
+
+      Assert
+        (Identity.Identifiers.Registry.Image (Identity.Events.Types.Session_Created)
+         = "identity.session.created"
+         and then Identity.Identifiers.Registry.Image
+           (Identity.Events.Types.Password_Reset_Requested)
+         = "identity.password.reset.requested"
+         and then Identity.Identifiers.Registry.Image
+           (Identity.Events.Types.TOTP_Replay_Detected)
+         = "identity.totp.replay-detected",
+         "IDENTITY-EVENT-002 expanded V1 event constants remain public");
+
+      Assert
+        (Identity.Events.Schemas.Known (Identity.Events.Types.Session_Rotated)
+         and then Identity.Events.Schemas.Is_Active (Session_Rotation_Schema.Schema)
+         and then Positive (Session_Rotation_Schema.Schema.Version) = 1
+         and then Session_Rotation_Schema.Class = Identity.Events.Classification.Sensitive
+         and then Identity.Events.Schemas.Requires_Mandatory_Audit
+           (Identity.Events.Types.Session_Rotated)
+         and then not Identity.Events.Schemas.Known
+           (Identity.Identifiers.Registry.From_String ("identity.test.unknown-event"))
+         and then not Identity.Events.Schemas.Is_Active (Unknown_Schema.Schema),
+         "IDENTITY-EVENT-001 event schema registry distinguishes known V1 events");
+
+      Assert
+        (Identity.Text.Bounded.Image (Redacted_Text) = "[identity-redacted]"
+         and then Identity.Diagnostics.Failure_Diagnostic (Diagnostic)
+         and then not Identity.Diagnostics.Success_Diagnostic (Diagnostic)
+         and then Identity.Diagnostics.Success_Diagnostic (Success_Diagnostic)
+         and then not Identity.Diagnostics.Failure_Diagnostic (Success_Diagnostic)
+         and then Identity.Text.Bounded.Image
+           (Identity.Diagnostics.Safe_Image (Diagnostic)) = "identity.repository.failure"
+         and then Identity.Text.Bounded.Image
+           (Identity.Diagnostics.Safe_Image (Success_Diagnostic))
+           = "identity.diagnostic.ok"
+         and then not Identity.Correlation.Has_Causation (Link),
+         "IDENTITY-DIAGNOSTIC-001 redaction diagnostics and correlation stay bounded");
+
+      Assert
+        (Identity.Audit.Policies.Requirement_For (Identity.Events.Classification.Sensitive)
+           = Identity.Audit.Policies.Required
+         and then Identity.Audit.Policies.Requirement_For (Identity.Events.Classification.Personal)
+           = Identity.Audit.Policies.Required
+         and then Identity.Audit.Policies.Requirement_For
+           (Audit_Policy, Identity.Events.Classification.Public)
+           = Identity.Audit.Policies.Optional
+         and then Identity.Audit.Policies.Audit_Required
+           (Audit_Policy, Identity.Events.Classification.Sensitive)
+         and then Identity.Audit.Policies.Audit_Required
+           (Audit_Policy, Identity.Events.Classification.Personal)
+         and then not Identity.Audit.Policies.Audit_Required
+           (Audit_Policy, Identity.Events.Classification.Public)
+         and then not Identity.Audit.Policies.Audit_Required
+           (Invalid_Audit_Policy, Identity.Events.Classification.Sensitive)
+         and then Identity.Audit.Policies.Valid (Audit_Policy)
+         and then Identity.Audit.Policies.Validate (Audit_Policy)
+           = Identity.Audit.Policies.Audit_Policy_Valid
+         and then Identity.Audit.Policies.Validation_Accepted
+           (Identity.Audit.Policies.Validate (Audit_Policy))
+         and then Identity.Audit.Policies.Validate (Invalid_Audit_Policy)
+           = Identity.Audit.Policies.Audit_Sensitive_Events_Not_Required
+         and then Identity.Audit.Policies.Requirement_Rejected
+           (Identity.Audit.Policies.Validate (Invalid_Audit_Policy))
+         and then not Identity.Audit.Policies.Valid (Invalid_Audit_Policy)
+         and then Identity.Audit.Policies.Validate (Personal_Optional_Audit_Policy)
+           = Identity.Audit.Policies.Audit_Personal_Events_Not_Required
+         and then Identity.Audit.Policies.Requirement_Rejected
+           (Identity.Audit.Policies.Validate (Personal_Optional_Audit_Policy))
+         and then Identity.Audit.Policies.Validate (Integrity_Optional_Audit_Policy)
+           = Identity.Audit.Policies.Audit_Integrity_Not_Required
+         and then Identity.Audit.Policies.Integrity_Rejected
+           (Identity.Audit.Policies.Validate (Integrity_Optional_Audit_Policy))
+         and then Identity.Audit.Integrity.Verified (Audit_Record.Integrity)
+         and then Identity.Audit.Integrity.Not_Configured
+           (Identity.Audit.Records.Not_Configured)
+         and then Identity.Audit.Integrity.Failed (Identity.Audit.Records.Failed)
+         and then Identity.Audit.Integrity.Acceptable (Audit_Record.Integrity)
+         and then not Identity.Audit.Integrity.Acceptable (Identity.Audit.Records.Failed),
+         "IDENTITY-AUDIT-001 durable audit records expose explicit integrity state");
+   end Test_24_identity_test_attribute;
+
+   procedure Test_25_identity_service_api_key (T : in out AUnit.Test_Cases.Test_Case'Class) is
+      pragma Unreferenced (T);
+      Service_Principal : constant Identity.Service_Principals.Service_Principal_Record :=
+        (Id => P2,
+         Kind => Identity.Principals.Kinds.Service,
+         Version => 0);
+      Service_Credential : constant Identity.Service_Credentials.Service_Credential_Record :=
+        (Id => C2,
+         Principal => P2,
+         Class_Id => Identity.Identifiers.Registry.From_String ("identity.service.api-key"),
+         Public_Label => Identity.Text.Bounded.From_String ("service-key"),
+         Secret_Verifier => Identity.Text.Bounded.From_String ("service-verifier"),
+         State => Identity.Credentials.States.Active,
+         Version => 0);
+      Empty_Verifier_Service_Credential : constant Identity.Service_Credentials.Service_Credential_Record :=
+        (Id => C3,
+         Principal => P2,
+         Class_Id => Identity.Identifiers.Registry.From_String ("identity.service.api-key"),
+         Public_Label => Identity.Text.Bounded.From_String ("empty-service-key"),
+         Secret_Verifier => Identity.Text.Bounded.From_String (""),
+         State => Identity.Credentials.States.Active,
+         Version => 0);
+      System_Actor : constant Identity.System_Actors.System_Actor_Record :=
+        (Principal => P3,
+         Kind => Identity.Principals.Kinds.System);
+      TOTP_Method : constant Identity.Multi_Factor.Methods.Method_Descriptor :=
+        (Id => Identity.Identifiers.Registry.From_String ("identity.mfa.totp"),
+         Category => Identity.Authentication.Evidence.Possession,
+         Active => True);
+      Recovery_Method : constant Identity.Multi_Factor.Methods.Method_Descriptor :=
+        (Id => Identity.Identifiers.Registry.From_String ("identity.mfa.recovery-code"),
+         Category => Identity.Authentication.Evidence.Recovery,
+         Active => True);
+      MFA_Policy : constant Identity.Multi_Factor.Policies.MFA_Policy :=
+        (Maximum_Challenges => 2,
+         Maximum_Attempts => 3,
+         Alternative_Methods_Allowed => True);
+      Zero_Challenge_MFA_Policy : constant Identity.Multi_Factor.Policies.MFA_Policy :=
+        (Maximum_Challenges => 0,
+         Maximum_Attempts => 3,
+         Alternative_Methods_Allowed => True);
+      Zero_Attempt_MFA_Policy : constant Identity.Multi_Factor.Policies.MFA_Policy :=
+        (Maximum_Challenges => 2,
+         Maximum_Attempts => 0,
+         Alternative_Methods_Allowed => True);
+      Enrollment : constant Identity.Multi_Factor.Enrollment.Enrollment_Record :=
+        (Credential => C4,
+         Principal => P1,
+         State => Identity.Multi_Factor.Enrollment.Proof_Accepted,
+         Created_At => 80,
+         Version => 0);
+      Session_For_Step_Up : constant Identity.Sessions.Definitions.Session_Record :=
+        (Id => S1,
+         Family => F1,
+         Principal => P1,
+         Credential => (Present => True, Value => C1),
+         External_Provider => (Present => False),
+         Public_Reference => Identity.Text.Bounded.From_String ("mfa-session-ref"),
+         Secret_Verifier => Identity.Text.Bounded.From_String ("mfa-session-verifier"),
+         Assurance => Identity.Assurance.Levels.Basic,
+         Attributes => (others => <>),
+         Created_At => 80,
+         Original_Authenticated_At => 80,
+         Primary_Authenticated_At => 80,
+         MFA_Completed_At => (Present => False),
+         Step_Up_At => (Present => False),
+         Last_Seen_At => 80,
+         Idle_Expires_At => (Present => True, Time_Point => 120),
+         Absolute_Expires_At => (Present => True, Time_Point => 200),
+         Remembered => False,
+         Generation => 4,
+         State => Identity.Sessions.Definitions.Active,
+         Version => 0);
+      Step_Up_Binding : constant Identity.Multi_Factor.Step_Up.Step_Up_Binding :=
+        (Session => S1,
+         Principal => P1,
+         Family => F1,
+         Generation => 4);
+   begin
+      Assert
+        (Identity.Service_Principals.Is_Service (Service_Principal)
+         and then Identity.Principals.Kinds.Service_Principal
+           (Service_Principal.Kind)
+         and then not Identity.Principals.Kinds.Human_Principal
+           (Service_Principal.Kind)
+         and then Identity.Service_Credentials.Can_Authenticate (Service_Credential)
+         and then (Identity.Service_Credentials.Admission (Service_Credential)
+           = Identity.Service_Credentials.Service_Credential_Admitted)
+         and then Identity.Service_Credentials.Admission_Accepted
+           (Identity.Service_Credentials.Admission (Service_Credential))
+         and then not Identity.Service_Credentials.Admission_Rejected
+           (Identity.Service_Credentials.Admission (Service_Credential))
+         and then not Identity.Service_Credentials.No_Mutation
+           (Identity.Service_Credentials.Admission (Service_Credential))
+         and then not Identity.Service_Credentials.Can_Authenticate
+           (Empty_Verifier_Service_Credential)
+         and then (Identity.Service_Credentials.Admission
+           (Empty_Verifier_Service_Credential)
+           = Identity.Service_Credentials.Service_Credential_Verifier_Missing)
+         and then Identity.Service_Credentials.Admission_Rejected
+           (Identity.Service_Credentials.Admission
+              (Empty_Verifier_Service_Credential))
+         and then Identity.Service_Credentials.Verifier_Missing_Rejection
+           (Identity.Service_Credentials.Admission
+              (Empty_Verifier_Service_Credential))
+         and then Identity.Service_Credentials.No_Mutation
+           (Identity.Service_Credentials.Admission
+              (Empty_Verifier_Service_Credential)),
+         "IDENTITY-SERVICE-001 service principals require verifier-backed credentials");
+
+      Assert
+        (Identity.Service_Credentials.Can_Authenticate
+           (Identity.Service_Credentials.Summary (Service_Credential))
+         and then Identity.Service_Credentials.Has_Public_Label
+           (Identity.Service_Credentials.Summary (Service_Credential))
+         and then Identity.Service_Credentials.Has_Credential_Class
+           (Identity.Service_Credentials.Summary (Service_Credential))
+         and then not Identity.Service_Credentials.Can_Authenticate
+           (Identity.Service_Credentials.Summary
+              (Empty_Verifier_Service_Credential))
+         and then Identity.Service_Credentials.Admission_Rejected
+           (Identity.Service_Credentials.Admission
+              ((Identity.Service_Credentials.Summary (Service_Credential)
+                with delta State => Identity.Credentials.States.Revoked)))
+         and then Identity.Service_Credentials.Credential_State_Rejection
+           (Identity.Service_Credentials.Admission
+              ((Identity.Service_Credentials.Summary (Service_Credential)
+                with delta State => Identity.Credentials.States.Revoked)))
+         and then Identity.Service_Credentials.No_Mutation
+           (Identity.Service_Credentials.Admission
+              ((Identity.Service_Credentials.Summary (Service_Credential)
+                with delta State => Identity.Credentials.States.Revoked)))
+         and then Identity.Service_Credentials.Not_Activated_Rejection
+           (Identity.Service_Credentials.Admission
+              ((Identity.Service_Credentials.Summary (Service_Credential)
+                with delta State => Identity.Credentials.States.Created)))
+         and then Identity.Service_Credentials.Replacement_Pending_Rejection
+           (Identity.Service_Credentials.Admission
+              ((Identity.Service_Credentials.Summary (Service_Credential)
+                with delta State => Identity.Credentials.States.Replacement_Pending)))
+         and then Identity.Service_Credentials.Migration_Pending_Rejection
+           (Identity.Service_Credentials.Admission
+              ((Identity.Service_Credentials.Summary (Service_Credential)
+                with delta State => Identity.Credentials.States.Migrating)))
+         and then Identity.Service_Credentials.Expired_Rejection
+           (Identity.Service_Credentials.Admission
+              ((Identity.Service_Credentials.Summary (Service_Credential)
+                with delta State => Identity.Credentials.States.Expired)))
+         and then Identity.Service_Credentials.Locked_Rejection
+           (Identity.Service_Credentials.Admission
+              ((Identity.Service_Credentials.Summary (Service_Credential)
+                with delta State => Identity.Credentials.States.Locked)))
+         and then Identity.Service_Credentials.Retired_Rejection
+           (Identity.Service_Credentials.Admission
+              ((Identity.Service_Credentials.Summary (Service_Credential)
+                with delta State => Identity.Credentials.States.Retired)))
+         and then Identity.Service_Credentials.Revoked_Rejection
+           (Identity.Service_Credentials.Admission
+              ((Identity.Service_Credentials.Summary (Service_Credential)
+                with delta State => Identity.Credentials.States.Revoked)))
+         and then (Identity.Service_Credentials.Admission
+           ((Identity.Service_Credentials.Summary (Service_Credential)
+             with delta State => Identity.Credentials.States.Revoked))
+           = Identity.Service_Credentials.Service_Credential_Revoked),
+         "IDENTITY-SERVICE-001 service credential safe projection preserves verifier-backed admission");
+
+      Assert
+        (Identity.System_Actors.Is_System (System_Actor)
+         and then Identity.Principals.Kinds.System_Principal (System_Actor.Kind)
+         and then not Identity.Principals.Kinds.Service_Principal (System_Actor.Kind)
+         and then Identity.System_Actors.Establishes_Identity_Only (System_Actor)
+         and then Identity.System_Actors.Requires_Downstream_Policy (System_Actor),
+         "IDENTITY-SYSTEM-001 system actors establish identity only and require downstream policy");
+
+      Assert
+        (Identity.System_Actors.Is_System
+           (Identity.System_Actors.Summary (System_Actor))
+         and then Identity.System_Actors.Establishes_Identity_Only
+           (Identity.System_Actors.Summary (System_Actor))
+         and then Identity.System_Actors.Requires_Downstream_Policy
+           (Identity.System_Actors.Summary (System_Actor)),
+         "IDENTITY-SYSTEM-001 system actor projection carries only identity boundary facts");
+
+      Assert
+        (Identity.Multi_Factor.Methods.Usable_For_MFA (TOTP_Method)
+         and then (Identity.Multi_Factor.Methods.Admission (TOTP_Method)
+           = Identity.Multi_Factor.Methods.MFA_Method_Admitted)
+         and then Identity.Multi_Factor.Methods.Admission_Accepted
+           (Identity.Multi_Factor.Methods.Admission (TOTP_Method))
+         and then not Identity.Multi_Factor.Methods.Admission_Rejected
+           (Identity.Multi_Factor.Methods.Admission (TOTP_Method))
+         and then not Identity.Multi_Factor.Methods.Usable_For_MFA (Recovery_Method)
+         and then (Identity.Multi_Factor.Methods.Admission (Recovery_Method)
+           = Identity.Multi_Factor.Methods.MFA_Method_Category_Rejected)
+         and then Identity.Multi_Factor.Methods.Category_Rejection
+           (Identity.Multi_Factor.Methods.Admission (Recovery_Method))
+         and then Identity.Multi_Factor.Methods.Admission_Rejected
+           (Identity.Multi_Factor.Methods.Admission (Recovery_Method))
+         and then (Identity.Multi_Factor.Methods.Admission
+           ((TOTP_Method with delta Active => False))
+           = Identity.Multi_Factor.Methods.MFA_Method_Inactive)
+         and then Identity.Multi_Factor.Methods.Inactive_Rejection
+           (Identity.Multi_Factor.Methods.Admission
+              ((TOTP_Method with delta Active => False)))
+         and then Identity.Multi_Factor.Methods.Admission_Rejected
+           (Identity.Multi_Factor.Methods.Admission
+              ((TOTP_Method with delta Active => False)))
+         and then Identity.Multi_Factor.Policies.Valid (MFA_Policy)
+         and then (Identity.Multi_Factor.Policies.Validate (MFA_Policy)
+                   = Identity.Multi_Factor.Policies.MFA_Policy_Valid)
+         and then Identity.Multi_Factor.Policies.Validation_Accepted
+           (Identity.Multi_Factor.Policies.Validate (MFA_Policy))
+         and then not Identity.Multi_Factor.Policies.Valid (Zero_Challenge_MFA_Policy)
+         and then (Identity.Multi_Factor.Policies.Validate (Zero_Challenge_MFA_Policy)
+                   = Identity.Multi_Factor.Policies.MFA_Challenge_Limit_Non_Positive)
+         and then Identity.Multi_Factor.Policies.Challenge_Limit_Rejected
+           (Identity.Multi_Factor.Policies.Validate (Zero_Challenge_MFA_Policy))
+         and then not Identity.Multi_Factor.Policies.Valid (Zero_Attempt_MFA_Policy)
+         and then (Identity.Multi_Factor.Policies.Validate (Zero_Attempt_MFA_Policy)
+                   = Identity.Multi_Factor.Policies.MFA_Attempt_Limit_Non_Positive)
+         and then Identity.Multi_Factor.Policies.Attempt_Limit_Rejected
+           (Identity.Multi_Factor.Policies.Validate (Zero_Attempt_MFA_Policy))
+         and then Identity.Multi_Factor.Enrollment.Can_Activate (Enrollment)
+         and then (Identity.Multi_Factor.Enrollment.Activation_Admission
+           (Enrollment)
+           = Identity.Multi_Factor.Enrollment.Enrollment_Activation_Admitted)
+         and then Identity.Multi_Factor.Enrollment.Activation_Accepted
+           (Identity.Multi_Factor.Enrollment.Activation_Admission
+              (Enrollment))
+         and then (Identity.Multi_Factor.Enrollment.Activation_Admission
+           (Identity.Multi_Factor.Enrollment.Pending)
+           = Identity.Multi_Factor.Enrollment.Enrollment_Proof_Required)
+         and then Identity.Multi_Factor.Enrollment.Proof_Required_Rejection
+           (Identity.Multi_Factor.Enrollment.Activation_Admission
+              (Identity.Multi_Factor.Enrollment.Pending))
+         and then (Identity.Multi_Factor.Enrollment.Activation_Admission
+           (Identity.Multi_Factor.Enrollment.Active)
+           = Identity.Multi_Factor.Enrollment.Enrollment_Already_Active)
+         and then Identity.Multi_Factor.Enrollment.Already_Active_Rejection
+           (Identity.Multi_Factor.Enrollment.Activation_Admission
+              (Identity.Multi_Factor.Enrollment.Active))
+         and then (Identity.Multi_Factor.Enrollment.Activation_Admission
+           (Identity.Multi_Factor.Enrollment.Cancelled)
+           = Identity.Multi_Factor.Enrollment.Enrollment_Cancelled)
+         and then Identity.Multi_Factor.Enrollment.Cancelled_Rejection
+           (Identity.Multi_Factor.Enrollment.Activation_Admission
+              (Identity.Multi_Factor.Enrollment.Cancelled))
+         and then (Identity.Multi_Factor.Enrollment.Activation_Admission
+           (Identity.Multi_Factor.Enrollment.Expired)
+           = Identity.Multi_Factor.Enrollment.Enrollment_Expired)
+         and then Identity.Multi_Factor.Enrollment.Expired_Rejection
+           (Identity.Multi_Factor.Enrollment.Activation_Admission
+              (Identity.Multi_Factor.Enrollment.Expired))
+         and then Identity.Multi_Factor.One_Time_Passwords.Evidence_Category
+           = Identity.Authentication.Evidence.Possession
+         and then Identity.Multi_Factor.Recovery_Codes.Evidence_Category
+           = Identity.Authentication.Evidence.Recovery
+         and then Identity.Crypto.One_Time_Passwords.Verification_Accepted
+           (Identity.Crypto.One_Time_Passwords.Accepted)
+         and then Identity.Crypto.One_Time_Passwords.Presentation_Rejected
+           (Identity.Crypto.One_Time_Passwords.Not_Accepted)
+         and then Identity.Crypto.One_Time_Passwords.Replay_Rejected
+           (Identity.Crypto.One_Time_Passwords.Replayed)
+         and then Identity.Crypto.One_Time_Passwords.Operational_Failure
+           (Identity.Crypto.One_Time_Passwords.Unsupported_Algorithm)
+         and then Identity.Crypto.One_Time_Passwords.Missing_Cryptographic_Capability
+           (Identity.Crypto.One_Time_Passwords.Missing_Capability),
+         "IDENTITY-MFA-002 MFA method policy and enrollment contracts are explicit");
+
+      Assert
+        (Identity.Multi_Factor.Step_Up.Matches (Step_Up_Binding, Session_For_Step_Up),
+         "IDENTITY-STEPUP-002 step-up binding matches one session principal family and generation");
+   end Test_25_identity_service_api_key;
+
+   procedure Test_26_warning_only_policy_find (T : in out AUnit.Test_Cases.Test_Case'Class) is
+      pragma Unreferenced (T);
+      Default_Policy : constant Identity.Policies.Snapshots.Policy_Snapshot :=
+        Identity.Policies.Defaults.Default_Snapshot;
+      Provider : constant Identity.Policies.Providers.Static_Policy_Provider :=
+        (Snapshot => Default_Policy);
+      Valid_Report : constant Identity.Policies.Findings.Finding_Report :=
+        Identity.Policies.Validation.Validate
+          (Identity.Policies.Providers.Current (Provider));
+      Invalid_Policy : constant Identity.Policies.Snapshots.Policy_Snapshot :=
+        (Default_Policy with delta
+           Password => (Minimum_Length => 12,
+                        Maximum_Length => Identity.Limits.Max_Password_Bytes + 1),
+           Sessions => (Maximum_Retention_Days => Identity.Limits.Max_Session_Retention_Days + 1,
+                        Rotation_Required => True),
+           TOTP => (Accepted_Skew_Steps => Identity.Limits.Max_TOTP_Skew_Steps + 1,
+                    Maximum_Attempts => 5),
+           Budget => (Repository_Reads => 64,
+                      Repository_Writes => 64,
+                      Entities_Loaded => 64,
+                      Cryptographic_Operations => 32,
+                      Password_History_Checks => Identity.Limits.Max_Password_History_Checks + 1,
+                      Factor_Challenges => 8,
+                      Events => 16,
+                      Event_Attributes => Identity.Limits.Max_Event_Attributes + 1,
+                      Collection_Capacity => 128,
+                      Retry_Count => Identity.Limits.Max_Operation_Retries + 1,
+                      Input_Bytes => 4_096,
+                      Output_Bytes => 4_096));
+      Invalid_Report : constant Identity.Policies.Findings.Finding_Report :=
+        Identity.Policies.Validation.Validate (Invalid_Policy);
+      Invalid_Public_Policy : constant Identity.Policies.Snapshots.Policy_Snapshot :=
+        (Default_Policy with delta
+           Password_Acceptance =>
+             (Minimum_Length => 20,
+              Maximum_Length => 10,
+              Quality_Checks_Enabled => False,
+              Compromised_Check_Enabled => False),
+           Password_Hashing =>
+             (Preferred_Format => 1,
+              Maximum_Verifier_Bytes => 0,
+              Accepted_Legacy_Formats => 1,
+              Pepper_Required => False),
+           Password_History =>
+             (Depth => 3,
+              Maximum_Verifications => 4),
+           Password_Reset =>
+             (Supersession => Identity.Passwords.Resets.Supersede_Prior_Unconsumed,
+              Sessions => Identity.Passwords.Resets.Revoke_Credential_Sessions,
+              Clear_Administrative_Restrictions => True),
+           Attempts =>
+             (Password =>
+                (Kind => Identity.Attempts.Buckets.Password_Failures,
+                 Window => 0,
+                 Threshold => 5,
+                 Saturation => 20),
+              TOTP =>
+                (Kind => Identity.Attempts.Buckets.TOTP_Failures,
+                 Window => 900,
+                 Threshold => 5,
+                 Saturation => 20),
+              Token =>
+                (Kind => Identity.Attempts.Buckets.Token_Failures,
+                 Window => 900,
+                 Threshold => 5,
+                 Saturation => 20)),
+           Throttling =>
+             (Delay_After => 10,
+              Reject_After => 10,
+              Delay_Duration => 30),
+           Lockout =>
+             (Temporary_Threshold => 0,
+              Indefinite_Threshold => 50,
+              Temporary_Duration => 900,
+              Permanent_Remote_Login_Disablement => False),
+           Assurance_MFA =>
+             (Maximum_Challenges => 0,
+              Maximum_Attempts => 5,
+              Alternative_Methods_Allowed => True),
+           TOTP_Core =>
+             (Time_Step_Seconds => 30,
+              Digit_Count => 6,
+              Accepted_Skew_Steps => 1,
+              Maximum_Attempts => 0,
+              Minimum_Secret_Bytes => 20,
+              Replay_Prevention_Required => True),
+           Sessions_Core =>
+             (Idle_Timeout => 600,
+              Absolute_Lifetime => 60,
+              Remember_Me_Lifetime => 1_200,
+              Rotation_Required => True,
+              Remember_Me_Allowed => True),
+           Tokens_Core =>
+             (Lifetime => 0,
+              Maximum_Attempts => 5,
+              Supersede_Siblings => True),
+           Verification =>
+             (Token_Lifetime => 0,
+              Maximum_Attempts => 0,
+              Supersede_Open_Tokens => False,
+              Old_Contact_Confirmation => Identity.Verification.Policies.Required_When_Verified,
+              Cooling_Off => 0),
+           Recovery =>
+             (Authority_Lifetime => 0,
+              Require_Credential_Reestablishment => True,
+              Require_MFA_Reenrollment => False,
+              Revoke_Existing_Sessions => True),
+           Recovery_Codes =>
+             (Active_Set_Size => 10,
+              Display_Only_Once => False,
+              Replace_Set_On_Regeneration => True,
+              Reduced_Assurance_By_Default => True),
+           API_Keys =>
+             (Maximum_Active_Keys_Per_Principal => 8,
+              Maximum_Overlap => 0,
+              Expiration_Required => False),
+           External_Providers =>
+             (Require_Trusted_Provider => False,
+              Replay_Registration_Required => True,
+              Email_Auto_Link_Allowed => True,
+              Explicit_JIT_Required => False),
+           Events_Core =>
+             (Maximum_Attributes => Identity.Limits.Max_Event_Attributes + 1,
+              Secret_Event_Attributes_Allowed => True,
+              Derived_Event_Attributes_Allowed => False,
+              Post_Commit_Publication_Only => False),
+           Audit =>
+             (Sensitive_Events => Identity.Audit.Policies.Optional,
+              Personal_Events => Identity.Audit.Policies.Required,
+              Integrity_Required => False));
+      Invalid_Public_Report : constant Identity.Policies.Findings.Finding_Report :=
+        Identity.Policies.Validation.Validate (Invalid_Public_Policy);
+      Warning_Report : constant Identity.Policies.Findings.Finding_Report :=
+        (Count => 1,
+         Findings =>
+           [1 =>
+              (Severity => Identity.Policies.Findings.Warning,
+               Code     => Identity.Policies.Findings.Invalid_Public_Policy,
+               Message  =>
+                 Identity.Text.Bounded.From_String ("warning-only policy finding")),
+            others => <>]);
+      Retention_Ok : Boolean;
+      Retention_Boundary : Identity.Times.Instant;
+   begin
+      Retention_Boundary :=
+        Identity.Operations.Sessions.Purge_Retained.Retention_Boundary
+          (10_000_000, Default_Policy.Sessions, Retention_Ok);
+
+      Assert
+        (not Identity.Policies.Findings.Has_Errors (Valid_Report)
+         and then not Identity.Policies.Findings.Has_Findings (Valid_Report)
+         and then not Identity.Policies.Findings.Has_Warnings (Valid_Report)
+         and then Identity.Passwords.Policies.Valid (Default_Policy.Password_Acceptance)
+         and then Identity.Passwords.Policies.Valid (Default_Policy.Password_Hashing)
+         and then Identity.Passwords.History.Valid (Default_Policy.Password_History)
+         and then Identity.Passwords.Resets.Valid (Default_Policy.Password_Reset)
+         and then Identity.Attempts.Policies.Valid (Default_Policy.Attempts)
+         and then Identity.Throttling.Policies.Valid (Default_Policy.Throttling)
+         and then Identity.Lockout.Policies.Valid (Default_Policy.Lockout)
+         and then Identity.Multi_Factor.Policies.Valid (Default_Policy.Assurance_MFA)
+         and then Identity.One_Time_Passwords.Policies.Valid (Default_Policy.TOTP_Core)
+         and then Identity.Sessions.Policies.Valid (Default_Policy.Sessions_Core)
+         and then Identity.Tokens.Policies.Valid (Default_Policy.Tokens_Core)
+         and then Identity.Verification.Policies.Valid (Default_Policy.Verification)
+         and then Identity.Recovery.Policies.Valid (Default_Policy.Recovery)
+         and then Identity.Recovery_Codes.Policies.Valid (Default_Policy.Recovery_Codes)
+         and then Identity.API_Keys.Policies.Valid (Default_Policy.API_Keys)
+         and then Identity.External_Providers.Policies.Valid (Default_Policy.External_Providers)
+         and then Identity.Events.Policies.Valid (Default_Policy.Events_Core)
+         and then Identity.Audit.Policies.Valid (Default_Policy.Audit)
+         and then Default_Policy.Versions.Password_History = 1
+         and then Default_Policy.Versions.Password_Reset = 1
+         and then Default_Policy.Versions.Throttling = 1
+         and then Default_Policy.Versions.Lockout = 1
+         and then Default_Policy.Versions.TOTP = 1
+         and then Default_Policy.Versions.Verification = 1
+         and then Default_Policy.Versions.Recovery_Codes = 1
+         and then Default_Policy.Versions.External_Providers = 1
+         and then Default_Policy.Versions.API_Keys = 1
+         and then Default_Policy.Versions.Events_Core = 1
+         and then Default_Policy.Versions.Audit = 1,
+         "default policy snapshot aggregates public policy families");
+      Assert
+        (Identity.Policies.Findings.Has_Findings (Warning_Report)
+         and then Identity.Policies.Findings.Has_Warnings (Warning_Report)
+         and then not Identity.Policies.Findings.Has_Errors (Warning_Report)
+         and then Identity.Policies.Findings.Warning_Severity
+           (Warning_Report.Findings (1).Severity)
+         and then Identity.Policies.Findings.No_Finding_Status
+           (Identity.Policies.Findings.None)
+         and then Identity.Policies.Findings.Error_Severity
+           (Identity.Policies.Findings.Error),
+         "IDENTITY-POLICY-001 policy finding severity classifiers distinguish "
+         & "warnings from errors");
+      Assert
+        (Identity.Policies.Findings.Has_Errors (Invalid_Report)
+         and then Invalid_Report.Count = 6
+         and then Invalid_Report.Findings (1).Code
+           = Identity.Policies.Findings.Password_Length_Above_Hard_Limit
+         and then Invalid_Report.Findings (6).Code
+           = Identity.Policies.Findings.Resource_Budget_Above_Hard_Limit,
+         "IDENTITY-POLICY-001 policy validation rejects limits above hard bounds");
+      Assert
+        (Identity.Policies.Findings.Has_Errors (Invalid_Public_Report)
+         and then Invalid_Public_Report.Count = 18
+         and then Invalid_Public_Report.Findings (1).Code
+           = Identity.Policies.Findings.Invalid_Password_Acceptance_Policy
+         and then Invalid_Public_Report.Findings (2).Code
+           = Identity.Policies.Findings.Invalid_Password_Hashing_Policy
+         and then Invalid_Public_Report.Findings (3).Code
+           = Identity.Policies.Findings.Invalid_Password_History_Policy
+         and then Invalid_Public_Report.Findings (4).Code
+           = Identity.Policies.Findings.Invalid_Password_Reset_Policy
+         and then Invalid_Public_Report.Findings (5).Code
+           = Identity.Policies.Findings.Invalid_Attempt_Policy
+         and then Invalid_Public_Report.Findings (6).Code
+           = Identity.Policies.Findings.Invalid_Throttling_Policy
+         and then Invalid_Public_Report.Findings (7).Code
+           = Identity.Policies.Findings.Invalid_Lockout_Policy
+         and then Invalid_Public_Report.Findings (8).Code
+           = Identity.Policies.Findings.Invalid_MFA_Policy
+         and then Invalid_Public_Report.Findings (9).Code
+           = Identity.Policies.Findings.Invalid_TOTP_Policy
+         and then Invalid_Public_Report.Findings (10).Code
+           = Identity.Policies.Findings.Invalid_Session_Policy
+         and then Invalid_Public_Report.Findings (11).Code
+           = Identity.Policies.Findings.Invalid_Token_Policy
+         and then Invalid_Public_Report.Findings (12).Code
+           = Identity.Policies.Findings.Invalid_Verification_Policy
+         and then Invalid_Public_Report.Findings (13).Code
+           = Identity.Policies.Findings.Invalid_Recovery_Policy
+         and then Invalid_Public_Report.Findings (14).Code
+           = Identity.Policies.Findings.Invalid_Recovery_Code_Policy
+         and then Invalid_Public_Report.Findings (15).Code
+           = Identity.Policies.Findings.Invalid_API_Key_Policy
+         and then Invalid_Public_Report.Findings (16).Code
+           = Identity.Policies.Findings.Invalid_External_Provider_Policy
+         and then Invalid_Public_Report.Findings (17).Code
+           = Identity.Policies.Findings.Invalid_Event_Policy
+         and then Invalid_Public_Report.Findings (18).Code
+           = Identity.Policies.Findings.Invalid_Audit_Policy,
+         "IDENTITY-POLICY-001 policy validation rejects invalid public policy aggregates");
+
+      Assert
+        (Invalid_Public_Report.Findings (1).Code
+           = Identity.Policies.Findings.Invalid_Password_Acceptance_Policy
+         and then Invalid_Public_Report.Findings (2).Code
+           = Identity.Policies.Findings.Invalid_Password_Hashing_Policy
+         and then Invalid_Public_Report.Findings (3).Code
+           = Identity.Policies.Findings.Invalid_Password_History_Policy
+         and then Invalid_Public_Report.Findings (4).Code
+           = Identity.Policies.Findings.Invalid_Password_Reset_Policy
+         and then Identity.Policies.Findings.Error_Severity
+           (Invalid_Public_Report.Findings (1).Severity)
+         and then Identity.Policies.Findings.Error_Severity
+           (Invalid_Public_Report.Findings (4).Severity)
+         and then not Identity.Passwords.Policies.Valid
+           (Invalid_Public_Policy.Password_Acceptance)
+         and then not Identity.Passwords.Policies.Valid
+           (Invalid_Public_Policy.Password_Hashing)
+         and then not Identity.Passwords.History.Valid
+           (Invalid_Public_Policy.Password_History)
+         and then not Identity.Passwords.Resets.Valid
+           (Invalid_Public_Policy.Password_Reset),
+         "policy validation reports password-family invalid public policies with "
+         & "specific finding codes");
+
+      Assert
+        (Invalid_Public_Report.Findings (5).Code
+           = Identity.Policies.Findings.Invalid_Attempt_Policy
+         and then Invalid_Public_Report.Findings (6).Code
+           = Identity.Policies.Findings.Invalid_Throttling_Policy
+         and then Invalid_Public_Report.Findings (7).Code
+           = Identity.Policies.Findings.Invalid_Lockout_Policy
+         and then Identity.Policies.Findings.Error_Severity
+           (Invalid_Public_Report.Findings (5).Severity)
+         and then not Identity.Attempts.Policies.Valid (Invalid_Public_Policy.Attempts)
+         and then not Identity.Throttling.Policies.Valid
+           (Invalid_Public_Policy.Throttling)
+         and then not Identity.Lockout.Policies.Valid (Invalid_Public_Policy.Lockout),
+         "policy validation reports attempts-family invalid public policies with "
+         & "specific finding codes");
+
+      Assert
+        (Invalid_Public_Report.Findings (10).Code
+           = Identity.Policies.Findings.Invalid_Session_Policy
+         and then Invalid_Public_Report.Findings (11).Code
+           = Identity.Policies.Findings.Invalid_Token_Policy
+         and then Invalid_Public_Report.Findings (12).Code
+           = Identity.Policies.Findings.Invalid_Verification_Policy
+         and then Identity.Policies.Findings.Error_Severity
+           (Invalid_Public_Report.Findings (10).Severity)
+         and then not Identity.Sessions.Policies.Valid
+           (Invalid_Public_Policy.Sessions_Core)
+         and then not Identity.Tokens.Policies.Valid (Invalid_Public_Policy.Tokens_Core)
+         and then not Identity.Verification.Policies.Valid
+           (Invalid_Public_Policy.Verification),
+         "policy validation reports continuity and authority-token invalid public "
+         & "policies with specific finding codes");
+
+      Assert
+        (Invalid_Public_Report.Findings (8).Code
+           = Identity.Policies.Findings.Invalid_MFA_Policy
+         and then Invalid_Public_Report.Findings (9).Code
+           = Identity.Policies.Findings.Invalid_TOTP_Policy
+         and then Invalid_Public_Report.Findings (13).Code
+           = Identity.Policies.Findings.Invalid_Recovery_Policy
+         and then Invalid_Public_Report.Findings (14).Code
+           = Identity.Policies.Findings.Invalid_Recovery_Code_Policy
+         and then Invalid_Public_Report.Findings (15).Code
+           = Identity.Policies.Findings.Invalid_API_Key_Policy
+         and then Invalid_Public_Report.Findings (16).Code
+           = Identity.Policies.Findings.Invalid_External_Provider_Policy
+         and then Invalid_Public_Report.Findings (17).Code
+           = Identity.Policies.Findings.Invalid_Event_Policy
+         and then Invalid_Public_Report.Findings (18).Code
+           = Identity.Policies.Findings.Invalid_Audit_Policy
+         and then not Identity.Multi_Factor.Policies.Valid
+           (Invalid_Public_Policy.Assurance_MFA)
+         and then not Identity.Recovery.Policies.Valid (Invalid_Public_Policy.Recovery)
+         and then not Identity.API_Keys.Policies.Valid (Invalid_Public_Policy.API_Keys)
+         and then not Identity.External_Providers.Policies.Valid
+           (Invalid_Public_Policy.External_Providers)
+         and then not Identity.Events.Policies.Valid (Invalid_Public_Policy.Events_Core)
+         and then not Identity.Audit.Policies.Valid (Invalid_Public_Policy.Audit),
+         "policy validation reports MFA, recovery, service credential, federation, event, "
+         & "and audit invalid public policies with specific finding codes");
+
+      Assert
+        (Identity.Times.Durations.To_Base (Default_Policy.Sessions_Core.Idle_Timeout)
+           = 3_600
+         and then Identity.Times.Durations.To_Base
+           (Default_Policy.Sessions_Core.Absolute_Lifetime) = 86_400
+         and then Identity.Times.Durations.To_Base
+           (Default_Policy.Sessions_Core.Remember_Me_Lifetime) = 2_592_000
+         and then Identity.Times.Durations.To_Base (Default_Policy.Tokens_Core.Lifetime)
+           = 3_600
+         and then Identity.Times.Durations.To_Base
+           (Default_Policy.Lockout.Temporary_Duration) = 900
+         and then Identity.Times.Durations.To_Base
+           (Default_Policy.Throttling.Delay_Duration) = 30
+         and then Identity.Times.Durations.To_Base
+           (Default_Policy.Recovery.Authority_Lifetime) = 900
+         and then Identity.Times.Durations.To_Base
+           (Default_Policy.Verification.Token_Lifetime) = 3_600
+         and then Identity.Times.Durations.To_Base
+           (Default_Policy.API_Keys.Maximum_Overlap) = 86_400
+         and then Identity.Times.Durations.Seconds (900) = 900,
+         "policy records expose semantic duration wrappers");
+
+      Assert
+        (Identity.Multi_Factor.Policies.Valid (Default_Policy.Assurance_MFA)
+         and then Identity.Multi_Factor.Policies.Validate
+           ((Default_Policy.Assurance_MFA with delta Maximum_Challenges => 0))
+           = Identity.Multi_Factor.Policies.MFA_Challenge_Limit_Non_Positive
+         and then Identity.Multi_Factor.Policies.Challenge_Limit_Rejected
+           (Identity.Multi_Factor.Policies.Validate
+              ((Default_Policy.Assurance_MFA with delta Maximum_Challenges => 0)))
+         and then not Identity.Multi_Factor.Policies.Attempt_Limit_Rejected
+           (Identity.Multi_Factor.Policies.Validate
+              ((Default_Policy.Assurance_MFA with delta Maximum_Challenges => 0)))
+         and then Identity.Multi_Factor.Policies.Validate
+           ((Default_Policy.Assurance_MFA with delta Maximum_Attempts => 0))
+           = Identity.Multi_Factor.Policies.MFA_Attempt_Limit_Non_Positive
+         and then Identity.Multi_Factor.Policies.Attempt_Limit_Rejected
+           (Identity.Multi_Factor.Policies.Validate
+              ((Default_Policy.Assurance_MFA with delta Maximum_Attempts => 0)))
+         and then not Identity.Multi_Factor.Policies.Challenge_Limit_Rejected
+           (Identity.Multi_Factor.Policies.Validate
+              ((Default_Policy.Assurance_MFA with delta Maximum_Attempts => 0))),
+         "MFA policy validation classifiers distinguish challenge and attempt limit "
+         & "rejection causes");
+
+      Assert
+        (Identity.Audit.Policies.Valid (Default_Policy.Audit)
+         and then Identity.Audit.Policies.Validate
+           ((Default_Policy.Audit with delta
+               Sensitive_Events => Identity.Audit.Policies.Optional))
+           = Identity.Audit.Policies.Audit_Sensitive_Events_Not_Required
+         and then Identity.Audit.Policies.Requirement_Rejected
+           (Identity.Audit.Policies.Validate
+              ((Default_Policy.Audit with delta
+                  Sensitive_Events => Identity.Audit.Policies.Optional)))
+         and then Identity.Audit.Policies.Validate
+           ((Default_Policy.Audit with delta
+               Personal_Events => Identity.Audit.Policies.Optional))
+           = Identity.Audit.Policies.Audit_Personal_Events_Not_Required
+         and then Identity.Audit.Policies.Requirement_Rejected
+           (Identity.Audit.Policies.Validate
+              ((Default_Policy.Audit with delta
+                  Personal_Events => Identity.Audit.Policies.Optional)))
+         and then Identity.Audit.Policies.Validate
+           ((Default_Policy.Audit with delta Integrity_Required => False))
+           = Identity.Audit.Policies.Audit_Integrity_Not_Required
+         and then Identity.Audit.Policies.Integrity_Rejected
+           (Identity.Audit.Policies.Validate
+              ((Default_Policy.Audit with delta Integrity_Required => False)))
+         and then not Identity.Audit.Policies.Requirement_Rejected
+           (Identity.Audit.Policies.Validate
+              ((Default_Policy.Audit with delta Integrity_Required => False))),
+         "audit policy validation classifiers distinguish required event material and "
+         & "integrity rejection causes");
+
+      Assert
+        (Identity.Events.Policies.Valid (Default_Policy.Events_Core)
+         and then Identity.Events.Policies.Validate
+           ((Default_Policy.Events_Core with delta
+               Maximum_Attributes => Identity.Limits.Max_Event_Attributes + 1))
+           = Identity.Events.Policies.Event_Maximum_Attributes_Too_High
+         and then Identity.Events.Policies.Attribute_Capacity_Rejected
+           (Identity.Events.Policies.Validate
+              ((Default_Policy.Events_Core with delta
+                  Maximum_Attributes => Identity.Limits.Max_Event_Attributes + 1)))
+         and then Identity.Events.Policies.Validate
+           ((Default_Policy.Events_Core with delta
+               Secret_Event_Attributes_Allowed => True))
+           = Identity.Events.Policies.Event_Secret_Attributes_Allowed
+         and then Identity.Events.Policies.Secret_Attribute_Rejected
+           (Identity.Events.Policies.Validate
+              ((Default_Policy.Events_Core with delta
+                  Secret_Event_Attributes_Allowed => True)))
+         and then Identity.Events.Policies.Secret_Attribute_Rejected
+           (Identity.Events.Policies.Validate
+              ((Default_Policy.Events_Core with delta
+                  Derived_Event_Attributes_Allowed => True)))
+         and then Identity.Events.Policies.Validate
+           ((Default_Policy.Events_Core with delta
+               Post_Commit_Publication_Only => False))
+           = Identity.Events.Policies.Event_Publication_Before_Commit_Allowed
+         and then Identity.Events.Policies.Publication_Timing_Rejected
+           (Identity.Events.Policies.Validate
+              ((Default_Policy.Events_Core with delta
+                  Post_Commit_Publication_Only => False)))
+         and then not Identity.Events.Policies.Secret_Attribute_Rejected
+           (Identity.Events.Policies.Validate
+              ((Default_Policy.Events_Core with delta
+                  Post_Commit_Publication_Only => False))),
+         "event policy validation classifiers distinguish capacity secret-class and "
+         & "publication-timing rejection causes");
+
+      Assert
+        (Identity.Verification.Policies.Valid (Default_Policy.Verification)
+         and then Identity.Verification.Policies.Validate
+           ((Default_Policy.Verification with delta Token_Lifetime => 0))
+           = Identity.Verification.Policies.Contact_Verification_Token_Lifetime_Non_Positive
+         and then Identity.Verification.Policies.Token_Lifetime_Rejected
+           (Identity.Verification.Policies.Validate
+              ((Default_Policy.Verification with delta Token_Lifetime => 0)))
+         and then Identity.Verification.Policies.Validate
+           ((Default_Policy.Verification with delta Maximum_Attempts => 0))
+           = Identity.Verification.Policies.Contact_Verification_Attempt_Limit_Non_Positive
+         and then Identity.Verification.Policies.Attempt_Limit_Rejected
+           (Identity.Verification.Policies.Validate
+              ((Default_Policy.Verification with delta Maximum_Attempts => 0)))
+         and then not Identity.Verification.Policies.Token_Lifetime_Rejected
+           (Identity.Verification.Policies.Validate
+              ((Default_Policy.Verification with delta Maximum_Attempts => 0)))
+         and then Identity.Verification.Policies.Validate
+           ((Default_Policy.Verification with delta Supersede_Open_Tokens => False))
+           = Identity.Verification.Policies.Contact_Verification_Supersession_Not_Required
+         and then Identity.Verification.Policies.Supersession_Rejected
+           (Identity.Verification.Policies.Validate
+              ((Default_Policy.Verification with delta Supersede_Open_Tokens => False))),
+         "contact verification policy validation classifiers distinguish token lifetime "
+         & "attempt limit and supersession rejection causes");
+
+      Assert
+        (Identity.External_Providers.Policies.Valid (Default_Policy.External_Providers)
+         and then Identity.External_Providers.Policies.Validate
+           ((Default_Policy.External_Providers with delta
+               Require_Trusted_Provider => False))
+           = Identity.External_Providers.Policies.Trusted_Provider_Not_Required
+         and then Identity.External_Providers.Policies.Trust_Rejected
+           (Identity.External_Providers.Policies.Validate
+              ((Default_Policy.External_Providers with delta
+                  Require_Trusted_Provider => False)))
+         and then Identity.External_Providers.Policies.Validate
+           ((Default_Policy.External_Providers with delta
+               Replay_Registration_Required => False))
+           = Identity.External_Providers.Policies.Replay_Registration_Not_Required
+         and then Identity.External_Providers.Policies.Replay_Rejected
+           (Identity.External_Providers.Policies.Validate
+              ((Default_Policy.External_Providers with delta
+                  Replay_Registration_Required => False)))
+         and then Identity.External_Providers.Policies.Validate
+           ((Default_Policy.External_Providers with delta
+               Email_Auto_Link_Allowed => True))
+           = Identity.External_Providers.Policies.Email_Auto_Link_Allowed_By_Policy
+         and then Identity.External_Providers.Policies.Email_Link_Rejected
+           (Identity.External_Providers.Policies.Validate
+              ((Default_Policy.External_Providers with delta
+                  Email_Auto_Link_Allowed => True)))
+         and then Identity.External_Providers.Policies.Validate
+           ((Default_Policy.External_Providers with delta
+               Explicit_JIT_Required => False))
+           = Identity.External_Providers.Policies.Explicit_JIT_Not_Required
+         and then Identity.External_Providers.Policies.JIT_Rejected
+           (Identity.External_Providers.Policies.Validate
+              ((Default_Policy.External_Providers with delta
+                  Explicit_JIT_Required => False)))
+         and then not Identity.External_Providers.Policies.Trust_Rejected
+           (Identity.External_Providers.Policies.Validate
+              ((Default_Policy.External_Providers with delta
+                  Explicit_JIT_Required => False))),
+         "external provider policy validation classifiers distinguish trust replay "
+         & "email-link and JIT rejection causes");
+
+      Assert
+        (Retention_Ok and then Retention_Boundary = 2_224_000,
+         "session retention boundary derives from policy and operation time");
+
+      Retention_Boundary :=
+        Identity.Operations.Sessions.Purge_Retained.Retention_Boundary
+          (10_000_000,
+           (Maximum_Retention_Days => Identity.Limits.Max_Session_Retention_Days + 1,
+            Rotation_Required => True),
+           Retention_Ok);
+
+      Assert
+        (not Retention_Ok and then Retention_Boundary = Identity.Times.Instant'First,
+         "session retention boundary rejects policy above hard limit");
+   end Test_26_warning_only_policy_find;
+
+   procedure Test_27_service_context_construc (T : in out AUnit.Test_Cases.Test_Case'Class) is
+      pragma Unreferenced (T);
+      Service : constant Identity.Services.Contexts.Service_Context :=
+        Identity.Services.Construction.Build
+          (Identity.Policies.Defaults.Default_Snapshot,
+           Deterministic_Test => True);
+      Operation_Context : constant Identity.Operations.Contexts.Operation_Context :=
+        (Operation => O1,
+         Correlation => R1,
+         Causation => (Present => False),
+         Request => (Present => False),
+         Actor => (Kind => Identity.Events.Envelopes.Unauthenticated,
+                   Principal => (Present => False)),
+         Requested_At => 10,
+         Deadline => Identity.Operations.Deadlines.At_Time (20),
+         Cancellation =>
+           (State => Identity.Operations.Cancellation.Not_Cancelled),
+         Disclosure => Identity.Operations.Disclosure.Untrusted_API,
+         Diagnostic_Mode => False);
+      Cancelled_Context : constant Identity.Operations.Contexts.Operation_Context :=
+        (Operation_Context with delta
+         Cancellation =>
+           (State => Identity.Operations.Cancellation.Cancellation_Requested));
+      Cancelled_Expired_Context : constant Identity.Operations.Contexts.Operation_Context :=
+        (Cancelled_Context with delta
+         Deadline => Identity.Operations.Deadlines.At_Time (15));
+      No_Deadline_Context : constant Identity.Operations.Contexts.Operation_Context :=
+        (Operation_Context with delta
+         Deadline => Identity.Operations.Deadlines.None);
+      Requested_Budget : constant Identity.Operations.Budgets.Operation_Budget :=
+        (Repository_Reads => 8,
+         Repository_Writes => 4,
+         Entities_Loaded => 6,
+         Cryptographic_Operations => 2,
+         Password_History_Checks => 1,
+         Factor_Challenges => 1,
+         Events => 2,
+         Event_Attributes => 2,
+         Collection_Capacity => 16,
+         Retry_Count => 1,
+         Input_Bytes => 512,
+         Output_Bytes => 512);
+      Excessive_Budget : constant Identity.Operations.Budgets.Operation_Budget :=
+        (Repository_Reads => Service.Resource_Limits.Repository_Reads + 1,
+         Repository_Writes => 4,
+         Entities_Loaded => 6,
+         Cryptographic_Operations => 2,
+         Password_History_Checks => 1,
+         Factor_Challenges => 1,
+         Events => 2,
+         Event_Attributes => 2,
+         Collection_Capacity => 16,
+         Retry_Count => 1,
+         Input_Bytes => 512,
+         Output_Bytes => 512);
+      Excessive_Retry_Budget : constant Identity.Operations.Budgets.Operation_Budget :=
+        (Requested_Budget with delta
+         Retry_Count => Service.Resource_Limits.Retry_Count + 1);
+      Hard_Limit_Budget : constant Identity.Operations.Budgets.Operation_Budget :=
+        Identity.Operations.Budgets.Hard_Limits;
+      Excessive_Hard_Budget : constant Identity.Operations.Budgets.Operation_Budget :=
+        (Hard_Limit_Budget with delta
+         Cryptographic_Operations =>
+           Identity.Limits.Max_Cryptographic_Operations + 1);
+      Requested_Admission : constant Identity.Operations.Budgets.Budget_Admission :=
+        Identity.Operations.Budgets.Admit
+          (Requested_Budget, Service.Resource_Limits);
+      Excessive_Admission : constant Identity.Operations.Budgets.Budget_Admission :=
+        Identity.Operations.Budgets.Admit
+          (Excessive_Budget, Service.Resource_Limits);
+      Excessive_Retry_Admission : constant Identity.Operations.Budgets.Budget_Admission :=
+        Identity.Operations.Budgets.Admit
+          (Excessive_Retry_Budget, Service.Resource_Limits);
+      Excessive_Hard_Admission : constant Identity.Operations.Budgets.Budget_Admission :=
+        Identity.Operations.Budgets.Admit_Hard_Limits (Excessive_Hard_Budget);
+      Cancellation : constant Identity.Operations.Cancellation.Cancellation_Source :=
+        (State => Identity.Operations.Cancellation.Cancellation_Requested);
+      Active_Cancellation : constant Identity.Operations.Cancellation.Cancellation_Source :=
+        (State => Identity.Operations.Cancellation.Not_Cancelled);
+   begin
+      Assert
+        (Identity.Services.Contexts.Is_Usable (Service)
+         and then Service.Capabilities.Deterministic_Test_Construction,
+         "service context construction is explicit and immutable");
+      Assert
+        (not Identity.Operations.Contexts.Deadline_Exceeded (Operation_Context, 19)
+         and then not Identity.Operations.Contexts.Deadline_Exceeded
+           (Operation_Context, 20)
+         and then Identity.Operations.Contexts.Deadline_Exceeded (Operation_Context, 21)
+         and then Identity.Operations.Contexts.Evaluate_Deadline
+           (No_Deadline_Context, 100)
+           = Identity.Operations.Contexts.No_Deadline
+         and then Identity.Operations.Contexts.Deadline_Unbounded
+           (Identity.Operations.Contexts.Evaluate_Deadline
+              (No_Deadline_Context, 100))
+         and then Identity.Operations.Contexts.Evaluate_Deadline
+           (Operation_Context, 19)
+           = Identity.Operations.Contexts.Before_Deadline
+         and then Identity.Operations.Contexts.Deadline_Open
+           (Identity.Operations.Contexts.Evaluate_Deadline
+              (Operation_Context, 19))
+         and then Identity.Operations.Contexts.Evaluate_Deadline
+           (Operation_Context, 20)
+           = Identity.Operations.Contexts.At_Deadline
+         and then Identity.Operations.Contexts.Deadline_At_Boundary
+           (Identity.Operations.Contexts.Evaluate_Deadline
+              (Operation_Context, 20))
+         and then Identity.Operations.Contexts.Evaluate_Deadline
+           (Operation_Context, 21)
+           = Identity.Operations.Contexts.Past_Deadline
+         and then Identity.Operations.Contexts.Deadline_Past
+           (Identity.Operations.Contexts.Evaluate_Deadline
+              (Operation_Context, 21)),
+         "operation context deadline evaluation is explicit");
+      Assert
+        (not Identity.Operations.Contexts.Cancellation_Requested (Operation_Context)
+         and then Identity.Operations.Contexts.Cancellation_Requested (Cancelled_Context),
+         "operation context carries cooperative cancellation source");
+      Assert
+        (Identity.Operations.Contexts.Evaluate_Checkpoint (Operation_Context, 19)
+           = Identity.Operations.Contexts.Continue
+         and then Identity.Operations.Contexts.Checkpoint_Allows_Progress
+           (Identity.Operations.Contexts.Evaluate_Checkpoint (Operation_Context, 19))
+         and then Identity.Operations.Contexts.Evaluate_Checkpoint (Operation_Context, 21)
+           = Identity.Operations.Contexts.Deadline_Exceeded
+         and then Identity.Operations.Contexts.Checkpoint_Deadline_Blocked
+           (Identity.Operations.Contexts.Evaluate_Checkpoint (Operation_Context, 21))
+         and then Identity.Operations.Contexts.Evaluate_Checkpoint (Cancelled_Context, 19)
+           = Identity.Operations.Contexts.Cancelled
+         and then Identity.Operations.Contexts.Checkpoint_Cancelled
+           (Identity.Operations.Contexts.Evaluate_Checkpoint (Cancelled_Context, 19))
+         and then Identity.Operations.Contexts.Evaluate_Checkpoint (Cancelled_Expired_Context, 21)
+           = Identity.Operations.Contexts.Cancelled,
+         "IDENTITY-CONTEXT-001 operation checkpoint evaluation distinguishes cancellation and deadline");
+      Assert
+        (Identity.Operations.Budgets.Within
+         (Requested_Budget, Service.Resource_Limits)
+         and then not Identity.Operations.Budgets.Within
+           (Excessive_Budget, Service.Resource_Limits)
+         and then not Identity.Operations.Budgets.Within
+           (Excessive_Retry_Budget, Service.Resource_Limits)
+         and then Identity.Operations.Budgets.Within_Hard_Limits (Hard_Limit_Budget)
+         and then not Identity.Operations.Budgets.Within_Hard_Limits
+           (Excessive_Hard_Budget),
+         "IDENTITY-CONTEXT-001 operation budgets cover all resource dimensions");
+      Assert
+        (Requested_Admission.Status = Identity.Operations.Budgets.Within_Limits
+         and then Identity.Operations.Budgets.Accepted
+           (Identity.Operations.Budgets.Within_Limits)
+         and then Identity.Operations.Budgets.Accepted (Requested_Admission)
+         and then Identity.Operations.Budgets.Has_Bounded_Detail
+           (Requested_Admission)
+         and then Excessive_Admission.Status =
+           Identity.Operations.Budgets.Limit_Exceeded
+         and then Identity.Operations.Budgets.Rejected
+           (Identity.Operations.Budgets.Limit_Exceeded)
+         and then Identity.Operations.Budgets.Rejected (Excessive_Admission)
+         and then Identity.Operations.Budgets.Exceeded
+           (Excessive_Admission, Identity.Operations.Budgets.Repository_Reads)
+         and then Identity.Operations.Budgets.Has_Bounded_Detail
+           (Excessive_Admission)
+         and then Excessive_Admission.Dimension =
+           Identity.Operations.Budgets.Repository_Reads
+         and then Excessive_Admission.Requested =
+           Service.Resource_Limits.Repository_Reads + 1
+         and then Excessive_Admission.Limit =
+           Service.Resource_Limits.Repository_Reads
+         and then Excessive_Retry_Admission.Status =
+           Identity.Operations.Budgets.Limit_Exceeded
+         and then Identity.Operations.Budgets.Rejected
+           (Excessive_Retry_Admission)
+         and then Identity.Operations.Budgets.Exceeded
+           (Excessive_Retry_Admission, Identity.Operations.Budgets.Retry_Count)
+         and then Excessive_Retry_Admission.Dimension =
+           Identity.Operations.Budgets.Retry_Count
+         and then Excessive_Retry_Admission.Requested =
+           Service.Resource_Limits.Retry_Count + 1
+         and then Excessive_Retry_Admission.Limit =
+           Service.Resource_Limits.Retry_Count,
+         "IDENTITY-CONTEXT-001 operation budget admission reports exceeded dimension and bound");
+      Assert
+        (Identity.Operations.Budgets.Accepted (Requested_Admission)
+         and then Identity.Operations.Budgets.Rejected (Excessive_Admission)
+         and then Identity.Operations.Budgets.Exceeded
+           (Excessive_Admission, Identity.Operations.Budgets.Repository_Reads)
+         and then Identity.Operations.Budgets.Rejected
+           (Excessive_Retry_Admission)
+         and then Identity.Operations.Budgets.Exceeded
+           (Excessive_Retry_Admission, Identity.Operations.Budgets.Retry_Count)
+         and then Identity.Operations.Budgets.Rejected (Excessive_Hard_Admission)
+         and then Identity.Operations.Budgets.Exceeded
+           (Excessive_Hard_Admission,
+            Identity.Operations.Budgets.Cryptographic_Operations)
+         and then Identity.Operations.Budgets.Exceeds_Hard_Limit
+           (Excessive_Hard_Budget,
+            Identity.Operations.Budgets.Cryptographic_Operations)
+         and then not Identity.Operations.Budgets.Exceeds_Hard_Limit
+           (Hard_Limit_Budget,
+            Identity.Operations.Budgets.Cryptographic_Operations)
+         and then Excessive_Hard_Admission.Limit =
+           Identity.Limits.Max_Cryptographic_Operations,
+         "IDENTITY-CONTEXT-001 operation hard-limit budget admission rejects "
+         & "policy values above implementation maxima");
+      Assert
+        (Identity.Operations.Cancellation.Cancelled (Cancellation)
+         and then not Identity.Operations.Cancellation.Active (Cancellation)
+         and then Identity.Operations.Cancellation.Active (Active_Cancellation)
+         and then not Identity.Operations.Cancellation.Cancelled (Active_Cancellation),
+         "operation cancellation is explicit and cooperative");
+   end Test_27_service_context_construc;
+
+   procedure Test_28_repository_transaction_b (T : in out AUnit.Test_Cases.Test_Case'Class) is
+      pragma Unreferenced (T);
+      Factory : constant Identity.Adapters.Repositories.Factories.Repository_Factory :=
+        (Capabilities => Identity.Adapters.Repositories.Capabilities.Full_Memory_Profile);
+      Context : constant Identity.Adapters.Repositories.Contexts.Repository_Context :=
+        Identity.Adapters.Repositories.Factories.Open (Factory);
+      Missing_Security : constant Identity.Adapters.Repositories.Capabilities.Repository_Capabilities :=
+        (Identity.Adapters.Repositories.Capabilities.Full_Memory_Profile
+         with delta Security_Transitions => False);
+      Missing_Events : constant Identity.Adapters.Repositories.Capabilities.Repository_Capabilities :=
+        (Identity.Adapters.Repositories.Capabilities.Full_Memory_Profile
+         with delta Atomic_Mandatory_Events => False);
+      Missing_Versions : constant Identity.Adapters.Repositories.Capabilities.Repository_Capabilities :=
+        (Identity.Adapters.Repositories.Capabilities.Full_Memory_Profile
+         with delta Optimistic_Versions => False);
+      Missing_Rotation : constant Identity.Adapters.Repositories.Capabilities.Repository_Capabilities :=
+        (Identity.Adapters.Repositories.Capabilities.Full_Memory_Profile
+         with delta Atomic_Session_Rotation => False);
+      Missing_Token_Action : constant Identity.Adapters.Repositories.Capabilities.Repository_Capabilities :=
+        (Identity.Adapters.Repositories.Capabilities.Full_Memory_Profile
+         with delta Atomic_Token_Action => False);
+      Missing_Replay : constant Identity.Adapters.Repositories.Capabilities.Repository_Capabilities :=
+        (Identity.Adapters.Repositories.Capabilities.Full_Memory_Profile
+         with delta Assertion_Replay_Registration => False);
+      Missing_Idempotency : constant Identity.Adapters.Repositories.Capabilities.Repository_Capabilities :=
+        (Identity.Adapters.Repositories.Capabilities.Full_Memory_Profile
+         with delta Idempotency => False);
+      Rotation_Command : constant Identity.Adapters.Repositories.Capabilities.Atomic_Command_Requirement :=
+        (Requires_Session_Rotation => True,
+         Requires_Deterministic_Ordering => True,
+         Atomic_Event_Count => 2,
+         Command_Size => 256,
+         others => False);
+      Token_Command : constant Identity.Adapters.Repositories.Capabilities.Atomic_Command_Requirement :=
+        (Requires_Token_Action => True,
+         Atomic_Event_Count => 2,
+         Command_Size => 256,
+         others => False);
+      Mandatory_Event_Command : constant Identity.Adapters.Repositories.Capabilities.Atomic_Command_Requirement :=
+        (Requires_Mandatory_Events => True,
+         Atomic_Event_Count => 1,
+         Command_Size => 256,
+         others => False);
+      Versioned_Command : constant Identity.Adapters.Repositories.Capabilities.Atomic_Command_Requirement :=
+        (Requires_Optimistic_Versions => True,
+         Atomic_Event_Count => 1,
+         Command_Size => 256,
+         others => False);
+      Replay_Command : constant Identity.Adapters.Repositories.Capabilities.Atomic_Command_Requirement :=
+        (Requires_Assertion_Replay => True,
+         Atomic_Event_Count => 1,
+         Command_Size => 256,
+         others => False);
+      Idempotent_Command : constant Identity.Adapters.Repositories.Capabilities.Atomic_Command_Requirement :=
+        (Requires_Idempotency => True,
+         Atomic_Event_Count => 1,
+         Command_Size => 256,
+         others => False);
+      Excessive_Event_Command : constant Identity.Adapters.Repositories.Capabilities.Atomic_Command_Requirement :=
+        (Atomic_Event_Count =>
+           Identity.Adapters.Repositories.Capabilities.Full_Memory_Profile.Maximum_Atomic_Event_Count + 1,
+         Command_Size => 256,
+         others => False);
+      Excessive_Size_Command : constant Identity.Adapters.Repositories.Capabilities.Atomic_Command_Requirement :=
+        (Atomic_Event_Count => 1,
+         Command_Size =>
+           Identity.Adapters.Repositories.Capabilities.Full_Memory_Profile.Maximum_Command_Size + 1,
+         others => False);
+      Begin_Result : constant Identity.Adapters.Repositories.Transactions.Transaction_Result :=
+        Identity.Adapters.Repositories.Transactions.Begin_Transaction
+          (Context.State, Identity.Adapters.Repositories.Security_Transition);
+      Commit_Result : constant Identity.Adapters.Repositories.Transactions.Transaction_Result :=
+        Identity.Adapters.Repositories.Transactions.Commit (Begin_Result.State);
+      Recommit_Result : constant Identity.Adapters.Repositories.Transactions.Transaction_Result :=
+        Identity.Adapters.Repositories.Transactions.Commit (Commit_Result.State);
+      Applied_Command : constant Identity.Adapters.Repositories.Commands.Command_Result :=
+        Identity.Adapters.Repositories.Commands.Success;
+      Conflict_Command : constant Identity.Adapters.Repositories.Commands.Command_Result :=
+        Identity.Adapters.Repositories.Commands.Conflict_Result
+          (Identity.Adapters.Repositories.Conflicts.Version_Conflict);
+      Rejected_Command : constant Identity.Adapters.Repositories.Commands.Command_Result :=
+        Identity.Adapters.Repositories.Commands.Rejection;
+      Close_Active_Result : constant Identity.Adapters.Repositories.Transactions.Transaction_Result :=
+        Identity.Adapters.Repositories.Transactions.Close
+          (Identity.Adapters.Repositories.Transaction_Active);
+   begin
+      Assert
+        (Context.State = Identity.Adapters.Repositories.Opened
+         and then Context.Capabilities.Security_Transitions,
+         "repository factory opens operation-scoped context with stable capabilities");
+      Assert
+        (Identity.Adapters.Repositories.Is_Open (Identity.Adapters.Repositories.Opened)
+         and then Identity.Adapters.Repositories.In_Transaction
+           (Identity.Adapters.Repositories.Transaction_Active)
+         and then Identity.Adapters.Repositories.Is_Committed
+           (Identity.Adapters.Repositories.Committed)
+         and then Identity.Adapters.Repositories.Is_Rolled_Back
+           (Identity.Adapters.Repositories.Rolled_Back)
+         and then Identity.Adapters.Repositories.Is_Closed
+           (Identity.Adapters.Repositories.Closed)
+         and then Identity.Adapters.Repositories.Is_Faulted
+           (Identity.Adapters.Repositories.Faulted)
+         and then Identity.Adapters.Repositories.Finalized
+           (Identity.Adapters.Repositories.Committed)
+         and then Identity.Adapters.Repositories.Finalized
+           (Identity.Adapters.Repositories.Rolled_Back)
+         and then Identity.Adapters.Repositories.May_Begin_Transaction
+           (Identity.Adapters.Repositories.Opened)
+         and then Identity.Adapters.Repositories.May_Commit
+           (Identity.Adapters.Repositories.Transaction_Active)
+         and then Identity.Adapters.Repositories.May_Rollback
+           (Identity.Adapters.Repositories.Transaction_Active)
+         and then not Identity.Adapters.Repositories.Finalized
+           (Identity.Adapters.Repositories.Transaction_Active)
+         and then not Identity.Adapters.Repositories.May_Commit
+           (Identity.Adapters.Repositories.Committed),
+         "IDENTITY-REPOSITORY-001 repository context state classification is explicit");
+      Assert
+        (Identity.Adapters.Repositories.Capabilities.Admit_Transaction
+           (Context.Capabilities, Identity.Adapters.Repositories.Security_Transition, True)
+         = Identity.Adapters.Repositories.Capabilities.Supported
+         and then Identity.Adapters.Repositories.Capabilities.Admit_Transaction
+           (Missing_Security, Identity.Adapters.Repositories.Security_Transition, True)
+           = Identity.Adapters.Repositories.Capabilities.Missing_Security_Transitions
+         and then Identity.Adapters.Repositories.Capabilities.Admit_Transaction
+           (Missing_Events, Identity.Adapters.Repositories.Security_Transition, True)
+           = Identity.Adapters.Repositories.Capabilities.Missing_Atomic_Mandatory_Events
+         and then Identity.Adapters.Repositories.Capabilities.Admit_Transaction
+           (Missing_Versions, Identity.Adapters.Repositories.Security_Transition, False)
+           = Identity.Adapters.Repositories.Capabilities.Missing_Optimistic_Versions,
+         "IDENTITY-REPOSITORY-001 repository capabilities admit security transitions explicitly");
+      Assert
+        (Identity.Adapters.Repositories.Capabilities.Admit_Command
+           (Context.Capabilities, Rotation_Command)
+         = Identity.Adapters.Repositories.Capabilities.Supported
+         and then Identity.Adapters.Repositories.Capabilities.Admit_Command
+           (Missing_Rotation, Rotation_Command)
+           = Identity.Adapters.Repositories.Capabilities.Missing_Atomic_Session_Rotation
+         and then Identity.Adapters.Repositories.Capabilities.Admit_Command
+           (Missing_Token_Action, Token_Command)
+           = Identity.Adapters.Repositories.Capabilities.Missing_Atomic_Token_Action
+         and then Identity.Adapters.Repositories.Capabilities.Admit_Command
+           (Missing_Events, Mandatory_Event_Command)
+           = Identity.Adapters.Repositories.Capabilities.Missing_Atomic_Mandatory_Events
+         and then Identity.Adapters.Repositories.Capabilities.Admit_Command
+           (Missing_Versions, Versioned_Command)
+           = Identity.Adapters.Repositories.Capabilities.Missing_Optimistic_Versions
+         and then Identity.Adapters.Repositories.Capabilities.Admit_Command
+           (Missing_Replay, Replay_Command)
+           = Identity.Adapters.Repositories.Capabilities.Missing_Assertion_Replay_Registration
+         and then Identity.Adapters.Repositories.Capabilities.Admit_Command
+           (Missing_Idempotency, Idempotent_Command)
+           = Identity.Adapters.Repositories.Capabilities.Missing_Idempotency
+         and then Identity.Adapters.Repositories.Capabilities.Admit_Command
+           (Context.Capabilities, Excessive_Event_Command)
+           = Identity.Adapters.Repositories.Capabilities.Atomic_Event_Capacity_Exceeded
+         and then Identity.Adapters.Repositories.Capabilities.Admit_Command
+           (Context.Capabilities, Excessive_Size_Command)
+           = Identity.Adapters.Repositories.Capabilities.Command_Size_Exceeded,
+         "IDENTITY-REPOSITORY-001 repository command capabilities require mandatory events and versions");
+      Assert
+        (Identity.Adapters.Repositories.Commands.Is_Applied (Applied_Command)
+         and then not Identity.Adapters.Repositories.Commands.Is_Conflict
+           (Applied_Command)
+         and then Identity.Adapters.Repositories.Commands.Is_Conflict
+           (Conflict_Command)
+         and then Identity.Adapters.Repositories.Commands.Conflicts_As
+           (Conflict_Command,
+            Identity.Adapters.Repositories.Conflicts.Version_Conflict)
+         and then not Identity.Adapters.Repositories.Commands.Conflicts_As
+           (Conflict_Command,
+            Identity.Adapters.Repositories.Conflicts.State_Conflict)
+         and then not Identity.Adapters.Repositories.Commands.Is_Applied
+           (Rejected_Command),
+         "repository command results classify applied rejected and conflict outcomes");
+      Assert
+        (Identity.Adapters.Repositories.Commands.Is_Rejected (Rejected_Command)
+         and then Identity.Adapters.Repositories.Commands.No_Mutation (Rejected_Command)
+         and then Identity.Adapters.Repositories.Commands.No_Mutation (Conflict_Command)
+         and then Identity.Adapters.Repositories.Commands.Capacity_Rejected
+           ((Outcome => Identity.Adapters.Repositories.Commands.Capacity_Exceeded,
+             Conflict => Identity.Adapters.Repositories.Conflicts.Capacity_Conflict))
+         and then Identity.Adapters.Repositories.Commands.Infrastructure_Failed
+           ((Outcome => Identity.Adapters.Repositories.Commands.Infrastructure_Failure,
+             Conflict => Identity.Adapters.Repositories.Conflicts.State_Conflict))
+         and then Identity.Adapters.Repositories.Commands.Operational_Failure
+           ((Outcome => Identity.Adapters.Repositories.Commands.Capacity_Exceeded,
+             Conflict => Identity.Adapters.Repositories.Conflicts.Capacity_Conflict))
+         and then Identity.Adapters.Repositories.Commands.No_Mutation
+           ((Outcome => Identity.Adapters.Repositories.Commands.Infrastructure_Failure,
+             Conflict => Identity.Adapters.Repositories.Conflicts.State_Conflict))
+         and then not Identity.Adapters.Repositories.Commands.No_Mutation (Applied_Command),
+         "IDENTITY-REPOSITORY-001 repository command outcome classification is explicit");
+      Assert
+        (Begin_Result.State = Identity.Adapters.Repositories.Transaction_Active
+         and then not Identity.Adapters.Repositories.Failures.Is_Failure (Begin_Result.Failure),
+         "repository transaction begins explicitly");
+      Assert
+        (Identity.Adapters.Repositories.Transactions.Succeeded (Begin_Result)
+         and then Identity.Adapters.Repositories.Transactions.Active (Begin_Result)
+         and then not Identity.Adapters.Repositories.Transactions.Failed (Begin_Result),
+         "repository transaction begin result classification is explicit");
+      Assert
+        (Commit_Result.State = Identity.Adapters.Repositories.Committed
+         and then not Identity.Adapters.Repositories.Failures.Is_Failure (Commit_Result.Failure),
+         "repository transaction commits explicitly");
+      Assert
+        (Identity.Adapters.Repositories.Transactions.Succeeded (Commit_Result)
+         and then Identity.Adapters.Repositories.Transactions.Committed (Commit_Result)
+         and then Identity.Adapters.Repositories.Transactions.Failed (Recommit_Result)
+         and then Identity.Adapters.Repositories.Transactions.Succeeded (Close_Active_Result)
+         and then Identity.Adapters.Repositories.Transactions.Rolled_Back (Close_Active_Result),
+         "IDENTITY-REPOSITORY-001 repository transaction result classification is explicit");
+      Assert
+        (Recommit_Result.Failure.Code
+         = Identity.Adapters.Repositories.Failures.Already_Finalized,
+         "finalized repository transaction cannot commit twice");
+      Assert
+        (Close_Active_Result.State = Identity.Adapters.Repositories.Rolled_Back,
+         "IDENTITY-REPOSITORY-001 closing active context rolls back rather than committing");
+   end Test_28_repository_transaction_b;
+
+   procedure Test_29_repository_contact_read (T : in out AUnit.Test_Cases.Test_Case'Class) is
+      pragma Unreferenced (T);
+      Principal_Status : Identity.Adapters.Repositories.Principals.Principal_Read_Status;
+      Identity_Status : Identity.Adapters.Repositories.Identities.Identity_Read_Status;
+      Contact_Status : Identity.Adapters.Repositories.Contacts.Contact_Read_Status;
+      Account_Status : Identity.Adapters.Repositories.Accounts.Account_Read_Status;
+      Credential_Status : Identity.Adapters.Repositories.Credentials.Credential_Read_Status;
+      Authentication_Status :
+        Identity.Adapters.Repositories.Authentication.Authentication_View_Status;
+      Challenge_Status : Identity.Adapters.Repositories.Challenges.Challenge_Read_Status;
+      Session_Status : Identity.Adapters.Repositories.Sessions.Session_Read_Status;
+      Token_Status : Identity.Adapters.Repositories.Tokens.Token_Read_Status;
+      Attempt_Status : Identity.Adapters.Repositories.Attempts.Attempt_Record_Status;
+      External_Status :
+        Identity.Adapters.Repositories.External_Bindings.External_Binding_Read_Status;
+      Idempotency_Status : Identity.Adapters.Repositories.Idempotency.Idempotency_Status;
+      Event_Status : Identity.Adapters.Repositories.Events.Event_Append_Status;
+      Conformance : Identity.Adapters.Repositories.Conformance.Conformance_Result;
+   begin
+      if Identity.Adapters.Repositories.Memory.Principal_Count (Repository) = Natural'Last then
+         Principal_Status := Identity.Adapters.Repositories.Principals.Infrastructure_Failure;
+         Identity_Status := Identity.Adapters.Repositories.Identities.Infrastructure_Failure;
+         Contact_Status := Identity.Adapters.Repositories.Contacts.Infrastructure_Failure;
+         Account_Status := Identity.Adapters.Repositories.Accounts.Infrastructure_Failure;
+         Credential_Status := Identity.Adapters.Repositories.Credentials.Infrastructure_Failure;
+         Authentication_Status :=
+           Identity.Adapters.Repositories.Authentication.Infrastructure_Failure;
+         Challenge_Status := Identity.Adapters.Repositories.Challenges.Infrastructure_Failure;
+         Session_Status := Identity.Adapters.Repositories.Sessions.Infrastructure_Failure;
+         Token_Status := Identity.Adapters.Repositories.Tokens.Infrastructure_Failure;
+         Attempt_Status := Identity.Adapters.Repositories.Attempts.Infrastructure_Failure;
+         External_Status :=
+           Identity.Adapters.Repositories.External_Bindings.Infrastructure_Failure;
+         Idempotency_Status := Identity.Adapters.Repositories.Idempotency.Infrastructure_Failure;
+         Event_Status := Identity.Adapters.Repositories.Events.Infrastructure_Failure;
+         Conformance :=
+           (Profile => Identity.Adapters.Repositories.Conformance.Core_Identity_Store,
+            Status  => Identity.Adapters.Repositories.Conformance.Failed);
+      else
+         Principal_Status := Identity.Adapters.Repositories.Principals.Not_Found;
+         Identity_Status := Identity.Adapters.Repositories.Identities.Ambiguous;
+         Contact_Status := Identity.Adapters.Repositories.Contacts.Binding_Mismatch;
+         Account_Status := Identity.Adapters.Repositories.Accounts.Found;
+         Credential_Status := Identity.Adapters.Repositories.Credentials.Unusable;
+         Authentication_Status := Identity.Adapters.Repositories.Authentication.Expired;
+         Challenge_Status := Identity.Adapters.Repositories.Challenges.Consumed;
+         Session_Status := Identity.Adapters.Repositories.Sessions.Replayed;
+         Token_Status := Identity.Adapters.Repositories.Tokens.Consumed;
+         Attempt_Status := Identity.Adapters.Repositories.Attempts.Recorded;
+         External_Status := Identity.Adapters.Repositories.External_Bindings.Replay_Detected;
+         Idempotency_Status := Identity.Adapters.Repositories.Idempotency.Replayed;
+         Event_Status := Identity.Adapters.Repositories.Events.Staged;
+         Conformance :=
+           (Profile => Identity.Adapters.Repositories.Conformance.Session_Store,
+            Status  => Identity.Adapters.Repositories.Conformance.Passed);
+      end if;
+
+      Assert
+        (Principal_Status
+           /= Identity.Adapters.Repositories.Principals.Infrastructure_Failure
+         and then Identity_Status
+           /= Identity.Adapters.Repositories.Identities.Resolved
+         and then Contact_Status
+           /= Identity.Adapters.Repositories.Contacts.Found
+         and then Account_Status
+           /= Identity.Adapters.Repositories.Accounts.Not_Found
+         and then Credential_Status
+           /= Identity.Adapters.Repositories.Credentials.Found,
+         "IDENTITY-REPOSITORY-002 repository identity account and credential views are explicit");
+
+      Assert
+        (Identity.Adapters.Repositories.Contacts.Found_Status
+           (Identity.Adapters.Repositories.Contacts.Found)
+         and then Identity.Adapters.Repositories.Contacts.Missing_Status
+           (Identity.Adapters.Repositories.Contacts.Not_Found)
+         and then Identity.Adapters.Repositories.Contacts.Binding_Mismatch_Status
+           (Identity.Adapters.Repositories.Contacts.Binding_Mismatch)
+         and then Identity.Adapters.Repositories.Contacts.Capacity_Rejected
+           (Identity.Adapters.Repositories.Contacts.Capacity_Exceeded)
+         and then Identity.Adapters.Repositories.Contacts.Infrastructure_Failed
+           (Identity.Adapters.Repositories.Contacts.Infrastructure_Failure)
+         and then Identity.Adapters.Repositories.Contacts.Operational_Failure
+           (Identity.Adapters.Repositories.Contacts.Infrastructure_Failure)
+         and then Identity.Adapters.Repositories.Contacts.Disclosure_Collapsible
+           (Identity.Adapters.Repositories.Contacts.Not_Found)
+         and then Identity.Adapters.Repositories.Contacts.Disclosure_Collapsible
+           (Identity.Adapters.Repositories.Contacts.Binding_Mismatch)
+         and then not Identity.Adapters.Repositories.Contacts.Disclosure_Collapsible
+           (Identity.Adapters.Repositories.Contacts.Found),
+         "repository contact read status classification is explicit");
+
+      Assert
+        (Identity.Adapters.Repositories.Principals.Found_Status
+           (Identity.Adapters.Repositories.Principals.Found)
+         and then Identity.Adapters.Repositories.Principals.Missing_Status
+           (Identity.Adapters.Repositories.Principals.Not_Found)
+         and then Identity.Adapters.Repositories.Principals.Capacity_Rejected
+           (Identity.Adapters.Repositories.Principals.Capacity_Exceeded)
+         and then Identity.Adapters.Repositories.Principals.Infrastructure_Failed
+           (Identity.Adapters.Repositories.Principals.Infrastructure_Failure)
+         and then Identity.Adapters.Repositories.Principals.Operational_Failure
+           (Identity.Adapters.Repositories.Principals.Capacity_Exceeded)
+         and then Identity.Adapters.Repositories.Accounts.Found_Status
+           (Identity.Adapters.Repositories.Accounts.Found)
+         and then Identity.Adapters.Repositories.Accounts.Missing_Status
+           (Identity.Adapters.Repositories.Accounts.Not_Found)
+         and then Identity.Adapters.Repositories.Accounts.Capacity_Rejected
+           (Identity.Adapters.Repositories.Accounts.Capacity_Exceeded)
+         and then Identity.Adapters.Repositories.Accounts.Infrastructure_Failed
+           (Identity.Adapters.Repositories.Accounts.Infrastructure_Failure)
+         and then Identity.Adapters.Repositories.Accounts.Operational_Failure
+           (Identity.Adapters.Repositories.Accounts.Infrastructure_Failure),
+         "repository principal and account read status classification is explicit");
+
+      Assert
+        (Identity.Adapters.Repositories.Identities.Resolved_Status
+           (Identity.Adapters.Repositories.Identities.Resolved)
+         and then Identity.Adapters.Repositories.Identities.Missing_Status
+           (Identity.Adapters.Repositories.Identities.Not_Found)
+         and then Identity.Adapters.Repositories.Identities.Ambiguous_Status
+           (Identity.Adapters.Repositories.Identities.Ambiguous)
+         and then Identity.Adapters.Repositories.Identities.Capacity_Rejected
+           (Identity.Adapters.Repositories.Identities.Capacity_Exceeded)
+         and then Identity.Adapters.Repositories.Identities.Infrastructure_Failed
+           (Identity.Adapters.Repositories.Identities.Infrastructure_Failure)
+         and then Identity.Adapters.Repositories.Identities.Operational_Failure
+           (Identity.Adapters.Repositories.Identities.Infrastructure_Failure)
+         and then Identity.Adapters.Repositories.Identities.Disclosure_Collapsible
+           (Identity.Adapters.Repositories.Identities.Not_Found)
+         and then Identity.Adapters.Repositories.Identities.Disclosure_Collapsible
+           (Identity.Adapters.Repositories.Identities.Ambiguous)
+         and then not Identity.Adapters.Repositories.Identities.Disclosure_Collapsible
+           (Identity.Adapters.Repositories.Identities.Resolved)
+         and then Identity.Adapters.Repositories.Credentials.Found_Status
+           (Identity.Adapters.Repositories.Credentials.Found)
+         and then Identity.Adapters.Repositories.Credentials.Missing_Status
+           (Identity.Adapters.Repositories.Credentials.Not_Found)
+         and then Identity.Adapters.Repositories.Credentials.Unusable_Status
+           (Identity.Adapters.Repositories.Credentials.Unusable)
+         and then Identity.Adapters.Repositories.Credentials.Capacity_Rejected
+           (Identity.Adapters.Repositories.Credentials.Capacity_Exceeded)
+         and then Identity.Adapters.Repositories.Credentials.Infrastructure_Failed
+           (Identity.Adapters.Repositories.Credentials.Infrastructure_Failure)
+         and then Identity.Adapters.Repositories.Credentials.Operational_Failure
+           (Identity.Adapters.Repositories.Credentials.Capacity_Exceeded)
+         and then Identity.Adapters.Repositories.Credentials.Disclosure_Collapsible
+           (Identity.Adapters.Repositories.Credentials.Not_Found)
+         and then Identity.Adapters.Repositories.Credentials.Disclosure_Collapsible
+           (Identity.Adapters.Repositories.Credentials.Unusable)
+         and then not Identity.Adapters.Repositories.Credentials.Disclosure_Collapsible
+           (Identity.Adapters.Repositories.Credentials.Found),
+         "repository identity and credential read status classification is explicit");
+
+      Assert
+        (Authentication_Status
+           /= Identity.Adapters.Repositories.Authentication.Found
+         and then Challenge_Status
+           /= Identity.Adapters.Repositories.Challenges.Found
+         and then Session_Status
+           /= Identity.Adapters.Repositories.Sessions.Found
+         and then Token_Status
+           /= Identity.Adapters.Repositories.Tokens.Found
+         and then Attempt_Status
+           /= Identity.Adapters.Repositories.Attempts.Infrastructure_Failure,
+         "IDENTITY-REPOSITORY-003 repository authentication token session and attempt views are explicit");
+
+      Assert
+        (Identity.Adapters.Repositories.Authentication.Found_Status
+           (Identity.Adapters.Repositories.Authentication.Found)
+         and then Identity.Adapters.Repositories.Authentication.Missing_Status
+           (Identity.Adapters.Repositories.Authentication.Not_Found)
+         and then Identity.Adapters.Repositories.Authentication.Expired_Status
+           (Identity.Adapters.Repositories.Authentication.Expired)
+         and then Identity.Adapters.Repositories.Authentication.Consumed_Status
+           (Identity.Adapters.Repositories.Authentication.Consumed)
+         and then Identity.Adapters.Repositories.Authentication.Capacity_Rejected
+           (Identity.Adapters.Repositories.Authentication.Capacity_Exceeded)
+         and then Identity.Adapters.Repositories.Authentication.Infrastructure_Failed
+           (Identity.Adapters.Repositories.Authentication.Infrastructure_Failure)
+         and then Identity.Adapters.Repositories.Authentication.Operational_Failure
+           (Identity.Adapters.Repositories.Authentication.Infrastructure_Failure)
+         and then Identity.Adapters.Repositories.Authentication.Terminal_Rejection
+           (Identity.Adapters.Repositories.Authentication.Not_Found)
+         and then Identity.Adapters.Repositories.Authentication.Terminal_Rejection
+           (Identity.Adapters.Repositories.Authentication.Expired)
+         and then Identity.Adapters.Repositories.Authentication.Terminal_Rejection
+           (Identity.Adapters.Repositories.Authentication.Consumed)
+         and then not Identity.Adapters.Repositories.Authentication.Terminal_Rejection
+           (Identity.Adapters.Repositories.Authentication.Found),
+         "repository authentication read status classification is explicit");
+
+      Assert
+        (Identity.Adapters.Repositories.Challenges.Found_Status
+           (Identity.Adapters.Repositories.Challenges.Found)
+         and then Identity.Adapters.Repositories.Challenges.Missing_Status
+           (Identity.Adapters.Repositories.Challenges.Not_Found)
+         and then Identity.Adapters.Repositories.Challenges.Expired_Status
+           (Identity.Adapters.Repositories.Challenges.Expired)
+         and then Identity.Adapters.Repositories.Challenges.Consumed_Status
+           (Identity.Adapters.Repositories.Challenges.Consumed)
+         and then Identity.Adapters.Repositories.Challenges.Capacity_Rejected
+           (Identity.Adapters.Repositories.Challenges.Capacity_Exceeded)
+         and then Identity.Adapters.Repositories.Challenges.Infrastructure_Failed
+           (Identity.Adapters.Repositories.Challenges.Infrastructure_Failure)
+         and then Identity.Adapters.Repositories.Challenges.Operational_Failure
+           (Identity.Adapters.Repositories.Challenges.Capacity_Exceeded)
+         and then Identity.Adapters.Repositories.Challenges.Terminal_Rejection
+           (Identity.Adapters.Repositories.Challenges.Not_Found)
+         and then Identity.Adapters.Repositories.Challenges.Terminal_Rejection
+           (Identity.Adapters.Repositories.Challenges.Expired)
+         and then Identity.Adapters.Repositories.Challenges.Terminal_Rejection
+           (Identity.Adapters.Repositories.Challenges.Consumed)
+         and then not Identity.Adapters.Repositories.Challenges.Terminal_Rejection
+           (Identity.Adapters.Repositories.Challenges.Found),
+         "repository challenge read status classification is explicit");
+
+      Assert
+        (Identity.Adapters.Repositories.Sessions.Found_Status
+           (Identity.Adapters.Repositories.Sessions.Found)
+         and then Identity.Adapters.Repositories.Sessions.Missing_Status
+           (Identity.Adapters.Repositories.Sessions.Not_Found)
+         and then Identity.Adapters.Repositories.Sessions.Expired_Status
+           (Identity.Adapters.Repositories.Sessions.Expired)
+         and then Identity.Adapters.Repositories.Sessions.Revoked_Status
+           (Identity.Adapters.Repositories.Sessions.Revoked)
+         and then Identity.Adapters.Repositories.Sessions.Replayed_Status
+           (Identity.Adapters.Repositories.Sessions.Replayed)
+         and then Identity.Adapters.Repositories.Sessions.Capacity_Rejected
+           (Identity.Adapters.Repositories.Sessions.Capacity_Exceeded)
+         and then Identity.Adapters.Repositories.Sessions.Infrastructure_Failed
+           (Identity.Adapters.Repositories.Sessions.Infrastructure_Failure)
+         and then Identity.Adapters.Repositories.Sessions.Operational_Failure
+           (Identity.Adapters.Repositories.Sessions.Infrastructure_Failure)
+         and then Identity.Adapters.Repositories.Sessions.Terminal_Rejection
+           (Identity.Adapters.Repositories.Sessions.Replayed)
+         and then Identity.Adapters.Repositories.Sessions.Security_Response_Required
+           (Identity.Adapters.Repositories.Sessions.Replayed)
+         and then not Identity.Adapters.Repositories.Sessions.Terminal_Rejection
+           (Identity.Adapters.Repositories.Sessions.Found),
+         "repository session read status classification is explicit");
+
+      Assert
+        (Identity.Adapters.Repositories.Tokens.Found_Status
+           (Identity.Adapters.Repositories.Tokens.Found)
+         and then Identity.Adapters.Repositories.Tokens.Missing_Status
+           (Identity.Adapters.Repositories.Tokens.Not_Found)
+         and then Identity.Adapters.Repositories.Tokens.Expired_Status
+           (Identity.Adapters.Repositories.Tokens.Expired)
+         and then Identity.Adapters.Repositories.Tokens.Consumed_Status
+           (Identity.Adapters.Repositories.Tokens.Consumed)
+         and then Identity.Adapters.Repositories.Tokens.Revoked_Status
+           (Identity.Adapters.Repositories.Tokens.Revoked)
+         and then Identity.Adapters.Repositories.Tokens.Capacity_Rejected
+           (Identity.Adapters.Repositories.Tokens.Capacity_Exceeded)
+         and then Identity.Adapters.Repositories.Tokens.Infrastructure_Failed
+           (Identity.Adapters.Repositories.Tokens.Infrastructure_Failure)
+         and then Identity.Adapters.Repositories.Tokens.Operational_Failure
+           (Identity.Adapters.Repositories.Tokens.Capacity_Exceeded)
+         and then Identity.Adapters.Repositories.Tokens.Terminal_Rejection
+           (Identity.Adapters.Repositories.Tokens.Consumed)
+         and then not Identity.Adapters.Repositories.Tokens.Terminal_Rejection
+           (Identity.Adapters.Repositories.Tokens.Found),
+         "repository token read status classification is explicit");
+
+      Assert
+        (Identity.Adapters.Repositories.Attempts.Recorded_Status
+           (Identity.Adapters.Repositories.Attempts.Recorded)
+         and then Identity.Adapters.Repositories.Attempts.Deferred_Status
+           (Identity.Adapters.Repositories.Attempts.Deferred)
+         and then Identity.Adapters.Repositories.Attempts.Capacity_Rejected
+           (Identity.Adapters.Repositories.Attempts.Capacity_Exceeded)
+         and then Identity.Adapters.Repositories.Attempts.Infrastructure_Failed
+           (Identity.Adapters.Repositories.Attempts.Infrastructure_Failure)
+         and then Identity.Adapters.Repositories.Attempts.Operational_Failure
+           (Identity.Adapters.Repositories.Attempts.Infrastructure_Failure),
+         "repository attempt record status classification is explicit");
+
+      Assert
+        (External_Status
+           /= Identity.Adapters.Repositories.External_Bindings.Found
+         and then Idempotency_Status
+           /= Identity.Adapters.Repositories.Idempotency.Fresh
+         and then Event_Status
+           /= Identity.Adapters.Repositories.Events.Infrastructure_Failure
+         and then Conformance.Profile = Identity.Adapters.Repositories.Conformance.Session_Store
+         and then Conformance.Status = Identity.Adapters.Repositories.Conformance.Passed
+         and then Identity.Adapters.Repositories.Conformance.Certification_Profile'Pos
+           (Identity.Adapters.Repositories.Conformance.Federated_Identity_Store) = 4
+         and then Identity.Adapters.Repositories.Conformance.Required_Check_Count
+           (Identity.Adapters.Repositories.Conformance.Federated_Identity_Store) = 7
+         and then Identity.Adapters.Repositories.Conformance.Requires_Staged_External_Authentication
+           (Identity.Adapters.Repositories.Conformance.Federated_Identity_Store)
+         and then not Identity.Adapters.Repositories.Conformance.Requires_Staged_External_Authentication
+           (Identity.Adapters.Repositories.Conformance.Session_Store),
+         "IDENTITY-REPOSITORY-004 repository events idempotency external binding and conformance "
+         & "contracts are explicit");
+
+      Assert
+        (Identity.Adapters.Repositories.External_Bindings.Found_Status
+           (Identity.Adapters.Repositories.External_Bindings.Found)
+         and then Identity.Adapters.Repositories.External_Bindings.Missing_Status
+           (Identity.Adapters.Repositories.External_Bindings.Not_Found)
+         and then Identity.Adapters.Repositories.External_Bindings.Replay_Detected_Status
+           (Identity.Adapters.Repositories.External_Bindings.Replay_Detected)
+         and then Identity.Adapters.Repositories.External_Bindings.Capacity_Rejected
+           (Identity.Adapters.Repositories.External_Bindings.Capacity_Exceeded)
+         and then Identity.Adapters.Repositories.External_Bindings.Infrastructure_Failed
+           (Identity.Adapters.Repositories.External_Bindings.Infrastructure_Failure)
+         and then Identity.Adapters.Repositories.External_Bindings.Operational_Failure
+           (Identity.Adapters.Repositories.External_Bindings.Capacity_Exceeded)
+         and then Identity.Adapters.Repositories.External_Bindings.Security_Response_Required
+           (Identity.Adapters.Repositories.External_Bindings.Replay_Detected)
+         and then not Identity.Adapters.Repositories.External_Bindings.Security_Response_Required
+           (Identity.Adapters.Repositories.External_Bindings.Found)
+         and then Identity.Adapters.Repositories.Events.Staged_Status
+           (Identity.Adapters.Repositories.Events.Staged)
+         and then Identity.Adapters.Repositories.Events.Capacity_Rejected
+           (Identity.Adapters.Repositories.Events.Capacity_Exceeded)
+         and then Identity.Adapters.Repositories.Events.Infrastructure_Failed
+           (Identity.Adapters.Repositories.Events.Infrastructure_Failure)
+         and then Identity.Adapters.Repositories.Events.Operational_Failure
+           (Identity.Adapters.Repositories.Events.Infrastructure_Failure),
+         "repository external binding and event status classification is explicit");
+
+      Assert
+        (Identity.Adapters.Repositories.Conflicts.Retryable
+           (Identity.Adapters.Repositories.Conflicts.Version_Conflict)
+         and then Identity.Adapters.Repositories.Conflicts.Retryable
+           (Identity.Adapters.Repositories.Conflicts.Serialization_Conflict)
+         and then Identity.Adapters.Repositories.Conflicts.Concurrency_Conflict
+           (Identity.Adapters.Repositories.Conflicts.Version_Conflict)
+         and then Identity.Adapters.Repositories.Conflicts.Concurrency_Conflict
+           (Identity.Adapters.Repositories.Conflicts.Serialization_Conflict)
+         and then Identity.Adapters.Repositories.Conflicts.State_Predicate_Failed
+           (Identity.Adapters.Repositories.Conflicts.State_Conflict)
+         and then Identity.Adapters.Repositories.Conflicts.Uniqueness_Rejected
+           (Identity.Adapters.Repositories.Conflicts.Uniqueness_Conflict)
+         and then Identity.Adapters.Repositories.Conflicts.Replay_Rejected
+           (Identity.Adapters.Repositories.Conflicts.Replay_Conflict)
+         and then Identity.Adapters.Repositories.Conflicts.Idempotency_Rejected
+           (Identity.Adapters.Repositories.Conflicts.Idempotency_Conflict)
+         and then Identity.Adapters.Repositories.Conflicts.Capacity_Rejected
+           (Identity.Adapters.Repositories.Conflicts.Capacity_Conflict)
+         and then Identity.Adapters.Repositories.Conflicts.Serialization_Rejected
+           (Identity.Adapters.Repositories.Conflicts.Serialization_Conflict)
+         and then Identity.Adapters.Repositories.Conflicts.One_Time_Use_Conflict
+           (Identity.Adapters.Repositories.Conflicts.Replay_Conflict)
+         and then Identity.Adapters.Repositories.Conflicts.One_Time_Use_Conflict
+           (Identity.Adapters.Repositories.Conflicts.Idempotency_Conflict)
+         and then not Identity.Adapters.Repositories.Conflicts.Retryable
+           (Identity.Adapters.Repositories.Conflicts.State_Conflict)
+         and then not Identity.Adapters.Repositories.Conflicts.One_Time_Use_Conflict
+           (Identity.Adapters.Repositories.Conflicts.Version_Conflict),
+         "repository conflict category classification is explicit");
+
+      Assert
+        (Identity.Adapters.Repositories.Conformance.Requires_Staged_External_Authentication
+           (Identity.Adapters.Repositories.Conformance.Federated_Identity_Store)
+         and then not Identity.Adapters.Repositories.Conformance.Requires_Staged_External_Authentication
+           (Identity.Adapters.Repositories.Conformance.Recovery_Store),
+         "federated conformance metadata requires staged external authentication");
+
+      Assert
+        (Identity.Adapters.Repositories.Conformance.Not_Run_Status
+           (Identity.Adapters.Repositories.Conformance.Not_Run)
+         and then Identity.Adapters.Repositories.Conformance.Passed_Status
+           (Identity.Adapters.Repositories.Conformance.Passed)
+         and then Identity.Adapters.Repositories.Conformance.Failed_Status
+           (Identity.Adapters.Repositories.Conformance.Failed)
+         and then Identity.Adapters.Repositories.Conformance.Unsupported_Status
+           (Identity.Adapters.Repositories.Conformance.Unsupported_Profile)
+         and then Identity.Adapters.Repositories.Conformance.Terminal_Status
+           (Identity.Adapters.Repositories.Conformance.Passed)
+         and then Identity.Adapters.Repositories.Conformance.Terminal_Status
+           (Identity.Adapters.Repositories.Conformance.Failed)
+         and then Identity.Adapters.Repositories.Conformance.Terminal_Status
+           (Identity.Adapters.Repositories.Conformance.Unsupported_Profile)
+         and then Identity.Adapters.Repositories.Conformance.May_Advertise_Profile
+           (Identity.Adapters.Repositories.Conformance.Passed)
+         and then not Identity.Adapters.Repositories.Conformance.Terminal_Status
+           (Identity.Adapters.Repositories.Conformance.Not_Run)
+         and then not Identity.Adapters.Repositories.Conformance.May_Advertise_Profile
+           (Identity.Adapters.Repositories.Conformance.Failed),
+         "repository conformance status classification is explicit");
+   end Test_29_repository_contact_read;
+
+   procedure Test_30_reset_request_principal (T : in out AUnit.Test_Cases.Test_Case'Class) is
+      pragma Unreferenced (T);
+      Key : constant Identity.Operations.Idempotency.Idempotency_Key :=
+        Identity.Operations.Idempotency.From_String ("reset-request:principal-1:2026-07-19");
+      Oversized_Key_Input : constant String
+        (1 .. Identity.Limits.Max_Public_Text_Bytes + 1) := [others => 'k'];
+      First : Identity.Adapters.Repositories.Idempotency.Reservation;
+      In_Progress : Identity.Adapters.Repositories.Idempotency.Reservation;
+      Stale_Completion : Identity.Adapters.Repositories.Idempotency.Reservation;
+      Completed : Identity.Adapters.Repositories.Idempotency.Reservation;
+      Replayed : Identity.Adapters.Repositories.Idempotency.Reservation;
+      Conflict : Identity.Adapters.Repositories.Idempotency.Reservation;
+      Completion_Result : Identity.Operations.Idempotency.Idempotency_Result;
+      Replay_Result : Identity.Operations.Idempotency.Idempotency_Result;
+   begin
+      Identity.Adapters.Repositories.Memory.Initialize (Repository);
+
+      First :=
+        Identity.Adapters.Repositories.Memory.Reserve_Idempotency
+          (Repository,
+           Identity.Operations.Idempotency.Password_Reset_Request,
+           Key);
+      In_Progress :=
+        Identity.Adapters.Repositories.Memory.Reserve_Idempotency
+          (Repository,
+           Identity.Operations.Idempotency.Password_Reset_Request,
+           Key);
+      Stale_Completion :=
+        Identity.Adapters.Repositories.Memory.Complete_Idempotency
+          (Repository,
+           Identity.Operations.Idempotency.Password_Reset_Request,
+           Key,
+           99);
+      Completed :=
+        Identity.Adapters.Repositories.Memory.Complete_Idempotency
+          (Repository,
+           Identity.Operations.Idempotency.Password_Reset_Request,
+           Key,
+           In_Progress.Version);
+      Replayed :=
+        Identity.Adapters.Repositories.Memory.Reserve_Idempotency
+          (Repository,
+           Identity.Operations.Idempotency.Password_Reset_Request,
+           Key);
+      Conflict :=
+        Identity.Adapters.Repositories.Memory.Reserve_Idempotency
+          (Repository,
+           Identity.Operations.Idempotency.API_Key_Issue,
+           Key);
+      Completion_Result :=
+        Identity.Adapters.Repositories.Idempotency.To_Operation_Result (Completed);
+      Replay_Result :=
+        Identity.Adapters.Repositories.Idempotency.To_Operation_Result (Replayed);
+
+      Assert
+        (First.Status = Identity.Adapters.Repositories.Idempotency.Fresh
+         and then In_Progress.Status = Identity.Adapters.Repositories.Idempotency.In_Progress
+         and then Stale_Completion.Status = Identity.Adapters.Repositories.Idempotency.Conflict
+         and then not Stale_Completion.Completed
+         and then Stale_Completion.Version = In_Progress.Version
+         and then Completed.Status = Identity.Adapters.Repositories.Idempotency.Fresh
+         and then Replayed.Status = Identity.Adapters.Repositories.Idempotency.Replayed
+         and then Conflict.Status = Identity.Adapters.Repositories.Idempotency.Conflict,
+         "IDENTITY-REPOSITORY-004 memory idempotency reserves completes replays and conflicts");
+      Assert
+        (Identity.Adapters.Repositories.Idempotency.Fresh_Status
+           (Identity.Adapters.Repositories.Idempotency.Fresh)
+         and then Identity.Adapters.Repositories.Idempotency.Replayed_Status
+           (Identity.Adapters.Repositories.Idempotency.Replayed)
+         and then Identity.Adapters.Repositories.Idempotency.In_Progress_Status
+           (Identity.Adapters.Repositories.Idempotency.In_Progress)
+         and then Identity.Adapters.Repositories.Idempotency.Conflict_Status
+           (Identity.Adapters.Repositories.Idempotency.Conflict)
+         and then Identity.Adapters.Repositories.Idempotency.Capacity_Rejected
+           (Identity.Adapters.Repositories.Idempotency.Capacity_Exceeded)
+         and then Identity.Adapters.Repositories.Idempotency.Infrastructure_Failed
+           (Identity.Adapters.Repositories.Idempotency.Infrastructure_Failure)
+         and then Identity.Adapters.Repositories.Idempotency.Operational_Failure
+           (Identity.Adapters.Repositories.Idempotency.Capacity_Exceeded)
+         and then Identity.Adapters.Repositories.Idempotency.Operational_Failure
+           (Identity.Adapters.Repositories.Idempotency.Infrastructure_Failure)
+         and then Identity.Adapters.Repositories.Idempotency.Terminal_Status
+           (Identity.Adapters.Repositories.Idempotency.Replayed)
+         and then Identity.Adapters.Repositories.Idempotency.Terminal_Status
+           (Identity.Adapters.Repositories.Idempotency.Conflict)
+         and then not Identity.Adapters.Repositories.Idempotency.Terminal_Status
+           (Identity.Adapters.Repositories.Idempotency.In_Progress),
+         "repository idempotency status classification is explicit");
+      Assert
+        (Completed.Completed
+         and then Completed.Version > Stale_Completion.Version,
+         "IDENTITY-REPOSITORY-004 stale staged idempotency completion leaves reservation incomplete");
+      Assert
+        (Identity.Operations.Idempotency.Secret_Output_Permitted (Completion_Result)
+         and then Completion_Result.State = Identity.Operations.Idempotency.Completed
+         and then not Identity.Operations.Idempotency.Secret_Output_Permitted (Replay_Result)
+         and then Replay_Result.Decision = Identity.Operations.Idempotency.Replay_Completed
+         and then Identity.Operations.Idempotency.Retry_Is_Safe (Replay_Result),
+         "IDENTITY-REPOSITORY-004 replayed idempotent issuance does not re-emit one-time secrets");
+
+      Assert
+        (Identity.Operations.Idempotency.Validate_Input ("") = Identity.Operations.Idempotency.Empty
+         and then Identity.Operations.Idempotency.Missing_Key
+           (Identity.Operations.Idempotency.Empty)
+         and then Identity.Operations.Idempotency.Validate_Input
+           ("reset-request:principal-1:2026-07-19")
+           = Identity.Operations.Idempotency.Accepted
+         and then Identity.Operations.Idempotency.Accepted_Key
+           (Identity.Operations.Idempotency.Accepted)
+         and then Identity.Operations.Idempotency.Validate_Input (Oversized_Key_Input)
+           = Identity.Operations.Idempotency.Too_Large
+         and then Identity.Operations.Idempotency.Rejected_Key
+           (Identity.Operations.Idempotency.Too_Large)
+         and then Identity.Operations.Idempotency.Size_Rejected
+           (Identity.Operations.Idempotency.Too_Large)
+         and then Identity.Operations.Idempotency.Valid (Key)
+         and then Identity.Operations.Idempotency.Length (Key) > 0
+         and then Identity.Operations.Idempotency.Image (Key)
+           = "reset-request:principal-1:2026-07-19"
+         and then Identity.Operations.Idempotency.Equal
+           (Key,
+            Identity.Operations.Idempotency.From_String
+              ("reset-request:principal-1:2026-07-19")),
+         "IDENTITY-REPOSITORY-004 idempotency key validation rejects empty and oversized input");
+
+      Assert
+        (Identity.Operations.Idempotency.Fresh_Decision
+           (Identity.Operations.Idempotency.Fresh)
+         and then Identity.Operations.Idempotency.Replay_Decision
+           (Identity.Operations.Idempotency.Replay_Completed)
+         and then Identity.Operations.Idempotency.In_Progress_Decision
+           (Identity.Operations.Idempotency.In_Progress)
+         and then Identity.Operations.Idempotency.Conflict_Decision
+           (Identity.Operations.Idempotency.Conflict)
+         and then Identity.Operations.Idempotency.Capacity_Rejected
+           (Identity.Operations.Idempotency.Capacity_Exceeded)
+         and then Identity.Operations.Idempotency.Infrastructure_Failed
+           (Identity.Operations.Idempotency.Infrastructure_Failure)
+         and then Identity.Operations.Idempotency.Operational_Failure
+           (Identity.Operations.Idempotency.Capacity_Exceeded)
+         and then Identity.Operations.Idempotency.Operational_Failure
+           (Identity.Operations.Idempotency.Infrastructure_Failure)
+         and then Identity.Operations.Idempotency.Terminal_Decision
+         (Identity.Operations.Idempotency.Replay_Completed)
+         and then not Identity.Operations.Idempotency.Terminal_Decision
+           (Identity.Operations.Idempotency.Fresh)
+         and then Identity.Operations.Idempotency.No_Mutation
+           (Identity.Operations.Idempotency.Replay_Completed)
+         and then Identity.Operations.Idempotency.No_Mutation
+           (Identity.Operations.Idempotency.In_Progress)
+         and then Identity.Operations.Idempotency.No_Mutation
+           (Identity.Operations.Idempotency.Conflict)
+         and then Identity.Operations.Idempotency.No_Mutation
+           (Identity.Operations.Idempotency.Capacity_Exceeded)
+         and then Identity.Operations.Idempotency.No_Mutation
+           (Identity.Operations.Idempotency.Infrastructure_Failure)
+         and then not Identity.Operations.Idempotency.No_Mutation
+           (Identity.Operations.Idempotency.Fresh)
+         and then Identity.Operations.Idempotency.Reserved_State
+           (Identity.Operations.Idempotency.Reserved)
+         and then Identity.Operations.Idempotency.Completed_State
+           (Identity.Operations.Idempotency.Completed)
+         and then Identity.Operations.Idempotency.Abandoned_State
+           (Identity.Operations.Idempotency.Abandoned)
+         and then Identity.Operations.Idempotency.Terminal_State
+           (Identity.Operations.Idempotency.Completed)
+         and then Identity.Operations.Idempotency.Terminal_State
+           (Identity.Operations.Idempotency.Abandoned)
+         and then not Identity.Operations.Idempotency.Terminal_State
+           (Identity.Operations.Idempotency.Reserved),
+         "idempotency decision completion state and no-mutation classification is explicit");
+   end Test_30_reset_request_principal;
+
+   procedure Test_31_administrative_restricti (T : in out AUnit.Test_Cases.Test_Case'Class) is
+      pragma Unreferenced (T);
+   begin
+      Account_State.Administrative := Identity.Accounts.States.Disabled;
+      Assert
+        (Identity.Accounts.States.Evaluate (Account_State) = Identity.Accounts.States.Ineligible,
+         "administrative restrictions survive authentication state");
+
+      Identity.Adapters.Repositories.Memory.Initialize (Repository);
+
+      Assert
+        (Identity.Operations.Principals.Create.Execute
+           (Repository,
+            (Id => P1,
+             Kind => Identity.Principals.Kinds.Human,
+             State => Identity.Principals.Definitions.Active,
+             Version => 0), Audit_Context, Next_Audit_Event, 1)
+         = Identity.Adapters.Repositories.Memory.Applied,
+         "memory repository creates principal");
+
+      Assert
+        (Identity.Operations.Accounts.Create.Execute
+           (Repository,
+            (Id => A1,
+             Principal => P1,
+             State => (Administrative => Identity.Accounts.States.Enabled,
+                       Lifecycle => Identity.Accounts.States.Active,
+                       Verification => Identity.Accounts.States.No_Verification_Required,
+                       Lock_State => Identity.Accounts.States.Not_Locked,
+                       Requirements => (others => False),
+                       Recovery => (others => False)),
+             Version => 0), Audit_Context, Next_Audit_Event, 1)
+         = Identity.Adapters.Repositories.Memory.Applied,
+         "memory repository creates account only for existing principal");
+
+      Assert
+        (Identity.Operations.Identities.Add.Execute
+           (Repository,
+            (Id => B1,
+             Principal => P1,
+             Kind => Login_Kind,
+             Normalized => Alice,
+             State => Identity.Identities.Bindings.Active,
+             Version => 0), Audit_Context, Next_Audit_Event, 1)
+         = Identity.Adapters.Repositories.Memory.Applied,
+         "identity binding add operation creates active binding");
+
+      Assert
+        (Identity.Adapters.Repositories.Memory.Resolve
+           (Repository,
+            (Kind => Login_Kind, Value => Alice)).Status
+         = Identity.Identities.Resolution.Resolved
+         and then Identity.Identities.Resolution.Successful
+           (Identity.Adapters.Repositories.Memory.Resolve
+              (Repository,
+               (Kind => Login_Kind, Value => Alice)).Status),
+         "identity registry resolves active binding");
+
+      Assert
+        (Identity.Identities.Bindings.Admission
+           (Identity.Identities.Bindings.Active,
+            Identity.Identities.Bindings.Subject_Resolution)
+           = Identity.Identities.Bindings.Binding_Admitted
+         and then Identity.Identities.Bindings.Admission_Accepted
+           (Identity.Identities.Bindings.Binding_Admitted)
+         and then not Identity.Identities.Bindings.Admission_Rejected
+           (Identity.Identities.Bindings.Binding_Admitted)
+         and then not Identity.Identities.Bindings.No_Mutation
+           (Identity.Identities.Bindings.Binding_Admitted)
+         and then Identity.Identities.Bindings.Usable_For_Resolution
+           (Identity.Identities.Bindings.Active)
+         and then Identity.Identities.Bindings.Admission
+           (Identity.Identities.Bindings.Revoked,
+            Identity.Identities.Bindings.Subject_Resolution)
+           = Identity.Identities.Bindings.Active_Required
+         and then Identity.Identities.Bindings.Active_Rejected
+           (Identity.Identities.Bindings.Active_Required)
+         and then Identity.Identities.Bindings.Admission_Rejected
+           (Identity.Identities.Bindings.Active_Required)
+         and then Identity.Identities.Bindings.No_Mutation
+           (Identity.Identities.Bindings.Active_Required)
+         and then not Identity.Identities.Bindings.Usable_For_Resolution
+           (Identity.Identities.Bindings.Revoked)
+         and then Identity.Identities.Bindings.Admission
+           (Identity.Identities.Bindings.Active,
+            Identity.Identities.Bindings.Binding_Revocation)
+           = Identity.Identities.Bindings.Binding_Admitted
+         and then Identity.Identities.Bindings.Can_Revoke
+           (Identity.Identities.Bindings.Active)
+         and then Identity.Identities.Bindings.Admission
+           (Identity.Identities.Bindings.Revoked,
+            Identity.Identities.Bindings.Binding_Revocation)
+           = Identity.Identities.Bindings.Not_Revoked_Required
+         and then Identity.Identities.Bindings.Revoked_Rejected
+           (Identity.Identities.Bindings.Not_Revoked_Required)
+         and then Identity.Identities.Bindings.Admission_Rejected
+           (Identity.Identities.Bindings.Not_Revoked_Required)
+         and then Identity.Identities.Bindings.No_Mutation
+           (Identity.Identities.Bindings.Not_Revoked_Required)
+         and then not Identity.Identities.Bindings.Can_Revoke
+           (Identity.Identities.Bindings.Revoked)
+         and then Identity.Identities.Bindings.Admission
+           (Identity.Identities.Bindings.Active,
+            Identity.Identities.Bindings.Binding_Replacement)
+           = Identity.Identities.Bindings.Binding_Admitted
+         and then Identity.Identities.Bindings.Can_Replace
+           (Identity.Identities.Bindings.Active)
+         and then Identity.Identities.Bindings.Admission
+           (Identity.Identities.Bindings.Suspended,
+            Identity.Identities.Bindings.Binding_Replacement)
+           = Identity.Identities.Bindings.Active_Required
+         and then not Identity.Identities.Bindings.Can_Replace
+           (Identity.Identities.Bindings.Suspended)
+         and then Identity.Identities.Bindings.Same_Active_Subject
+           ((Id => B1,
+             Principal => P1,
+             Kind => Login_Kind,
+             Normalized => Alice,
+             State => Identity.Identities.Bindings.Active,
+             Version => 0),
+            (Id => B2,
+             Principal => P2,
+             Kind => Login_Kind,
+             Normalized => Alice,
+             State => Identity.Identities.Bindings.Active,
+             Version => 0))
+         and then not Identity.Identities.Bindings.Same_Active_Subject
+           ((Id => B1,
+             Principal => P1,
+             Kind => Login_Kind,
+             Normalized => Alice,
+             State => Identity.Identities.Bindings.Revoked,
+             Version => 0),
+            (Id => B2,
+             Principal => P2,
+             Kind => Login_Kind,
+             Normalized => Alice,
+             State => Identity.Identities.Bindings.Active,
+             Version => 0))
+         and then Identity.Identities.Bindings.Active_Matches_Subject
+           ((Id => B1,
+             Principal => P1,
+             Kind => Login_Kind,
+             Normalized => Alice,
+             State => Identity.Identities.Bindings.Active,
+             Version => 0),
+            (Kind => Login_Kind, Value => Alice))
+         and then not Identity.Identities.Bindings.Active_Matches_Subject
+           ((Id => B1,
+             Principal => P1,
+             Kind => Login_Kind,
+             Normalized => Alice,
+             State => Identity.Identities.Bindings.Revoked,
+             Version => 0),
+            (Kind => Login_Kind, Value => Alice))
+         and then not Identity.Identities.Bindings.Matches_Subject
+           ((Id => B1,
+             Principal => P1,
+             Kind => Login_Kind,
+             Normalized => Alice,
+             State => Identity.Identities.Bindings.Active,
+             Version => 0),
+            (Kind => Login_Kind, Value => Alias_One)),
+         "identity binding lifecycle admission is explicit");
+
+      Assert
+        (Identity.Operations.Identities.Add.Execute
+           (Repository,
+            (Id => B2,
+             Principal => P1,
+             Kind => Login_Kind,
+             Normalized => Alice,
+             State => Identity.Identities.Bindings.Active,
+             Version => 0), Audit_Context, Next_Audit_Event, 1)
+         = Identity.Adapters.Repositories.Memory.Uniqueness_Conflict,
+         "IDENTITY-IDENTITY-001 active binding uniqueness enforced");
+
+      Assert
+        (Identity.Operations.Identities.Add.Execute
+           (Repository,
+            (Id => B3,
+             Principal => P1,
+             Kind => Login_Kind,
+             Normalized => Alias_One,
+             State => Identity.Identities.Bindings.Active,
+             Version => 0), Audit_Context, Next_Audit_Event, 1)
+         = Identity.Adapters.Repositories.Memory.Applied,
+         "identity binding add operation applied");
+
+      Assert
+        (Identity.Adapters.Repositories.Memory.Resolve
+           (Repository,
+            (Kind => Login_Kind, Value => Alias_One)).Status
+         = Identity.Identities.Resolution.Resolved,
+         "added identity binding resolves");
+
+      Assert
+        (Identity.Operations.Identities.Revoke.Execute
+           (Repository,
+            Identity.Operations.Identities.Revoke.Staged_Revoke_Request'
+              (Binding => B3,
+               Principal => P1,
+               Expected_Binding_Version => 1), Audit_Context, Next_Audit_Event, 1)
+         = Identity.Adapters.Repositories.Memory.Version_Conflict,
+         "stale staged identity binding revocation conflicts before revocation");
+
+      Assert
+        (Identity.Adapters.Repositories.Memory.Resolve
+           (Repository,
+            (Kind => Login_Kind, Value => Alias_One)).Status
+         = Identity.Identities.Resolution.Resolved,
+         "stale staged identity binding revocation leaves binding resolvable");
+
+      Assert
+        (Identity.Operations.Identities.Revoke.Execute (Repository, B3, P1, Audit_Context, Next_Audit_Event, 1)
+         = Identity.Adapters.Repositories.Memory.Applied,
+         "identity binding revoke operation applied");
+
+      Assert
+        (Identity.Adapters.Repositories.Memory.Resolve
+           (Repository,
+            (Kind => Login_Kind, Value => Alias_One)).Status
+         = Identity.Identities.Resolution.Not_Found
+         and then Identity.Identities.Resolution.Generic_Miss
+           (Identity.Adapters.Repositories.Memory.Resolve
+              (Repository,
+               (Kind => Login_Kind, Value => Alias_One)).Status)
+         and then Identity.Identities.Resolution.Disclosure_Collapsed_Rejection
+           (Identity.Identities.Resolution.Not_Found)
+         and then Identity.Identities.Resolution.Disclosure_Collapsed_Rejection
+           (Identity.Identities.Resolution.Ambiguous)
+         and then Identity.Identities.Resolution.Ambiguity_Detected
+           (Identity.Identities.Resolution.Ambiguous)
+         and then Identity.Identities.Resolution.Unsupported_Subject
+           (Identity.Identities.Resolution.Unsupported)
+         and then Identity.Identities.Resolution.Operational
+           (Identity.Identities.Resolution.Operational_Failure),
+         "revoked identity binding no longer resolves");
+
+      Assert
+        (Identity.Operations.Identities.Add.Execute
+           (Repository,
+            (Id => B4,
+             Principal => P1,
+             Kind => Login_Kind,
+             Normalized => Alias_Two,
+             State => Identity.Identities.Bindings.Active,
+             Version => 0), Audit_Context, Next_Audit_Event, 1)
+         = Identity.Adapters.Repositories.Memory.Applied,
+         "identity binding added for change workflow");
+
+      Assert
+        (Identity.Operations.Identities.Change.Execute
+           (Repository,
+            Identity.Operations.Identities.Change.Staged_Change_Request'
+              (Predecessor => B4,
+               Expected_Predecessor_Version => 1,
+               Successor =>
+                 (Id => B6,
+                  Principal => P1,
+                  Kind => Login_Kind,
+                  Normalized => Alias_Three,
+                  State => Identity.Identities.Bindings.Active,
+                  Version => 0)), Audit_Context, Next_Audit_Event, 1)
+         = Identity.Adapters.Repositories.Memory.Version_Conflict,
+         "stale staged identity binding change conflicts before predecessor revocation");
+
+      Assert
+        (Identity.Adapters.Repositories.Memory.Resolve
+           (Repository,
+            (Kind => Login_Kind, Value => Alias_Two)).Status
+         = Identity.Identities.Resolution.Resolved,
+         "stale staged identity binding change leaves predecessor resolvable");
+
+      Assert
+        (Identity.Operations.Identities.Change.Execute
+           (Repository,
+            B4,
+            (Id => B5,
+             Principal => P1,
+             Kind => Login_Kind,
+             Normalized => Alias_Three,
+             State => Identity.Identities.Bindings.Active,
+             Version => 0), Audit_Context, Next_Audit_Event, 1)
+         = Identity.Adapters.Repositories.Memory.Applied,
+         "identity binding change revokes predecessor and adds successor");
+
+      Assert
+        (Identity.Adapters.Repositories.Memory.Resolve
+           (Repository,
+            (Kind => Login_Kind, Value => Alias_Two)).Status
+         = Identity.Identities.Resolution.Not_Found,
+         "changed predecessor identity binding no longer resolves");
+
+      Assert
+        (Identity.Adapters.Repositories.Memory.Resolve
+           (Repository,
+            (Kind => Login_Kind, Value => Alias_Three)).Status
+         = Identity.Identities.Resolution.Resolved,
+         "changed successor identity binding resolves");
+
+      Assert
+        (Identity.Operations.Identities.Change.Execute
+           (Repository,
+            B5,
+            (Id => Identity.Identifiers.Entities.Identity_Binding
+                (Identity.Identifiers.From_String ("20000000-0000-0000-0000-000000000006")),
+             Principal => P1,
+             Kind => Login_Kind,
+             Normalized => Alice,
+             State => Identity.Identities.Bindings.Active,
+             Version => 0), Audit_Context, Next_Audit_Event, 1)
+         = Identity.Adapters.Repositories.Memory.Uniqueness_Conflict,
+         "identity binding change enforces active subject uniqueness");
+
+      Assert
+        (Identity.Operations.Principals.Create.Execute
+           (Repository,
+            (Id => P3,
+             Kind => Identity.Principals.Kinds.Human,
+             State => Identity.Principals.Definitions.Active,
+             Version => 0), Audit_Context, Next_Audit_Event, 1)
+         = Identity.Adapters.Repositories.Memory.Applied,
+         "retirement fixture principal created");
+
+      Assert
+        (Identity.Operations.Accounts.Create.Execute
+           (Repository,
+            (Id => A3,
+             Principal => P3,
+             State => (Administrative => Identity.Accounts.States.Enabled,
+                       Lifecycle => Identity.Accounts.States.Active,
+                       Verification => Identity.Accounts.States.No_Verification_Required,
+                       Lock_State => Identity.Accounts.States.Not_Locked,
+                       Requirements => (others => False),
+                       Recovery => (others => False)),
+             Version => 0), Audit_Context, Next_Audit_Event, 1)
+         = Identity.Adapters.Repositories.Memory.Applied,
+         "retirement fixture account created");
+
+      Assert
+        (Identity.Operations.Identities.Add.Execute
+           (Repository,
+            (Id => B7,
+             Principal => P3,
+             Kind => Login_Kind,
+             Normalized => Retired_User,
+             State => Identity.Identities.Bindings.Active,
+             Version => 0), Audit_Context, Next_Audit_Event, 1)
+         = Identity.Adapters.Repositories.Memory.Applied,
+         "retirement fixture identity binding created");
+
+      Assert
+        (Identity.Operations.Passwords.Enroll.Execute
+           (Repository, P3, C9, New_Password, Audit_Context, Next_Audit_Event, 1)
+         = Identity.Adapters.Repositories.Memory.Applied,
+         "retirement fixture password enrolled");
+
+      Assert
+        (Identity.Operations.Passwords.Authenticate.Execute
+           (Repository,
+            (Kind => Login_Kind, Value => Retired_User),
+            Presented_Password, Audit_Context, Next_Audit_Event, 1).Status = Identity.Results.Succeeded,
+         "active principal authenticates before retirement");
+
+      Assert
+        (Identity.Operations.Passwords.Authenticate.Execute
+           (Repository,
+            Identity.Operations.Passwords.Authenticate.Attempted_Request'
+              (Subject => (Kind => Login_Kind, Value => Retired_User),
+               Password => Wrong_Password,
+               Attempt => AT5,
+               Correlation => R1,
+               Subject_Fingerprint => Identity.Text.Bounded.From_String ("subject-fingerprint-lockout"),
+               Started_At => 73,
+               Completed_At => 74,
+               Lockout_Threshold => 1), Audit_Context, Next_Audit_Event, 1).Status = Identity.Results.Rejected,
+         "password failure threshold rejects authentication attempt");
+
+      Identity.Adapters.Repositories.Memory.Find_Account
+        (Repository, P3, Found_Account_Check, Account_Check);
+      Assert
+        (Found_Account_Check
+         and then Account_Check.State.Lock_State = Identity.Accounts.States.Temporarily_Locked,
+         "password failure threshold locks account deterministically");
+
+      Assert
+        (Identity.Operations.Passwords.Authenticate.Execute
+           (Repository,
+            (Kind => Login_Kind, Value => Retired_User),
+            Presented_Password, Audit_Context, Next_Audit_Event, 1).Status = Identity.Results.Rejected,
+         "temporarily locked account rejects password authentication generically");
+
+      Account_Check.State.Lock_State := Identity.Accounts.States.Not_Locked;
+      Assert
+        (Identity.Adapters.Repositories.Memory.Update_Account_State
+           (Repository, A3, P3, Account_Check.State)
+         = Identity.Adapters.Repositories.Memory.Applied,
+         "test fixture clears lockout before retirement");
+
+      Assert
+        (Identity.Operations.Principals.Retire.Execute
+           (Repository,
+            Identity.Operations.Principals.Retire.Staged_Retire_Request'
+              (Principal => P3,
+               Expected_Version => 99), Audit_Context, Next_Audit_Event, 1)
+         = Identity.Adapters.Repositories.Memory.Version_Conflict,
+         "stale staged principal retirement conflicts before lifecycle change");
+   end Test_31_administrative_restricti;
+
+   procedure Test_32_stale_staged_principal_r (T : in out AUnit.Test_Cases.Test_Case'Class) is
+      pragma Unreferenced (T);
+      Found_Principal_Check : Boolean := False;
+      Principal_Check       : Identity.Principals.Definitions.Principal_Record;
+   begin
+      Identity.Adapters.Repositories.Memory.Find_Principal
+        (Repository, P3, Found_Principal_Check, Principal_Check);
+      Assert
+        (Found_Principal_Check
+         and then Identity.Principals.Lifecycle.Active (Principal_Check.State),
+         "stale staged principal retirement leaves principal active");
+   end Test_32_stale_staged_principal_r;
+
+   procedure Test_33_principal_retirement_tra (T : in out AUnit.Test_Cases.Test_Case'Class) is
+      pragma Unreferenced (T);
+   begin
+      Assert
+        (Identity.Operations.Principals.Retire.Execute (Repository, P3, Audit_Context, Next_Audit_Event, 1)
+         = Identity.Adapters.Repositories.Memory.Applied,
+         "principal retirement transition applied");
+
+      Assert
+        (Identity.Operations.Identities.Add.Execute
+           (Repository,
+            (Id => B8,
+             Principal => P3,
+             Kind => Login_Kind,
+             Normalized => Retired_User_New_Binding,
+             State => Identity.Identities.Bindings.Active,
+             Version => 0), Audit_Context, Next_Audit_Event, 1)
+         = Identity.Adapters.Repositories.Memory.State_Conflict,
+         "identity binding add rejects retired principal");
+
+      Assert
+        (Identity.Operations.Identities.Change.Execute
+           (Repository,
+            B7,
+            (Id => B9,
+             Principal => P3,
+             Kind => Login_Kind,
+             Normalized => Retired_User_Changed_Binding,
+             State => Identity.Identities.Bindings.Active,
+             Version => 0), Audit_Context, Next_Audit_Event, 1)
+         = Identity.Adapters.Repositories.Memory.State_Conflict,
+         "identity binding change rejects retired principal");
+
+      Assert
+        (Identity.Operations.Passwords.Authenticate.Execute
+           (Repository,
+            (Kind => Login_Kind, Value => Retired_User),
+            Presented_Password, Audit_Context, Next_Audit_Event, 1).Status = Identity.Results.Rejected,
+         "retired principal cannot authenticate");
+
+      Assert
+        (Identity.Operations.Accounts.Create.Execute
+           (Repository,
+            (Id => Identity.Identifiers.Entities.Account
+                (Identity.Identifiers.From_String ("10000000-0000-0000-0000-000000000002")),
+             Principal => P2,
+             State => Account_State,
+             Version => 0), Audit_Context, Next_Audit_Event, 1)
+         = Identity.Adapters.Repositories.Memory.State_Conflict,
+         "account creation requires existing principal");
+
+      Assert
+        (Identity.Operations.Passwords.Enroll.Execute
+           (Repository, P1, C1, New_Password, Audit_Context, Next_Audit_Event, 1)
+         = Identity.Adapters.Repositories.Memory.Applied,
+         "IDENTITY-SECRET-001 password enrollment persists verifier only");
+
+      Assert
+        (Identity.Adapters.Repositories.Memory.Password_Credential_Count (Repository) = 2,
+         "password credential count projection is bounded");
+
+      Identity.Adapters.Repositories.Memory.Find_Active_Password
+        (Repository, P1, Found_Password_Check, Password_Check);
+      Assert
+        (Found_Password_Check
+         and then Identity.Passwords.Credentials.Can_Authenticate
+           (Password_Check)
+         and then (Identity.Passwords.Credentials.Authentication_Admission
+           (Password_Check)
+           = Identity.Passwords.Credentials.Password_Credential_Authentication_Admitted)
+         and then Identity.Passwords.Credentials.Authentication_Accepted
+           (Identity.Passwords.Credentials.Authentication_Admission
+              (Password_Check))
+         and then Identity.Passwords.Credentials.Can_Authenticate
+           (Identity.Passwords.Credentials.Summary (Password_Check))
+         and then Identity.Passwords.Credentials.Verifier_Missing_Rejection
+           (Identity.Passwords.Credentials.Authentication_Admission
+              ((Identity.Passwords.Credentials.Summary (Password_Check)
+                with delta Verifier_Present => False)))
+         and then Identity.Passwords.Credentials.Credential_State_Rejection
+           (Identity.Passwords.Credentials.Authentication_Admission
+              ((Identity.Passwords.Credentials.Summary (Password_Check)
+                with delta State => Identity.Credentials.States.Retired)))
+         and then (Identity.Passwords.Credentials.Authentication_Admission
+           ((Identity.Passwords.Credentials.Summary (Password_Check)
+             with delta State => Identity.Credentials.States.Retired))
+           = Identity.Passwords.Credentials.Password_Credential_Retired)
+         and then not Identity.Passwords.Credentials.Terminal
+           (Identity.Passwords.Credentials.Summary (Password_Check)),
+         "IDENTITY-CREDENTIAL-001 password credential safe projection omits verifier material");
+
+      Assert
+        (Identity.Operations.Passwords.Enroll.Execute
+           (Repository, P1, C2, New_Password, Audit_Context, Next_Audit_Event, 1)
+         = Identity.Adapters.Repositories.Memory.State_Conflict,
+         "only one active password credential in this memory profile");
+
+      Assert
+        (Identity.Operations.Passwords.Authenticate.Execute
+           (Repository,
+            (Kind => Login_Kind, Value => Alice),
+            Presented_Password, Audit_Context, Next_Audit_Event, 1).Status = Identity.Results.Succeeded,
+         "password authentication is a structured operation result");
+
+      Assert
+        (Identity.Operations.Passwords.Authenticate.Execute
+           (Repository,
+            Identity.Operations.Passwords.Authenticate.Attempted_Request'
+              (Subject => (Kind => Login_Kind, Value => Alice),
+               Password => Presented_Password,
+               Attempt => AT3,
+               Correlation => R1,
+               Subject_Fingerprint => Identity.Text.Bounded.From_String ("subject-fingerprint-login-success"),
+               Started_At => 75,
+               Completed_At => 76,
+               Lockout_Threshold => 0), Audit_Context, Next_Audit_Event, 1).Status = Identity.Results.Succeeded,
+         "password authentication request records successful attempt");
+
+      Identity.Adapters.Repositories.Memory.Find_Attempt
+        (Repository, AT3, Found_Attempt_Check, Attempt_Check);
+      Assert
+        (Found_Attempt_Check
+         and then Attempt_Check.Principal.Present
+         and then Attempt_Check.Outcome = Identity.Attempts.Outcomes.Succeeded
+         and then Attempt_Check.Failure = Identity.Attempts.Outcomes.None,
+         "successful password attempt records principal and no failure");
+
+      Assert
+        (Identity.Operations.Passwords.Authenticate.Execute
+           (Repository,
+            (Kind => Login_Kind, Value => Alice),
+            Wrong_Password, Audit_Context, Next_Audit_Event, 1).Status = Identity.Results.Rejected,
+         "wrong password is ordinary rejection");
+
+      Assert
+        (Identity.Operations.Disclosure.To_Disclosure_Safe_Result
+           (Identity.Operations.Passwords.Authenticate.Execute
+              (Repository,
+               (Kind => Login_Kind, Value => Alice),
+               Wrong_Password, Audit_Context, Next_Audit_Event, 1).Status,
+            Identity.Operations.Disclosure.Untrusted_Interactive)
+         = Identity.Operations.Disclosure.Authentication_Rejected,
+         "wrong password disclosure remains generic");
+
+      Assert
+        (Identity.Operations.Passwords.Authenticate.Execute
+           (Repository,
+            (Kind => Login_Kind, Value => Unknown_Login),
+            Wrong_Password, Audit_Context, Next_Audit_Event, 1).Status = Identity.Results.Rejected,
+         "unknown subject performs synthetic verification and rejects generically");
+
+      Assert
+        (Identity.Operations.Passwords.Authenticate.Execute
+           (Repository,
+            Identity.Operations.Passwords.Authenticate.Attempted_Request'
+              (Subject => (Kind => Login_Kind, Value => Unknown_Login),
+               Password => Wrong_Password,
+               Attempt => AT4,
+               Correlation => R1,
+               Subject_Fingerprint => Identity.Text.Bounded.From_String ("subject-fingerprint-login-unknown"),
+               Started_At => 77,
+               Completed_At => 78,
+               Lockout_Threshold => 0), Audit_Context, Next_Audit_Event, 1).Status = Identity.Results.Rejected,
+         "password authentication request records rejected attempt");
+
+      Identity.Adapters.Repositories.Memory.Find_Attempt
+        (Repository, AT4, Found_Attempt_Check, Attempt_Check);
+      Assert
+        (Found_Attempt_Check
+         and then not Attempt_Check.Principal.Present
+         and then Attempt_Check.Outcome = Identity.Attempts.Outcomes.Failed
+         and then Attempt_Check.Failure = Identity.Attempts.Outcomes.Password_Failure,
+         "rejected password attempt records generic password failure");
+
+      Assert
+        (Identity.Operations.Disclosure.To_Disclosure_Safe_Result
+           (Identity.Operations.Passwords.Authenticate.Execute
+              (Repository,
+               (Kind => Login_Kind, Value => Unknown_Login),
+               Wrong_Password, Audit_Context, Next_Audit_Event, 1).Status,
+            Identity.Operations.Disclosure.Untrusted_Interactive)
+         = Identity.Operations.Disclosure.Authentication_Rejected,
+         "unknown subject disclosure remains generic");
+
+      Assert
+        (Identity.Operations.Passwords.Change.Execute
+           (Repository, P1, C6, Wrong_Password, Changed_Password, Audit_Context, Next_Audit_Event, 1)
+         = Identity.Results.Rejected,
+         "wrong current password cannot replace credential");
+
+      Assert
+        (Identity.Operations.Passwords.Change.Execute
+           (Repository,
+            Identity.Operations.Passwords.Change.Change_Request'
+              (Principal => P1,
+               New_Credential => C6,
+               Expected_Current_Version => 99,
+               Current => Presented_Password,
+               Replacement => Changed_Password), Audit_Context, Next_Audit_Event, 1)
+         = Identity.Results.Conflict,
+         "stale staged password change conflicts before credential replacement");
+
+      Assert
+        (Identity.Operations.Passwords.Authenticate.Execute
+           (Repository,
+            (Kind => Login_Kind, Value => Alice),
+            Presented_Password, Audit_Context, Next_Audit_Event, 1).Status = Identity.Results.Succeeded,
+         "stale staged password change leaves current credential active");
+
+      Assert
+        (Identity.Operations.Passwords.Change.Execute
+           (Repository, P1, C7, Presented_Password, Changed_Password, Audit_Context, Next_Audit_Event, 1)
+         = Identity.Results.Succeeded,
+         "password change verifies old credential before replacement");
+
+      Identity.Adapters.Repositories.Memory.Find_Active_Password
+        (Repository, P1, Found_Password_Check, Password_Check);
+      Assert
+        (Found_Password_Check
+         and then Password_Check.Id = C7
+         and then Identity.Passwords.Credentials.Can_Authenticate
+           (Identity.Passwords.Credentials.Summary (Password_Check))
+         and then Identity.Passwords.Credentials.Terminal
+           (Identity.Passwords.Credentials.Summary
+              ((Id => C1,
+                Principal => P1,
+                State => Identity.Credentials.States.Retired,
+                Verifier => Identity.Text.Bounded.From_String ("old-verifier"),
+                Version => 1))),
+         "password replacement safe projection reports successor and terminal predecessor state");
+
+      Assert
+        (Identity.Operations.Passwords.Authenticate.Execute
+           (Repository,
+            (Kind => Login_Kind, Value => Alice),
+            Presented_Password, Audit_Context, Next_Audit_Event, 1).Status = Identity.Results.Rejected,
+         "retired password credential cannot authenticate");
+
+      Assert
+        (Identity.Operations.Passwords.Authenticate.Execute
+           (Repository,
+            (Kind => Login_Kind, Value => Alice),
+            Presented_Changed_Password, Audit_Context, Next_Audit_Event, 1).Status = Identity.Results.Succeeded,
+         "replacement password credential authenticates");
+
+      Assert
+        (Identity.Operations.Sessions.Create.Execute
+           (Repository,
+            Identity.Sessions.Definitions.Session_Record'
+              (Id => S10,
+               Family => F1,
+               Principal => P3,
+               Credential => (Present => False),
+               External_Provider => (Present => False),
+               Public_Reference => Retired_Principal_Session_Reference,
+               Secret_Verifier => Identity.Crypto.Secret_Verifiers.Derive_Text
+                 (Identity.Crypto.Domains.Session_Token, Retired_Principal_Session_Secret),
+               Assurance => Identity.Assurance.Levels.Basic,
+               Attributes => (others => <>),
+               Created_At => 9,
+               Original_Authenticated_At => 9,
+               Primary_Authenticated_At => 9,
+               MFA_Completed_At => (Present => False),
+               Step_Up_At => (Present => False),
+               Last_Seen_At => 9,
+               Idle_Expires_At => (Present => True, Time_Point => 100),
+               Absolute_Expires_At => (Present => True, Time_Point => 1000),
+               Remembered => False,
+               Generation => 0,
+               State => Identity.Sessions.Definitions.Active,
+               Version => 0), Audit_Context, Next_Audit_Event, 1)
+         = Identity.Adapters.Repositories.Memory.State_Conflict,
+         "session creation rejects retired principal");
+
+      Assert
+        (Identity.Operations.Sessions.Create.Execute
+           (Repository,
+            Identity.Sessions.Definitions.Session_Record'
+              (Id => S1,
+             Family => F1,
+             Principal => P1,
+             Credential => (Present => False),
+             External_Provider => (Present => False),
+             Public_Reference => Session_Reference,
+             Secret_Verifier => Identity.Crypto.Secret_Verifiers.Derive_Text
+               (Identity.Crypto.Domains.Session_Token, Session_Secret),
+             Assurance => Identity.Assurance.Levels.Basic,
+             Attributes => (others => <>),
+             Created_At => 10,
+             Original_Authenticated_At => 10,
+             Primary_Authenticated_At => 10,
+             MFA_Completed_At => (Present => True, Value => 11),
+             Step_Up_At => (Present => False),
+             Last_Seen_At => 10,
+             Idle_Expires_At => (Present => True, Time_Point => 100),
+             Absolute_Expires_At => (Present => True, Time_Point => 1000),
+             Remembered => False,
+             Generation => 0,
+             State => Identity.Sessions.Definitions.Active,
+             Version => 0), Audit_Context, Next_Audit_Event, 1)
+         = Identity.Adapters.Repositories.Memory.Applied,
+         "IDENTITY-SESSION-001 session stores bearer verifier only");
+
+      Assert
+        (Identity.Operations.Sessions.Lookup.Execute
+           (Repository, Session_Reference, Session_Secret, 20).Status
+         = Identity.Sessions.Handles.Found
+         and then Identity.Sessions.Handles.Found
+           (Identity.Operations.Sessions.Lookup.Execute
+              (Repository, Session_Reference, Session_Secret, 20))
+         and then not Identity.Sessions.Handles.Rejected
+           (Identity.Sessions.Handles.Found)
+         and then not Identity.Sessions.Handles.Terminal_Rejection
+           (Identity.Sessions.Handles.Found),
+         "session lookup returns minimal handle");
+
+      Assert
+        (Identity.Operations.Sessions.Lookup.Execute
+           (Repository, Session_Reference, Wrong_Session_Secret, 20).Status
+         = Identity.Sessions.Handles.Not_Verified
+         and then Identity.Sessions.Handles.Rejected
+           (Identity.Operations.Sessions.Lookup.Execute
+              (Repository, Session_Reference, Wrong_Session_Secret, 20))
+         and then Identity.Sessions.Handles.Disclosure_Collapsed_Invalid
+           (Identity.Sessions.Handles.Not_Verified)
+         and then Identity.Sessions.Handles.Not_Verified_Status
+           (Identity.Sessions.Handles.Not_Verified)
+         and then Identity.Sessions.Handles.Unknown_Status
+           (Identity.Sessions.Handles.Unknown)
+         and then Identity.Sessions.Handles.Disclosure_Collapsed_Invalid
+           (Identity.Sessions.Handles.Unknown)
+         and then Identity.Sessions.Handles.Retryable_By_Presentation
+           (Identity.Sessions.Handles.Not_Verified)
+         and then not Identity.Sessions.Handles.Terminal_Rejection
+           (Identity.Sessions.Handles.Not_Verified),
+         "wrong session secret rejected");
+
+      Renewed_Handle := Identity.Operations.Sessions.Renew.Execute
+        (Repository,
+         Session_Reference,
+         Session_Secret,
+         21,
+         (Present => True, Time_Point => 120), Audit_Context, Next_Audit_Event, 1);
+      Assert
+        (Renewed_Handle.Status = Identity.Sessions.Handles.Found
+         and then Renewed_Handle.Last_Seen_At = 21
+         and then Renewed_Handle.Original_Authenticated_At = 10
+         and then Renewed_Handle.Primary_Authenticated_At = 10
+         and then Renewed_Handle.MFA_Completed_At.Present
+         and then Renewed_Handle.MFA_Completed_At.Value = 11
+         and then not Renewed_Handle.Step_Up_At.Present
+         and then Renewed_Handle.Revision = 1,
+         "session renewal advances activity and revision without resetting authentication age");
+
+      Renewed_Handle := Identity.Operations.Sessions.Update_Activity.Execute
+        (Repository,
+         Session_Reference,
+         Session_Secret,
+         22,
+         (Present => True, Time_Point => 130));
+      Assert
+        (Renewed_Handle.Status = Identity.Sessions.Handles.Found
+         and then Renewed_Handle.Last_Seen_At = 22
+         and then Renewed_Handle.Original_Authenticated_At = 10
+         and then Renewed_Handle.Primary_Authenticated_At = 10
+         and then Renewed_Handle.MFA_Completed_At.Present
+         and then Renewed_Handle.MFA_Completed_At.Value = 11
+         and then Renewed_Handle.Revision = 2,
+         "session update activity operation preserves authentication age fields");
+
+      Session_Summaries := Identity.Operations.Sessions.Enumerate.Execute
+        (Repository, P1);
+      Assert
+        (Session_Summaries.Count = 1
+         and then Identity.Identifiers.Entities.To_String
+           (Session_Summaries.Items (1).Principal)
+           = Identity.Identifiers.Entities.To_String (P1)
+         and then Identity.Identifiers.Entities.To_String
+           (Session_Summaries.Items (1).Id)
+           = Identity.Identifiers.Entities.To_String (S1)
+         and then Session_Summaries.Items (1).Revision = 2,
+         "session enumeration returns bounded safe summaries for a principal");
+
+      Renewed_Handle := Identity.Operations.Sessions.Update_Activity.Execute
+        (Repository,
+         Session_Reference,
+         Session_Secret,
+         23,
+         (Present => True, Time_Point => 140));
+      Assert
+        (Renewed_Handle.Status = Identity.Sessions.Handles.Found
+         and then Renewed_Handle.Last_Seen_At = 23
+         and then Renewed_Handle.Revision = 3
+         and then Renewed_Handle.Revision > Session_Summaries.Items (1).Revision
+         and then Renewed_Handle.Original_Authenticated_At = 10
+         and then Renewed_Handle.Primary_Authenticated_At = 10,
+         "session update activity operation advances activity and revision");
+
+      Assert
+        (Identity.Operations.Sessions.Renew.Execute
+           (Repository,
+            Session_Reference,
+            Wrong_Session_Secret,
+            23,
+            (Present => True, Time_Point => 140), Audit_Context, Next_Audit_Event, 1).Status
+         = Identity.Sessions.Handles.Not_Verified,
+         "wrong secret cannot renew session");
+
+      Assert
+        (Identity.Operations.Sessions.Renew.Execute
+           (Repository,
+            Session_Reference,
+            Session_Secret,
+            23,
+            (Present => True, Time_Point => 1001), Audit_Context, Next_Audit_Event, 1).Status
+         = Identity.Sessions.Handles.Expired
+         and then Identity.Sessions.Handles.Expired (Identity.Sessions.Handles.Expired)
+         and then Identity.Sessions.Handles.Terminal_Rejection
+           (Identity.Sessions.Handles.Expired),
+         "renewal cannot extend beyond absolute lifetime");
+
+      Identity.Adapters.Repositories.Memory.Find_Session
+        (Repository, S1, Found_Session_Check, Session_Check);
+      Pre_Rotation_Session_Version := Session_Check.Version;
+
+      Assert
+        (Identity.Operations.Sessions.Rotate.Execute
+           (Repository,
+            S1,
+            (Id => S2,
+             Family => F1,
+             Principal => P1,
+             Credential => (Present => False),
+             External_Provider => (Present => False),
+             Public_Reference => Rotated_Session_Reference,
+             Secret_Verifier => Identity.Crypto.Secret_Verifiers.Derive_Text
+               (Identity.Crypto.Domains.Session_Token, Rotated_Session_Secret),
+             Assurance => Identity.Assurance.Levels.Basic,
+             Attributes => (others => <>),
+             Created_At => 24,
+             Original_Authenticated_At => 24,
+             Primary_Authenticated_At => 24,
+             MFA_Completed_At => (Present => False),
+             Step_Up_At => (Present => False),
+             Last_Seen_At => 24,
+             Idle_Expires_At => (Present => True, Time_Point => 100),
+             Absolute_Expires_At => (Present => True, Time_Point => 1000),
+             Remembered => False,
+             Generation => 1,
+             State => Identity.Sessions.Definitions.Active,
+             Version => 0), Audit_Context, Next_Audit_Event, 1)
+         = Identity.Adapters.Repositories.Memory.Applied,
+         "IDENTITY-SESSION-001 session rotation command applied");
+
+      Identity.Adapters.Repositories.Memory.Find_Session
+        (Repository, S1, Found_Session_Check, Session_Check);
+      Assert
+        (Found_Session_Check
+         and then Session_Check.Version =
+           Identity.Versions.Next_Entity_Version (Pre_Rotation_Session_Version)
+         and then Session_Check.State = Identity.Sessions.Definitions.Rotated,
+         "session rotation advances predecessor version");
+
+      Assert
+        (Found_Session_Check
+         and then Identity.Projections.Sessions.Summary (Session_Check).Verifier_Present
+         and then Identity.Projections.Sessions.Terminal
+           (Identity.Projections.Sessions.Summary (Session_Check))
+         and then not Identity.Projections.Sessions.Lookup_Usable
+           (Identity.Projections.Sessions.Summary (Session_Check), 24),
+         "rotated session projection is verifier-free and unusable");
+   end Test_33_principal_retirement_tra;
+
+   procedure Test_34_session_ref_11 (T : in out AUnit.Test_Cases.Test_Case'Class) is
+      pragma Unreferenced (T);
+      Stale_Rotation_Status : constant Identity.Adapters.Repositories.Memory.Command_Status :=
+        Identity.Operations.Sessions.Rotate.Execute
+          (Repository,
+           Identity.Operations.Sessions.Rotate.Staged_Rotate_Request'
+             (Request =>
+                (Predecessor => S1,
+                 Id => S11,
+                 Family => F1,
+                 Principal => P1,
+                 Credential => (Present => False),
+                 External_Provider => (Present => False),
+                 Public_Reference => Identity.Text.Bounded.From_String ("session-ref-11"),
+                 Secret => Rotated_Session_Secret,
+                 Assurance => Identity.Assurance.Levels.Basic,
+                 Attributes => (others => <>),
+                 Created_At => 25,
+                 Original_Authenticated_At => 25,
+                 Primary_Authenticated_At => 25,
+                 MFA_Completed_At => (Present => False),
+                 Step_Up_At => (Present => False),
+                 Last_Seen_At => 25,
+                 Idle_Expires_At => (Present => True, Time_Point => 100),
+                 Absolute_Expires_At => (Present => True, Time_Point => 1000),
+                 Remembered => False,
+                 Generation => 2),
+              Expected_Predecessor_Version => Pre_Rotation_Session_Version), Audit_Context, Next_Audit_Event, 1);
+   begin
+      Assert
+        (Stale_Rotation_Status = Identity.Adapters.Repositories.Memory.Version_Conflict,
+         "stale staged session rotation conflicts before predecessor-state disclosure");
+   end Test_34_session_ref_11;
+
+   procedure Test_35_rotated_predecessor_reje (T : in out AUnit.Test_Cases.Test_Case'Class) is
+      pragma Unreferenced (T);
+   begin
+      Assert
+        (Identity.Operations.Sessions.Lookup.Execute
+           (Repository, Session_Reference, Session_Secret, 25).Status
+         = Identity.Sessions.Handles.Revoked,
+         "rotated predecessor rejected");
+
+      Assert
+        (Identity.Operations.Sessions.Lookup.Execute
+           (Repository, Rotated_Session_Reference, Rotated_Session_Secret, 25).Status
+         = Identity.Sessions.Handles.Found,
+         "rotated successor verifies with new bearer secret");
+
+      Assert
+        (Identity.Operations.Sessions.Rotate.Execute
+           (Repository,
+            S1,
+             (Id => Identity.Identifiers.Entities.Session
+                (Identity.Identifiers.From_String ("40000000-0000-0000-0000-000000000003")),
+             Family => F1,
+             Principal => P1,
+             Credential => (Present => False),
+             External_Provider => (Present => False),
+             Public_Reference => Identity.Text.Bounded.From_String ("session-public-reference-3"),
+             Secret_Verifier => Identity.Crypto.Secret_Verifiers.Derive_Text
+               (Identity.Crypto.Domains.Session_Token, Rotated_Session_Secret),
+             Assurance => Identity.Assurance.Levels.Basic,
+             Attributes => (others => <>),
+             Created_At => 23,
+             Original_Authenticated_At => 23,
+             Primary_Authenticated_At => 23,
+             MFA_Completed_At => (Present => False),
+             Step_Up_At => (Present => False),
+             Last_Seen_At => 23,
+             Idle_Expires_At => (Present => True, Time_Point => 100),
+             Absolute_Expires_At => (Present => True, Time_Point => 1000),
+             Remembered => False,
+             Generation => 2,
+             State => Identity.Sessions.Definitions.Active,
+             Version => 0), Audit_Context, Next_Audit_Event, 1)
+         = Identity.Adapters.Repositories.Memory.State_Conflict,
+         "rotated predecessor cannot rotate again");
+
+      Assert
+        (Identity.Operations.Sessions.Revoke.Execute
+           (Repository,
+            Identity.Operations.Sessions.Revoke.Staged_Revoke_Request'
+              (Session => S2,
+               Expected_Session_Version => 1), Audit_Context, Next_Audit_Event, 1)
+         = Identity.Adapters.Repositories.Memory.Version_Conflict,
+         "stale staged session revocation conflicts before revocation");
+
+      Assert
+        (Identity.Operations.Sessions.Lookup.Execute
+           (Repository, Rotated_Session_Reference, Rotated_Session_Secret, 24).Status
+         = Identity.Sessions.Handles.Found,
+         "stale staged session revocation leaves session usable");
+
+      Assert
+        (Identity.Operations.Sessions.Revoke.Execute (Repository, S2, Audit_Context, Next_Audit_Event, 1)
+         = Identity.Adapters.Repositories.Memory.Applied,
+         "session revocation command applied");
+
+      Assert
+        (Identity.Operations.Sessions.Lookup.Execute
+           (Repository, Rotated_Session_Reference, Rotated_Session_Secret, 24).Status
+         = Identity.Sessions.Handles.Revoked,
+         "revoked session unusable");
+
+      Assert
+        (Identity.Operations.Sessions.Create.Execute
+           (Repository,
+            Identity.Operations.Sessions.Create.Create_Request'
+              (Id => S3,
+               Family => F1,
+               Principal => P1,
+               Credential => (Present => False),
+               External_Provider => (Present => False),
+               Public_Reference => Request_Session_Reference,
+               Secret => Request_Session_Secret,
+               Assurance => Identity.Assurance.Levels.Basic,
+               Attributes => (others => <>),
+               Created_At => 25,
+               Original_Authenticated_At => 25,
+               Primary_Authenticated_At => 25,
+               MFA_Completed_At => (Present => False),
+               Step_Up_At => (Present => False),
+               Last_Seen_At => 25,
+               Idle_Expires_At => (Present => True, Time_Point => 100),
+               Absolute_Expires_At => (Present => True, Time_Point => 1000),
+               Remembered => False,
+               Generation => 2), Audit_Context, Next_Audit_Event, 1)
+         = Identity.Adapters.Repositories.Memory.Applied,
+         "IDENTITY-SESSION-001 session create operation derives verifier from secret container");
+
+      Identity.Adapters.Repositories.Memory.Find_Session
+        (Repository, S3, Found_Session_Check, Session_Check);
+      Assert
+        (Found_Session_Check
+         and then Session_Check.State = Identity.Sessions.Definitions.Active
+         and then Identity.Text.Bounded.Equal
+           (Session_Check.Secret_Verifier,
+            Identity.Crypto.Secret_Verifiers.Derive_Text
+              (Identity.Crypto.Domains.Session_Token, Request_Session_Secret)),
+         "session create operation stores derived bearer verifier only");
+
+      Assert
+        (Found_Session_Check
+         and then Identity.Projections.Sessions.Summary (Session_Check).Verifier_Present
+         and then Identity.Projections.Sessions.Lookup_Usable
+           (Identity.Projections.Sessions.Summary (Session_Check), 26)
+         and then not Identity.Projections.Sessions.Terminal
+           (Identity.Projections.Sessions.Summary (Session_Check)),
+         "active session projection exposes verifier presence without verifier material");
+
+      Assert
+        (Identity.Operations.Sessions.Lookup.Execute
+           (Repository, Request_Session_Reference, Request_Session_Secret, 26).Status
+         = Identity.Sessions.Handles.Found,
+         "session created from secret container verifies with bearer secret");
+
+      Assert
+        (Identity.Operations.Sessions.Rotate.Execute
+           (Repository,
+            Identity.Operations.Sessions.Rotate.Rotate_Request'
+              (Predecessor => S3,
+               Id => S11,
+               Family => F1,
+               Principal => P3,
+               Credential => (Present => False),
+               External_Provider => (Present => False),
+               Public_Reference => Retired_Principal_Rotated_Session_Reference,
+               Secret => Retired_Principal_Rotated_Session_Secret,
+               Assurance => Identity.Assurance.Levels.Basic,
+               Attributes => (others => <>),
+               Created_At => 27,
+               Original_Authenticated_At => 27,
+               Primary_Authenticated_At => 27,
+               MFA_Completed_At => (Present => False),
+               Step_Up_At => (Present => False),
+               Last_Seen_At => 27,
+               Idle_Expires_At => (Present => True, Time_Point => 100),
+               Absolute_Expires_At => (Present => True, Time_Point => 1000),
+               Remembered => False,
+               Generation => 3), Audit_Context, Next_Audit_Event, 1)
+         = Identity.Adapters.Repositories.Memory.State_Conflict,
+         "session rotation rejects retired successor principal");
+
+      Assert
+        (Identity.Operations.Sessions.Rotate.Execute
+           (Repository,
+            Identity.Operations.Sessions.Rotate.Rotate_Request'
+              (Predecessor => S3,
+               Id => S9,
+               Family => F1,
+               Principal => P1,
+               Credential => (Present => False),
+               External_Provider => (Present => False),
+               Public_Reference => Request_Rotated_Session_Reference,
+               Secret => Request_Rotated_Session_Secret,
+               Assurance => Identity.Assurance.Levels.Basic,
+               Attributes => (others => <>),
+               Created_At => 27,
+               Original_Authenticated_At => 27,
+               Primary_Authenticated_At => 27,
+               MFA_Completed_At => (Present => False),
+               Step_Up_At => (Present => False),
+               Last_Seen_At => 27,
+               Idle_Expires_At => (Present => True, Time_Point => 100),
+               Absolute_Expires_At => (Present => True, Time_Point => 1000),
+               Remembered => False,
+               Generation => 3), Audit_Context, Next_Audit_Event, 1)
+         = Identity.Adapters.Repositories.Memory.Applied,
+         "IDENTITY-SESSION-001 session rotate operation derives successor verifier from secret container");
+
+      Assert
+        (Identity.Operations.Sessions.Lookup.Execute
+           (Repository, Request_Session_Reference, Request_Session_Secret, 28).Status
+         = Identity.Sessions.Handles.Revoked,
+         "request-rotated session predecessor rejected");
+
+      Identity.Adapters.Repositories.Memory.Find_Session
+        (Repository, S9, Found_Session_Check, Session_Check);
+      Assert
+        (Found_Session_Check
+         and then Session_Check.State = Identity.Sessions.Definitions.Active
+         and then Identity.Text.Bounded.Equal
+           (Session_Check.Secret_Verifier,
+            Identity.Crypto.Secret_Verifiers.Derive_Text
+              (Identity.Crypto.Domains.Session_Token, Request_Rotated_Session_Secret)),
+         "session rotate operation stores derived successor verifier only");
+
+      Assert
+        (Identity.Operations.Sessions.Lookup.Execute
+           (Repository, Request_Rotated_Session_Reference, Request_Rotated_Session_Secret, 28).Status
+         = Identity.Sessions.Handles.Found,
+         "request-rotated session successor verifies with new bearer secret");
+
+      Assert
+        (Identity.Operations.Sessions.Create.Execute
+           (Repository,
+            Identity.Sessions.Definitions.Session_Record'
+              (Id => S4,
+             Family => F1,
+             Principal => P1,
+             Credential => (Present => False),
+             External_Provider => (Present => False),
+             Public_Reference => Family_Session_Reference,
+             Secret_Verifier => Identity.Crypto.Secret_Verifiers.Derive_Text
+               (Identity.Crypto.Domains.Session_Token, Family_Session_Secret),
+             Assurance => Identity.Assurance.Levels.Basic,
+             Attributes => (others => <>),
+             Created_At => 25,
+             Original_Authenticated_At => 25,
+             Primary_Authenticated_At => 25,
+             MFA_Completed_At => (Present => False),
+             Step_Up_At => (Present => False),
+             Last_Seen_At => 25,
+             Idle_Expires_At => (Present => True, Time_Point => 100),
+             Absolute_Expires_At => (Present => True, Time_Point => 1000),
+             Remembered => False,
+             Generation => 2,
+             State => Identity.Sessions.Definitions.Active,
+             Version => 0), Audit_Context, Next_Audit_Event, 1)
+         = Identity.Adapters.Repositories.Memory.Applied,
+         "second active family session created");
+
+      Assert
+        (Identity.Operations.Sessions.Revoke_Family.Execute
+           (Repository,
+            Identity.Operations.Sessions.Revoke_Family.Staged_Revoke_Request'
+              (Family => F1,
+               Expected_Affected_Count => 2), Audit_Context, Next_Audit_Event, 1)
+         = Identity.Adapters.Repositories.Memory.Version_Conflict,
+         "stale staged session family revocation conflicts before revocation");
+
+      Assert
+        (Identity.Operations.Sessions.Lookup.Execute
+           (Repository, Family_Session_Reference, Family_Session_Secret, 26).Status
+         = Identity.Sessions.Handles.Found,
+         "stale staged session family revocation leaves session usable");
+
+      Assert
+        (Identity.Operations.Sessions.Revoke_Family.Execute (Repository, F1, Audit_Context, Next_Audit_Event, 1)
+         = Identity.Adapters.Repositories.Memory.Applied,
+         "session family revocation command applied");
+
+      Assert
+        (Identity.Operations.Sessions.Lookup.Execute
+           (Repository, Family_Session_Reference, Family_Session_Secret, 26).Status
+         = Identity.Sessions.Handles.Revoked
+         and then Identity.Sessions.Handles.Revoked (Identity.Sessions.Handles.Revoked)
+         and then Identity.Sessions.Handles.Terminal_Rejection
+           (Identity.Sessions.Handles.Revoked),
+         "family revoked session unusable");
+
+      Assert
+        (Identity.Operations.Sessions.Create.Execute
+           (Repository,
+            Identity.Sessions.Definitions.Session_Record'
+              (Id => S5,
+             Family => F1,
+             Principal => P1,
+             Credential => (Present => False),
+             External_Provider => (Present => False),
+             Public_Reference => Principal_Session_Reference,
+             Secret_Verifier => Identity.Crypto.Secret_Verifiers.Derive_Text
+               (Identity.Crypto.Domains.Session_Token, Principal_Session_Secret),
+             Assurance => Identity.Assurance.Levels.Basic,
+             Attributes => (others => <>),
+             Created_At => 27,
+             Original_Authenticated_At => 27,
+             Primary_Authenticated_At => 27,
+             MFA_Completed_At => (Present => False),
+             Step_Up_At => (Present => False),
+             Last_Seen_At => 27,
+             Idle_Expires_At => (Present => True, Time_Point => 100),
+             Absolute_Expires_At => (Present => True, Time_Point => 1000),
+             Remembered => False,
+             Generation => 3,
+             State => Identity.Sessions.Definitions.Active,
+             Version => 0), Audit_Context, Next_Audit_Event, 1)
+         = Identity.Adapters.Repositories.Memory.Applied,
+         "principal session created after family revocation");
+
+      Assert
+        (Identity.Operations.Sessions.Revoke_Principal.Execute
+           (Repository,
+            Identity.Operations.Sessions.Revoke_Principal.Staged_Revoke_Request'
+              (Principal => P1,
+               Expected_Affected_Count => 2), Audit_Context, Next_Audit_Event, 1)
+         = Identity.Adapters.Repositories.Memory.Version_Conflict,
+         "stale staged principal session revocation conflicts before revocation");
+
+      Assert
+        (Identity.Operations.Sessions.Lookup.Execute
+           (Repository, Principal_Session_Reference, Principal_Session_Secret, 28).Status
+         = Identity.Sessions.Handles.Found,
+         "stale staged principal session revocation leaves session usable");
+
+      Assert
+        (Identity.Operations.Sessions.Revoke_Principal.Execute (Repository, P1, Audit_Context, Next_Audit_Event, 1)
+         = Identity.Adapters.Repositories.Memory.Applied,
+         "principal session revocation command applied");
+
+      Assert
+        (Identity.Operations.Sessions.Lookup.Execute
+           (Repository, Principal_Session_Reference, Principal_Session_Secret, 28).Status
+         = Identity.Sessions.Handles.Revoked,
+         "principal revoked session unusable");
+
+      Assert
+        (Identity.Operations.Sessions.Create.Execute
+           (Repository,
+            Identity.Sessions.Definitions.Session_Record'
+              (Id => S6,
+             Family => F1,
+             Principal => P1,
+             Credential => (Present => False),
+             External_Provider => (Present => False),
+             Public_Reference => Expired_Session_Reference,
+             Secret_Verifier => Identity.Crypto.Secret_Verifiers.Derive_Text
+               (Identity.Crypto.Domains.Session_Token, Expired_Session_Secret),
+             Assurance => Identity.Assurance.Levels.Basic,
+             Attributes => (others => <>),
+             Created_At => 1,
+             Original_Authenticated_At => 1,
+             Primary_Authenticated_At => 1,
+             MFA_Completed_At => (Present => False),
+             Step_Up_At => (Present => False),
+             Last_Seen_At => 1,
+             Idle_Expires_At => (Present => True, Time_Point => 10),
+             Absolute_Expires_At => (Present => True, Time_Point => 1000),
+             Remembered => False,
+             Generation => 4,
+             State => Identity.Sessions.Definitions.Active,
+             Version => 0), Audit_Context, Next_Audit_Event, 1)
+         = Identity.Adapters.Repositories.Memory.Applied,
+         "idle-expired session fixture created");
+
+      Assert
+        (Identity.Operations.Sessions.Expire_Eligible.Execute (Repository, 30, Audit_Context, Next_Audit_Event, 1) = 1,
+         "eligible sessions expire through explicit command");
+
+      Assert
+        (Identity.Operations.Sessions.Lookup.Execute
+           (Repository, Expired_Session_Reference, Expired_Session_Secret, 30).Status
+         = Identity.Sessions.Handles.Expired,
+         "expired session lookup reports expiration");
+
+      Assert
+        (Identity.Operations.Sessions.Purge_Retained.Execute (Repository, 31, Audit_Context, Next_Audit_Event, 1) = 7,
+         "retained non-active sessions purged deterministically");
+
+      Assert
+        (Identity.Adapters.Repositories.Memory.Session_Count (Repository) = 0,
+         "session purge removes retained session records");
+
+      Assert
+        (Identity.Operations.Tokens.Issue.Execute
+           (Repository,
+            Identity.Tokens.Definitions.Action_Token_Record'
+              (Id => T11,
+               Purpose => Identity.Tokens.Purposes.Password_Reset,
+               Principal => P3,
+               Secret_Verifier => Identity.Crypto.Secret_Verifiers.Derive_Text
+                 (Identity.Crypto.Domains.Password_Reset_Token, Reset_Token_Secret),
+               Issued_At => 30,
+               Expires_At => (Present => True, Time_Point => 300),
+               State => Identity.Tokens.Definitions.Issued,
+               Attempts => 0,
+               Version => 0), Audit_Context, Next_Audit_Event, 1)
+         = Identity.Adapters.Repositories.Memory.State_Conflict,
+         "action token issue rejects retired principal");
+
+      Assert
+        (Identity.Operations.Tokens.Issue.Execute
+           (Repository,
+            Identity.Tokens.Definitions.Action_Token_Record'
+              (Id => T1,
+               Purpose => Identity.Tokens.Purposes.Password_Reset,
+               Principal => P1,
+               Secret_Verifier => Identity.Crypto.Secret_Verifiers.Derive_Text
+                 (Identity.Crypto.Domains.Password_Reset_Token, Reset_Token_Secret),
+               Issued_At => 30,
+               Expires_At => (Present => True, Time_Point => 300),
+               State => Identity.Tokens.Definitions.Issued,
+               Attempts => 0,
+               Version => 0), Audit_Context, Next_Audit_Event, 1)
+         = Identity.Adapters.Repositories.Memory.Applied,
+         "IDENTITY-TOKEN-002 action token stores verifier only");
+
+      Assert
+        (Identity.Operations.Tokens.Verify.Execute
+           (Repository, T1, Identity.Tokens.Purposes.Password_Reset, Reset_Token_Secret, 40)
+         = Identity.Tokens.Verification.Valid,
+         "purpose-bound token verifies with matching secret");
+
+      Assert
+        (Identity.Operations.Tokens.Verify.Execute
+           (Repository, T1, Identity.Tokens.Purposes.Contact_Verification, Reset_Token_Secret, 40)
+         = Identity.Tokens.Verification.Purpose_Mismatch,
+         "purpose mismatch is explicit");
+
+      Assert
+        (Identity.Operations.Tokens.Verify.Execute
+           (Repository, T1, Identity.Tokens.Purposes.Password_Reset, Wrong_Reset_Token_Secret, 40)
+         = Identity.Tokens.Verification.Not_Verified,
+         "wrong token secret rejected");
+
+      Assert
+        (Identity.Operations.Tokens.Consume.Execute
+           (Repository, T1, Identity.Tokens.Purposes.Password_Reset, Reset_Token_Secret, 40,
+            Audit_Context, Next_Audit_Event, 1)
+         = Identity.Tokens.Verification.Valid,
+         "token consumption succeeds once");
+
+      Identity.Adapters.Repositories.Memory.Find_Token
+        (Repository, T1, Found_Token_Check, Token_Check);
+      Assert
+        (Found_Token_Check
+         and then Token_Check.Version = 1
+         and then Token_Check.State = Identity.Tokens.Definitions.Consumed,
+         "token consumption advances token version");
+
+      Assert
+        (Found_Token_Check
+         and then Identity.Tokens.Projections.Summary (Token_Check).Verifier_Present
+         and then Identity.Tokens.Projections.Summary (Token_Check).Version = 1
+         and then Identity.Tokens.Projections.Terminal
+           (Identity.Tokens.Projections.Summary (Token_Check)),
+         "action token consumed projection omits verifier material");
+
+      Assert
+        (Identity.Operations.Tokens.Consume.Execute
+           (Repository,
+            Identity.Operations.Tokens.Consume.Consume_Request'
+              (Token => T1,
+               Expected_Version => 0,
+               Purpose => Identity.Tokens.Purposes.Password_Reset,
+               Secret => Reset_Token_Secret,
+               Now => 40), Audit_Context, Next_Audit_Event, 1)
+         = Identity.Tokens.Verification.State_Conflict,
+         "stale token consumption request conflicts before consumed-state disclosure");
+
+      Assert
+        (Identity.Operations.Tokens.Consume.Execute
+           (Repository, T1, Identity.Tokens.Purposes.Password_Reset, Reset_Token_Secret, 40,
+            Audit_Context, Next_Audit_Event, 1)
+         = Identity.Tokens.Verification.Already_Consumed,
+         "consumed token cannot reactivate");
+
+      Assert
+        (Identity.Operations.Tokens.Issue.Execute
+           (Repository,
+            Identity.Tokens.Definitions.Action_Token_Record'
+              (Id => T12,
+               Purpose => Identity.Tokens.Purposes.Password_Reset,
+               Principal => P1,
+               Secret_Verifier => Identity.Crypto.Secret_Verifiers.Derive_Text
+                 (Identity.Crypto.Domains.Password_Reset_Token, Reset_Token_Secret),
+               Issued_At => 40,
+               Expires_At => (Present => True, Time_Point => 300),
+               State => Identity.Tokens.Definitions.Completed,
+               Attempts => 0,
+               Version => 0), Audit_Context, Next_Audit_Event, 1)
+         = Identity.Adapters.Repositories.Memory.Applied,
+         "completed token fixture created");
+
+      Assert
+        (Identity.Operations.Tokens.Verify.Execute
+           (Repository, T12, Identity.Tokens.Purposes.Password_Reset, Reset_Token_Secret, 40)
+         = Identity.Tokens.Verification.Already_Consumed,
+         "completed token cannot reactivate");
+
+      Assert
+        (Identity.Operations.Tokens.Consume.Execute
+           (Repository, T12, Identity.Tokens.Purposes.Password_Reset, Reset_Token_Secret, 40,
+            Audit_Context, Next_Audit_Event, 1)
+         = Identity.Tokens.Verification.Already_Consumed,
+         "completed token cannot be consumed again");
+
+      Assert
+        (Identity.Operations.Tokens.Issue.Execute
+           (Repository,
+            Identity.Operations.Tokens.Issue.Issue_Request'
+              (Id => T8,
+               Purpose => Identity.Tokens.Purposes.Password_Reset,
+               Principal => P1,
+               Verifier_Domain => Identity.Crypto.Domains.Password_Reset_Token,
+               Secret => Reset_Token_Secret,
+               Issued_At => 41,
+               Expires_At => (Present => True, Time_Point => 300),
+               Attempts => 0), Audit_Context, Next_Audit_Event, 1)
+         = Identity.Adapters.Repositories.Memory.Applied,
+         "IDENTITY-TOKEN-002 generic token issue derives verifier from secret container");
+
+      Identity.Adapters.Repositories.Memory.Find_Token
+        (Repository, T8, Found_Token_Check, Token_Check);
+      Assert
+        (Found_Token_Check
+         and then Identity.Text.Bounded.Equal
+           (Token_Check.Secret_Verifier,
+            Identity.Crypto.Secret_Verifiers.Derive_Text
+              (Identity.Crypto.Domains.Password_Reset_Token, Reset_Token_Secret))
+         and then Token_Check.State = Identity.Tokens.Definitions.Issued,
+         "generic token issue stores derived verifier only");
+
+      Assert
+        (Found_Token_Check
+         and then Identity.Tokens.Projections.Summary (Token_Check).Verifier_Present
+         and then Identity.Tokens.Projections.Can_Verify
+           (Identity.Tokens.Projections.Summary (Token_Check), 42)
+         and then not Identity.Tokens.Projections.Terminal
+           (Identity.Tokens.Projections.Summary (Token_Check)),
+         "action token issued projection exposes verifier presence without verifier material");
+
+      Assert
+        (Identity.Operations.Tokens.Verify.Execute
+           (Repository, T8, Identity.Tokens.Purposes.Password_Reset, Reset_Token_Secret, 42)
+         = Identity.Tokens.Verification.Valid,
+         "generic token issued from secret container verifies with matching secret");
+
+      Assert
+        (Identity.Operations.Passwords.Request_Reset.Execute
+           (Repository,
+            Identity.Tokens.Definitions.Action_Token_Record'
+              (Id => T2,
+               Purpose => Identity.Tokens.Purposes.Password_Reset,
+               Principal => P1,
+               Secret_Verifier => Identity.Crypto.Secret_Verifiers.Derive_Text
+                 (Identity.Crypto.Domains.Password_Reset_Token, Reset_Token_Secret),
+               Issued_At => 41,
+               Expires_At => (Present => True, Time_Point => 300),
+               State => Identity.Tokens.Definitions.Issued,
+               Attempts => 0,
+               Version => 0), Audit_Context, Next_Audit_Event, 1)
+         = Identity.Adapters.Repositories.Memory.Applied,
+         "password reset request issues purpose-bound token through public operation");
+
+      Assert
+        (Identity.Operations.Passwords.Request_Reset.Execute
+           (Repository,
+            Identity.Operations.Passwords.Request_Reset.Reset_Request'
+              (Id => T5,
+               Principal => P1,
+               Secret => Reset_Token_Secret,
+               Issued_At => 41,
+               Expires_At => (Present => True, Time_Point => 300)), Audit_Context, Next_Audit_Event, 1)
+         = Identity.Adapters.Repositories.Memory.Applied,
+         "IDENTITY-TOKEN-001 password reset request derives verifier from reset token secret");
+
+      Identity.Adapters.Repositories.Memory.Find_Token
+        (Repository, T5, Found_Token_Check, Token_Check);
+      Assert
+        (Found_Token_Check
+         and then Identity.Identifiers.Registry.Image (Token_Check.Purpose)
+           = Identity.Identifiers.Registry.Image (Identity.Tokens.Purposes.Password_Reset)
+         and then Identity.Text.Bounded.Equal
+           (Token_Check.Secret_Verifier,
+            Identity.Crypto.Secret_Verifiers.Derive_Text
+              (Identity.Crypto.Domains.Password_Reset_Token, Reset_Token_Secret)),
+         "password reset request stores purpose-bound derived token verifier only");
+
+      Identity.Adapters.Repositories.Memory.Find_Token
+        (Repository, T2, Found_Token_Check, Token_Check);
+      Assert
+        (Found_Token_Check
+         and then Token_Check.State = Identity.Tokens.Definitions.Superseded,
+         "new reset request supersedes prior reset tokens");
+
+      Assert
+        (Identity.Operations.Tokens.Verify.Execute
+           (Repository, T2, Identity.Tokens.Purposes.Password_Reset, Reset_Token_Secret, 42)
+         = Identity.Tokens.Verification.State_Conflict,
+         "superseded prior reset token cannot verify");
+
+      Assert
+        (Identity.Operations.Passwords.Complete_Reset.Execute
+           (Repository, T5, P1, Wrong_Reset_Token_Secret, 42, C8, Reset_Password, Audit_Context, Next_Audit_Event, 1)
+         = Identity.Tokens.Verification.Not_Verified,
+         "wrong reset token secret does not replace password");
+
+      Assert
+        (Identity.Operations.Passwords.Authenticate.Execute
+           (Repository,
+            (Kind => Login_Kind, Value => Alice),
+            Presented_Changed_Password, Audit_Context, Next_Audit_Event, 1).Status = Identity.Results.Succeeded,
+         "password unchanged after failed reset completion");
+
+      Assert
+        (Identity.Operations.Passwords.Complete_Reset.Execute
+           (Repository,
+            Identity.Operations.Passwords.Complete_Reset.Reset_Completion_Request'
+              (Token => T5,
+               Principal => P1,
+               Secret => Reset_Token_Secret,
+               Now => 42,
+               New_Credential => C8,
+               Password => Reset_Password,
+               Expected_Token_Version => 99,
+               Expected_Predecessor_Version => 0), Audit_Context, Next_Audit_Event, 1)
+         = Identity.Tokens.Verification.State_Conflict,
+         "stale staged reset token version conflicts before password replacement");
+
+      Assert
+        (Identity.Operations.Passwords.Complete_Reset.Execute
+           (Repository,
+            Identity.Operations.Passwords.Complete_Reset.Reset_Completion_Request'
+              (Token => T5,
+               Principal => P1,
+               Secret => Reset_Token_Secret,
+               Now => 42,
+               New_Credential => C8,
+               Password => Reset_Password,
+               Expected_Token_Version => 0,
+               Expected_Predecessor_Version => 99), Audit_Context, Next_Audit_Event, 1)
+         = Identity.Tokens.Verification.State_Conflict,
+         "stale staged reset predecessor version conflicts before password replacement");
+
+      Assert
+        (Identity.Operations.Passwords.Authenticate.Execute
+           (Repository,
+            (Kind => Login_Kind, Value => Alice),
+            Presented_Changed_Password, Audit_Context, Next_Audit_Event, 1).Status = Identity.Results.Succeeded,
+         "stale staged password reset leaves current credential active");
+
+      Assert
+        (Identity.Operations.Passwords.Complete_Reset.Execute
+           (Repository, T5, P1, Reset_Token_Secret, 43, C8, Reset_Password, Audit_Context, Next_Audit_Event, 1)
+         = Identity.Tokens.Verification.Valid,
+         "password reset atomically replaces credential and consumes token");
+
+      Identity.Adapters.Repositories.Memory.Find_Token
+        (Repository, T2, Found_Token_Check, Token_Check);
+      Assert
+        (Found_Token_Check
+         and then Token_Check.State = Identity.Tokens.Definitions.Superseded,
+         "password reset completion preserves superseded sibling reset tokens");
+
+      Assert
+        (Identity.Operations.Tokens.Verify.Execute
+           (Repository, T2, Identity.Tokens.Purposes.Password_Reset, Reset_Token_Secret, 44)
+         = Identity.Tokens.Verification.State_Conflict,
+         "superseded reset token remains unverifiable after password reset completion");
+
+      Assert
+        (Identity.Operations.Passwords.Complete_Reset.Execute
+           (Repository, T5, P1, Reset_Token_Secret, 44, C8, Reset_Password, Audit_Context, Next_Audit_Event, 1)
+         = Identity.Tokens.Verification.Already_Consumed,
+         "consumed reset token cannot complete twice");
+
+      Assert
+        (Identity.Operations.Passwords.Authenticate.Execute
+           (Repository,
+            (Kind => Login_Kind, Value => Alice),
+            Presented_Changed_Password, Audit_Context, Next_Audit_Event, 1).Status = Identity.Results.Rejected,
+         "pre-reset password credential is retired");
+
+      Assert
+        (Identity.Operations.Passwords.Authenticate.Execute
+           (Repository,
+            (Kind => Login_Kind, Value => Alice),
+            Presented_Reset_Password, Audit_Context, Next_Audit_Event, 1).Status = Identity.Results.Succeeded,
+         "reset replacement password authenticates");
+
+      Assert
+        (Identity.Operations.Verification.Request.Execute
+           (Repository,
+            Identity.Contacts.Bindings.Contact_Binding_Record'
+              (Id => CB6,
+               Principal => P3,
+               Kind => Contact_Email,
+               Normalized_Value => Contact_Email_Value_5,
+               State => Identity.Contacts.Bindings.Pending_Verification,
+               Version => 0),
+            Identity.Tokens.Definitions.Action_Token_Record'
+              (Id => T9,
+               Purpose => Identity.Tokens.Purposes.Contact_Verification,
+               Principal => P3,
+               Secret_Verifier => Identity.Crypto.Secret_Verifiers.Derive_Text
+                 (Identity.Crypto.Domains.Contact_Verification_Token, Contact_Verification_Secret),
+               Issued_At => 45,
+               Expires_At => (Present => True, Time_Point => 300),
+               State => Identity.Tokens.Definitions.Issued,
+               Attempts => 0,
+               Version => 0), Audit_Context, Next_Audit_Event, 1)
+         = Identity.Adapters.Repositories.Memory.State_Conflict,
+         "contact verification request rejects retired principal");
+
+      Assert
+        (Identity.Operations.Verification.Begin_Contact_Change.Execute
+           (Repository,
+            Identity.Verification.Changes.Contact_Change_Record'
+              (Principal   => P3,
+               Predecessor => CB6,
+               Successor   => CB7,
+               Token       => T10,
+               State       => Identity.Verification.Changes.Change_Requested,
+               Version     => 0),
+            Identity.Contacts.Bindings.Contact_Binding_Record'
+              (Id => CB7,
+               Principal => P3,
+               Kind => Contact_Email,
+               Normalized_Value => Contact_Email_Value_6,
+               State => Identity.Contacts.Bindings.Pending_Verification,
+               Version => 0),
+            Identity.Tokens.Definitions.Action_Token_Record'
+              (Id => T10,
+               Purpose => Identity.Tokens.Purposes.Contact_Change,
+               Principal => P3,
+               Secret_Verifier => Identity.Crypto.Secret_Verifiers.Derive_Text
+                 (Identity.Crypto.Domains.Contact_Verification_Token, Contact_Change_Secret),
+               Issued_At => 50,
+               Expires_At => (Present => True, Time_Point => 300),
+               State => Identity.Tokens.Definitions.Issued,
+               Attempts => 0,
+               Version => 0), Audit_Context, Next_Audit_Event, 1)
+         = Identity.Adapters.Repositories.Memory.State_Conflict,
+         "contact change request rejects retired principal");
+
+      Assert
+        (Identity.Operations.Verification.Request.Execute
+           (Repository,
+            Identity.Contacts.Bindings.Contact_Binding_Record'
+              (Id => CB1,
+               Principal => P1,
+               Kind => Contact_Email,
+               Normalized_Value => Contact_Email_Value,
+               State => Identity.Contacts.Bindings.Pending_Verification,
+               Version => 0),
+            Identity.Tokens.Definitions.Action_Token_Record'
+              (Id => T3,
+               Purpose => Identity.Tokens.Purposes.Contact_Verification,
+               Principal => P1,
+               Secret_Verifier => Identity.Crypto.Secret_Verifiers.Derive_Text
+                 (Identity.Crypto.Domains.Contact_Verification_Token, Contact_Verification_Secret),
+               Issued_At => 45,
+               Expires_At => (Present => True, Time_Point => 300),
+               State => Identity.Tokens.Definitions.Issued,
+               Attempts => 0,
+               Version => 0), Audit_Context, Next_Audit_Event, 1)
+         = Identity.Adapters.Repositories.Memory.Applied,
+         "IDENTITY-CONTACT-001 contact verification request stores pending binding and token");
+
+      Assert
+        (Identity.Adapters.Repositories.Memory.Contact_Binding_Count (Repository) = 1,
+         "contact binding count projection is bounded");
+
+      Assert
+        (Identity.Operations.Tokens.Verify.Execute
+           (Repository, T3, Identity.Tokens.Purposes.Contact_Verification,
+            Contact_Verification_Secret, 46)
+         = Identity.Tokens.Verification.Valid,
+         "contact verification token verifies with contact domain");
+
+      Assert
+        (Identity.Operations.Verification.Request.Execute
+           (Repository,
+            Identity.Contacts.Bindings.Contact_Binding_Record'
+              (Id => CB4,
+               Principal => P1,
+               Kind => Contact_Email,
+               Normalized_Value => Contact_Email_Value_3,
+               State => Identity.Contacts.Bindings.Pending_Verification,
+               Version => 0),
+            Identity.Operations.Verification.Request.Verification_Token_Request'
+              (Id => T6,
+               Principal => P1,
+               Secret => Contact_Verification_Secret,
+               Issued_At => 46,
+               Expires_At => (Present => True, Time_Point => 300)), Audit_Context, Next_Audit_Event, 1)
+         = Identity.Adapters.Repositories.Memory.Applied,
+         "IDENTITY-CONTACT-001 contact verification request derives verifier from token secret");
+
+      Identity.Adapters.Repositories.Memory.Find_Token
+        (Repository, T6, Found_Token_Check, Token_Check);
+      Assert
+        (Found_Token_Check
+         and then Identity.Identifiers.Registry.Image (Token_Check.Purpose)
+           = Identity.Identifiers.Registry.Image (Identity.Tokens.Purposes.Contact_Verification)
+         and then Identity.Text.Bounded.Equal
+           (Token_Check.Secret_Verifier,
+            Identity.Crypto.Secret_Verifiers.Derive_Text
+              (Identity.Crypto.Domains.Contact_Verification_Token, Contact_Verification_Secret)),
+         "contact verification request stores purpose-bound derived token verifier only");
+   end Test_35_rotated_predecessor_reje;
+
+   procedure Test_36_stale_staged_contact_ver (T : in out AUnit.Test_Cases.Test_Case'Class) is
+      pragma Unreferenced (T);
+      Stale_Contact_Verification : constant Identity.Tokens.Verification.Token_Verification_Outcome :=
+        Identity.Operations.Verification.Complete.Execute
+          (Repository,
+           Identity.Operations.Verification.Complete.Staged_Completion_Request'
+             (Token => T6,
+              Expected_Token_Version => 1,
+              Expected_Contact_Version => 0,
+              Secret => Wrong_Contact_Verification_Secret,
+              Now => 46,
+              Contact => CB4), Audit_Context, Next_Audit_Event, 1);
+   begin
+      Assert
+        (Stale_Contact_Verification = Identity.Tokens.Verification.State_Conflict,
+         "stale staged contact verification conflicts before secret verification");
+   end Test_36_stale_staged_contact_ver;
+
+   procedure Test_37_wrong_contact_verificati (T : in out AUnit.Test_Cases.Test_Case'Class) is
+      pragma Unreferenced (T);
+   begin
+      Assert
+        (Identity.Operations.Verification.Complete.Execute
+           (Repository, T3, Wrong_Contact_Verification_Secret, 46, CB1, Audit_Context, Next_Audit_Event, 1)
+         = Identity.Tokens.Verification.Not_Verified,
+         "wrong contact verification secret rejected without mutation");
+
+      Identity.Adapters.Repositories.Memory.Find_Contact_Binding
+        (Repository, CB1, Found_Contact_Check, Contact_Check);
+      Assert
+        (Found_Contact_Check
+         and then Contact_Check.State = Identity.Contacts.Bindings.Pending_Verification,
+         "failed contact verification leaves binding pending");
+
+      Assert
+        (Identity.Contacts.Bindings.Summary (Contact_Check).Value_Present
+         and then Identity.Contacts.Bindings.Admission
+           (Identity.Contacts.Bindings.Summary (Contact_Check),
+            Identity.Contacts.Bindings.Verification_Request)
+           = Identity.Contacts.Bindings.Contact_Binding_Admitted
+         and then Identity.Contacts.Bindings.Admission_Accepted
+           (Identity.Contacts.Bindings.Contact_Binding_Admitted)
+         and then not Identity.Contacts.Bindings.Admission_Rejected
+           (Identity.Contacts.Bindings.Contact_Binding_Admitted)
+         and then not Identity.Contacts.Bindings.No_Mutation
+           (Identity.Contacts.Bindings.Contact_Binding_Admitted)
+         and then Identity.Contacts.Bindings.Can_Request_Verification
+           (Identity.Contacts.Bindings.Summary (Contact_Check))
+         and then Identity.Contacts.Bindings.Admission
+           (Identity.Contacts.Bindings.Summary (Contact_Check),
+            Identity.Contacts.Bindings.Verification_Completion)
+           = Identity.Contacts.Bindings.Contact_Binding_Admitted
+         and then Identity.Contacts.Bindings.Can_Complete_Verification
+           (Identity.Contacts.Bindings.Summary (Contact_Check))
+         and then Identity.Contacts.Bindings.Admission
+           (Identity.Contacts.Bindings.Summary (Contact_Check),
+            Identity.Contacts.Bindings.Contact_Change_Successor)
+           = Identity.Contacts.Bindings.Contact_Binding_Admitted
+         and then Identity.Contacts.Bindings.Can_Be_Change_Successor
+           (Identity.Contacts.Bindings.Summary (Contact_Check))
+         and then Identity.Contacts.Bindings.Admission
+           (Identity.Contacts.Bindings.Summary (Contact_Check),
+            Identity.Contacts.Bindings.Contact_Value_Occupancy)
+           = Identity.Contacts.Bindings.Contact_Binding_Admitted
+         and then Identity.Contacts.Bindings.Occupies_Contact_Value
+           (Identity.Contacts.Bindings.Summary (Contact_Check))
+         and then Identity.Contacts.Bindings.Admission
+           (Identity.Contacts.Bindings.Summary (Contact_Check),
+            Identity.Contacts.Bindings.Contact_Change_Predecessor)
+           = Identity.Contacts.Bindings.Verified_Required
+         and then Identity.Contacts.Bindings.Verified_Rejected
+           (Identity.Contacts.Bindings.Verified_Required)
+         and then Identity.Contacts.Bindings.Admission_Rejected
+           (Identity.Contacts.Bindings.Verified_Required)
+         and then Identity.Contacts.Bindings.No_Mutation
+           (Identity.Contacts.Bindings.Verified_Required)
+         and then Identity.Contacts.Verification_State.Mutable
+           (Identity.Contacts.Bindings.Summary (Contact_Check))
+         and then not Identity.Contacts.Verification_State.Verified
+           (Identity.Contacts.Bindings.Summary (Contact_Check)),
+         "IDENTITY-CONTACT-001 pending contact binding safe projection omits contact value");
+
+      Assert
+        (Identity.Operations.Verification.Complete.Execute
+           (Repository, T3, Contact_Verification_Secret, 47, CB2, Audit_Context, Next_Audit_Event, 1)
+         = Identity.Tokens.Verification.Binding_Mismatch,
+         "contact verification token is bound to one contact binding");
+
+      Assert
+        (Identity.Operations.Verification.Complete.Execute
+           (Repository, T3, Contact_Verification_Secret, 48, CB1, Audit_Context, Next_Audit_Event, 1)
+         = Identity.Tokens.Verification.Valid,
+         "contact verification atomically verifies binding and consumes token");
+
+      Identity.Adapters.Repositories.Memory.Find_Contact_Binding
+        (Repository, CB1, Found_Contact_Check, Contact_Check);
+      Assert
+        (Found_Contact_Check
+         and then Contact_Check.State = Identity.Contacts.Bindings.Verified
+         and then Contact_Check.Version = 1,
+         "verified contact binding advances version");
+
+      Assert
+        (Identity.Contacts.Bindings.Summary (Contact_Check).Value_Present
+         and then Identity.Contacts.Bindings.Admission
+           (Identity.Contacts.Bindings.Summary (Contact_Check),
+            Identity.Contacts.Bindings.Contact_Change_Predecessor)
+           = Identity.Contacts.Bindings.Contact_Binding_Admitted
+         and then Identity.Contacts.Bindings.Can_Be_Change_Predecessor
+           (Identity.Contacts.Bindings.Summary (Contact_Check))
+         and then Identity.Contacts.Bindings.Admission
+           (Identity.Contacts.Bindings.Summary (Contact_Check),
+            Identity.Contacts.Bindings.Verification_Request)
+           = Identity.Contacts.Bindings.Pending_Verification_Required
+         and then Identity.Contacts.Bindings.Pending_Verification_Rejected
+           (Identity.Contacts.Bindings.Pending_Verification_Required)
+         and then Identity.Contacts.Bindings.Admission_Rejected
+           (Identity.Contacts.Bindings.Pending_Verification_Required)
+         and then Identity.Contacts.Bindings.No_Mutation
+           (Identity.Contacts.Bindings.Pending_Verification_Required)
+         and then not Identity.Contacts.Bindings.Can_Request_Verification
+           (Identity.Contacts.Bindings.Summary (Contact_Check))
+         and then Identity.Contacts.Bindings.Admission
+           (Identity.Contacts.Bindings.Retired,
+            Identity.Contacts.Bindings.Contact_Value_Occupancy)
+           = Identity.Contacts.Bindings.Occupying_State_Required
+         and then Identity.Contacts.Bindings.Occupancy_Rejected
+           (Identity.Contacts.Bindings.Occupying_State_Required)
+         and then Identity.Contacts.Bindings.Admission_Rejected
+           (Identity.Contacts.Bindings.Occupying_State_Required)
+         and then Identity.Contacts.Bindings.No_Mutation
+           (Identity.Contacts.Bindings.Occupying_State_Required)
+         and then Identity.Contacts.Verification_State.Verified
+           (Identity.Contacts.Bindings.Summary (Contact_Check))
+         and then Identity.Contacts.Verification_State.Mutable
+           (Identity.Contacts.Bindings.Summary (Contact_Check)),
+         "IDENTITY-CONTACT-001 verified contact binding safe projection preserves state only");
+
+      Assert
+        (Identity.Operations.Verification.Complete.Execute
+           (Repository, T3, Contact_Verification_Secret, 49, CB1, Audit_Context, Next_Audit_Event, 1)
+         = Identity.Tokens.Verification.Already_Consumed,
+         "consumed contact verification token cannot verify twice");
+
+      Assert
+        (Identity.Operations.Verification.Begin_Contact_Change.Execute
+           (Repository,
+            Identity.Verification.Changes.Contact_Change_Record'
+              (Principal   => P1,
+               Predecessor => CB1,
+               Successor   => CB3,
+               Token       => T4,
+               State       => Identity.Verification.Changes.Change_Requested,
+               Version     => 0),
+            Identity.Contacts.Bindings.Contact_Binding_Record'
+              (Id => CB3,
+               Principal => P1,
+               Kind => Contact_Email,
+               Normalized_Value => Contact_Email_Value_2,
+               State => Identity.Contacts.Bindings.Pending_Verification,
+               Version => 0),
+            Identity.Tokens.Definitions.Action_Token_Record'
+              (Id => T4,
+               Purpose => Identity.Tokens.Purposes.Contact_Change,
+               Principal => P1,
+               Secret_Verifier => Identity.Crypto.Secret_Verifiers.Derive_Text
+                 (Identity.Crypto.Domains.Contact_Verification_Token, Contact_Change_Secret),
+               Issued_At => 50,
+               Expires_At => (Present => True, Time_Point => 300),
+               State => Identity.Tokens.Definitions.Issued,
+               Attempts => 0,
+               Version => 0), Audit_Context, Next_Audit_Event, 1)
+         = Identity.Adapters.Repositories.Memory.Applied,
+         "IDENTITY-CONTACT-CHANGE-001 contact change stores pending successor and token");
+
+      Assert
+        (Identity.Verification.Changes.Can_Begin
+           (Identity.Verification.Changes.Change_Requested)
+         and then not Identity.Verification.Changes.Can_Begin
+           (Identity.Verification.Changes.New_Contact_Verification)
+         and then Identity.Verification.Changes.Can_Complete
+           (Identity.Verification.Changes.New_Contact_Verification)
+         and then not Identity.Verification.Changes.Can_Complete
+           (Identity.Verification.Changes.Activated)
+         and then not Identity.Verification.Changes.Is_Terminal
+           (Identity.Verification.Changes.Cooling_Off)
+         and then Identity.Verification.Changes.Is_Terminal
+           (Identity.Verification.Changes.Activated)
+         and then Identity.Verification.Changes.Is_Terminal
+           (Identity.Verification.Changes.Cancelled)
+         and then Identity.Verification.Changes.Is_Terminal
+           (Identity.Verification.Changes.Expired)
+         and then Identity.Verification.Changes.Can_Cancel
+           (Identity.Verification.Changes.New_Contact_Verification)
+         and then not Identity.Verification.Changes.Can_Cancel
+           (Identity.Verification.Changes.Activated)
+         and then Identity.Verification.Changes.Can_Expire
+           (Identity.Verification.Changes.Old_Contact_Confirmation)
+         and then not Identity.Verification.Changes.Can_Expire
+           (Identity.Verification.Changes.Expired)
+         and then Identity.Verification.Changes.Can_Record_Old_Contact_Confirmation
+           (Identity.Verification.Changes.New_Contact_Verification)
+         and then Identity.Verification.Changes.Can_Start_Cooling_Off
+           (Identity.Verification.Changes.Old_Contact_Confirmation)
+         and then Identity.Verification.Changes.Can_Start_Cooling_Off
+           (Identity.Verification.Changes.New_Contact_Verification)
+         and then Identity.Verification.Changes.Can_Activate_After_Gates
+           (Identity.Verification.Changes.Cooling_Off)
+         and then not Identity.Verification.Changes.Can_Activate_After_Gates
+           (Identity.Verification.Changes.Cancelled)
+         and then (Identity.Verification.Changes.Admission
+           (Identity.Verification.Changes.Change_Requested,
+            Identity.Verification.Changes.Begin_Change)
+           = Identity.Verification.Changes.Contact_Change_Admitted)
+         and then Identity.Verification.Changes.Admission_Accepted
+           (Identity.Verification.Changes.Contact_Change_Admitted)
+         and then not Identity.Verification.Changes.Admission_Rejected
+           (Identity.Verification.Changes.Contact_Change_Admitted)
+         and then not Identity.Verification.Changes.No_Mutation
+           (Identity.Verification.Changes.Contact_Change_Admitted)
+         and then (Identity.Verification.Changes.Admission
+           (Identity.Verification.Changes.Pending_New_Binding,
+            Identity.Verification.Changes.Complete_New_Verification)
+           = Identity.Verification.Changes.Contact_Change_State_Rejected)
+         and then Identity.Verification.Changes.State_Rejected
+           (Identity.Verification.Changes.Contact_Change_State_Rejected)
+         and then Identity.Verification.Changes.Admission_Rejected
+           (Identity.Verification.Changes.Contact_Change_State_Rejected)
+         and then Identity.Verification.Changes.No_Mutation
+           (Identity.Verification.Changes.Contact_Change_State_Rejected)
+         and then (Identity.Verification.Changes.Admission
+           (Identity.Verification.Changes.Expired,
+            Identity.Verification.Changes.Cancel_Change)
+           = Identity.Verification.Changes.Contact_Change_Terminal_Rejected)
+         and then Identity.Verification.Changes.Terminal_Rejected
+           (Identity.Verification.Changes.Contact_Change_Terminal_Rejected)
+         and then Identity.Verification.Changes.Admission_Rejected
+           (Identity.Verification.Changes.Contact_Change_Terminal_Rejected)
+         and then Identity.Verification.Changes.No_Mutation
+           (Identity.Verification.Changes.Contact_Change_Terminal_Rejected)
+         and then (Identity.Verification.Changes.Admission
+           (Identity.Verification.Changes.Old_Contact_Confirmation,
+            Identity.Verification.Changes.Activate_After_Gates)
+           = Identity.Verification.Changes.Contact_Change_Admitted),
+         "contact change state admission predicates are explicit");
+
+      Assert
+        (Identity.Verification.Changes.In_Progress
+           (Identity.Verification.Changes.New_Contact_Verification)
+         and then Identity.Verification.Changes.In_Progress
+           (Identity.Verification.Changes.Cooling_Off)
+         and then not Identity.Verification.Changes.In_Progress
+           (Identity.Verification.Changes.Activated)
+         and then Identity.Verification.Changes.Awaiting_New_Contact_Verification
+           (Identity.Verification.Changes.New_Contact_Verification)
+         and then not Identity.Verification.Changes.Awaiting_New_Contact_Verification
+           (Identity.Verification.Changes.Old_Contact_Confirmation)
+         and then Identity.Verification.Changes.Awaiting_Old_Contact_Confirmation
+           (Identity.Verification.Changes.Old_Contact_Confirmation)
+         and then Identity.Verification.Changes.Cooling_Off_Active
+           (Identity.Verification.Changes.Cooling_Off)
+         and then Identity.Verification.Changes.Activated_State
+           (Identity.Verification.Changes.Activated)
+         and then Identity.Verification.Changes.Cancelled_State
+           (Identity.Verification.Changes.Cancelled)
+         and then Identity.Verification.Changes.Expired_State
+           (Identity.Verification.Changes.Expired),
+         "contact change state classification predicates are explicit");
+
+      Assert
+        (Identity.Operations.Verification.Begin_Contact_Change.Execute
+           (Repository,
+            Identity.Verification.Changes.Contact_Change_Record'
+              (Principal   => P1,
+               Predecessor => CB1,
+               Successor   => CB5,
+               Token       => T7,
+               State       => Identity.Verification.Changes.Change_Requested,
+               Version     => 0),
+            Identity.Contacts.Bindings.Contact_Binding_Record'
+              (Id => CB5,
+               Principal => P1,
+               Kind => Contact_Email,
+               Normalized_Value => Contact_Email_Value_4,
+               State => Identity.Contacts.Bindings.Pending_Verification,
+               Version => 0),
+            Identity.Operations.Verification.Begin_Contact_Change.Contact_Change_Token_Request'
+              (Id => T7,
+               Principal => P1,
+               Secret => Contact_Change_Secret,
+               Issued_At => 50,
+               Expires_At => (Present => True, Time_Point => 300)), Audit_Context, Next_Audit_Event, 1)
+         = Identity.Adapters.Repositories.Memory.Applied,
+         "IDENTITY-CONTACT-CHANGE-001 contact change request derives verifier from token secret");
+
+      Identity.Adapters.Repositories.Memory.Find_Token
+        (Repository, T7, Found_Token_Check, Token_Check);
+      Assert
+        (Found_Token_Check
+         and then Identity.Identifiers.Registry.Image (Token_Check.Purpose)
+           = Identity.Identifiers.Registry.Image (Identity.Tokens.Purposes.Contact_Change)
+         and then Identity.Text.Bounded.Equal
+           (Token_Check.Secret_Verifier,
+            Identity.Crypto.Secret_Verifiers.Derive_Text
+              (Identity.Crypto.Domains.Contact_Verification_Token, Contact_Change_Secret)),
+         "contact change request stores purpose-bound derived token verifier only");
+
+      Assert
+        (Identity.Adapters.Repositories.Memory.Contact_Change_Count (Repository) = 2,
+         "contact change state machine is persisted");
+
+      Identity.Adapters.Repositories.Memory.Find_Contact_Binding
+        (Repository, CB1, Found_Contact_Check, Contact_Check);
+      Assert
+        (Found_Contact_Check
+         and then Contact_Check.State = Identity.Contacts.Bindings.Verified,
+         "contact change request does not overwrite verified predecessor");
+
+      Assert
+        (Identity.Operations.Verification.Complete_Contact_Change.Execute
+           (Repository, T4, Wrong_Contact_Change_Secret, 51, CB1, CB3, Audit_Context, Next_Audit_Event, 1)
+         = Identity.Tokens.Verification.Not_Verified,
+         "wrong contact change secret rejected without mutation");
+
+      Identity.Adapters.Repositories.Memory.Find_Contact_Binding
+        (Repository, CB3, Found_Contact_Check, Contact_Check);
+      Assert
+        (Found_Contact_Check
+         and then Contact_Check.State = Identity.Contacts.Bindings.Pending_Verification,
+         "failed contact change leaves successor pending");
+
+      Assert
+        (Identity.Operations.Verification.Complete_Contact_Change.Execute
+           (Repository, T4, Contact_Change_Secret, 52, CB2, CB3, Audit_Context, Next_Audit_Event, 1)
+         = Identity.Tokens.Verification.Binding_Mismatch,
+         "contact change token is bound to the predecessor and successor");
+
+      Assert
+        (Identity.Operations.Verification.Complete_Contact_Change.Execute
+           (Repository, T4, Contact_Change_Secret, 53, CB1, CB3, Audit_Context, Next_Audit_Event, 1)
+         = Identity.Tokens.Verification.Valid,
+         "contact change atomically verifies successor and retires predecessor");
+
+      Identity.Adapters.Repositories.Memory.Find_Contact_Binding
+        (Repository, CB1, Found_Contact_Check, Contact_Check);
+      Assert
+        (Found_Contact_Check
+         and then Contact_Check.State = Identity.Contacts.Bindings.Retired,
+         "contact change retires predecessor only after successor verification");
+
+      Identity.Adapters.Repositories.Memory.Find_Contact_Binding
+        (Repository, CB3, Found_Contact_Check, Contact_Check);
+      Assert
+        (Found_Contact_Check
+         and then Contact_Check.State = Identity.Contacts.Bindings.Verified
+         and then Contact_Check.Version = 1,
+         "contact change activates successor contact");
+
+      Identity.Adapters.Repositories.Memory.Find_Token
+        (Repository, T4, Found_Token_Check, Token_Check);
+      Assert
+        (Found_Token_Check
+         and then Token_Check.State = Identity.Tokens.Definitions.Consumed
+         and then Token_Check.Version = 1,
+         "contact change consumes token and advances version");
+   end Test_37_wrong_contact_verificati;
+
+   procedure Test_38_section (T : in out AUnit.Test_Cases.Test_Case'Class) is
+      pragma Unreferenced (T);
+      Stale_Contact_Change : constant Identity.Tokens.Verification.Token_Verification_Outcome :=
+        Identity.Operations.Verification.Complete_Contact_Change.Execute
+          (Repository,
+           Identity.Operations.Verification.Complete_Contact_Change.Staged_Completion_Request'
+             (Token => T4,
+              Expected_Token_Version => 0,
+              Expected_Change_Version => 0,
+              Expected_Predecessor_Version => 0,
+              Expected_Successor_Version => 0,
+              Secret => Contact_Change_Secret,
+              Now => 54,
+              Predecessor => CB1,
+              Successor => CB3), Audit_Context, Next_Audit_Event, 1);
+   begin
+      Assert
+        (Stale_Contact_Change = Identity.Tokens.Verification.State_Conflict,
+         "stale staged contact change completion conflicts before consumed-token disclosure");
+   end Test_38_section;
+
+   procedure Test_39_consumed_contact_change (T : in out AUnit.Test_Cases.Test_Case'Class) is
+      pragma Unreferenced (T);
+   begin
+      Assert
+        (Identity.Operations.Verification.Complete_Contact_Change.Execute
+           (Repository, T4, Contact_Change_Secret, 54, CB1, CB3, Audit_Context, Next_Audit_Event, 1)
+         = Identity.Tokens.Verification.Already_Consumed,
+         "consumed contact change token cannot activate twice");
+
+      Identity.Adapters.Repositories.Memory.Find_Account
+        (Repository, P1, Found_Account_Check, Account_Check);
+   end Test_39_consumed_contact_change;
+
+   procedure Test_40_section (T : in out AUnit.Test_Cases.Test_Case'Class) is
+      pragma Unreferenced (T);
+      Password_Requirement : constant
+        Identity.Operations.Accounts.Require_Password_Change.Requirement_Request :=
+          (Account => A1,
+           Principal => P1,
+           Expected_Version => Account_Check.Version);
+      Stale_Password_Requirement : constant
+        Identity.Operations.Accounts.Require_Password_Change.Requirement_Request :=
+          (Password_Requirement with delta
+             Expected_Version => (if Account_Check.Version = 0 then 1 else 0));
+   begin
+      Assert
+        (Found_Account_Check
+         and then Identity.Operations.Accounts.Require_Password_Change.Execute
+           (Repository, Stale_Password_Requirement, Audit_Context, Next_Audit_Event, 1)
+         = Identity.Adapters.Repositories.Memory.State_Conflict
+         and then Identity.Operations.Accounts.Require_Password_Change.Execute
+           (Repository, Password_Requirement, Audit_Context, Next_Audit_Event, 1)
+         = Identity.Adapters.Repositories.Memory.Applied,
+         "IDENTITY-ACCOUNT-001 account password-change requirement uses expected version");
+   end Test_40_section;
+
+   procedure Test_41_password_change_requirem (T : in out AUnit.Test_Cases.Test_Case'Class) is
+      pragma Unreferenced (T);
+   begin
+      Assert
+        (Identity.Operations.Passwords.Authenticate.Execute
+           (Repository,
+            (Kind => Login_Kind, Value => Alice),
+            Presented_Reset_Password,
+            Audit_Context, Next_Audit_Event, 1).Status = Identity.Results.Password_Change_Required,
+         "password-change requirement restricts authentication result");
+
+      Identity.Adapters.Repositories.Memory.Find_Account
+        (Repository, P1, Found_Account_Check, Account_Check);
+   end Test_41_password_change_requirem;
+
+   procedure Test_42_identity_account_disable (T : in out AUnit.Test_Cases.Test_Case'Class) is
+      pragma Unreferenced (T);
+      Disable_Request : constant Identity.Operations.Accounts.Disable.Disable_Request :=
+        (Account => A1,
+         Principal => P1,
+         Transition =>
+           (Actor => (Kind => Identity.Events.Envelopes.Authenticated_Principal,
+                      Principal => (Present => True, Value => P1)),
+            Reason => Identity.Identifiers.Registry.From_String ("identity.account.disable"),
+            Operation => O1,
+            Correlation => R1,
+            Requested_At => 55,
+            Expected_Version => Account_Check.Version,
+            Previous_State => Account_Check.State.Administrative,
+            New_State => Identity.Accounts.States.Disabled,
+            Mandatory_Audit => True));
+      Stale_Disable_Request : constant Identity.Operations.Accounts.Disable.Disable_Request :=
+        (Disable_Request with delta
+           Transition =>
+             (Disable_Request.Transition with delta
+                Expected_Version =>
+                  (if Account_Check.Version = 0 then 1 else 0)));
+   begin
+      Assert
+        (Found_Account_Check
+         and then Identity.Operations.Accounts.Disable.Execute
+           (Repository, Stale_Disable_Request, Audit_Context, Next_Audit_Event, 1)
+         = Identity.Adapters.Repositories.Memory.State_Conflict
+         and then Identity.Operations.Accounts.Disable.Execute
+           (Repository, Disable_Request, Audit_Context, Next_Audit_Event, 1)
+         = Identity.Adapters.Repositories.Memory.Applied,
+         "IDENTITY-ACCOUNT-001 account disable requires actor reason correlation audit and expected version");
+   end Test_42_identity_account_disable;
+
+   procedure Test_43_disabled_account_cannot (T : in out AUnit.Test_Cases.Test_Case'Class) is
+      pragma Unreferenced (T);
+   begin
+      Assert
+        (Identity.Operations.Passwords.Authenticate.Execute
+           (Repository,
+            (Kind => Login_Kind, Value => Alice),
+            Presented_Reset_Password, Audit_Context, Next_Audit_Event, 1).Status = Identity.Results.Rejected,
+         "disabled account cannot authenticate");
+
+      Identity.Adapters.Repositories.Memory.Find_Account
+        (Repository, P1, Found_Account_Check, Account_Check);
+   end Test_43_disabled_account_cannot;
+
+   procedure Test_44_identity_account_enable (T : in out AUnit.Test_Cases.Test_Case'Class) is
+      pragma Unreferenced (T);
+      Enable_Request : constant Identity.Operations.Accounts.Enable.Enable_Request :=
+        (Account => A1,
+         Principal => P1,
+         Transition =>
+           (Actor => (Kind => Identity.Events.Envelopes.Authenticated_Principal,
+                      Principal => (Present => True, Value => P1)),
+            Reason => Identity.Identifiers.Registry.From_String ("identity.account.enable"),
+            Operation => O1,
+            Correlation => R1,
+            Requested_At => 56,
+            Expected_Version => Account_Check.Version,
+            Previous_State => Account_Check.State.Administrative,
+            New_State => Identity.Accounts.States.Enabled,
+            Mandatory_Audit => True));
+   begin
+      Assert
+        (Found_Account_Check
+         and then Identity.Operations.Accounts.Enable.Execute
+           (Repository, Enable_Request, Audit_Context, Next_Audit_Event, 1)
+         = Identity.Adapters.Repositories.Memory.Applied,
+         "IDENTITY-ACCOUNT-001 account enable requires administrative transition metadata");
+   end Test_44_identity_account_enable;
+
+   procedure Test_45_authentication_success_d (T : in out AUnit.Test_Cases.Test_Case'Class) is
+      pragma Unreferenced (T);
+   begin
+      Assert
+        (Identity.Operations.Passwords.Authenticate.Execute
+           (Repository,
+            (Kind => Login_Kind, Value => Alice),
+            Presented_Reset_Password,
+            Audit_Context, Next_Audit_Event, 1).Status = Identity.Results.Password_Change_Required,
+         "authentication success does not clear password-change requirement");
+
+      Identity.Adapters.Repositories.Memory.Find_Account
+        (Repository, P1, Found_Account_Check, Account_Check);
+      Assert
+        (Found_Account_Check
+         and then Account_Check.State.Requirements.Password_Change_Required,
+         "enable does not silently clear credential requirement");
+
+      Account_Check.State.Requirements.Password_Change_Required := False;
+      Assert
+        (Identity.Adapters.Repositories.Memory.Update_Account_State
+           (Repository, A1, P1, Account_Check.State)
+         = Identity.Adapters.Repositories.Memory.Applied,
+         "test fixture clears password-change requirement explicitly");
+
+      Identity.Adapters.Repositories.Memory.Find_Account
+        (Repository, P1, Found_Account_Check, Account_Check);
+   end Test_45_authentication_success_d;
+
+   procedure Test_46_IDENTITY_ACCOUNT_001_acc (T : in out AUnit.Test_Cases.Test_Case'Class) is
+      pragma Unreferenced (T);
+      MFA_Requirement : constant Identity.Operations.Accounts.Require_MFA.Requirement_Request :=
+        (Account => A1,
+         Principal => P1,
+         Expected_Version => Account_Check.Version);
+      Stale_MFA_Requirement : constant
+        Identity.Operations.Accounts.Require_MFA.Requirement_Request :=
+          (MFA_Requirement with delta
+             Expected_Version => (if Account_Check.Version = 0 then 1 else 0));
+   begin
+      Assert
+        (Found_Account_Check
+         and then Identity.Operations.Accounts.Require_MFA.Execute
+           (Repository, Stale_MFA_Requirement, Audit_Context, Next_Audit_Event, 1)
+         = Identity.Adapters.Repositories.Memory.State_Conflict
+         and then Identity.Operations.Accounts.Require_MFA.Execute
+           (Repository, MFA_Requirement, Audit_Context, Next_Audit_Event, 1)
+         = Identity.Adapters.Repositories.Memory.Applied,
+         "IDENTITY-ACCOUNT-001 account MFA requirement uses expected version");
+   end Test_46_IDENTITY_ACCOUNT_001_acc;
+
+   procedure Test_47_MFA_enrollment_requireme (T : in out AUnit.Test_Cases.Test_Case'Class) is
+      pragma Unreferenced (T);
+   begin
+      Assert
+        (Identity.Operations.Passwords.Authenticate.Execute
+           (Repository,
+            (Kind => Login_Kind, Value => Alice),
+            Presented_Reset_Password,
+            Audit_Context, Next_Audit_Event, 1).Status = Identity.Results.Password_Change_Required,
+         "MFA enrollment requirement restricts authentication result");
+
+      Identity.Adapters.Repositories.Memory.Find_Account
+        (Repository, P1, Found_Account_Check, Account_Check);
+      Account_Check.State.Requirements.MFA_Enrollment_Required := False;
+      Account_Check.State.Lock_State := Identity.Accounts.States.Temporarily_Locked;
+      Assert
+        (Identity.Adapters.Repositories.Memory.Update_Account_State
+           (Repository, A1, P1, Account_Check.State)
+         = Identity.Adapters.Repositories.Memory.Applied,
+         "test fixture applies temporary lock explicitly");
+
+      Identity.Adapters.Repositories.Memory.Find_Account
+        (Repository, P1, Found_Account_Check, Account_Check);
+   end Test_47_MFA_enrollment_requireme;
+
+   procedure Test_48_IDENTITY_ACCOUNT_001_acc (T : in out AUnit.Test_Cases.Test_Case'Class) is
+      pragma Unreferenced (T);
+      Unlock_Request : constant Identity.Operations.Accounts.Unlock.Unlock_Request :=
+        (Account => A1,
+         Principal => P1,
+         Expected_Version => Account_Check.Version);
+      Stale_Unlock_Request : constant Identity.Operations.Accounts.Unlock.Unlock_Request :=
+        (Unlock_Request with delta
+           Expected_Version => (if Account_Check.Version = 0 then 1 else 0));
+   begin
+      Assert
+        (Found_Account_Check
+         and then Identity.Operations.Accounts.Unlock.Execute
+           (Repository, Stale_Unlock_Request, Audit_Context, Next_Audit_Event, 1)
+         = Identity.Adapters.Repositories.Memory.State_Conflict
+         and then Identity.Operations.Accounts.Unlock.Execute
+           (Repository, Unlock_Request, Audit_Context, Next_Audit_Event, 1)
+         = Identity.Adapters.Repositories.Memory.Applied,
+         "IDENTITY-ACCOUNT-001 account unlock uses expected version");
+   end Test_48_IDENTITY_ACCOUNT_001_acc;
+
+   procedure Test_49_unlock_clears_lock_state (T : in out AUnit.Test_Cases.Test_Case'Class) is
+      pragma Unreferenced (T);
+   begin
+      Identity.Adapters.Repositories.Memory.Find_Account
+        (Repository, P1, Found_Account_Check, Account_Check);
+      Assert
+        (Found_Account_Check
+         and then Account_Check.State.Lock_State = Identity.Accounts.States.Not_Locked,
+         "unlock clears lock state only");
+
+      Identity.Adapters.Repositories.Memory.Find_Account
+        (Repository, P1, Found_Account_Check, Account_Check);
+   end Test_49_unlock_clears_lock_state;
+
+   procedure Test_50_identity_account_suspend (T : in out AUnit.Test_Cases.Test_Case'Class) is
+      pragma Unreferenced (T);
+      Suspend_Request : constant Identity.Operations.Accounts.Suspend.Suspend_Request :=
+        (Account => A1,
+         Principal => P1,
+         Transition =>
+           (Actor => (Kind => Identity.Events.Envelopes.Authenticated_Principal,
+                      Principal => (Present => True, Value => P1)),
+            Reason => Identity.Identifiers.Registry.From_String ("identity.account.suspend"),
+            Operation => O1,
+            Correlation => R1,
+            Requested_At => 57,
+            Expected_Version => Account_Check.Version,
+            Previous_State => Account_Check.State.Administrative,
+            New_State => Identity.Accounts.States.Suspended,
+            Mandatory_Audit => True));
+   begin
+      Assert
+        (Found_Account_Check
+         and then Identity.Operations.Accounts.Suspend.Execute
+           (Repository, Suspend_Request, Audit_Context, Next_Audit_Event, 1)
+         = Identity.Adapters.Repositories.Memory.Applied,
+         "IDENTITY-ACCOUNT-001 account suspend requires administrative transition metadata");
+   end Test_50_identity_account_suspend;
+
+   procedure Test_51_suspended_account_cannot (T : in out AUnit.Test_Cases.Test_Case'Class) is
+      pragma Unreferenced (T);
+   begin
+      Assert
+        (Identity.Operations.Passwords.Authenticate.Execute
+           (Repository,
+            (Kind => Login_Kind, Value => Alice),
+            Presented_Reset_Password, Audit_Context, Next_Audit_Event, 1).Status = Identity.Results.Rejected,
+         "suspended account cannot authenticate");
+
+      Identity.Adapters.Repositories.Memory.Find_Account
+        (Repository, P1, Found_Account_Check, Account_Check);
+   end Test_51_suspended_account_cannot;
+
+   procedure Test_52_identity_account_enable (T : in out AUnit.Test_Cases.Test_Case'Class) is
+      pragma Unreferenced (T);
+      Reenable_Request : constant Identity.Operations.Accounts.Enable.Enable_Request :=
+        (Account => A1,
+         Principal => P1,
+         Transition =>
+           (Actor => (Kind => Identity.Events.Envelopes.Authenticated_Principal,
+                      Principal => (Present => True, Value => P1)),
+            Reason => Identity.Identifiers.Registry.From_String ("identity.account.enable"),
+            Operation => O1,
+            Correlation => R1,
+            Requested_At => 58,
+            Expected_Version => Account_Check.Version,
+            Previous_State => Account_Check.State.Administrative,
+            New_State => Identity.Accounts.States.Enabled,
+            Mandatory_Audit => True));
+   begin
+      Assert
+        (Found_Account_Check
+         and then Identity.Operations.Accounts.Enable.Execute
+           (Repository, Reenable_Request, Audit_Context, Next_Audit_Event, 1)
+         = Identity.Adapters.Repositories.Memory.Applied,
+         "account reenabled after suspension for remaining fixtures");
+   end Test_52_identity_account_enable;
+
+   procedure Test_53_section (T : in out AUnit.Test_Cases.Test_Case'Class) is
+      pragma Unreferenced (T);
+   begin
+      Identity.Adapters.Repositories.Memory.Find_Account
+        (Repository, P1, Found_Account_Check, Account_Check);
+   end Test_53_section;
+
+   procedure Test_54_identity_account_close (T : in out AUnit.Test_Cases.Test_Case'Class) is
+      pragma Unreferenced (T);
+      Close_Request : constant Identity.Operations.Accounts.Close.Close_Request :=
+        (Account => A1,
+         Principal => P1,
+         Transition =>
+           (Actor => (Kind => Identity.Events.Envelopes.Authenticated_Principal,
+                      Principal => (Present => True, Value => P1)),
+            Reason => Identity.Identifiers.Registry.From_String ("identity.account.close"),
+            Operation => O1,
+            Correlation => R1,
+            Requested_At => 59,
+            Expected_Version => Account_Check.Version,
+            Previous_State => Account_Check.State.Administrative,
+            New_State => Identity.Accounts.States.Closed,
+            Mandatory_Audit => True));
+   begin
+      Assert
+        (Found_Account_Check
+         and then Identity.Operations.Accounts.Close.Execute
+           (Repository, Close_Request, Audit_Context, Next_Audit_Event, 1)
+         = Identity.Adapters.Repositories.Memory.Applied,
+         "IDENTITY-ACCOUNT-001 account close requires administrative transition metadata");
+   end Test_54_identity_account_close;
+
+   procedure Test_55_closed_account_cannot_au (T : in out AUnit.Test_Cases.Test_Case'Class) is
+      pragma Unreferenced (T);
+   begin
+      Assert
+        (Identity.Operations.Passwords.Authenticate.Execute
+           (Repository,
+            (Kind => Login_Kind, Value => Alice),
+            Presented_Reset_Password, Audit_Context, Next_Audit_Event, 1).Status = Identity.Results.Rejected,
+         "closed account cannot authenticate");
+
+      Identity.Adapters.Repositories.Memory.Find_Account
+        (Repository, P1, Found_Account_Check, Account_Check);
+      Assert
+        (Found_Account_Check
+         and then Account_Check.State.Administrative = Identity.Accounts.States.Closed
+         and then Account_Check.State.Lifecycle = Identity.Accounts.States.Retired,
+         "closed account transition persisted retired lifecycle");
+
+      Assert
+        (not Identity.Accounts.States.Can_Apply
+           (Account_Check.State, Identity.Accounts.States.Enable_Administrative),
+         "closed account transition admission rejects reenable");
+
+      Assert
+        (Identity.Accounts.States.Apply
+           (Account_Check.State, Identity.Accounts.States.Enable_Administrative)
+         = Account_Check.State,
+         "rejected account transition leaves state unchanged");
+
+      Assert
+        (Identity.Operations.Accounts.Enable.Execute (Repository, A1, P1, Audit_Context, Next_Audit_Event, 1)
+         = Identity.Adapters.Repositories.Memory.State_Conflict,
+         "closed account cannot be reenabled through account operation");
+
+      Assert
+        (Identity.Operations.Accounts.Require_Password_Change.Execute (Repository, A1, P1,
+                                                                       Audit_Context, Next_Audit_Event, 1)
+         = Identity.Adapters.Repositories.Memory.State_Conflict,
+         "closed account cannot receive new password-change requirement");
+
+      Identity.Adapters.Repositories.Memory.Find_Account
+        (Repository, P1, Found_Account_Check, Account_Check);
+      Account_Check.State.Administrative := Identity.Accounts.States.Enabled;
+      Account_Check.State.Lifecycle := Identity.Accounts.States.Active;
+      Assert
+        (Identity.Adapters.Repositories.Memory.Update_Account_State
+           (Repository, A1, P1, Account_Check.State)
+         = Identity.Adapters.Repositories.Memory.Applied,
+         "test fixture reopens account explicitly for remaining fixtures");
+
+      Assert
+        (Identity.Operations.Principals.Create.Execute
+           (Repository,
+            (Id => P2,
+             Kind => Identity.Principals.Kinds.Service,
+             State => Identity.Principals.Definitions.Active,
+             Version => 0), Audit_Context, Next_Audit_Event, 1)
+         = Identity.Adapters.Repositories.Memory.Applied,
+         "service principal is an ordinary principal kind");
+
+      Assert
+        (Identity.Operations.API_Keys.Issue.Execute
+           (Repository,
+            Identity.API_Keys.Credentials.API_Key_Credential_Record'
+              (Id => C3,
+               Principal => P2,
+               Public_Key_Id => API_Key_Id,
+               Credential_Class_Id => Identity.Identifiers.Registry.From_String ("identity.service.api-key"),
+               Secret_Verifier => Identity.Crypto.Secret_Verifiers.Derive_Text
+                 (Identity.Crypto.Domains.API_Key, API_Key_Secret),
+               State => Identity.Credentials.States.Active,
+               Created_At => 50,
+               Expires_At => (Present => True, Time_Point => 500),
+               Last_Used_At => (Present => False, Time_Point => 0),
+               Rotation_Generation => 0,
+               Version => 0), Audit_Context, Next_Audit_Event, 1)
+         = Identity.Adapters.Repositories.Memory.Applied,
+         "IDENTITY-APIKEY-001 api key issued through public operation with verifier-only storage");
+   end Test_55_closed_account_cannot_au;
+
+   procedure Test_56_identity_service_api_key (T : in out AUnit.Test_Cases.Test_Case'Class) is
+      pragma Unreferenced (T);
+      Unset_Credential_Class : Identity.Identifiers.Registry.Registry_Id;
+      Admissible_API_Key : constant
+        Identity.API_Keys.Credentials.API_Key_Credential_Record :=
+        (Id => C3,
+         Principal => P2,
+         Public_Key_Id => API_Key_Id,
+         Credential_Class_Id =>
+           Identity.Identifiers.Registry.From_String ("identity.service.api-key"),
+         Secret_Verifier => Identity.Crypto.Secret_Verifiers.Derive_Text
+           (Identity.Crypto.Domains.API_Key, API_Key_Secret),
+         State => Identity.Credentials.States.Active,
+         Created_At => 50,
+         Expires_At => (Present => True, Time_Point => 500),
+         Last_Used_At => (Present => False, Time_Point => 0),
+         Rotation_Generation => 0,
+         Version => 0);
+   begin
+      Assert
+        (Identity.API_Keys.Credentials.Authentication_Admission
+           (Admissible_API_Key, 60)
+           = Identity.API_Keys.Credentials.Authentication_Allowed
+         and then Identity.API_Keys.Credentials.Can_Authenticate
+           (Admissible_API_Key, 60)
+         and then Identity.API_Keys.Credentials.Authentication_Admission
+           ((Admissible_API_Key with delta
+               State => Identity.Credentials.States.Revoked),
+            60)
+           = Identity.API_Keys.Credentials.Credential_Unusable
+         and then Identity.API_Keys.Credentials.State_Rejected
+           (Identity.API_Keys.Credentials.Authentication_Admission
+              ((Admissible_API_Key with delta
+                  State => Identity.Credentials.States.Revoked),
+               60))
+         and then Identity.API_Keys.Credentials.Authentication_Admission
+           ((Admissible_API_Key with delta
+               Secret_Verifier => Identity.Text.Bounded.From_String ("")),
+            60)
+           = Identity.API_Keys.Credentials.Verifier_Missing
+         and then Identity.API_Keys.Credentials.Verifier_Rejected
+           (Identity.API_Keys.Credentials.Authentication_Admission
+              ((Admissible_API_Key with delta
+                  Secret_Verifier => Identity.Text.Bounded.From_String ("")),
+               60))
+         and then Identity.API_Keys.Credentials.Authentication_Admission
+           (Admissible_API_Key, 600)
+           = Identity.API_Keys.Credentials.Credential_Expired
+         and then Identity.API_Keys.Credentials.Expiration_Rejected
+           (Identity.API_Keys.Credentials.Authentication_Admission
+              (Admissible_API_Key, 600))
+         and then Identity.API_Keys.Credentials.Authentication_Admission
+           (Identity.API_Keys.Credentials.Summary (Admissible_API_Key), 60)
+           = Identity.API_Keys.Credentials.Authentication_Allowed
+         and then Identity.API_Keys.Credentials.Has_Verifier
+           (Identity.API_Keys.Credentials.Summary (Admissible_API_Key))
+         and then not Identity.API_Keys.Credentials.Has_Verifier
+           (Identity.API_Keys.Credentials.Summary
+              ((Admissible_API_Key with delta
+                  Secret_Verifier => Identity.Text.Bounded.From_String (""))))
+         and then Identity.API_Keys.Credentials.Has_Credential_Class
+           (Admissible_API_Key)
+         and then Identity.API_Keys.Credentials.Has_Credential_Class
+           (Identity.API_Keys.Credentials.Summary (Admissible_API_Key))
+         and then not Identity.API_Keys.Credentials.Has_Credential_Class
+           ((Admissible_API_Key with delta
+               Credential_Class_Id => Unset_Credential_Class))
+         and then Identity.API_Keys.Credentials.Matches_Public_Key_Id
+           (Admissible_API_Key, API_Key_Id)
+         and then Identity.API_Keys.Credentials.No_Mutation
+           (Identity.API_Keys.Credentials.Authentication_Admission
+              (Admissible_API_Key, 600))
+         and then not Identity.API_Keys.Credentials.No_Mutation
+           (Identity.API_Keys.Credentials.Authentication_Admission
+              (Admissible_API_Key, 60)),
+         "API key credential authentication admission checks lifecycle expiry verifier "
+         & "presence and credential class");
+   end Test_56_identity_service_api_key;
+
+   procedure Test_57_identity_service_api_key (T : in out AUnit.Test_Cases.Test_Case'Class) is
+      pragma Unreferenced (T);
+   begin
+      Assert
+        (Identity.API_Keys.Credentials.Can_Authenticate
+           (Identity.API_Keys.Credentials.API_Key_Credential_Record'
+              (Id => C3,
+               Principal => P2,
+               Public_Key_Id => API_Key_Id,
+               Credential_Class_Id => Identity.Identifiers.Registry.From_String ("identity.service.api-key"),
+               Secret_Verifier => Identity.Crypto.Secret_Verifiers.Derive_Text
+                 (Identity.Crypto.Domains.API_Key, API_Key_Secret),
+               State => Identity.Credentials.States.Active,
+               Created_At => 50,
+               Expires_At => (Present => True, Time_Point => 500),
+               Last_Used_At => (Present => False, Time_Point => 0),
+               Rotation_Generation => 0,
+               Version => 0),
+            60)
+         and then Identity.API_Keys.Credentials.Authentication_Admission
+           (Identity.API_Keys.Credentials.API_Key_Credential_Record'
+              (Id => C3,
+               Principal => P2,
+               Public_Key_Id => API_Key_Id,
+               Credential_Class_Id => Identity.Identifiers.Registry.From_String ("identity.service.api-key"),
+               Secret_Verifier => Identity.Crypto.Secret_Verifiers.Derive_Text
+                 (Identity.Crypto.Domains.API_Key, API_Key_Secret),
+               State => Identity.Credentials.States.Active,
+               Created_At => 50,
+               Expires_At => (Present => True, Time_Point => 500),
+               Last_Used_At => (Present => False, Time_Point => 0),
+               Rotation_Generation => 0,
+               Version => 0),
+            60) = Identity.API_Keys.Credentials.Authentication_Allowed
+         and then Identity.API_Keys.Credentials.Admission_Accepted
+           (Identity.API_Keys.Credentials.Authentication_Allowed)
+         and then not Identity.API_Keys.Credentials.Admission_Rejected
+           (Identity.API_Keys.Credentials.Authentication_Allowed)
+         and then not Identity.API_Keys.Credentials.No_Mutation
+           (Identity.API_Keys.Credentials.Authentication_Allowed)
+         and then not Identity.API_Keys.Credentials.Can_Authenticate
+           (Identity.API_Keys.Credentials.API_Key_Credential_Record'
+              (Id => C3,
+               Principal => P2,
+               Public_Key_Id => API_Key_Id,
+               Credential_Class_Id => Identity.Identifiers.Registry.From_String ("identity.service.api-key"),
+               Secret_Verifier => Identity.Crypto.Secret_Verifiers.Derive_Text
+                 (Identity.Crypto.Domains.API_Key, API_Key_Secret),
+               State => Identity.Credentials.States.Active,
+               Created_At => 50,
+               Expires_At => (Present => True, Time_Point => 500),
+               Last_Used_At => (Present => False, Time_Point => 0),
+               Rotation_Generation => 0,
+               Version => 0),
+            501)
+         and then Identity.API_Keys.Credentials.Authentication_Admission
+           (Identity.API_Keys.Credentials.API_Key_Credential_Record'
+              (Id => C3,
+               Principal => P2,
+               Public_Key_Id => API_Key_Id,
+               Credential_Class_Id => Identity.Identifiers.Registry.From_String ("identity.service.api-key"),
+               Secret_Verifier => Identity.Crypto.Secret_Verifiers.Derive_Text
+                 (Identity.Crypto.Domains.API_Key, API_Key_Secret),
+               State => Identity.Credentials.States.Active,
+               Created_At => 50,
+               Expires_At => (Present => True, Time_Point => 500),
+               Last_Used_At => (Present => False, Time_Point => 0),
+               Rotation_Generation => 0,
+               Version => 0),
+            501) = Identity.API_Keys.Credentials.Credential_Expired
+         and then Identity.API_Keys.Credentials.Admission_Rejected
+           (Identity.API_Keys.Credentials.Credential_Expired)
+         and then Identity.API_Keys.Credentials.Expiration_Rejected
+           (Identity.API_Keys.Credentials.Credential_Expired)
+         and then Identity.API_Keys.Credentials.No_Mutation
+           (Identity.API_Keys.Credentials.Credential_Expired)
+         and then not Identity.API_Keys.Credentials.Can_Authenticate
+           (Identity.API_Keys.Credentials.API_Key_Credential_Record'
+              (Id => C3,
+               Principal => P2,
+               Public_Key_Id => API_Key_Id,
+               Credential_Class_Id => Identity.Identifiers.Registry.From_String ("identity.service.api-key"),
+               Secret_Verifier => Identity.Crypto.Secret_Verifiers.Derive_Text
+                 (Identity.Crypto.Domains.API_Key, API_Key_Secret),
+               State => Identity.Credentials.States.Retired,
+               Created_At => 50,
+               Expires_At => (Present => True, Time_Point => 500),
+               Last_Used_At => (Present => False, Time_Point => 0),
+               Rotation_Generation => 0,
+               Version => 0),
+            60)
+         and then Identity.API_Keys.Credentials.Authentication_Admission
+           (Identity.API_Keys.Credentials.API_Key_Credential_Record'
+              (Id => C3,
+               Principal => P2,
+               Public_Key_Id => API_Key_Id,
+               Credential_Class_Id => Identity.Identifiers.Registry.From_String ("identity.service.api-key"),
+               Secret_Verifier => Identity.Crypto.Secret_Verifiers.Derive_Text
+                 (Identity.Crypto.Domains.API_Key, API_Key_Secret),
+               State => Identity.Credentials.States.Retired,
+               Created_At => 50,
+               Expires_At => (Present => True, Time_Point => 500),
+               Last_Used_At => (Present => False, Time_Point => 0),
+               Rotation_Generation => 0,
+               Version => 0),
+            60) = Identity.API_Keys.Credentials.Credential_Unusable
+         and then Identity.API_Keys.Credentials.Admission_Rejected
+           (Identity.API_Keys.Credentials.Credential_Unusable)
+         and then Identity.API_Keys.Credentials.State_Rejected
+           (Identity.API_Keys.Credentials.Credential_Unusable)
+         and then Identity.API_Keys.Credentials.No_Mutation
+           (Identity.API_Keys.Credentials.Credential_Unusable)
+         and then not Identity.API_Keys.Credentials.Can_Authenticate
+           (Identity.API_Keys.Credentials.API_Key_Credential_Record'
+              (Id => C3,
+               Principal => P2,
+               Public_Key_Id => API_Key_Id,
+               Credential_Class_Id => Identity.Identifiers.Registry.From_String
+                 ("identity.service.api-key"),
+               Secret_Verifier => Identity.Text.Bounded.From_String (""),
+               State => Identity.Credentials.States.Active,
+               Created_At => 50,
+               Expires_At => (Present => True, Time_Point => 500),
+               Last_Used_At => (Present => False, Time_Point => 0),
+               Rotation_Generation => 0,
+               Version => 0),
+            60)
+         and then Identity.API_Keys.Credentials.Authentication_Admission
+           (Identity.API_Keys.Credentials.API_Key_Credential_Record'
+              (Id => C3,
+               Principal => P2,
+               Public_Key_Id => API_Key_Id,
+               Credential_Class_Id => Identity.Identifiers.Registry.From_String
+                 ("identity.service.api-key"),
+               Secret_Verifier => Identity.Text.Bounded.From_String (""),
+               State => Identity.Credentials.States.Active,
+               Created_At => 50,
+               Expires_At => (Present => True, Time_Point => 500),
+               Last_Used_At => (Present => False, Time_Point => 0),
+               Rotation_Generation => 0,
+               Version => 0),
+            60) = Identity.API_Keys.Credentials.Verifier_Missing
+         and then Identity.API_Keys.Credentials.Admission_Rejected
+           (Identity.API_Keys.Credentials.Verifier_Missing)
+         and then Identity.API_Keys.Credentials.Verifier_Rejected
+           (Identity.API_Keys.Credentials.Verifier_Missing)
+         and then Identity.API_Keys.Credentials.No_Mutation
+           (Identity.API_Keys.Credentials.Verifier_Missing)
+         and then Identity.API_Keys.Credentials.Same_Public_Key_Id
+           (Identity.API_Keys.Credentials.API_Key_Credential_Record'
+              (Id => C3,
+               Principal => P2,
+               Public_Key_Id => API_Key_Id,
+               Credential_Class_Id => Identity.Identifiers.Registry.From_String ("identity.service.api-key"),
+               Secret_Verifier => Identity.Crypto.Secret_Verifiers.Derive_Text
+                 (Identity.Crypto.Domains.API_Key, API_Key_Secret),
+               State => Identity.Credentials.States.Active,
+               Created_At => 50,
+               Expires_At => (Present => True, Time_Point => 500),
+               Last_Used_At => (Present => False, Time_Point => 0),
+               Rotation_Generation => 0,
+               Version => 0),
+            Identity.API_Keys.Credentials.API_Key_Credential_Record'
+              (Id => C4,
+               Principal => P2,
+               Public_Key_Id => API_Key_Id,
+               Credential_Class_Id => Identity.Identifiers.Registry.From_String ("identity.service.api-key"),
+               Secret_Verifier => Identity.Crypto.Secret_Verifiers.Derive_Text
+                 (Identity.Crypto.Domains.API_Key, Rotated_API_Key_Secret),
+               State => Identity.Credentials.States.Active,
+               Created_At => 60,
+               Expires_At => (Present => True, Time_Point => 600),
+               Last_Used_At => (Present => False, Time_Point => 0),
+               Rotation_Generation => 1,
+               Version => 0))
+         and then not Identity.API_Keys.Credentials.Same_Public_Key_Id
+           (Identity.API_Keys.Credentials.API_Key_Credential_Record'
+              (Id => C3,
+               Principal => P2,
+               Public_Key_Id => API_Key_Id,
+               Credential_Class_Id => Identity.Identifiers.Registry.From_String ("identity.service.api-key"),
+               Secret_Verifier => Identity.Crypto.Secret_Verifiers.Derive_Text
+                 (Identity.Crypto.Domains.API_Key, API_Key_Secret),
+               State => Identity.Credentials.States.Active,
+               Created_At => 50,
+               Expires_At => (Present => True, Time_Point => 500),
+               Last_Used_At => (Present => False, Time_Point => 0),
+               Rotation_Generation => 0,
+               Version => 0),
+            Identity.API_Keys.Credentials.API_Key_Credential_Record'
+              (Id => C4,
+               Principal => P2,
+               Public_Key_Id => Rotated_API_Key_Id,
+               Credential_Class_Id => Identity.Identifiers.Registry.From_String ("identity.service.api-key"),
+               Secret_Verifier => Identity.Crypto.Secret_Verifiers.Derive_Text
+                 (Identity.Crypto.Domains.API_Key, Rotated_API_Key_Secret),
+               State => Identity.Credentials.States.Active,
+               Created_At => 60,
+               Expires_At => (Present => True, Time_Point => 600),
+               Last_Used_At => (Present => False, Time_Point => 0),
+               Rotation_Generation => 1,
+               Version => 0))
+         and then Identity.API_Keys.Credentials.Matches_Public_Key_Id
+           (Identity.API_Keys.Credentials.API_Key_Credential_Record'
+              (Id => C3,
+               Principal => P2,
+               Public_Key_Id => API_Key_Id,
+               Credential_Class_Id => Identity.Identifiers.Registry.From_String ("identity.service.api-key"),
+               Secret_Verifier => Identity.Crypto.Secret_Verifiers.Derive_Text
+                 (Identity.Crypto.Domains.API_Key, API_Key_Secret),
+               State => Identity.Credentials.States.Active,
+               Created_At => 50,
+               Expires_At => (Present => True, Time_Point => 500),
+               Last_Used_At => (Present => False, Time_Point => 0),
+               Rotation_Generation => 0,
+               Version => 0),
+            API_Key_Id)
+         and then Identity.API_Keys.Credentials.Has_Credential_Class
+           (Identity.API_Keys.Credentials.API_Key_Credential_Record'
+              (Id => C3,
+               Principal => P2,
+               Public_Key_Id => API_Key_Id,
+               Credential_Class_Id => Identity.Identifiers.Registry.From_String ("identity.service.api-key"),
+               Secret_Verifier => Identity.Crypto.Secret_Verifiers.Derive_Text
+                 (Identity.Crypto.Domains.API_Key, API_Key_Secret),
+               State => Identity.Credentials.States.Active,
+               Created_At => 50,
+               Expires_At => (Present => True, Time_Point => 500),
+               Last_Used_At => (Present => False, Time_Point => 0),
+               Rotation_Generation => 0,
+               Version => 0)),
+         "API key credential authentication admission checks lifecycle expiry and credential class");
+
+      Assert
+        (Identity.Operations.API_Keys.Authenticate.Execute
+           (Repository,
+            Identity.Operations.API_Keys.Authenticate.Staged_Authentication_Request'
+              (Public_Key_Id => API_Key_Id,
+               Secret => API_Key_Secret,
+               Now => 60,
+               Expected_Credential_Version => 99), Audit_Context, Next_Audit_Event, 1).Status
+         = Identity.Results.Conflict,
+         "stale staged api key authentication conflicts before last-used update");
+
+      Identity.Adapters.Repositories.Memory.Find_API_Key
+        (Repository, C3, Found_API_Key_Check, API_Key_Check);
+      Assert
+        (Found_API_Key_Check
+         and then not API_Key_Check.Last_Used_At.Present
+         and then API_Key_Check.Version = 0,
+         "stale staged api key authentication leaves metadata unchanged");
+
+      Assert
+        (Identity.Operations.API_Keys.Authenticate.Execute
+           (Repository,
+            Identity.Operations.API_Keys.Authenticate.Staged_Authentication_Request'
+              (Public_Key_Id => API_Key_Id,
+               Secret => API_Key_Secret,
+               Now => 60,
+               Expected_Credential_Version => API_Key_Check.Version), Audit_Context, Next_Audit_Event, 1).Status
+         = Identity.Results.Succeeded,
+         "service api key authenticates without session creation");
+
+      Identity.Adapters.Repositories.Memory.Find_API_Key
+        (Repository, C3, Found_API_Key_Check, API_Key_Check);
+      Assert
+        (Found_API_Key_Check
+         and then API_Key_Check.Last_Used_At.Present
+         and then API_Key_Check.Last_Used_At.Time_Point = 60
+         and then API_Key_Check.Version = 1,
+         "IDENTITY-APIKEY-001 api key authentication records last used instant and revision");
+
+      Assert
+        (Identity.Operations.Authentication.API_Key.Execute
+           (Repository,
+            Identity.Operations.Authentication.API_Key.Staged_Authentication_Request'
+              (Public_Key_Id => API_Key_Id,
+               Secret => API_Key_Secret,
+               Now => 60,
+               Expected_Credential_Version => API_Key_Check.Version), Audit_Context, Next_Audit_Event, 1).Status
+         = Identity.Results.Succeeded,
+         "authentication API key operation package authenticates service principal");
+
+      Identity.Adapters.Repositories.Memory.Find_API_Key
+        (Repository, C3, Found_API_Key_Check, API_Key_Check);
+      Assert
+        (Found_API_Key_Check
+         and then API_Key_Check.Last_Used_At.Present
+         and then API_Key_Check.Last_Used_At.Time_Point = 60
+         and then API_Key_Check.Version = 2,
+         "authentication API key package records the same verifier-safe metadata transition");
+
+      Assert
+        (Identity.Operations.API_Keys.Authenticate.Execute
+           (Repository, API_Key_Id, Wrong_API_Key_Secret, 60, Audit_Context, Next_Audit_Event, 1).Status
+         = Identity.Results.Rejected,
+         "wrong api key secret rejected");
+
+      Identity.Adapters.Repositories.Memory.Find_API_Key
+        (Repository, C3, Found_API_Key_Check, API_Key_Check);
+      Assert
+        (Found_API_Key_Check
+         and then API_Key_Check.Last_Used_At.Present
+         and then API_Key_Check.Last_Used_At.Time_Point = 60
+         and then API_Key_Check.Version = 2,
+         "IDENTITY-APIKEY-001 wrong api key secret does not update last used metadata");
+
+      Pre_Rotation_API_Key_Version := API_Key_Check.Version;
+
+      Assert
+        (Identity.Operations.API_Keys.Rotate.Execute
+           (Repository,
+            C3,
+            (Id => C5,
+             Principal => P2,
+             Public_Key_Id => Rotated_API_Key_Id,
+             Credential_Class_Id => Identity.Identifiers.Registry.From_String ("identity.service.api-key"),
+             Secret_Verifier => Identity.Crypto.Secret_Verifiers.Derive_Text
+               (Identity.Crypto.Domains.API_Key, Rotated_API_Key_Secret),
+             State => Identity.Credentials.States.Active,
+             Created_At => 61,
+             Expires_At => (Present => True, Time_Point => 600),
+             Last_Used_At => (Present => False, Time_Point => 0),
+             Rotation_Generation => 1,
+             Version => 0), Audit_Context, Next_Audit_Event, 1)
+         = Identity.Adapters.Repositories.Memory.Applied,
+         "api key rotation retires predecessor and creates successor");
+
+      Identity.Adapters.Repositories.Memory.Find_API_Key
+        (Repository, C3, Found_API_Key_Check, API_Key_Check);
+      Assert
+        (Found_API_Key_Check
+         and then API_Key_Check.State = Identity.Credentials.States.Retired
+         and then API_Key_Check.Version =
+           Identity.Versions.Next_Entity_Version (Pre_Rotation_API_Key_Version),
+         "api key rotation advances predecessor version");
+
+      Assert
+        (Identity.Operations.API_Keys.Rotate.Execute
+           (Repository,
+            Identity.Operations.API_Keys.Rotate.Staged_Rotate_Request'
+              (Request =>
+                 (Predecessor => C3,
+                  Id => C18,
+                  Principal => P2,
+                  Public_Key_Id => Identity.Text.Bounded.From_String ("api-key-18"),
+                  Credential_Class_Id => Identity.Identifiers.Registry.From_String ("identity.service.api-key"),
+                  Secret => Rotated_API_Key_Secret,
+                  Created_At => 62,
+                  Expires_At => (Present => True, Time_Point => 600),
+                  Rotation_Generation => 2),
+               Expected_Predecessor_Version => Pre_Rotation_API_Key_Version), Audit_Context, Next_Audit_Event, 1)
+         = Identity.Adapters.Repositories.Memory.Version_Conflict,
+         "stale staged api key rotation conflicts before predecessor-state disclosure");
+
+      Assert
+        (Identity.Operations.API_Keys.Authenticate.Execute
+           (Repository, API_Key_Id, API_Key_Secret, 60, Audit_Context, Next_Audit_Event, 1).Status
+         = Identity.Results.Rejected,
+         "retired api key cannot authenticate");
+
+      Assert
+        (Identity.Operations.API_Keys.Authenticate.Execute
+           (Repository, Rotated_API_Key_Id, Rotated_API_Key_Secret, 62, Audit_Context, Next_Audit_Event, 1).Status
+         = Identity.Results.Succeeded,
+         "rotated api key successor authenticates");
+
+      Identity.Adapters.Repositories.Memory.Find_API_Key
+        (Repository, C5, Found_API_Key_Check, API_Key_Check);
+      Assert
+        (Found_API_Key_Check
+         and then API_Key_Check.Last_Used_At.Present
+         and then API_Key_Check.Last_Used_At.Time_Point = 62
+         and then API_Key_Check.Version = 1,
+         "rotated api key successor records last used metadata independently");
+
+      Assert
+        (Identity.Operations.API_Keys.Revoke.Execute
+           (Repository,
+            Identity.Operations.API_Keys.Revoke.Staged_Revoke_Request'
+              (Credential => C5,
+               Expected_Credential_Version => 0), Audit_Context, Next_Audit_Event, 1)
+         = Identity.Adapters.Repositories.Memory.Version_Conflict,
+         "stale staged api key revocation conflicts before revocation");
+
+      Identity.Adapters.Repositories.Memory.Find_API_Key
+        (Repository, C5, Found_API_Key_Check, API_Key_Check);
+      Assert
+        (Found_API_Key_Check
+         and then API_Key_Check.State = Identity.Credentials.States.Active
+         and then API_Key_Check.Version = 1,
+         "stale staged api key revocation leaves credential active");
+
+      Assert
+        (Identity.Operations.API_Keys.Revoke.Execute (Repository, C5, Audit_Context, Next_Audit_Event, 1)
+         = Identity.Adapters.Repositories.Memory.Applied,
+         "api key revocation applied");
+
+      Assert
+        (Identity.Operations.API_Keys.Authenticate.Execute
+           (Repository, Rotated_API_Key_Id, Rotated_API_Key_Secret, 63, Audit_Context, Next_Audit_Event, 1).Status
+         = Identity.Results.Rejected,
+         "revoked api key cannot authenticate");
+
+      Assert
+        (Identity.Operations.API_Keys.Issue.Execute
+           (Repository,
+            Identity.Operations.API_Keys.Issue.Issue_Request'
+              (Id => C10,
+               Principal => P2,
+               Public_Key_Id => Issued_API_Key_Id,
+               Credential_Class_Id => Identity.Identifiers.Registry.From_String ("identity.service.api-key"),
+               Secret => Issued_API_Key_Secret,
+               Created_At => 64,
+               Expires_At => (Present => True, Time_Point => 700),
+               Rotation_Generation => 0), Audit_Context, Next_Audit_Event, 1)
+         = Identity.Adapters.Repositories.Memory.Applied,
+         "IDENTITY-APIKEY-001 api key issue operation derives verifier from secret container");
+
+      Identity.Adapters.Repositories.Memory.Find_API_Key
+        (Repository, C10, Found_API_Key_Check, API_Key_Check);
+      Assert
+        (Found_API_Key_Check
+         and then not API_Key_Check.Last_Used_At.Present
+         and then Identity.Identifiers.Registry.Image (API_Key_Check.Credential_Class_Id)
+           = "identity.service.api-key"
+         and then Identity.Text.Bounded.Equal
+           (API_Key_Check.Secret_Verifier,
+            Identity.Crypto.Secret_Verifiers.Derive_Text
+              (Identity.Crypto.Domains.API_Key, Issued_API_Key_Secret)),
+         "api key issue operation stores derived verifier and credential class only");
+
+      Assert
+        (Identity.API_Keys.Credentials.Matches_Public_Key_Id
+           (Identity.API_Keys.Credentials.Summary (API_Key_Check),
+            Issued_API_Key_Id)
+        and then Identity.API_Keys.Credentials.Has_Credential_Class
+          (Identity.API_Keys.Credentials.Summary (API_Key_Check))
+         and then Identity.API_Keys.Credentials.Has_Verifier
+           (Identity.API_Keys.Credentials.Summary (API_Key_Check))
+         and then Identity.API_Keys.Credentials.Can_Authenticate
+           (Identity.API_Keys.Credentials.Summary (API_Key_Check), 65)
+         and then Identity.API_Keys.Credentials.Authentication_Admission
+           (Identity.API_Keys.Credentials.Summary (API_Key_Check), 65)
+           = Identity.API_Keys.Credentials.Authentication_Allowed
+         and then not Identity.API_Keys.Credentials.Can_Authenticate
+           (Identity.API_Keys.Credentials.Summary (API_Key_Check), 701)
+         and then Identity.API_Keys.Credentials.Authentication_Admission
+           (Identity.API_Keys.Credentials.Summary (API_Key_Check), 701)
+           = Identity.API_Keys.Credentials.Credential_Expired,
+         "IDENTITY-APIKEY-001 api key safe projection classifies verifier-free authentication metadata");
+
+      Assert
+        (Identity.Operations.API_Keys.Authenticate.Execute
+           (Repository, Issued_API_Key_Id, Issued_API_Key_Secret, 65, Audit_Context, Next_Audit_Event, 1).Status
+         = Identity.Results.Succeeded,
+         "api key issued from secret container authenticates");
+
+      Assert
+        (Identity.Operations.API_Keys.Rotate.Execute
+           (Repository,
+            Identity.Operations.API_Keys.Rotate.Rotate_Request'
+              (Predecessor => C10,
+               Id => C12,
+               Principal => P2,
+               Public_Key_Id => Request_Rotated_API_Key_Id,
+               Credential_Class_Id => Identity.Identifiers.Registry.From_String ("identity.service.api-key"),
+               Secret => Request_Rotated_API_Key_Secret,
+               Created_At => 66,
+               Expires_At => (Present => True, Time_Point => 800),
+               Rotation_Generation => 1), Audit_Context, Next_Audit_Event, 1)
+         = Identity.Adapters.Repositories.Memory.Applied,
+         "IDENTITY-APIKEY-001 api key rotate operation derives successor verifier from secret container");
+
+      Identity.Adapters.Repositories.Memory.Find_API_Key
+        (Repository, C10, Found_API_Key_Check, API_Key_Check);
+      Assert
+        (Found_API_Key_Check
+         and then API_Key_Check.State = Identity.Credentials.States.Retired,
+         "api key rotate operation retires request predecessor");
+
+      Identity.Adapters.Repositories.Memory.Find_API_Key
+        (Repository, C12, Found_API_Key_Check, API_Key_Check);
+      Assert
+        (Found_API_Key_Check
+         and then API_Key_Check.State = Identity.Credentials.States.Active
+         and then not API_Key_Check.Last_Used_At.Present
+         and then Identity.Identifiers.Registry.Image (API_Key_Check.Credential_Class_Id)
+           = "identity.service.api-key"
+         and then Identity.Text.Bounded.Equal
+           (API_Key_Check.Secret_Verifier,
+            Identity.Crypto.Secret_Verifiers.Derive_Text
+              (Identity.Crypto.Domains.API_Key, Request_Rotated_API_Key_Secret)),
+         "api key rotate operation stores derived successor verifier and credential class only");
+
+      Assert
+        (Identity.API_Keys.Credentials.Summary (API_Key_Check).Rotation_Generation = 1
+         and then Identity.API_Keys.Credentials.Same_Public_Key_Id
+           (Identity.API_Keys.Credentials.Summary (API_Key_Check),
+            Identity.API_Keys.Credentials.Summary
+              ((Id => C18,
+                Principal => P2,
+                Public_Key_Id => Request_Rotated_API_Key_Id,
+                Credential_Class_Id =>
+                  Identity.Identifiers.Registry.From_String ("identity.service.api-key"),
+                Secret_Verifier => Identity.Text.Bounded.From_String ("different-verifier"),
+                State => Identity.Credentials.States.Retired,
+                Created_At => 67,
+                Expires_At => (Present => True, Time_Point => 900),
+                Last_Used_At => (Present => True, Time_Point => 68),
+                Rotation_Generation => 2,
+                Version => 0))),
+         "api key safe projection compares public key id without verifier material");
+
+      Assert
+        (Identity.Operations.API_Keys.Authenticate.Execute
+           (Repository, Issued_API_Key_Id, Issued_API_Key_Secret, 67, Audit_Context, Next_Audit_Event, 1).Status
+         = Identity.Results.Rejected,
+         "request-rotated api key predecessor cannot authenticate");
+
+      Assert
+        (Identity.Operations.API_Keys.Authenticate.Execute
+           (Repository, Request_Rotated_API_Key_Id, Request_Rotated_API_Key_Secret, 67,
+            Audit_Context, Next_Audit_Event, 1).Status
+         = Identity.Results.Succeeded,
+         "request-rotated api key successor authenticates");
+
+      Assert
+        (Identity.Operations.API_Keys.Rotate.Execute
+           (Repository,
+            Identity.Operations.API_Keys.Rotate.Rotate_Request'
+              (Predecessor => C12,
+               Id => C17,
+               Principal => P2,
+               Public_Key_Id => Expired_API_Key_Id,
+               Credential_Class_Id => Identity.Identifiers.Registry.From_String ("identity.service.api-key"),
+               Secret => Expired_API_Key_Secret,
+               Created_At => 68,
+               Expires_At => (Present => True, Time_Point => 68),
+               Rotation_Generation => 2), Audit_Context, Next_Audit_Event, 1)
+         = Identity.Adapters.Repositories.Memory.State_Conflict,
+         "IDENTITY-APIKEY-001 api key rotate request rejects non-future expiration");
+
+      Assert
+        (Identity.Operations.API_Keys.Issue.Execute
+           (Repository,
+            Identity.Operations.API_Keys.Issue.Issue_Request'
+              (Id => C17,
+               Principal => P2,
+               Public_Key_Id => Expired_API_Key_Id,
+               Credential_Class_Id => Identity.Identifiers.Registry.From_String ("identity.service.api-key"),
+               Secret => Expired_API_Key_Secret,
+               Created_At => 68,
+               Expires_At => (Present => True, Time_Point => 68),
+               Rotation_Generation => 0), Audit_Context, Next_Audit_Event, 1)
+         = Identity.Adapters.Repositories.Memory.State_Conflict,
+         "IDENTITY-APIKEY-001 api key issue request rejects non-future expiration");
+
+      Assert
+        (Identity.Operations.API_Keys.Issue.Execute
+           (Repository,
+            Identity.API_Keys.Credentials.API_Key_Credential_Record'
+              (Id => C17,
+               Principal => P2,
+               Public_Key_Id => Expired_API_Key_Id,
+               Credential_Class_Id => Identity.Identifiers.Registry.From_String ("identity.service.api-key"),
+               Secret_Verifier => Identity.Crypto.Secret_Verifiers.Derive_Text
+                 (Identity.Crypto.Domains.API_Key, Expired_API_Key_Secret),
+               State => Identity.Credentials.States.Active,
+               Created_At => 68,
+               Expires_At => (Present => True, Time_Point => 69),
+               Last_Used_At => (Present => False, Time_Point => 0),
+               Rotation_Generation => 0,
+               Version => 0), Audit_Context, Next_Audit_Event, 1)
+         = Identity.Adapters.Repositories.Memory.Applied,
+         "expired api key fixture issued with verifier-only storage");
+
+      Assert
+        (Identity.Operations.API_Keys.Authenticate.Execute
+           (Repository, Expired_API_Key_Id, Expired_API_Key_Secret, 70, Audit_Context, Next_Audit_Event, 1).Status
+         = Identity.Results.Rejected,
+         "expired api key cannot authenticate");
+
+      Identity.Adapters.Repositories.Memory.Find_API_Key
+        (Repository, C17, Found_API_Key_Check, API_Key_Check);
+      Assert
+        (Found_API_Key_Check
+         and then not API_Key_Check.Last_Used_At.Present
+         and then API_Key_Check.Version = 0,
+         "expired api key does not update last used metadata");
+
+      Assert
+        (Identity.Operations.Principals.Create.Execute
+           (Repository,
+            (Id => P4,
+             Kind => Identity.Principals.Kinds.Service,
+             State => Identity.Principals.Definitions.Active,
+             Version => 0), Audit_Context, Next_Audit_Event, 1)
+         = Identity.Adapters.Repositories.Memory.Applied,
+         "retired-principal API key fixture principal created");
+
+      Assert
+        (Identity.Operations.API_Keys.Issue.Execute
+           (Repository,
+            Identity.Operations.API_Keys.Issue.Issue_Request'
+              (Id => C14,
+               Principal => P4,
+               Public_Key_Id => Retired_Principal_API_Key_Id,
+               Credential_Class_Id => Identity.Identifiers.Registry.From_String ("identity.service.api-key"),
+               Secret => Retired_Principal_API_Key_Secret,
+               Created_At => 68,
+               Expires_At => (Present => True, Time_Point => 900),
+               Rotation_Generation => 0), Audit_Context, Next_Audit_Event, 1)
+         = Identity.Adapters.Repositories.Memory.Applied,
+         "retired-principal API key fixture credential issued");
+
+      Assert
+        (Identity.Operations.Principals.Retire.Execute (Repository, P4, Audit_Context, Next_Audit_Event, 1)
+         = Identity.Adapters.Repositories.Memory.Applied,
+         "retired-principal API key fixture principal retired");
+
+      Assert
+        (Identity.Operations.API_Keys.Authenticate.Execute
+           (Repository, Retired_Principal_API_Key_Id, Retired_Principal_API_Key_Secret, 69,
+            Audit_Context, Next_Audit_Event, 1).Status
+         = Identity.Results.Rejected,
+         "api key for retired principal cannot authenticate");
+
+      Identity.Adapters.Repositories.Memory.Find_API_Key
+        (Repository, C14, Found_API_Key_Check, API_Key_Check);
+      Assert
+        (Found_API_Key_Check
+         and then not API_Key_Check.Last_Used_At.Present
+         and then API_Key_Check.Version = 0,
+         "api key for retired principal does not update last used metadata");
+
+      Assert
+        (Identity.Operations.API_Keys.Issue.Execute
+           (Repository,
+            Identity.Operations.API_Keys.Issue.Issue_Request'
+              (Id => C15,
+               Principal => P4,
+               Public_Key_Id => Retired_Principal_Rotated_API_Key_Id,
+               Credential_Class_Id => Identity.Identifiers.Registry.From_String ("identity.service.api-key"),
+               Secret => Retired_Principal_Rotated_API_Key_Secret,
+               Created_At => 69,
+               Expires_At => (Present => True, Time_Point => 901),
+               Rotation_Generation => 0), Audit_Context, Next_Audit_Event, 1)
+         = Identity.Adapters.Repositories.Memory.State_Conflict,
+         "api key issue rejects retired principal");
+
+      Assert
+        (Identity.Operations.API_Keys.Rotate.Execute
+           (Repository,
+            Identity.Operations.API_Keys.Rotate.Rotate_Request'
+              (Predecessor => C14,
+               Id => C15,
+               Principal => P4,
+               Public_Key_Id => Retired_Principal_Rotated_API_Key_Id,
+               Credential_Class_Id => Identity.Identifiers.Registry.From_String ("identity.service.api-key"),
+               Secret => Retired_Principal_Rotated_API_Key_Secret,
+               Created_At => 69,
+               Expires_At => (Present => True, Time_Point => 901),
+               Rotation_Generation => 1), Audit_Context, Next_Audit_Event, 1)
+         = Identity.Adapters.Repositories.Memory.State_Conflict,
+         "api key rotation rejects retired principal");
+
+      Assert
+        (Identity.Events.Classification.Allowed_In_Ordinary_Event
+           (Identity.Events.Classification.Secret) = False,
+         "IDENTITY-EVENT-001 secret data class rejected for ordinary events");
+
+      Assert
+        (Identity.Redaction.Safe_For_Public_Output
+           (Identity.Events.Classification.Public)
+         and then Identity.Redaction.Safe_For_Public_Output
+           (Identity.Events.Classification.Operational)
+         and then Identity.Redaction.Requires_Redaction
+           (Identity.Events.Classification.Personal)
+         and then Identity.Redaction.Requires_Redaction
+           (Identity.Events.Classification.Sensitive)
+         and then Identity.Redaction.Requires_Redaction
+           (Identity.Events.Classification.Secret)
+         and then Identity.Redaction.Requires_Redaction
+           (Identity.Events.Classification.Derived_Secret)
+         and then Identity.Text.Bounded.Equal
+           (Identity.Redaction.Public_Image
+              (Identity.Events.Classification.Secret,
+               Identity.Text.Bounded.From_String ("CANARY-event-secret")),
+            Identity.Text.Bounded.From_String ("[identity-redacted]")),
+         "IDENTITY-EVENT-002 event redaction predicates classify public output");
+
+      Assert
+        (Identity.Adapters.Repositories.Memory.Append_Event
+           (Repository,
+            (Id => E1,
+             Type_Id => Identity.Events.Types.Authentication_Succeeded,
+             Schema => 1,
+             Occurred_At => 70,
+             Recorded_At => 71,
+             Severity => Identity.Events.Envelopes.Informational,
+             Correlation => R1,
+             Operation => O1,
+             Actor =>
+               (Kind => Identity.Events.Envelopes.Authenticated_Principal,
+                Principal => (Present => True, Value => P1)),
+             Subject => (Present => True, Value => P1),
+             Target => Identity.Text.Bounded.From_String ("principal"),
+             Outcome => Identity.Events.Envelopes.Succeeded))
+         = Identity.Adapters.Repositories.Memory.Applied,
+         "event append is explicit and immutable");
+
+      Assert
+        (Identity.Adapters.Repositories.Memory.Event_Count (Repository) = 145,
+         "event count projection is bounded");
+
+      Assert
+        (Identity.Adapters.Repositories.Memory.Append_Event
+           (Repository,
+            (Id => E1,
+             Type_Id => Identity.Events.Types.Authentication_Succeeded,
+             Schema => 1,
+             Occurred_At => 70,
+             Recorded_At => 71,
+             Severity => Identity.Events.Envelopes.Informational,
+             Correlation => R1,
+             Operation => O1,
+             Actor =>
+               (Kind => Identity.Events.Envelopes.Authenticated_Principal,
+                Principal => (Present => True, Value => P1)),
+             Subject => (Present => True, Value => P1),
+             Target => Identity.Text.Bounded.From_String ("principal"),
+             Outcome => Identity.Events.Envelopes.Succeeded))
+         = Identity.Adapters.Repositories.Memory.Uniqueness_Conflict,
+         "duplicate event id rejected");
+   end Test_57_identity_service_api_key;
+
+   procedure Test_58_principal (T : in out AUnit.Test_Cases.Test_Case'Class) is
+      pragma Unreferenced (T);
+      Encoded : constant Identity.Text.Bounded.Bounded_Text :=
+        Identity.Events.Canonical.Encode
+          ((Id => E1,
+            Type_Id => Identity.Events.Types.Authentication_Succeeded,
+            Schema => 1,
+            Occurred_At => 70,
+            Recorded_At => 71,
+            Severity => Identity.Events.Envelopes.Informational,
+            Correlation => R1,
+            Operation => O1,
+            Actor =>
+              (Kind => Identity.Events.Envelopes.Authenticated_Principal,
+               Principal => (Present => True, Value => P1)),
+            Subject => (Present => True, Value => P1),
+            Target => Identity.Text.Bounded.From_String ("principal"),
+            Outcome => Identity.Events.Envelopes.Succeeded));
+      Encoded_Image : constant String := Identity.Text.Bounded.Image (Encoded);
+      Expected_Prefix : constant String :=
+        "identity-event-v1;" &
+        "eid=70000000-0000-0000-0000-000000000001;" &
+        "type=identity.authentication.succeeded;" &
+        "schema=1;occurred=70;recorded=71;severity=INFORMATIONAL;" &
+        "correlation=90000000-0000-0000-0000-000000000001;" &
+        "operation=80000000-0000-0000-0000-000000000001;";
+      Max_Target : constant String (1 .. Identity.Limits.Max_Public_Text_Bytes) :=
+        [others => 'x'];
+      Max_Encoded : constant Identity.Text.Bounded.Bounded_Text :=
+        Identity.Events.Canonical.Encode
+          ((Id => E1,
+            Type_Id => Identity.Events.Types.Authentication_Succeeded,
+            Schema => 1,
+            Occurred_At => 70,
+            Recorded_At => 71,
+            Severity => Identity.Events.Envelopes.Informational,
+            Correlation => R1,
+            Operation => O1,
+            Actor =>
+              (Kind => Identity.Events.Envelopes.Authenticated_Principal,
+               Principal => (Present => True, Value => P1)),
+            Subject => (Present => True, Value => P1),
+            Target => Identity.Text.Bounded.From_String (Max_Target),
+            Outcome => Identity.Events.Envelopes.Succeeded));
+   begin
+      Assert
+        (Identity.Text.Bounded.Length (Encoded) > 0
+         and then Encoded_Image (Encoded_Image'First .. Encoded_Image'First + Expected_Prefix'Length - 1)
+           = Expected_Prefix,
+         "canonical event encoding includes stable envelope fields");
+
+      Assert
+        (Identity.Text.Bounded.Length (Max_Encoded) = Identity.Limits.Max_Public_Text_Bytes,
+         "canonical event encoding is bounded");
+   end Test_58_principal;
+
+   procedure Test_59_subject_fingerprint_1 (T : in out AUnit.Test_Cases.Test_Case'Class) is
+      pragma Unreferenced (T);
+   begin
+      Assert
+        (Identity.Adapters.Repositories.Memory.Record_Attempt
+           (Repository,
+            (Id => AT1,
+             Correlation => R1,
+             Principal => (Present => True, Value => P1),
+             Subject_Fingerprint => Identity.Text.Bounded.From_String ("subject-fingerprint-1"),
+             Method => Login_Kind,
+             Started_At => 80,
+             Completed_At => 81,
+             Outcome => Identity.Attempts.Outcomes.Failed,
+             Failure => Identity.Attempts.Outcomes.Password_Failure,
+             Disclosure => Identity.Attempts.Outcomes.Generic_Rejection,
+             Version => 0))
+         = Identity.Adapters.Repositories.Memory.Applied,
+         "attempt record appended");
+
+      Assert
+        (Identity.Adapters.Repositories.Memory.Record_Attempt
+           (Repository,
+            (Id => AT1,
+             Correlation => R1,
+             Principal => (Present => True, Value => P1),
+             Subject_Fingerprint => Identity.Text.Bounded.From_String ("subject-fingerprint-1"),
+             Method => Login_Kind,
+             Started_At => 80,
+             Completed_At => 81,
+             Outcome => Identity.Attempts.Outcomes.Failed,
+             Failure => Identity.Attempts.Outcomes.Password_Failure,
+             Disclosure => Identity.Attempts.Outcomes.Generic_Rejection,
+             Version => 0))
+         = Identity.Adapters.Repositories.Memory.Uniqueness_Conflict,
+         "duplicate attempt id rejected");
+
+      Assert
+        (Identity.Adapters.Repositories.Memory.Record_Attempt
+           (Repository,
+            (Id => AT2,
+             Correlation => R1,
+             Principal => (Present => True, Value => P1),
+             Subject_Fingerprint => Identity.Text.Bounded.From_String ("subject-fingerprint-1"),
+             Method => Login_Kind,
+             Started_At => 82,
+             Completed_At => 83,
+             Outcome => Identity.Attempts.Outcomes.Failed,
+             Failure => Identity.Attempts.Outcomes.Password_Failure,
+             Disclosure => Identity.Attempts.Outcomes.Generic_Rejection,
+             Version => 0))
+         = Identity.Adapters.Repositories.Memory.Applied,
+         "second failed attempt appended");
+
+      Assert
+        (Identity.Adapters.Repositories.Memory.Failure_Count
+           (Repository, P1, Identity.Attempts.Outcomes.Password_Failure) = 2,
+         "password failure count is deterministic");
+
+      Assert
+        (Identity.Lockout.Evaluation.Evaluate
+           (Identity.Adapters.Repositories.Memory.Failure_Count
+              (Repository, P1, Identity.Attempts.Outcomes.Password_Failure),
+            2)
+         = Identity.Lockout.Evaluation.Temporarily_Lock,
+         "IDENTITY-ATTEMPT-001 threshold crossing locks deterministically");
+
+      Assert
+        (Identity.Operations.Factors.Generate_Recovery_Codes.Execute
+           (Repository,
+            Identity.Recovery_Codes.Sets.Recovery_Code_Set_Record'
+              (Id => CS5,
+               Principal => P3,
+               Created_At => 89,
+               Version => 0,
+               Count => 1,
+               Codes =>
+                 [1 =>
+                    (Code_Id => Identity.Text.Bounded.From_String ("retired-code-1"),
+                     Secret_Verifier => Identity.Crypto.Secret_Verifiers.Derive_Text
+                       (Identity.Crypto.Domains.Recovery_Code, Recovery_Code),
+                     State => Identity.Recovery_Codes.Sets.Active),
+                  others =>
+                    (Code_Id => Identity.Text.Bounded.From_String (""),
+                     Secret_Verifier => Identity.Text.Bounded.From_String (""),
+                     State => Identity.Recovery_Codes.Sets.Revoked)]), Audit_Context, Next_Audit_Event, 1)
+         = Identity.Adapters.Repositories.Memory.State_Conflict,
+         "recovery code generation rejects retired principal");
+
+      Assert
+        (Identity.Operations.Factors.Regenerate_Recovery_Codes.Execute
+           (Repository,
+            Identity.Recovery_Codes.Sets.Recovery_Code_Set_Record'
+              (Id => CS6,
+               Principal => P3,
+               Created_At => 89,
+               Version => 0,
+               Count => 1,
+               Codes =>
+                 [1 =>
+                    (Code_Id => Identity.Text.Bounded.From_String ("retired-code-2"),
+                     Secret_Verifier => Identity.Crypto.Secret_Verifiers.Derive_Text
+                       (Identity.Crypto.Domains.Recovery_Code, Recovery_Code_2),
+                     State => Identity.Recovery_Codes.Sets.Active),
+                  others =>
+                    (Code_Id => Identity.Text.Bounded.From_String (""),
+                     Secret_Verifier => Identity.Text.Bounded.From_String (""),
+                     State => Identity.Recovery_Codes.Sets.Revoked)]), Audit_Context, Next_Audit_Event, 1)
+         = Identity.Adapters.Repositories.Memory.State_Conflict,
+         "recovery code regeneration rejects retired principal");
+
+      Assert
+        (Identity.Operations.Factors.Generate_Recovery_Codes.Execute
+           (Repository,
+            Identity.Recovery_Codes.Sets.Recovery_Code_Set_Record'
+              (Id => CS1,
+               Principal => P1,
+               Created_At => 90,
+               Version => 0,
+               Count => 1,
+               Codes =>
+                 [1 =>
+                    (Code_Id => Identity.Text.Bounded.From_String ("code-1"),
+                     Secret_Verifier => Identity.Crypto.Secret_Verifiers.Derive_Text
+                       (Identity.Crypto.Domains.Recovery_Code, Recovery_Code),
+                     State => Identity.Recovery_Codes.Sets.Active),
+                  others =>
+                    (Code_Id => Identity.Text.Bounded.From_String (""),
+                     Secret_Verifier => Identity.Text.Bounded.From_String (""),
+                     State => Identity.Recovery_Codes.Sets.Revoked)]), Audit_Context, Next_Audit_Event, 1)
+         = Identity.Adapters.Repositories.Memory.Applied,
+         "IDENTITY-RECOVERY-001 recovery code set stores verifier only");
+
+      Assert
+        (Identity.Recovery_Codes.Sets.Admit_Matched_Code
+           ((Code_Id => Identity.Text.Bounded.From_String ("code-active"),
+             Secret_Verifier => Identity.Text.Bounded.From_String ("verifier-active"),
+             State => Identity.Recovery_Codes.Sets.Active))
+         = Identity.Recovery_Codes.Sets.Consumed
+         and then Identity.Recovery_Codes.Sets.Admit_Matched_Code
+           ((Code_Id => Identity.Text.Bounded.From_String ("code-consumed"),
+             Secret_Verifier => Identity.Text.Bounded.From_String ("verifier-consumed"),
+             State => Identity.Recovery_Codes.Sets.Consumed))
+           = Identity.Recovery_Codes.Sets.Already_Consumed
+         and then Identity.Recovery_Codes.Sets.Admit_Matched_Code
+           ((Code_Id => Identity.Text.Bounded.From_String ("code-revoked"),
+             Secret_Verifier => Identity.Text.Bounded.From_String ("verifier-revoked"),
+             State => Identity.Recovery_Codes.Sets.Revoked))
+           = Identity.Recovery_Codes.Sets.State_Conflict
+         and then Identity.Recovery_Codes.Sets.Evaluate_Presentation
+           (False,
+            False,
+            (Code_Id => Identity.Text.Bounded.From_String ("code-missing"),
+             Secret_Verifier => Identity.Text.Bounded.From_String ("verifier-missing"),
+             State => Identity.Recovery_Codes.Sets.Active))
+           = Identity.Recovery_Codes.Sets.Unknown
+         and then Identity.Recovery_Codes.Sets.Evaluate_Presentation
+           (True,
+            False,
+            (Code_Id => Identity.Text.Bounded.From_String ("code-wrong"),
+             Secret_Verifier => Identity.Text.Bounded.From_String ("verifier-wrong"),
+             State => Identity.Recovery_Codes.Sets.Active))
+           = Identity.Recovery_Codes.Sets.Not_Verified
+         and then Identity.Recovery_Codes.Sets.Evaluate_Presentation
+           (True,
+            True,
+            (Code_Id => Identity.Text.Bounded.From_String ("code-reused"),
+             Secret_Verifier => Identity.Text.Bounded.From_String ("verifier-reused"),
+             State => Identity.Recovery_Codes.Sets.Consumed))
+           = Identity.Recovery_Codes.Sets.Already_Consumed
+         and then Identity.Recovery_Codes.Sets.Usable
+           (Identity.Recovery_Codes.Sets.Active)
+         and then not Identity.Recovery_Codes.Sets.Usable
+           (Identity.Recovery_Codes.Sets.Consumed)
+         and then Identity.Recovery_Codes.Sets.Active_State
+           (Identity.Recovery_Codes.Sets.Active)
+         and then Identity.Recovery_Codes.Sets.Consumed_State
+           (Identity.Recovery_Codes.Sets.Consumed)
+         and then Identity.Recovery_Codes.Sets.Revoked_State
+           (Identity.Recovery_Codes.Sets.Revoked)
+         and then (Identity.Recovery_Codes.Sets.Admission
+           (Identity.Recovery_Codes.Sets.Active,
+            Identity.Recovery_Codes.Sets.Consume_Code)
+           = Identity.Recovery_Codes.Sets.Recovery_Code_Admitted)
+         and then not Identity.Recovery_Codes.Sets.Admission_Rejected
+           (Identity.Recovery_Codes.Sets.Admission
+              (Identity.Recovery_Codes.Sets.Active,
+               Identity.Recovery_Codes.Sets.Consume_Code))
+         and then (Identity.Recovery_Codes.Sets.Admission
+           (Identity.Recovery_Codes.Sets.Consumed,
+            Identity.Recovery_Codes.Sets.Consume_Code)
+           = Identity.Recovery_Codes.Sets.Recovery_Code_Consumed_Rejected)
+         and then Identity.Recovery_Codes.Sets.Consumed_Rejected
+           (Identity.Recovery_Codes.Sets.Recovery_Code_Consumed_Rejected)
+         and then Identity.Recovery_Codes.Sets.Admission_Rejected
+           (Identity.Recovery_Codes.Sets.Admission
+              (Identity.Recovery_Codes.Sets.Consumed,
+               Identity.Recovery_Codes.Sets.Consume_Code))
+         and then (Identity.Recovery_Codes.Sets.Admission
+           (Identity.Recovery_Codes.Sets.Revoked,
+            Identity.Recovery_Codes.Sets.Regeneration_Revocation)
+           = Identity.Recovery_Codes.Sets.Recovery_Code_Revoked_Rejected)
+         and then Identity.Recovery_Codes.Sets.Revoked_Rejected
+           (Identity.Recovery_Codes.Sets.Recovery_Code_Revoked_Rejected)
+         and then Identity.Recovery_Codes.Sets.Admission_Rejected
+           (Identity.Recovery_Codes.Sets.Admission
+              (Identity.Recovery_Codes.Sets.Revoked,
+               Identity.Recovery_Codes.Sets.Regeneration_Revocation))
+         and then Identity.Recovery_Codes.Sets.Consumption_Succeeded
+           (Identity.Recovery_Codes.Sets.Consumed)
+         and then Identity.Recovery_Codes.Sets.Reuse_Rejected
+           (Identity.Recovery_Codes.Sets.Already_Consumed)
+         and then Identity.Recovery_Codes.Sets.Retryable_By_Presentation
+           (Identity.Recovery_Codes.Sets.Not_Verified)
+         and then Identity.Recovery_Codes.Sets.Retryable_By_Presentation
+           (Identity.Recovery_Codes.Sets.Unknown)
+         and then not Identity.Recovery_Codes.Sets.Retryable_By_Presentation
+           (Identity.Recovery_Codes.Sets.Already_Consumed)
+         and then Identity.Recovery_Codes.Sets.Unknown_Code
+           (Identity.Recovery_Codes.Sets.Unknown)
+         and then Identity.Recovery_Codes.Sets.Conflict
+           (Identity.Recovery_Codes.Sets.State_Conflict)
+         and then Identity.Recovery_Codes.Sets.No_State_Mutation
+           (Identity.Recovery_Codes.Sets.Not_Verified)
+         and then Identity.Recovery_Codes.Sets.No_State_Mutation
+           (Identity.Recovery_Codes.Sets.Already_Consumed)
+         and then not Identity.Recovery_Codes.Sets.No_State_Mutation
+           (Identity.Recovery_Codes.Sets.Consumed)
+         and then Identity.Recovery_Codes.Sets.Can_Revoke_During_Regeneration
+           (Identity.Recovery_Codes.Sets.Active)
+         and then not Identity.Recovery_Codes.Sets.Can_Revoke_During_Regeneration
+           (Identity.Recovery_Codes.Sets.Consumed)
+         and then not Identity.Recovery_Codes.Sets.Can_Revoke_During_Regeneration
+           (Identity.Recovery_Codes.Sets.Revoked),
+         "IDENTITY-RECOVERY-001 recovery code state admission is explicit");
+
+      Assert
+        (Identity.Operations.Factors.Generate_Recovery_Codes.Execute
+           (Repository,
+            Identity.Operations.Factors.Generate_Recovery_Codes.Generate_Request'
+              (Id => CS3,
+               Principal => P1,
+               Created_At => 90,
+               Count => 1,
+               Codes =>
+                 [1 =>
+                    (Code_Id => Identity.Text.Bounded.From_String ("code-3"),
+                     Secret => Recovery_Code_3),
+                  others =>
+                    (Code_Id => Identity.Text.Bounded.From_String (""),
+                     Secret => Wrong_Recovery_Code)]), Audit_Context, Next_Audit_Event, 1)
+         = Identity.Adapters.Repositories.Memory.Applied,
+         "IDENTITY-RECOVERY-001 recovery code request derives verifier from code secret");
+
+      Identity.Adapters.Repositories.Memory.Find_Recovery_Code_Set
+        (Repository, CS3, Found_Recovery_Code_Set_Check, Recovery_Code_Set_Check);
+      Assert
+        (Found_Recovery_Code_Set_Check
+         and then Recovery_Code_Set_Check.Count = 1
+         and then Identity.Text.Bounded.Equal
+           (Recovery_Code_Set_Check.Codes (1).Secret_Verifier,
+            Identity.Crypto.Secret_Verifiers.Derive_Text
+              (Identity.Crypto.Domains.Recovery_Code, Recovery_Code_3))
+         and then Recovery_Code_Set_Check.Codes (2).State = Identity.Recovery_Codes.Sets.Revoked,
+         "recovery code request stores derived verifier only");
+
+      Assert
+        (Found_Recovery_Code_Set_Check
+         and then Identity.Recovery_Codes.Sets.Summary
+           (Recovery_Code_Set_Check).Count = 1
+         and then Identity.Recovery_Codes.Sets.Summary
+           (Recovery_Code_Set_Check).Active_Count = 1
+         and then Identity.Recovery_Codes.Sets.Has_Usable_Code
+           (Identity.Recovery_Codes.Sets.Summary (Recovery_Code_Set_Check))
+         and then not Identity.Recovery_Codes.Sets.Has_Revoked_Code
+           (Identity.Recovery_Codes.Sets.Summary (Recovery_Code_Set_Check))
+         and then not Identity.Recovery_Codes.Sets.Fully_Consumed
+           (Identity.Recovery_Codes.Sets.Summary (Recovery_Code_Set_Check))
+         and then not Identity.Recovery_Codes.Sets.Fully_Revoked
+           (Identity.Recovery_Codes.Sets.Summary (Recovery_Code_Set_Check)),
+         "recovery-code set projection exposes counts without verifier material");
+
+      Assert
+        (Identity.Recovery_Codes.Sets.Has_Revoked_Code
+           ((Id => CS3,
+             Principal => P1,
+             Created_At => 90,
+             Version => 0,
+             Count => 1,
+             Active_Count => 0,
+             Consumed_Count => 0,
+             Revoked_Count => 1))
+         and then Identity.Recovery_Codes.Sets.Fully_Revoked
+           ((Id => CS3,
+             Principal => P1,
+             Created_At => 90,
+             Version => 0,
+             Count => 1,
+             Active_Count => 0,
+             Consumed_Count => 0,
+             Revoked_Count => 1)),
+         "recovery-code set projection classifies revoked counted entries");
+
+      Assert
+        (Identity.Operations.Factors.Consume_Recovery_Code.Execute
+           (Repository, CS1, Wrong_Recovery_Code, Audit_Context, Next_Audit_Event, 1)
+         = Identity.Recovery_Codes.Sets.Not_Verified,
+         "wrong recovery code rejected");
+
+      Assert
+        (Identity.Operations.Factors.Consume_Recovery_Code.Execute
+           (Repository, CS1, Recovery_Code, Audit_Context, Next_Audit_Event, 1)
+         = Identity.Recovery_Codes.Sets.Consumed,
+         "recovery code consumed once");
+
+      Identity.Adapters.Repositories.Memory.Find_Recovery_Code_Set
+        (Repository, CS1, Found_Recovery_Code_Set_Check, Recovery_Code_Set_Check);
+      Assert
+        (Found_Recovery_Code_Set_Check
+         and then Recovery_Code_Set_Check.Version = 1,
+         "recovery code consumption advances set version");
+
+      Assert
+        (Found_Recovery_Code_Set_Check
+         and then Identity.Recovery_Codes.Sets.Summary
+           (Recovery_Code_Set_Check).Version = 1
+         and then Identity.Recovery_Codes.Sets.Summary
+           (Recovery_Code_Set_Check).Consumed_Count = 1
+         and then Identity.Recovery_Codes.Sets.Fully_Consumed
+           (Identity.Recovery_Codes.Sets.Summary (Recovery_Code_Set_Check)),
+         "recovery-code consumed projection reports consumed count and version");
+
+      Assert
+        (Identity.Operations.Factors.Consume_Recovery_Code.Execute
+           (Repository,
+            Identity.Operations.Factors.Consume_Recovery_Code.Consume_Request'
+              (Set_Id => CS1,
+               Expected_Version => 0,
+               Code => Recovery_Code), Audit_Context, Next_Audit_Event, 1)
+         = Identity.Recovery_Codes.Sets.State_Conflict,
+         "stale recovery code consumption request conflicts before reuse");
+
+      Assert
+        (Identity.Operations.Factors.Consume_Recovery_Code.Execute
+           (Repository, CS1, Recovery_Code, Audit_Context, Next_Audit_Event, 1)
+         = Identity.Recovery_Codes.Sets.Already_Consumed,
+         "recovery code cannot be consumed twice");
+   end Test_59_subject_fingerprint_1;
+
+   procedure Test_60_classifier_code (T : in out AUnit.Test_Cases.Test_Case'Class) is
+      pragma Unreferenced (T);
+      Active_Code : constant Identity.Recovery_Codes.Sets.Recovery_Code_Verifier :=
+        (Code_Id => Identity.Text.Bounded.From_String ("classifier-code"),
+         Secret_Verifier => Identity.Text.Bounded.From_String ("classifier-verifier"),
+         State => Identity.Recovery_Codes.Sets.Active);
+      Consumed_Code : constant Identity.Recovery_Codes.Sets.Recovery_Code_Verifier :=
+        (Active_Code with delta State => Identity.Recovery_Codes.Sets.Consumed);
+      Revoked_Code : constant Identity.Recovery_Codes.Sets.Recovery_Code_Verifier :=
+        (Active_Code with delta State => Identity.Recovery_Codes.Sets.Revoked);
+   begin
+      Assert
+        (Identity.Recovery_Codes.Sets.Evaluate_Presentation (False, False, Active_Code)
+           = Identity.Recovery_Codes.Sets.Unknown
+         and then Identity.Recovery_Codes.Sets.Unknown_Code
+           (Identity.Recovery_Codes.Sets.Evaluate_Presentation
+              (False, False, Active_Code))
+         and then Identity.Recovery_Codes.Sets.Evaluate_Presentation
+           (True, False, Active_Code)
+           = Identity.Recovery_Codes.Sets.Not_Verified
+         and then Identity.Recovery_Codes.Sets.Retryable_By_Presentation
+           (Identity.Recovery_Codes.Sets.Evaluate_Presentation
+              (True, False, Active_Code))
+         and then Identity.Recovery_Codes.Sets.Evaluate_Presentation
+           (True, True, Active_Code)
+           = Identity.Recovery_Codes.Sets.Consumed
+         and then Identity.Recovery_Codes.Sets.Consumption_Succeeded
+           (Identity.Recovery_Codes.Sets.Evaluate_Presentation
+              (True, True, Active_Code))
+         and then Identity.Recovery_Codes.Sets.Evaluate_Presentation
+           (True, True, Consumed_Code)
+           = Identity.Recovery_Codes.Sets.Already_Consumed
+         and then Identity.Recovery_Codes.Sets.Reuse_Rejected
+           (Identity.Recovery_Codes.Sets.Evaluate_Presentation
+              (True, True, Consumed_Code))
+         and then Identity.Recovery_Codes.Sets.Evaluate_Presentation
+           (True, True, Revoked_Code)
+           = Identity.Recovery_Codes.Sets.State_Conflict
+         and then Identity.Recovery_Codes.Sets.Conflict
+           (Identity.Recovery_Codes.Sets.Evaluate_Presentation
+              (True, True, Revoked_Code)),
+         "recovery code presentation classifier distinguishes missing wrong and reused "
+         & "code paths");
+
+      Assert
+        (Identity.Recovery_Codes.Sets.Usable (Identity.Recovery_Codes.Sets.Active)
+         and then not Identity.Recovery_Codes.Sets.Usable
+           (Identity.Recovery_Codes.Sets.Consumed)
+         and then not Identity.Recovery_Codes.Sets.Usable
+           (Identity.Recovery_Codes.Sets.Revoked)
+         and then Identity.Recovery_Codes.Sets.Admission
+           (Identity.Recovery_Codes.Sets.Consumed,
+            Identity.Recovery_Codes.Sets.Consume_Code)
+           = Identity.Recovery_Codes.Sets.Recovery_Code_Consumed_Rejected
+         and then Identity.Recovery_Codes.Sets.Consumed_Rejected
+           (Identity.Recovery_Codes.Sets.Admission
+              (Identity.Recovery_Codes.Sets.Consumed,
+               Identity.Recovery_Codes.Sets.Consume_Code))
+         and then Identity.Recovery_Codes.Sets.Revoked_Rejected
+           (Identity.Recovery_Codes.Sets.Admission
+              (Identity.Recovery_Codes.Sets.Revoked,
+               Identity.Recovery_Codes.Sets.Consume_Code))
+         and then Identity.Recovery_Codes.Sets.Can_Revoke_During_Regeneration
+           (Identity.Recovery_Codes.Sets.Active)
+         and then not Identity.Recovery_Codes.Sets.Can_Revoke_During_Regeneration
+           (Identity.Recovery_Codes.Sets.Revoked)
+         and then Identity.Recovery_Codes.Sets.No_State_Mutation
+           (Identity.Recovery_Codes.Sets.Already_Consumed)
+         and then Identity.Recovery_Codes.Sets.No_State_Mutation
+           (Identity.Recovery_Codes.Sets.Not_Verified)
+         and then Identity.Recovery_Codes.Sets.No_State_Mutation
+           (Identity.Recovery_Codes.Sets.Unknown)
+         and then Identity.Recovery_Codes.Sets.No_State_Mutation
+           (Identity.Recovery_Codes.Sets.State_Conflict)
+         and then not Identity.Recovery_Codes.Sets.No_State_Mutation
+           (Identity.Recovery_Codes.Sets.Recovery_Code_Consume_Status'
+              (Identity.Recovery_Codes.Sets.Consumed))
+         and then Identity.Recovery_Codes.Sets.Active_State
+           (Identity.Recovery_Codes.Sets.Active)
+         and then Identity.Recovery_Codes.Sets.Consumed_State
+           (Identity.Recovery_Codes.Sets.Recovery_Code_State'
+              (Identity.Recovery_Codes.Sets.Consumed))
+         and then Identity.Recovery_Codes.Sets.Revoked_State
+           (Identity.Recovery_Codes.Sets.Revoked),
+         "recovery code status predicates classify single-use and no-mutation outcomes");
+   end Test_60_classifier_code;
+
+   procedure Test_61_code_2 (T : in out AUnit.Test_Cases.Test_Case'Class) is
+      pragma Unreferenced (T);
+   begin
+      Assert
+        (Identity.Operations.Factors.Regenerate_Recovery_Codes.Execute
+           (Repository,
+            Identity.Operations.Factors.Regenerate_Recovery_Codes.Staged_Regenerate_Request'
+              (Request =>
+                 (Id => CS2,
+                  Principal => P1,
+                  Created_At => 91,
+                  Count => 1,
+                  Codes =>
+                    [1 =>
+                       (Code_Id => Identity.Text.Bounded.From_String ("code-2"),
+                        Secret => Recovery_Code_2),
+                     others =>
+                       (Code_Id => Identity.Text.Bounded.From_String (""),
+                        Secret => Wrong_Recovery_Code)]),
+               Expected_Affected_Count => 3), Audit_Context, Next_Audit_Event, 1)
+         = Identity.Adapters.Repositories.Memory.Version_Conflict,
+         "stale staged recovery-code regeneration conflicts before revocation");
+
+      Assert
+        (Identity.Operations.Factors.Consume_Recovery_Code.Execute
+           (Repository, CS3, Recovery_Code_3, Audit_Context, Next_Audit_Event, 1)
+         = Identity.Recovery_Codes.Sets.Consumed,
+         "stale staged recovery-code regeneration leaves active set usable");
+
+      Assert
+        (Identity.Operations.Factors.Regenerate_Recovery_Codes.Execute
+           (Repository,
+            Identity.Recovery_Codes.Sets.Recovery_Code_Set_Record'
+              (Id => CS2,
+               Principal => P1,
+               Created_At => 91,
+               Version => 0,
+               Count => 1,
+               Codes =>
+                 [1 =>
+                    (Code_Id => Identity.Text.Bounded.From_String ("code-2"),
+                     Secret_Verifier => Identity.Crypto.Secret_Verifiers.Derive_Text
+                       (Identity.Crypto.Domains.Recovery_Code, Recovery_Code_2),
+                     State => Identity.Recovery_Codes.Sets.Active),
+                  others =>
+                    (Code_Id => Identity.Text.Bounded.From_String (""),
+                     Secret_Verifier => Identity.Text.Bounded.From_String (""),
+                     State => Identity.Recovery_Codes.Sets.Revoked)]), Audit_Context, Next_Audit_Event, 1)
+         = Identity.Adapters.Repositories.Memory.Applied,
+         "recovery-code regeneration installs replacement verifier set");
+
+      Identity.Adapters.Repositories.Memory.Find_Recovery_Code_Set
+        (Repository, CS2, Found_Recovery_Code_Set_Check, Recovery_Code_Set_Check);
+      Assert
+        (Found_Recovery_Code_Set_Check
+         and then Identity.Recovery_Codes.Sets.Summary
+           (Recovery_Code_Set_Check).Active_Count = 1
+         and then Identity.Recovery_Codes.Sets.Has_Usable_Code
+           (Identity.Recovery_Codes.Sets.Summary (Recovery_Code_Set_Check)),
+         "recovery-code regenerated projection reports replacement active count");
+
+      Assert
+        (Identity.Operations.Factors.Consume_Recovery_Code.Execute
+           (Repository, CS2, Recovery_Code_2, Audit_Context, Next_Audit_Event, 1)
+         = Identity.Recovery_Codes.Sets.Consumed,
+         "regenerated recovery code can be consumed once");
+
+      Assert
+        (Identity.Operations.Factors.Regenerate_Recovery_Codes.Execute
+           (Repository,
+            Identity.Operations.Factors.Regenerate_Recovery_Codes.Regenerate_Request'
+              (Id => CS4,
+               Principal => P1,
+               Created_At => 92,
+               Count => 1,
+               Codes =>
+                 [1 =>
+                    (Code_Id => Identity.Text.Bounded.From_String ("code-4"),
+                     Secret => Recovery_Code_3),
+                  others =>
+                    (Code_Id => Identity.Text.Bounded.From_String (""),
+                     Secret => Wrong_Recovery_Code)]), Audit_Context, Next_Audit_Event, 1)
+         = Identity.Adapters.Repositories.Memory.Applied,
+         "recovery-code regeneration request derives replacement verifier from code secret");
+
+      Identity.Adapters.Repositories.Memory.Find_Recovery_Code_Set
+        (Repository, CS4, Found_Recovery_Code_Set_Check, Recovery_Code_Set_Check);
+      Assert
+        (Found_Recovery_Code_Set_Check
+         and then Recovery_Code_Set_Check.Count = 1
+         and then Identity.Text.Bounded.Equal
+           (Recovery_Code_Set_Check.Codes (1).Secret_Verifier,
+            Identity.Crypto.Secret_Verifiers.Derive_Text
+              (Identity.Crypto.Domains.Recovery_Code, Recovery_Code_3)),
+         "recovery-code regeneration request stores replacement verifier only");
+
+      Assert
+        (Identity.Operations.Factors.Consume_Recovery_Code.Execute
+           (Repository, CS4, Recovery_Code_3, Audit_Context, Next_Audit_Event, 1)
+         = Identity.Recovery_Codes.Sets.Consumed,
+         "regenerated recovery code from request can be consumed once");
+
+      Assert
+        (Identity.Operations.Recovery.Begin_Recovery.Execute
+           (Repository,
+            (Id => RT3,
+             Principal => P3,
+             Account => A3,
+             Created_At => 93,
+             Expires_At => (Present => True, Time_Point => 180),
+             State => Identity.Recovery.Transactions.Started,
+             Version => 0), Audit_Context, Next_Audit_Event, 1)
+         = Identity.Recovery.Transactions.State_Conflict,
+         "recovery transaction begin rejects retired principal");
+
+      Assert
+        (Identity.Operations.Recovery.Begin_Recovery.Execute
+           (Repository,
+            (Id => RT1,
+             Principal => P1,
+             Account => A1,
+             Created_At => 94,
+             Expires_At => (Present => True, Time_Point => 180),
+             State => Identity.Recovery.Transactions.Started,
+             Version => 0), Audit_Context, Next_Audit_Event, 1)
+         = Identity.Recovery.Transactions.Applied,
+         "IDENTITY-RECOVERY-002 recovery transaction begins in evidence-required state");
+
+      Assert
+        (Identity.Adapters.Repositories.Memory.Recovery_Transaction_Count (Repository) = 1,
+         "recovery transaction count projection is bounded");
+
+      Assert
+        (Identity.Recovery.Transactions.Admission
+           (Identity.Recovery.Transactions.Started,
+            Identity.Recovery.Transactions.Begin_Recovery)
+           = Identity.Recovery.Transactions.Recovery_Transaction_Admitted
+         and then not Identity.Recovery.Transactions.Admission_Rejected
+           (Identity.Recovery.Transactions.Admission
+              (Identity.Recovery.Transactions.Started,
+               Identity.Recovery.Transactions.Begin_Recovery))
+         and then Identity.Recovery.Transactions.Admission_Rejected
+           (Identity.Recovery.Transactions.Admission
+              (Identity.Recovery.Transactions.Evidence_Required,
+               Identity.Recovery.Transactions.Begin_Recovery))
+         and then Identity.Recovery.Transactions.Admission_State_Rejected
+           (Identity.Recovery.Transactions.Admission
+              (Identity.Recovery.Transactions.Evidence_Required,
+               Identity.Recovery.Transactions.Begin_Recovery))
+         and then Identity.Recovery.Transactions.Admission_Rejected
+           (Identity.Recovery.Transactions.Admission
+              (Identity.Recovery.Transactions.Completed,
+               Identity.Recovery.Transactions.Accept_Recovery_Evidence))
+         and then Identity.Recovery.Transactions.Admission_Terminal_Rejected
+           (Identity.Recovery.Transactions.Admission
+              (Identity.Recovery.Transactions.Completed,
+               Identity.Recovery.Transactions.Accept_Recovery_Evidence))
+         and then not Identity.Recovery.Transactions.Admission_State_Rejected
+           (Identity.Recovery.Transactions.Admission
+              (Identity.Recovery.Transactions.Completed,
+               Identity.Recovery.Transactions.Accept_Recovery_Evidence))
+         and then Identity.Recovery.Transactions.Admission_Rejected
+           (Identity.Recovery.Transactions.Admission
+              (Identity.Recovery.Transactions.Cancelled,
+               Identity.Recovery.Transactions.Cancel_Recovery))
+         and then Identity.Recovery.Transactions.Admission_Rejected
+           (Identity.Recovery.Transactions.Admission
+              (Identity.Recovery.Transactions.Started,
+               Identity.Recovery.Transactions.Complete_Recovery))
+         and then not Identity.Recovery.Transactions.Admission_Rejected
+           (Identity.Recovery.Transactions.Admission
+              (Identity.Recovery.Transactions.Approved,
+               Identity.Recovery.Transactions.Complete_Recovery)),
+         "recovery transaction aggregate admission rejection predicate");
+
+      Identity.Adapters.Repositories.Memory.Find_Recovery_Transaction
+        (Repository, RT1, Found_Recovery_Check, Recovery_Check);
+      Assert
+        (Found_Recovery_Check
+         and then Recovery_Check.State = Identity.Recovery.Transactions.Evidence_Required
+         and then Recovery_Check.Version = 1,
+         "recovery begin advances transaction state and version");
+
+      Assert
+        (Identity.Operations.Recovery.Complete.Execute (Repository, RT1, P1, 95, Audit_Context, Next_Audit_Event, 1)
+         = Identity.Recovery.Transactions.State_Conflict,
+         "recovery cannot complete before accepted evidence");
+
+      Assert
+        (Identity.Recovery.Transactions.Can_Accept_Evidence
+           (Identity.Recovery.Transactions.Evidence_Required)
+        and then Identity.Recovery.Transactions.Can_Begin
+          (Identity.Recovery.Transactions.Started)
+         and then
+           (Identity.Recovery.Transactions.Admission
+              (Identity.Recovery.Transactions.Started,
+               Identity.Recovery.Transactions.Begin_Recovery)
+            = Identity.Recovery.Transactions.Recovery_Transaction_Admitted)
+         and then Identity.Recovery.Transactions.Admission_Accepted
+           (Identity.Recovery.Transactions.Recovery_Transaction_Admitted)
+         and then not Identity.Recovery.Transactions.Admission_Rejected
+           (Identity.Recovery.Transactions.Recovery_Transaction_Admitted)
+         and then not Identity.Recovery.Transactions.Can_Begin
+           (Identity.Recovery.Transactions.Evidence_Required)
+         and then
+           (Identity.Recovery.Transactions.Admission
+              (Identity.Recovery.Transactions.Evidence_Required,
+               Identity.Recovery.Transactions.Begin_Recovery)
+            = Identity.Recovery.Transactions.Recovery_Transaction_State_Rejected)
+         and then Identity.Recovery.Transactions.Admission_Rejected
+           (Identity.Recovery.Transactions.Recovery_Transaction_State_Rejected)
+         and then Identity.Recovery.Transactions.Admission_State_Rejected
+           (Identity.Recovery.Transactions.Recovery_Transaction_State_Rejected)
+         and then
+           (Identity.Recovery.Transactions.Admission
+              (Identity.Recovery.Transactions.Completed,
+               Identity.Recovery.Transactions.Accept_Recovery_Evidence)
+            = Identity.Recovery.Transactions.Recovery_Transaction_Terminal_Rejected)
+         and then Identity.Recovery.Transactions.Admission_Rejected
+           (Identity.Recovery.Transactions.Recovery_Transaction_Terminal_Rejected)
+         and then Identity.Recovery.Transactions.Admission_Terminal_Rejected
+           (Identity.Recovery.Transactions.Recovery_Transaction_Terminal_Rejected)
+         and then not Identity.Recovery.Transactions.Expired_At
+           (Recovery_Check, 100)
+         and then Identity.Recovery.Transactions.Expired_At
+           (Recovery_Check, 180)
+         and then Identity.Recovery.Transactions.Can_Accept_Evidence
+           (Identity.Recovery.Transactions.Additional_Evidence_Required)
+         and then not Identity.Recovery.Transactions.Can_Accept_Evidence
+           (Identity.Recovery.Transactions.Evidence_Accepted)
+         and then Identity.Recovery.Transactions.Can_Approve
+           (Identity.Recovery.Transactions.Evidence_Accepted)
+         and then not Identity.Recovery.Transactions.Can_Approve
+           (Identity.Recovery.Transactions.Evidence_Required)
+         and then Identity.Recovery.Transactions.Can_Require_Credential_Reestablishment
+           (Identity.Recovery.Transactions.Approved)
+         and then Identity.Recovery.Transactions.Requires_Credential_Reestablishment
+           (Identity.Recovery.Transactions.Credential_Reestablishment_Required)
+         and then Identity.Recovery.Transactions.Can_Establish_Restricted_Authentication
+           (Identity.Recovery.Transactions.Credential_Reestablishment_Required)
+         and then not Identity.Recovery.Transactions.Can_Establish_Restricted_Authentication
+           (Identity.Recovery.Transactions.Rejected),
+         "recovery evidence admission is explicit");
+
+      Assert
+        (Identity.Recovery.Transactions.Evidence_Phase
+           (Identity.Recovery.Transactions.Evidence_Required)
+         and then Identity.Recovery.Transactions.Evidence_Phase
+           (Identity.Recovery.Transactions.Additional_Evidence_Required)
+         and then Identity.Recovery.Transactions.Evidence_Accepted_Phase
+           (Identity.Recovery.Transactions.Evidence_Accepted)
+         and then Identity.Recovery.Transactions.Approval_Phase
+           (Identity.Recovery.Transactions.Approved)
+         and then Identity.Recovery.Transactions.Credential_Reestablishment_Phase
+           (Identity.Recovery.Transactions.Credential_Reestablishment_Required)
+         and then Identity.Recovery.Transactions.Restricted_Authentication_Phase
+           (Identity.Recovery.Transactions.Restricted_Authentication_Established)
+         and then Identity.Recovery.Transactions.Successful_Terminal
+           (Identity.Recovery.Transactions.Restricted_Authentication_Established)
+         and then Identity.Recovery.Transactions.Successful_Terminal
+           (Identity.Recovery.Transactions.Completed)
+         and then Identity.Recovery.Transactions.Failed_Terminal
+           (Identity.Recovery.Transactions.Rejected)
+         and then Identity.Recovery.Transactions.Failed_Terminal
+           (Identity.Recovery.Transactions.Attempt_Limit_Reached)
+         and then Identity.Recovery.Transactions.Failed_Terminal
+           (Identity.Recovery.Transactions.Expired)
+         and then Identity.Recovery.Transactions.Failed_Terminal
+           (Identity.Recovery.Transactions.Cancelled)
+         and then Identity.Recovery.Transactions.Failed_Terminal
+           (Identity.Recovery.Transactions.Superseded)
+         and then Identity.Recovery.Transactions.Cancelable_State
+           (Identity.Recovery.Transactions.Evidence_Required)
+         and then not Identity.Recovery.Transactions.Cancelable_State
+           (Identity.Recovery.Transactions.Completed),
+         "recovery lifecycle phase classification is explicit");
+
+      Assert
+        (Identity.Recovery.Transactions.Transition_Applied
+           (Identity.Recovery.Transactions.Applied)
+         and then Identity.Recovery.Transactions.Unknown_Transaction
+           (Identity.Recovery.Transactions.Unknown)
+         and then Identity.Recovery.Transactions.Conflict_Status
+           (Identity.Recovery.Transactions.State_Conflict)
+         and then Identity.Recovery.Transactions.Conflict_Status
+           (Identity.Recovery.Transactions.Version_Conflict)
+         and then Identity.Recovery.Transactions.Conflict_Status
+           (Identity.Recovery.Transactions.Capacity_Conflict)
+         and then Identity.Recovery.Transactions.State_Conflict_Status
+           (Identity.Recovery.Transactions.State_Conflict)
+         and then Identity.Recovery.Transactions.Version_Conflict_Status
+           (Identity.Recovery.Transactions.Version_Conflict)
+         and then Identity.Recovery.Transactions.Capacity_Conflict_Status
+           (Identity.Recovery.Transactions.Capacity_Conflict)
+         and then Identity.Recovery.Transactions.No_Mutation
+           (Identity.Recovery.Transactions.Unknown)
+         and then Identity.Recovery.Transactions.No_Mutation
+           (Identity.Recovery.Transactions.Version_Conflict)
+         and then not Identity.Recovery.Transactions.No_Mutation
+           (Identity.Recovery.Transactions.Applied),
+         "recovery transition status classification is explicit");
+
+      Assert
+        (Identity.Operations.Recovery.Continue.Execute
+           (Repository,
+            Identity.Operations.Recovery.Continue.Staged_Continue_Request'
+              (Transaction => RT1,
+               Principal => P1,
+               Now => 96,
+               Expected_Version => 99), Audit_Context, Next_Audit_Event, 1)
+         = Identity.Recovery.Transactions.Version_Conflict,
+         "stale staged recovery evidence acceptance conflicts before transition");
+
+      Identity.Adapters.Repositories.Memory.Find_Recovery_Transaction
+        (Repository, RT1, Found_Recovery_Check, Recovery_Check);
+      Assert
+        (Found_Recovery_Check
+         and then Recovery_Check.State = Identity.Recovery.Transactions.Evidence_Required
+         and then Recovery_Check.Version = 1,
+         "stale staged recovery evidence acceptance leaves transaction unchanged");
+
+      Assert
+        (Identity.Operations.Recovery.Continue.Execute
+           (Repository,
+            Identity.Operations.Recovery.Continue.Staged_Continue_Request'
+              (Transaction => RT1,
+               Principal => P1,
+               Now => 96,
+               Expected_Version => Recovery_Check.Version), Audit_Context, Next_Audit_Event, 1)
+         = Identity.Recovery.Transactions.Applied,
+         "recovery evidence acceptance transition applied");
+
+      Identity.Adapters.Repositories.Memory.Find_Recovery_Transaction
+        (Repository, RT1, Found_Recovery_Check, Recovery_Check);
+      Assert
+        (Found_Recovery_Check
+         and then Identity.Recovery.Transactions.Can_Complete (Recovery_Check.State)
+         and then not Identity.Recovery.Transactions.Can_Complete
+           (Identity.Recovery.Transactions.Evidence_Required),
+         "recovery completion admission requires accepted evidence");
+
+      Assert
+        (Identity.Operations.Recovery.Complete.Execute
+           (Repository,
+            Identity.Operations.Recovery.Complete.Staged_Completion_Request'
+              (Transaction => RT1,
+               Principal => P1,
+               Now => 97,
+               Expected_Transaction_Version => 99,
+               Expected_Account_Version => 0), Audit_Context, Next_Audit_Event, 1)
+         = Identity.Recovery.Transactions.Version_Conflict,
+         "stale staged recovery completion transaction version conflicts before restrictions");
+
+      Assert
+        (Identity.Operations.Recovery.Complete.Execute
+           (Repository,
+            Identity.Operations.Recovery.Complete.Staged_Completion_Request'
+              (Transaction => RT1,
+               Principal => P1,
+               Now => 97,
+               Expected_Transaction_Version => Recovery_Check.Version,
+               Expected_Account_Version => 99), Audit_Context, Next_Audit_Event, 1)
+         = Identity.Recovery.Transactions.Version_Conflict,
+         "stale staged recovery completion account version conflicts before restrictions");
+
+      Identity.Adapters.Repositories.Memory.Find_Recovery_Transaction
+        (Repository, RT1, Found_Recovery_Check, Recovery_Check);
+      Identity.Adapters.Repositories.Memory.Find_Account
+        (Repository, P1, Found_Account_Check, Account_Check);
+      Assert
+        (Found_Recovery_Check
+         and then Recovery_Check.State = Identity.Recovery.Transactions.Evidence_Accepted
+         and then Found_Account_Check
+         and then not Account_Check.State.Recovery.Restricted_Session
+         and then not Account_Check.State.Requirements.Credential_Reestablishment_Required,
+         "stale staged recovery completion leaves transaction and account unchanged");
+
+      Assert
+        (Identity.Operations.Recovery.Complete.Execute
+           (Repository,
+            Identity.Operations.Recovery.Complete.Staged_Completion_Request'
+              (Transaction => RT1,
+               Principal => P1,
+               Now => 97,
+               Expected_Transaction_Version => Recovery_Check.Version,
+               Expected_Account_Version => Account_Check.Version), Audit_Context, Next_Audit_Event, 1)
+         = Identity.Recovery.Transactions.Applied,
+         "recovery completion establishes restricted authentication state");
+
+      Identity.Adapters.Repositories.Memory.Find_Account
+        (Repository, P1, Found_Account_Check, Account_Check);
+      Assert
+        (Found_Account_Check
+         and then Account_Check.State.Recovery.Restricted_Session
+         and then Account_Check.State.Recovery.Required_Credential_Reestablishment
+         and then Account_Check.State.Recovery.No_Remember_Me
+         and then Account_Check.State.Requirements.Credential_Reestablishment_Required,
+         "completed recovery applies structured restrictions");
+
+      Assert
+        (Identity.Operations.Passwords.Authenticate.Execute
+           (Repository,
+            (Kind => Login_Kind, Value => Alice),
+            Presented_Reset_Password,
+            Audit_Context, Next_Audit_Event, 1).Status = Identity.Results.Recovery_Action_Required,
+         "recovery-restricted account returns recovery action result");
+
+      Assert
+        (Identity.Operations.Recovery.Cancel.Execute (Repository, RT1, P1, Audit_Context, Next_Audit_Event, 1)
+         = Identity.Recovery.Transactions.State_Conflict,
+         "completed recovery transaction cannot be cancelled");
+
+      Identity.Adapters.Repositories.Memory.Find_Recovery_Transaction
+        (Repository, RT1, Found_Recovery_Check, Recovery_Check);
+      Assert
+        (Found_Recovery_Check
+         and then Identity.Recovery.Transactions.Is_Terminal (Recovery_Check.State)
+         and then not Identity.Recovery.Transactions.Can_Cancel (Recovery_Check.State),
+         "recovery terminal state admission rejects cancellation");
+
+      Assert
+        (Identity.Operations.Recovery.Begin_Recovery.Execute
+           (Repository,
+            (Id => RT2,
+             Principal => P1,
+             Account => A1,
+             Created_At => 98,
+             Expires_At => (Present => True, Time_Point => 180),
+             State => Identity.Recovery.Transactions.Started,
+             Version => 0), Audit_Context, Next_Audit_Event, 1)
+         = Identity.Recovery.Transactions.Applied,
+         "second recovery transaction begins for cancellation");
+
+      Identity.Adapters.Repositories.Memory.Find_Recovery_Transaction
+        (Repository, RT2, Found_Recovery_Check, Recovery_Check);
+      Assert
+        (Found_Recovery_Check
+         and then Recovery_Check.State = Identity.Recovery.Transactions.Evidence_Required,
+         "recovery cancellation staged fixture version is visible");
+
+      Assert
+        (Identity.Operations.Recovery.Cancel.Execute
+           (Repository,
+            Identity.Operations.Recovery.Cancel.Staged_Cancellation_Request'
+              (Transaction => RT2,
+               Principal => P1,
+               Expected_Version => 99), Audit_Context, Next_Audit_Event, 1)
+         = Identity.Recovery.Transactions.Version_Conflict,
+         "stale staged recovery cancellation conflicts before cancelled state");
+
+      Identity.Adapters.Repositories.Memory.Find_Recovery_Transaction
+        (Repository, RT2, Found_Recovery_Check, Recovery_Check);
+      Assert
+        (Found_Recovery_Check
+         and then Recovery_Check.State = Identity.Recovery.Transactions.Evidence_Required,
+         "stale staged recovery cancellation leaves transaction unchanged");
+
+      Assert
+        (Identity.Operations.Recovery.Cancel.Execute
+           (Repository,
+            Identity.Operations.Recovery.Cancel.Staged_Cancellation_Request'
+              (Transaction => RT2,
+               Principal => P1,
+               Expected_Version => Recovery_Check.Version), Audit_Context, Next_Audit_Event, 1)
+         = Identity.Recovery.Transactions.Applied,
+         "recovery cancellation transition applied");
+
+      Identity.Adapters.Repositories.Memory.Find_Recovery_Transaction
+        (Repository, RT2, Found_Recovery_Check, Recovery_Check);
+      Assert
+        (Found_Recovery_Check and then Recovery_Check.State = Identity.Recovery.Transactions.Cancelled,
+         "cancelled recovery transaction is terminal");
+
+      Identity.Adapters.Repositories.Memory.Find_Account
+        (Repository, P1, Found_Account_Check, Account_Check);
+      Account_Check.State.Recovery := (others => False);
+      Account_Check.State.Requirements.Credential_Reestablishment_Required := False;
+      Assert
+        (Identity.Adapters.Repositories.Memory.Update_Account_State
+           (Repository, A1, P1, Account_Check.State)
+         = Identity.Adapters.Repositories.Memory.Applied,
+         "test fixture clears recovery restrictions explicitly");
+
+      Assert
+        (Identity.Operations.External_Identities.Bind.Execute
+           (Repository,
+            (Id => EB1,
+             Principal => P1,
+             Provider => EP1,
+             Issuer => External_Issuer,
+             External_Subject => External_Subject,
+             State => Identity.External_Providers.Bindings.Active,
+             Created_At => 100,
+             Version => 0), Audit_Context, Next_Audit_Event, 1)
+         = Identity.Adapters.Repositories.Memory.Applied,
+         "IDENTITY-EXTERNAL-001 external binding is explicit");
+
+      Assert
+        (Identity.External_Providers.Bindings.Usable_For_Authentication
+           (Identity.External_Providers.Bindings.Active)
+        and then not Identity.External_Providers.Bindings.Usable_For_Authentication
+           (Identity.External_Providers.Bindings.Revoked)
+         and then Identity.External_Providers.Bindings.Can_Revoke
+           (Identity.External_Providers.Bindings.Active)
+         and then not Identity.External_Providers.Bindings.Can_Revoke
+           (Identity.External_Providers.Bindings.Revoked)
+         and then Identity.External_Providers.Bindings.Can_Replace
+           (Identity.External_Providers.Bindings.Suspended)
+         and then Identity.External_Providers.Bindings.Admission
+           (Identity.External_Providers.Bindings.Active,
+            Identity.External_Providers.Bindings.Assertion_Authentication)
+           = Identity.External_Providers.Bindings.External_Binding_Admitted
+         and then Identity.External_Providers.Bindings.Admission_Accepted
+           (Identity.External_Providers.Bindings.Admission
+              (Identity.External_Providers.Bindings.Active,
+               Identity.External_Providers.Bindings.Assertion_Authentication))
+         and then not Identity.External_Providers.Bindings.Admission_Rejected
+           (Identity.External_Providers.Bindings.Admission
+              (Identity.External_Providers.Bindings.Active,
+               Identity.External_Providers.Bindings.Assertion_Authentication))
+         and then not Identity.External_Providers.Bindings.No_Mutation
+           (Identity.External_Providers.Bindings.External_Binding_Admitted)
+         and then Identity.External_Providers.Bindings.Admission
+           (Identity.External_Providers.Bindings.Pending,
+            Identity.External_Providers.Bindings.Assertion_Authentication)
+           = Identity.External_Providers.Bindings.Active_Required
+         and then Identity.External_Providers.Bindings.Active_Rejected
+           (Identity.External_Providers.Bindings.Active_Required)
+         and then Identity.External_Providers.Bindings.Admission_Rejected
+           (Identity.External_Providers.Bindings.Admission
+              (Identity.External_Providers.Bindings.Pending,
+               Identity.External_Providers.Bindings.Assertion_Authentication))
+         and then Identity.External_Providers.Bindings.No_Mutation
+           (Identity.External_Providers.Bindings.Active_Required)
+         and then Identity.External_Providers.Bindings.Admission
+           (Identity.External_Providers.Bindings.Revoked,
+            Identity.External_Providers.Bindings.Binding_Revocation)
+           = Identity.External_Providers.Bindings.Not_Revoked_Required
+         and then Identity.External_Providers.Bindings.Revoked_Rejected
+           (Identity.External_Providers.Bindings.Not_Revoked_Required)
+         and then Identity.External_Providers.Bindings.Admission_Rejected
+           (Identity.External_Providers.Bindings.Admission
+              (Identity.External_Providers.Bindings.Revoked,
+               Identity.External_Providers.Bindings.Binding_Revocation))
+         and then Identity.External_Providers.Bindings.No_Mutation
+           (Identity.External_Providers.Bindings.Not_Revoked_Required)
+         and then Identity.External_Providers.Bindings.Active_Rejected
+           (Identity.External_Providers.Bindings.Suspended,
+            Identity.External_Providers.Bindings.Assertion_Authentication)
+         and then Identity.External_Providers.Bindings.Revoked_Rejected
+           (Identity.External_Providers.Bindings.Revoked,
+            Identity.External_Providers.Bindings.Binding_Replacement)
+         and then Identity.External_Providers.Bindings.Active_State
+           (Identity.External_Providers.Bindings.Active)
+         and then Identity.External_Providers.Bindings.Pending_State
+           (Identity.External_Providers.Bindings.Pending)
+         and then Identity.External_Providers.Bindings.Suspended_State
+           (Identity.External_Providers.Bindings.Suspended)
+         and then Identity.External_Providers.Bindings.Revoked_State
+           (Identity.External_Providers.Bindings.Revoked)
+         and then Identity.External_Providers.Bindings.Rebinding_Required_State
+           (Identity.External_Providers.Bindings.Rebinding_Required)
+         and then Identity.External_Providers.Bindings.Authentication_State_Rejected
+           (Identity.External_Providers.Bindings.Pending)
+         and then Identity.External_Providers.Bindings.Authentication_State_Rejected
+           (Identity.External_Providers.Bindings.Suspended)
+         and then Identity.External_Providers.Bindings.Authentication_State_Rejected
+           (Identity.External_Providers.Bindings.Rebinding_Required)
+         and then not Identity.External_Providers.Bindings.Authentication_State_Rejected
+           (Identity.External_Providers.Bindings.Active)
+         and then Identity.External_Providers.Bindings.Lifecycle_Mutation_State_Rejected
+           (Identity.External_Providers.Bindings.Revoked)
+         and then not Identity.External_Providers.Bindings.Lifecycle_Mutation_State_Rejected
+           (Identity.External_Providers.Bindings.Suspended)
+         and then Identity.External_Providers.Bindings.Same_Active_External_Key
+           ((Id => EB1,
+             Principal => P1,
+             Provider => EP1,
+             Issuer => External_Issuer,
+             External_Subject => External_Subject,
+             State => Identity.External_Providers.Bindings.Active,
+             Created_At => 100,
+             Version => 0),
+            (Id => EB2,
+             Principal => P2,
+             Provider => EP1,
+             Issuer => External_Issuer,
+             External_Subject => External_Subject,
+             State => Identity.External_Providers.Bindings.Active,
+             Created_At => 101,
+             Version => 0))
+         and then not Identity.External_Providers.Bindings.Same_Active_External_Key
+           ((Id => EB1,
+             Principal => P1,
+             Provider => EP1,
+             Issuer => External_Issuer,
+             External_Subject => External_Subject,
+             State => Identity.External_Providers.Bindings.Revoked,
+             Created_At => 100,
+             Version => 0),
+            (Id => EB2,
+             Principal => P2,
+             Provider => EP1,
+             Issuer => External_Issuer,
+             External_Subject => External_Subject,
+             State => Identity.External_Providers.Bindings.Active,
+             Created_At => 101,
+             Version => 0)),
+         "external binding lifecycle admission is explicit");
+
+      Assert
+        (Identity.Operations.External_Identities.Bind.Execute
+           (Repository,
+            (Id => EB2,
+             Principal => P2,
+             Provider => EP1,
+             Issuer => External_Issuer,
+             External_Subject => External_Subject,
+             State => Identity.External_Providers.Bindings.Active,
+             Created_At => 101,
+             Version => 0), Audit_Context, Next_Audit_Event, 1)
+         = Identity.Adapters.Repositories.Memory.Uniqueness_Conflict,
+         "provider issuer subject key is unique");
+
+      Assert
+        (Identity.External_Providers.Bindings.Active_Matches_Assertion
+           ((Id => EB1,
+             Principal => P1,
+             Provider => EP1,
+             Issuer => External_Issuer,
+             External_Subject => External_Subject,
+             State => Identity.External_Providers.Bindings.Active,
+             Created_At => 100,
+             Version => 0),
+            (Provider => EP1,
+             Protocol => OIDC_Protocol,
+             Issuer => External_Issuer,
+             External_Subject => External_Subject,
+             Issued_At => 110,
+             Authentication_Time => 109,
+             Expires_At => (Present => True, Time_Point => 200),
+             Nonce => Identity.External_Providers.Assertions.Validated,
+             Assertion_Fingerprint => External_Fingerprint,
+             Validation_Profile => Adapter_Profile))
+         and then Identity.External_Providers.Assertions.Has_Replay_Fingerprint
+           ((Provider => EP1,
+             Protocol => OIDC_Protocol,
+             Issuer => External_Issuer,
+             External_Subject => External_Subject,
+             Issued_At => 110,
+             Authentication_Time => 109,
+             Expires_At => (Present => True, Time_Point => 200),
+             Nonce => Identity.External_Providers.Assertions.Validated,
+             Assertion_Fingerprint => External_Fingerprint,
+             Validation_Profile => Adapter_Profile))
+         and then Identity.External_Providers.Assertions.Ready_For_Replay_Registration
+           ((Provider => EP1,
+             Protocol => OIDC_Protocol,
+             Issuer => External_Issuer,
+             External_Subject => External_Subject,
+             Issued_At => 110,
+             Authentication_Time => 109,
+             Expires_At => (Present => True, Time_Point => 200),
+             Nonce => Identity.External_Providers.Assertions.Validated,
+             Assertion_Fingerprint => External_Fingerprint,
+             Validation_Profile => Adapter_Profile),
+            120)
+         and then not Identity.External_Providers.Assertions.Ready_For_Replay_Registration
+           ((Provider => EP1,
+             Protocol => OIDC_Protocol,
+             Issuer => External_Issuer,
+             External_Subject => External_Subject,
+             Issued_At => 110,
+             Authentication_Time => 109,
+             Expires_At => (Present => True, Time_Point => 200),
+             Nonce => Identity.External_Providers.Assertions.Validated,
+             Assertion_Fingerprint => Identity.Text.Bounded.From_String (""),
+             Validation_Profile => Adapter_Profile),
+            120)
+         and then Identity.External_Providers.Assertions.Same_External_Key
+           ((Provider => EP1,
+             Protocol => OIDC_Protocol,
+             Issuer => External_Issuer,
+             External_Subject => External_Subject,
+             Issued_At => 110,
+             Authentication_Time => 109,
+             Expires_At => (Present => True, Time_Point => 200),
+             Nonce => Identity.External_Providers.Assertions.Validated,
+             Assertion_Fingerprint => External_Fingerprint,
+             Validation_Profile => Adapter_Profile),
+            (Provider => EP1,
+             Protocol => OIDC_Protocol,
+             Issuer => External_Issuer,
+             External_Subject => External_Subject,
+             Issued_At => 111,
+             Authentication_Time => 110,
+             Expires_At => (Present => True, Time_Point => 201),
+             Nonce => Identity.External_Providers.Assertions.Validated,
+             Assertion_Fingerprint => External_Fingerprint_2,
+             Validation_Profile => Adapter_Profile))
+         and then not Identity.External_Providers.Bindings.Active_Matches_Assertion
+           ((Id => EB1,
+             Principal => P1,
+             Provider => EP1,
+             Issuer => External_Issuer,
+             External_Subject => External_Subject,
+             State => Identity.External_Providers.Bindings.Revoked,
+             Created_At => 100,
+             Version => 0),
+            (Provider => EP1,
+             Protocol => OIDC_Protocol,
+             Issuer => External_Issuer,
+             External_Subject => External_Subject,
+             Issued_At => 110,
+             Authentication_Time => 109,
+             Expires_At => (Present => True, Time_Point => 200),
+             Nonce => Identity.External_Providers.Assertions.Validated,
+             Assertion_Fingerprint => External_Fingerprint,
+             Validation_Profile => Adapter_Profile)),
+         "IDENTITY-EXTERNAL-001 external assertion binding key admission is explicit");
+
+      Assert
+        (Identity.Projections.External_Bindings.Usable_For_Authentication
+           (Identity.Projections.External_Bindings.Summary
+              ((Id => EB1,
+                Principal => P1,
+                Provider => EP1,
+                Issuer => External_Issuer,
+                External_Subject => External_Subject,
+                State => Identity.External_Providers.Bindings.Active,
+                Created_At => 100,
+                Version => 0)))
+         and then Identity.Projections.External_Bindings.Active_Matches_Assertion
+           (Identity.Projections.External_Bindings.Summary
+              ((Id => EB1,
+                Principal => P1,
+                Provider => EP1,
+                Issuer => External_Issuer,
+                External_Subject => External_Subject,
+                State => Identity.External_Providers.Bindings.Active,
+                Created_At => 100,
+                Version => 0)),
+            (Provider => EP1,
+             Protocol => OIDC_Protocol,
+             Issuer => External_Issuer,
+             External_Subject => External_Subject,
+             Issued_At => 110,
+             Authentication_Time => 109,
+             Expires_At => (Present => True, Time_Point => 200),
+             Nonce => Identity.External_Providers.Assertions.Validated,
+             Assertion_Fingerprint => External_Fingerprint,
+             Validation_Profile => Adapter_Profile))
+         and then not Identity.Projections.External_Bindings.Active_Matches_Assertion
+           (Identity.Projections.External_Bindings.Summary
+              ((Id => EB1,
+                Principal => P1,
+                Provider => EP1,
+                Issuer => External_Issuer,
+                External_Subject => External_Subject,
+                State => Identity.External_Providers.Bindings.Revoked,
+                Created_At => 100,
+                Version => 0)),
+            (Provider => EP1,
+             Protocol => OIDC_Protocol,
+             Issuer => External_Issuer,
+             External_Subject => External_Subject,
+             Issued_At => 110,
+             Authentication_Time => 109,
+             Expires_At => (Present => True, Time_Point => 200),
+             Nonce => Identity.External_Providers.Assertions.Validated,
+             Assertion_Fingerprint => External_Fingerprint,
+             Validation_Profile => Adapter_Profile))
+         and then Identity.External_Providers.Projections.Same_Active_External_Key
+           (Identity.External_Providers.Projections.Summary
+              ((Id => EB1,
+                Principal => P1,
+                Provider => EP1,
+                Issuer => External_Issuer,
+                External_Subject => External_Subject,
+                State => Identity.External_Providers.Bindings.Active,
+                Created_At => 100,
+                Version => 0)),
+            Identity.External_Providers.Projections.Summary
+              ((Id => EB2,
+                Principal => P2,
+                Provider => EP1,
+                Issuer => External_Issuer,
+                External_Subject => External_Subject,
+                State => Identity.External_Providers.Bindings.Active,
+                Created_At => 101,
+                Version => 0))),
+         "IDENTITY-EXTERNAL-002 external binding projection contract is explicit");
+
+      Assert
+        (Identity.Operations.Authentication.External.Execute
+           (Repository,
+            Identity.External_Providers.Assertions.Normalized_Assertion'
+              (Provider => EP1,
+             Protocol => OIDC_Protocol,
+             Issuer => External_Issuer,
+             External_Subject => External_Subject,
+             Issued_At => 110,
+             Authentication_Time => 109,
+             Expires_At => (Present => True, Time_Point => 200),
+             Nonce => Identity.External_Providers.Assertions.Validated,
+            Assertion_Fingerprint => External_Fingerprint,
+            Validation_Profile => Adapter_Profile),
+            120, Audit_Context, Next_Audit_Event, 1).Status = Identity.Results.Succeeded,
+         "external assertion authenticates only active explicit binding");
+
+      Assert
+        (Identity.Adapters.Repositories.Memory.External_Replay_Count (Repository) = 1,
+         "IDENTITY-EXTERNAL-001 external assertion replay marker is registered by authentication transition");
+
+      Assert
+        (Identity.Operations.Authentication.External.Execute
+           (Repository,
+            Identity.External_Providers.Assertions.Normalized_Assertion'
+              (Provider => EP1,
+             Protocol => OIDC_Protocol,
+             Issuer => Identity.Text.Bounded.From_String ("https://other-issuer.example"),
+             External_Subject => External_Subject,
+             Issued_At => 110,
+             Authentication_Time => 109,
+             Expires_At => (Present => True, Time_Point => 200),
+             Nonce => Identity.External_Providers.Assertions.Validated,
+            Assertion_Fingerprint => External_Fingerprint_2,
+            Validation_Profile => Adapter_Profile),
+            120, Audit_Context, Next_Audit_Event, 1).Status = Identity.Results.Recovery_Action_Required,
+         "external identity is not auto-linked by alternate claims");
+
+      Assert
+        (Identity.Adapters.Repositories.Memory.External_Replay_Count (Repository) = 2,
+         "unbound external assertion replay marker is still registered by authentication transition");
+
+      Assert
+        (Identity.Operations.Authentication.External.Execute
+           (Repository,
+            Identity.Operations.Authentication.External.Staged_Authentication_Request'
+              (Assertion =>
+                 (Provider => EP1,
+                  Protocol => OIDC_Protocol,
+                  Issuer => External_Issuer,
+                  External_Subject => External_Subject,
+                  Issued_At => 110,
+                  Authentication_Time => 109,
+                  Expires_At => (Present => True, Time_Point => 200),
+                  Nonce => Identity.External_Providers.Assertions.Validated,
+                  Assertion_Fingerprint => External_Fingerprint_6,
+                  Validation_Profile => Adapter_Profile),
+               Expected_Binding_Version => 99),
+            120, Audit_Context, Next_Audit_Event, 1).Status = Identity.Results.Conflict,
+         "stale staged external authentication conflicts before replay registration");
+
+      Assert
+        (Identity.Adapters.Repositories.Memory.External_Replay_Count (Repository) = 2,
+         "stale staged external authentication leaves replay markers unchanged");
+
+      Assert
+        (Identity.Adapters.Repositories.Memory.Register_External_Replay
+           (Repository, External_Fingerprint)
+         = Identity.Adapters.Repositories.Memory.State_Conflict,
+         "duplicate external assertion replay marker rejected");
+
+      Assert
+        (Identity.Operations.Principals.Create.Execute
+           (Repository,
+            (Id => P5,
+             Kind => Identity.Principals.Kinds.Human,
+             State => Identity.Principals.Definitions.Active,
+             Version => 0), Audit_Context, Next_Audit_Event, 1)
+         = Identity.Adapters.Repositories.Memory.Applied,
+         "external retired-principal fixture principal created");
+
+      Assert
+        (Identity.Operations.External_Identities.Bind.Execute
+           (Repository,
+            (Id => EB3,
+             Principal => P5,
+             Provider => EP1,
+             Issuer => External_Issuer,
+             External_Subject => Identity.Text.Bounded.From_String ("provider-subject-retired"),
+             State => Identity.External_Providers.Bindings.Active,
+             Created_At => 121,
+             Version => 0), Audit_Context, Next_Audit_Event, 1)
+         = Identity.Adapters.Repositories.Memory.Applied,
+         "external binding fixture created before local principal retirement");
+
+      Assert
+        (Identity.Operations.External_Identities.Bind.Execute
+           (Repository,
+            (Id => EB4,
+             Principal => P4,
+             Provider => EP1,
+             Issuer => External_Issuer,
+             External_Subject => Identity.Text.Bounded.From_String ("provider-subject-retired-new"),
+             State => Identity.External_Providers.Bindings.Active,
+             Created_At => 121,
+             Version => 0), Audit_Context, Next_Audit_Event, 1)
+         = Identity.Adapters.Repositories.Memory.State_Conflict,
+         "external binding creation rejects retired local principal");
+
+      Assert
+        (Identity.Operations.Principals.Retire.Execute (Repository, P5, Audit_Context, Next_Audit_Event, 1)
+         = Identity.Adapters.Repositories.Memory.Applied,
+         "external retired-principal fixture principal retired");
+
+      Assert
+        (Identity.Operations.Authentication.External.Execute
+           (Repository,
+            Identity.External_Providers.Assertions.Normalized_Assertion'
+              (Provider => EP1,
+             Protocol => OIDC_Protocol,
+             Issuer => External_Issuer,
+             External_Subject => Identity.Text.Bounded.From_String ("provider-subject-retired"),
+             Issued_At => 121,
+             Authentication_Time => 120,
+             Expires_At => (Present => True, Time_Point => 220),
+             Nonce => Identity.External_Providers.Assertions.Validated,
+             Assertion_Fingerprint => External_Fingerprint_4,
+             Validation_Profile => Adapter_Profile),
+            122, Audit_Context, Next_Audit_Event, 1).Status = Identity.Results.Rejected,
+         "external assertion bound to retired local principal cannot authenticate");
+
+      Assert
+        (Identity.Operations.External_Identities.Revoke.Execute
+           (Repository,
+            Identity.Operations.External_Identities.Revoke.Staged_Revoke_Request'
+              (Binding => EB1,
+               Principal => P1,
+               Expected_Binding_Version => 1), Audit_Context, Next_Audit_Event, 1)
+         = Identity.Adapters.Repositories.Memory.Version_Conflict,
+         "stale staged external binding revocation conflicts before revocation");
+
+      Assert
+        (Identity.Operations.Authentication.External.Execute
+           (Repository,
+            Identity.External_Providers.Assertions.Normalized_Assertion'
+              (Provider => EP1,
+             Protocol => OIDC_Protocol,
+             Issuer => External_Issuer,
+             External_Subject => External_Subject,
+             Issued_At => 122,
+             Authentication_Time => 121,
+             Expires_At => (Present => True, Time_Point => 220),
+             Nonce => Identity.External_Providers.Assertions.Validated,
+             Assertion_Fingerprint => External_Fingerprint_5,
+             Validation_Profile => Adapter_Profile),
+            123, Audit_Context, Next_Audit_Event, 1).Status = Identity.Results.Succeeded,
+         "stale staged external binding revocation leaves binding authenticable");
+
+      Assert
+        (Identity.Operations.External_Identities.Revoke
+           .Execute (Repository, EB1, P1, Audit_Context, Next_Audit_Event, 1)
+         = Identity.Adapters.Repositories.Memory.Applied,
+         "external binding revocation is explicit");
+
+      Assert
+        (Identity.Operations.Authentication.External.Execute
+           (Repository,
+            Identity.External_Providers.Assertions.Normalized_Assertion'
+              (Provider => EP1,
+             Protocol => OIDC_Protocol,
+             Issuer => External_Issuer,
+             External_Subject => External_Subject,
+             Issued_At => 121,
+             Authentication_Time => 120,
+             Expires_At => (Present => True, Time_Point => 220),
+             Nonce => Identity.External_Providers.Assertions.Validated,
+             Assertion_Fingerprint => External_Fingerprint_3,
+             Validation_Profile => Adapter_Profile),
+            122, Audit_Context, Next_Audit_Event, 1).Status = Identity.Results.Rejected,
+         "revoked external binding cannot authenticate");
+
+      Assert
+        (Identity.Operations.Authentication.External.Execute
+           (Repository,
+            Identity.External_Providers.Assertions.Normalized_Assertion'
+              (Provider => EP1,
+             Protocol => OIDC_Protocol,
+             Issuer => External_Issuer,
+             External_Subject => External_Subject,
+             Issued_At => 110,
+             Authentication_Time => 109,
+             Expires_At => (Present => True, Time_Point => 200),
+             Nonce => Identity.External_Providers.Assertions.Validated,
+             Assertion_Fingerprint => External_Fingerprint,
+             Validation_Profile => Adapter_Profile),
+            120, Audit_Context, Next_Audit_Event, 1).Status = Identity.Results.Conflict,
+         "registered external assertion replay returns conflict");
+
+      Assert
+        (Identity.Operations.Sessions.Create.Execute
+           (Repository,
+            Identity.Sessions.Definitions.Session_Record'
+              (Id => S8,
+             Family => F1,
+             Principal => P1,
+             Credential => (Present => False),
+             External_Provider => (Present => True, Value => EP1),
+             Public_Reference => Provider_Session_Reference,
+             Secret_Verifier => Identity.Crypto.Secret_Verifiers.Derive_Text
+               (Identity.Crypto.Domains.Session_Token, Provider_Session_Secret),
+             Assurance => Identity.Assurance.Levels.Basic,
+             Attributes => (others => <>),
+             Created_At => 121,
+             Original_Authenticated_At => 121,
+             Primary_Authenticated_At => 121,
+             MFA_Completed_At => (Present => False),
+             Step_Up_At => (Present => False),
+             Last_Seen_At => 121,
+             Idle_Expires_At => (Present => True, Time_Point => 180),
+             Absolute_Expires_At => (Present => True, Time_Point => 300),
+             Remembered => False,
+             Generation => 6,
+             State => Identity.Sessions.Definitions.Active,
+             Version => 0), Audit_Context, Next_Audit_Event, 1)
+         = Identity.Adapters.Repositories.Memory.Applied,
+         "provider-derived session fixture created");
+
+      Assert
+        (Identity.Operations.Sessions.Revoke_Provider.Execute
+           (Repository,
+            Identity.Operations.Sessions.Revoke_Provider.Staged_Revoke_Request'
+              (Provider => EP1,
+               Expected_Affected_Count => 2), Audit_Context, Next_Audit_Event, 1)
+         = Identity.Adapters.Repositories.Memory.Version_Conflict,
+         "stale staged provider session revocation conflicts before revocation");
+
+      Assert
+        (Identity.Operations.Sessions.Lookup.Execute
+           (Repository, Provider_Session_Reference, Provider_Session_Secret, 122).Status
+         = Identity.Sessions.Handles.Found,
+         "stale staged provider session revocation leaves session usable");
+
+      Assert
+        (Identity.Operations.Sessions.Revoke_Provider.Execute (Repository, EP1, Audit_Context, Next_Audit_Event, 1)
+         = Identity.Adapters.Repositories.Memory.Applied,
+         "IDENTITY-SESSION-003 provider-derived session revocation applied");
+
+      Assert
+        (Identity.Operations.Sessions.Lookup.Execute
+           (Repository, Provider_Session_Reference, Provider_Session_Secret, 122).Status
+         = Identity.Sessions.Handles.Revoked,
+         "provider-derived revoked session unusable");
+
+      Assert
+        (Identity.Operations.Sessions.Revoke_Provider.Execute (Repository, EP1, Audit_Context, Next_Audit_Event, 1)
+         = Identity.Adapters.Repositories.Memory.State_Conflict,
+         "provider-derived session revocation is idempotency-conflict after all revoked");
+
+      Assert
+        (Identity.Operations.Factors.Begin_Enrollment.Execute
+           (Repository,
+            Identity.One_Time_Passwords.Credentials.TOTP_Credential_Record'
+              (Id => C16,
+               Principal => P3,
+               Algorithm => TOTP_Algorithm,
+               Secret_Verifier => Identity.Text.Bounded.From_String ("retired-pending-totp-verifier"),
+               State => Identity.Credentials.States.Created,
+               Created_At => 128,
+               Highest_Accepted_Counter => 0,
+               Version => 0), Audit_Context, Next_Audit_Event, 1)
+         = Identity.Adapters.Repositories.Memory.State_Conflict,
+         "TOTP enrollment begin rejects retired principal");
+
+      Assert
+        (Identity.Operations.Factors.Begin_Enrollment.Execute
+           (Repository,
+            Identity.One_Time_Passwords.Credentials.TOTP_Credential_Record'
+              (Id => C4,
+               Principal => P1,
+               Algorithm => TOTP_Algorithm,
+               Secret_Verifier => Identity.Text.Bounded.From_String ("pending-totp-verifier"),
+               State => Identity.Credentials.States.Created,
+               Created_At => 129,
+               Highest_Accepted_Counter => 0,
+               Version => 0), Audit_Context, Next_Audit_Event, 1)
+         = Identity.Adapters.Repositories.Memory.Applied,
+         "TOTP enrollment begins with pending credential");
+
+      Assert
+        (Identity.Operations.Factors.Begin_Enrollment.Execute
+           (Repository,
+            Identity.One_Time_Passwords.Credentials.TOTP_Credential_Record'
+              (Id => C11,
+               Principal => P1,
+               Algorithm => TOTP_Algorithm,
+               Secret_Verifier => Identity.Text.Bounded.From_String ("pending-totp-verifier-2"),
+               State => Identity.Credentials.States.Created,
+               Created_At => 129,
+               Highest_Accepted_Counter => 0,
+               Version => 0), Audit_Context, Next_Audit_Event, 1)
+         = Identity.Adapters.Repositories.Memory.Applied,
+         "second TOTP enrollment begins with pending credential");
+
+      Assert
+        (Identity.Operations.Factors.Begin_Enrollment.Execute
+           (Repository,
+            Identity.Operations.Factors.Begin_Enrollment.TOTP_Begin_Request'
+              (Id => C13,
+               Principal => P1,
+               Algorithm => TOTP_Algorithm,
+               Created_At => 129), Audit_Context, Next_Audit_Event, 1)
+         = Identity.Adapters.Repositories.Memory.Applied,
+         "IDENTITY-TOTP-002 TOTP begin request creates pending credential without caller verifier");
+
+      Identity.Adapters.Repositories.Memory.Find_TOTP_Credential
+        (Repository, C13, Found_TOTP_Check, TOTP_Check);
+      Assert
+        (Found_TOTP_Check
+         and then TOTP_Check.State = Identity.Credentials.States.Created
+         and then Identity.Text.Bounded.Equal
+           (TOTP_Check.Secret_Verifier, Identity.Text.Bounded.From_String (""))
+         and then TOTP_Check.Highest_Accepted_Counter = 0,
+         "TOTP begin request stores no verifier before proof");
+
+      Assert
+        (Found_TOTP_Check
+         and then not Identity.One_Time_Passwords.Credentials.Credential_Usable
+           (Identity.One_Time_Passwords.Credentials.Summary (TOTP_Check))
+         and then not Identity.One_Time_Passwords.Credentials.Terminal
+           (Identity.One_Time_Passwords.Credentials.Summary (TOTP_Check)),
+         "TOTP pending projection omits verifier material and is not usable");
+
+      Assert
+        (Identity.Operations.Factors.Accept_TOTP_Counter.Execute
+           (Repository, C4, 1, Audit_Context, Next_Audit_Event, 1)
+         = Identity.One_Time_Passwords.Credentials.Credential_Unusable,
+         "pending TOTP credential cannot authenticate before proof");
+
+      Assert
+        (Identity.Operations.Factors.Complete_Enrollment.Execute
+           (Repository,
+            Identity.Operations.Factors.Complete_Enrollment.Staged_TOTP_Completion_Request'
+              (Request =>
+                 Identity.Operations.Factors.Complete_Enrollment.TOTP_Completion_Request'
+                   (Id => C13,
+                    Principal => P1,
+                    Algorithm => TOTP_Algorithm,
+                    Secret => TOTP_Seed_2,
+                    Created_At => 130,
+                    Highest_Accepted_Counter => 0),
+               Expected_Credential_Version => 1), Audit_Context, Next_Audit_Event, 1)
+         = Identity.Adapters.Repositories.Memory.Version_Conflict,
+         "stale staged TOTP enrollment completion conflicts before activation");
+
+      Identity.Adapters.Repositories.Memory.Find_TOTP_Credential
+        (Repository, C13, Found_TOTP_Check, TOTP_Check);
+      Assert
+        (Found_TOTP_Check
+         and then TOTP_Check.State = Identity.Credentials.States.Created
+         and then TOTP_Check.Version = 0,
+         "stale staged TOTP enrollment completion leaves credential pending");
+
+      Assert
+        (Identity.Operations.Factors.Complete_Enrollment.Execute
+           (Repository,
+            Identity.One_Time_Passwords.Credentials.TOTP_Credential_Record'
+              (Id => C4,
+               Principal => P1,
+               Algorithm => TOTP_Algorithm,
+               Secret_Verifier => Identity.Crypto.Secret_Verifiers.Derive_Text
+                 (Identity.Crypto.Domains.TOTP_Secret, TOTP_Seed),
+               State => Identity.Credentials.States.Active,
+               Created_At => 130,
+               Highest_Accepted_Counter => 0,
+               Version => 0), Audit_Context, Next_Audit_Event, 1)
+         = Identity.Adapters.Repositories.Memory.Applied,
+         "TOTP enrollment completion activates verifier metadata");
+
+      Assert
+        (Identity.Operations.Factors.Complete_Enrollment.Execute
+           (Repository,
+            Identity.Operations.Factors.Complete_Enrollment.TOTP_Completion_Request'
+              (Id => C11,
+               Principal => P1,
+               Algorithm => TOTP_Algorithm,
+               Secret => TOTP_Seed_2,
+               Created_At => 130,
+               Highest_Accepted_Counter => 0), Audit_Context, Next_Audit_Event, 1)
+         = Identity.Adapters.Repositories.Memory.Applied,
+         "IDENTITY-TOTP-002 TOTP completion request derives verifier from secret container");
+
+      Identity.Adapters.Repositories.Memory.Find_TOTP_Credential
+        (Repository, C11, Found_TOTP_Check, TOTP_Check);
+      Assert
+        (Found_TOTP_Check
+         and then TOTP_Check.State = Identity.Credentials.States.Active
+         and then Identity.Text.Bounded.Equal
+           (TOTP_Check.Secret_Verifier,
+            Identity.Crypto.Secret_Verifiers.Derive_Text
+              (Identity.Crypto.Domains.TOTP_Secret, TOTP_Seed_2))
+         and then TOTP_Check.Version = 1,
+         "TOTP completion request stores derived verifier only");
+
+      Assert
+        (Found_TOTP_Check
+         and then Identity.One_Time_Passwords.Credentials.Credential_Usable
+           (Identity.One_Time_Passwords.Credentials.Summary (TOTP_Check))
+         and then Identity.One_Time_Passwords.Credentials.Summary
+           (TOTP_Check).Verifier_Present
+         and then Identity.One_Time_Passwords.Credentials.Summary
+           (TOTP_Check).Highest_Accepted_Counter = 0,
+         "TOTP active projection exposes verifier presence without verifier material");
+
+      Assert
+        (Identity.Operations.Factors.Complete_Enrollment.Execute
+           (Repository,
+            Identity.One_Time_Passwords.Credentials.TOTP_Credential_Record'
+              (Id => C4,
+               Principal => P1,
+               Algorithm => TOTP_Algorithm,
+               Secret_Verifier => Identity.Crypto.Secret_Verifiers.Derive_Text
+                 (Identity.Crypto.Domains.TOTP_Secret, TOTP_Seed),
+               State => Identity.Credentials.States.Active,
+               Created_At => 130,
+               Highest_Accepted_Counter => 0,
+               Version => 0), Audit_Context, Next_Audit_Event, 1)
+         = Identity.Adapters.Repositories.Memory.State_Conflict,
+         "TOTP enrollment completion cannot activate twice");
+
+      Assert
+        (Identity.Operations.Authentication.Begin_Transaction.Execute
+           (Repository,
+            (Id => MT3,
+             Principal => P3,
+             Requested_Profile => Identity.Assurance.Profiles.Sensitive,
+             Created_At => 130,
+             Expires_At => (Present => True, Time_Point => 180),
+             State => Identity.Authentication.Transactions.Started,
+             Attempts => 0,
+             Evidence_Count => 0,
+             Version => 0), Audit_Context, Next_Audit_Event, 1)
+         = Identity.Authentication.Transactions.State_Conflict,
+         "authentication transaction begin rejects retired principal");
+
+      Assert
+        (Identity.Operations.Authentication.Begin_Transaction.Execute
+           (Repository,
+            (Id => MT1,
+             Principal => P1,
+             Requested_Profile => Identity.Assurance.Profiles.Sensitive,
+             Created_At => 131,
+             Expires_At => (Present => True, Time_Point => 180),
+             State => Identity.Authentication.Transactions.Started,
+             Attempts => 0,
+             Evidence_Count => 0,
+             Version => 0), Audit_Context, Next_Audit_Event, 1)
+         = Identity.Authentication.Transactions.Applied,
+         "IDENTITY-MFA-001 authentication transaction begins and requires factor");
+
+      Assert
+        (Identity.Adapters.Repositories.Memory.Authentication_Transaction_Count (Repository) = 1,
+         "authentication transaction count projection is bounded");
+
+      Identity.Adapters.Repositories.Memory.Find_Authentication_Transaction
+        (Repository, MT1, Found_Auth_Tx_Check, Auth_Tx_Check);
+      Assert
+        (Found_Auth_Tx_Check
+         and then Auth_Tx_Check.State = Identity.Authentication.Transactions.Additional_Factor_Required
+         and then Auth_Tx_Check.Version = 1,
+         "authentication transaction start advances state and version");
+
+      Assert
+        (Identity.Authentication.Transactions.Can_Begin
+           (Identity.Authentication.Transactions.Started)
+         and then not Identity.Authentication.Transactions.Can_Begin
+           (Identity.Authentication.Transactions.Additional_Factor_Required)
+         and then Identity.Authentication.Transactions.Can_Issue_Challenge
+           (Identity.Authentication.Transactions.Summary (Auth_Tx_Check, 132))
+         and then not Identity.Authentication.Transactions.Can_Issue_Challenge
+           (Identity.Authentication.Transactions.Summary (Auth_Tx_Check, 181))
+         and then (Identity.Authentication.Transactions.Admission
+           (Identity.Authentication.Transactions.Summary (Auth_Tx_Check, 132),
+            Identity.Authentication.Transactions.Issue_Challenge)
+           = Identity.Authentication.Transactions.Transaction_Admitted)
+         and then (Identity.Authentication.Transactions.Admission
+           (Identity.Authentication.Transactions.Summary (Auth_Tx_Check, 181),
+            Identity.Authentication.Transactions.Issue_Challenge)
+           = Identity.Authentication.Transactions.Transaction_Expired)
+         and then (Identity.Authentication.Transactions.Admission
+           (Identity.Authentication.Transactions.Satisfied,
+            Identity.Authentication.Transactions.Issue_Challenge)
+           = Identity.Authentication.Transactions.Transaction_State_Rejected)
+         and then Identity.Authentication.Transactions.Is_Terminal
+           (Identity.Authentication.Transactions.Summary (Auth_Tx_Check, 181))
+         and then not Identity.Authentication.Transactions.Expired_At (Auth_Tx_Check, 132)
+         and then Identity.Authentication.Transactions.Expired_At (Auth_Tx_Check, 181),
+         "authentication transaction begin expiry and projection admission is explicit");
+
+      Assert
+        (Identity.Authentication.Transactions.Command_Applied
+           (Identity.Authentication.Transactions.Applied)
+         and then Identity.Authentication.Transactions.Unknown_Transaction
+           (Identity.Authentication.Transactions.Unknown)
+         and then Identity.Authentication.Transactions.Conflict_Status
+           (Identity.Authentication.Transactions.State_Conflict)
+         and then Identity.Authentication.Transactions.Conflict_Status
+           (Identity.Authentication.Transactions.Version_Conflict)
+         and then Identity.Authentication.Transactions.Conflict_Status
+           (Identity.Authentication.Transactions.Capacity_Conflict)
+         and then Identity.Authentication.Transactions.State_Conflict_Status
+           (Identity.Authentication.Transactions.State_Conflict)
+         and then Identity.Authentication.Transactions.Version_Conflict_Status
+           (Identity.Authentication.Transactions.Version_Conflict)
+         and then Identity.Authentication.Transactions.Capacity_Conflict_Status
+           (Identity.Authentication.Transactions.Capacity_Conflict)
+         and then Identity.Authentication.Transactions.No_Mutation
+           (Identity.Authentication.Transactions.Unknown)
+         and then Identity.Authentication.Transactions.No_Mutation
+           (Identity.Authentication.Transactions.Version_Conflict)
+         and then not Identity.Authentication.Transactions.No_Mutation
+           (Identity.Authentication.Transactions.Applied),
+         "authentication transaction command status classification is explicit");
+
+      Assert
+        (Identity.Authentication.Transactions.Admission
+           (Identity.Authentication.Transactions.Started,
+            Identity.Authentication.Transactions.Begin_Transaction)
+           = Identity.Authentication.Transactions.Transaction_Admitted
+         and then Identity.Authentication.Transactions.Admission_Accepted
+           (Identity.Authentication.Transactions.Admission
+              (Identity.Authentication.Transactions.Started,
+               Identity.Authentication.Transactions.Begin_Transaction))
+         and then Identity.Authentication.Transactions.Admission
+           (Identity.Authentication.Transactions.Started,
+            Identity.Authentication.Transactions.Begin_Transaction,
+            Is_Expired => True)
+           = Identity.Authentication.Transactions.Transaction_Expired
+         and then Identity.Authentication.Transactions.Expired_Rejected
+           (Identity.Authentication.Transactions.Admission
+              (Identity.Authentication.Transactions.Started,
+               Identity.Authentication.Transactions.Begin_Transaction,
+               Is_Expired => True))
+         and then Identity.Authentication.Transactions.Admission
+           (Identity.Authentication.Transactions.Satisfied,
+            Identity.Authentication.Transactions.Issue_Challenge)
+           = Identity.Authentication.Transactions.Transaction_State_Rejected
+         and then Identity.Authentication.Transactions.State_Rejected
+           (Identity.Authentication.Transactions.Admission
+              (Identity.Authentication.Transactions.Satisfied,
+               Identity.Authentication.Transactions.Issue_Challenge))
+         and then Identity.Authentication.Transactions.Admission
+           (Identity.Authentication.Transactions.Challenge_Completed,
+            Identity.Authentication.Transactions.Satisfy_Transaction,
+            Is_Expired => False,
+            Evidence_Count => 0)
+           = Identity.Authentication.Transactions.Transaction_Evidence_Required
+         and then Identity.Authentication.Transactions.Evidence_Required
+           (Identity.Authentication.Transactions.Admission
+              (Identity.Authentication.Transactions.Challenge_Completed,
+               Identity.Authentication.Transactions.Satisfy_Transaction,
+               Is_Expired => False,
+               Evidence_Count => 0))
+         and then Identity.Authentication.Transactions.Admission
+           (Identity.Authentication.Transactions.Challenge_Completed,
+            Identity.Authentication.Transactions.Satisfy_Transaction,
+            Is_Expired => False,
+            Evidence_Count => 1)
+           = Identity.Authentication.Transactions.Transaction_Admitted
+         and then not Identity.Authentication.Transactions.Evidence_Required
+           (Identity.Authentication.Transactions.Admission
+              (Identity.Authentication.Transactions.Challenge_Completed,
+               Identity.Authentication.Transactions.Satisfy_Transaction,
+               Is_Expired => False,
+               Evidence_Count => 1))
+         and then Identity.Authentication.Transactions.Admission_Rejected
+           (Identity.Authentication.Transactions.Admission
+              (Identity.Authentication.Transactions.Satisfied,
+               Identity.Authentication.Transactions.Issue_Challenge)),
+         "authentication transaction admission cause predicates classify accepted expired "
+         & "state rejected and evidence-required outcomes");
+
+      Assert
+        (Identity.Authentication.Challenges.Admission
+           (Identity.Authentication.Challenges.Issued,
+            Identity.Authentication.Challenges.Issue_Action)
+           = Identity.Authentication.Challenges.Challenge_Action_Admitted
+         and then Identity.Authentication.Challenges.Action_Admission_Accepted
+           (Identity.Authentication.Challenges.Admission
+              (Identity.Authentication.Challenges.Issued,
+               Identity.Authentication.Challenges.Issue_Action))
+         and then Identity.Authentication.Challenges.Admission
+           (Identity.Authentication.Challenges.Issued,
+            Identity.Authentication.Challenges.Retry_Action,
+            Is_Expired => True)
+           = Identity.Authentication.Challenges.Challenge_Expired_By_Time
+         and then Identity.Authentication.Challenges.Action_Expired_Rejected
+           (Identity.Authentication.Challenges.Admission
+              (Identity.Authentication.Challenges.Issued,
+               Identity.Authentication.Challenges.Retry_Action,
+               Is_Expired => True))
+         and then Identity.Authentication.Challenges.Admission
+           (Identity.Authentication.Challenges.Completed,
+            Identity.Authentication.Challenges.Retry_Action)
+           = Identity.Authentication.Challenges.Challenge_Terminal_Rejected
+         and then Identity.Authentication.Challenges.Action_Terminal_Rejected
+           (Identity.Authentication.Challenges.Admission
+              (Identity.Authentication.Challenges.Completed,
+               Identity.Authentication.Challenges.Retry_Action))
+         and then Identity.Authentication.Challenges.Admission
+           (Identity.Authentication.Challenges.Cancelled,
+            Identity.Authentication.Challenges.Cancel_Action)
+           = Identity.Authentication.Challenges.Challenge_Terminal_Rejected
+         and then Identity.Authentication.Challenges.Admission
+           (Identity.Authentication.Challenges.Failed,
+            Identity.Authentication.Challenges.Cancel_Action)
+           = Identity.Authentication.Challenges.Challenge_Action_Admitted
+         and then Identity.Authentication.Challenges.Action_State_Rejected
+           (Identity.Authentication.Challenges.Challenge_State_Rejected)
+         and then not Identity.Authentication.Challenges.Action_State_Rejected
+           (Identity.Authentication.Challenges.Challenge_Terminal_Rejected)
+         and then Identity.Authentication.Challenges.Action_Admission_Rejected
+           (Identity.Authentication.Challenges.Admission
+              (Identity.Authentication.Challenges.Completed,
+               Identity.Authentication.Challenges.Retry_Action))
+         and then not Identity.Authentication.Challenges.Action_Admission_Rejected
+           (Identity.Authentication.Challenges.Admission
+              (Identity.Authentication.Challenges.Issued,
+               Identity.Authentication.Challenges.Issue_Action)),
+         "authentication challenge action admission cause predicates classify accepted "
+         & "expired state rejected and terminal outcomes");
+
+      Assert
+        (Identity.Operations.Authentication.Continue.Satisfy (Repository, MT1, P1, 132)
+         = Identity.Authentication.Transactions.State_Conflict,
+         "authentication transaction cannot satisfy before challenge completion");
+
+      Assert
+        (Identity.Authentication.Transactions.Can_Issue_Challenge
+           (Identity.Authentication.Transactions.Additional_Factor_Required)
+         and then Identity.Authentication.Transactions.Can_Issue_Challenge
+           (Identity.Authentication.Transactions.Primary_Evidence_Accepted)
+         and then not Identity.Authentication.Transactions.Can_Issue_Challenge
+           (Identity.Authentication.Transactions.Satisfied),
+         "authentication transaction challenge issue admission is explicit");
+
+      Assert
+        (Identity.Authentication.Transactions.Can_Complete_Challenge
+           (Identity.Authentication.Transactions.Challenge_Issued)
+         and then not Identity.Authentication.Transactions.Can_Complete_Challenge
+           (Identity.Authentication.Transactions.Additional_Factor_Required),
+         "authentication transaction challenge completion admission is explicit");
+
+      Assert
+        (Identity.Authentication.Challenges.Admit_Completion
+           ((Id => CH3,
+             Transaction => MT1,
+             Principal => P1,
+             Method => TOTP_Algorithm,
+             Created_At => 132,
+             Expires_At => (Present => True, Time_Point => 180),
+             State => Identity.Authentication.Challenges.Issued,
+             Attempts => 0,
+             Version => 0),
+            133)
+         = Identity.Authentication.Challenges.Admitted
+         and then Identity.Authentication.Challenges.Admit_Completion
+           ((Id => CH3,
+             Transaction => MT1,
+             Principal => P1,
+             Method => TOTP_Algorithm,
+             Created_At => 132,
+             Expires_At => (Present => True, Time_Point => 133),
+             State => Identity.Authentication.Challenges.Issued,
+             Attempts => 0,
+             Version => 0),
+            134)
+         = Identity.Authentication.Challenges.Expired_By_Time
+         and then Identity.Authentication.Challenges.Admit_Completion
+           ((Id => CH3,
+             Transaction => MT1,
+             Principal => P1,
+             Method => TOTP_Algorithm,
+             Created_At => 132,
+             Expires_At => (Present => True, Time_Point => 180),
+             State => Identity.Authentication.Challenges.Completed,
+             Attempts => 0,
+             Version => 0),
+            134)
+         = Identity.Authentication.Challenges.Already_Completed,
+         "authentication challenge completion admission reports state cause");
+
+      Assert
+        (Identity.Authentication.Challenges.Completion_Admitted
+           (Identity.Authentication.Challenges.Admitted)
+         and then not Identity.Authentication.Challenges.Completion_Admitted
+           (Identity.Authentication.Challenges.Expired_By_Time)
+         and then Identity.Authentication.Challenges.Completion_Rejected
+           (Identity.Authentication.Challenges.Already_Completed)
+         and then Identity.Authentication.Challenges.Already_Completed_Rejected
+           (Identity.Authentication.Challenges.Already_Completed)
+         and then Identity.Authentication.Challenges.State_Rejected
+           (Identity.Authentication.Challenges.Failed_State)
+         and then Identity.Authentication.Challenges.State_Rejected
+           (Identity.Authentication.Challenges.Cancelled_State)
+         and then Identity.Authentication.Challenges.Expiration_Rejected
+           (Identity.Authentication.Challenges.Expired_State)
+         and then Identity.Authentication.Challenges.Expiration_Rejected
+           (Identity.Authentication.Challenges.Expired_By_Time)
+         and then Identity.Authentication.Challenges.No_Mutation
+           (Identity.Authentication.Challenges.Expired_By_Time)
+         and then not Identity.Authentication.Challenges.No_Mutation
+           (Identity.Authentication.Challenges.Admitted),
+         "authentication challenge completion admission classification is explicit");
+
+      Assert
+        (Identity.Authentication.Challenges.Can_Issue
+           (Identity.Authentication.Challenges.Issued)
+         and then Identity.Authentication.Challenges.Can_Record_Failure
+           (Identity.Authentication.Challenges.Issued)
+         and then Identity.Authentication.Challenges.Can_Retry
+           (Identity.Authentication.Challenges.Issued)
+         and then Identity.Authentication.Challenges.Can_Cancel
+           (Identity.Authentication.Challenges.Failed)
+         and then not Identity.Authentication.Challenges.Can_Cancel
+           (Identity.Authentication.Challenges.Completed)
+         and then Identity.Authentication.Challenges.Is_Terminal
+           (Identity.Authentication.Challenges.Failed)
+         and then not Identity.Authentication.Challenges.Is_Terminal
+           (Identity.Authentication.Challenges.Issued)
+         and then not Identity.Authentication.Challenges.Can_Issue
+           (Identity.Authentication.Challenges.Completed)
+         and then not Identity.Authentication.Challenges.Can_Issue
+           (Identity.Authentication.Challenges.Cancelled)
+         and then (Identity.Authentication.Challenges.Admission
+           (Identity.Authentication.Challenges.Issued,
+            Identity.Authentication.Challenges.Issue_Action)
+           = Identity.Authentication.Challenges.Challenge_Action_Admitted)
+         and then Identity.Authentication.Challenges.Action_Admission_Accepted
+           (Identity.Authentication.Challenges.Admission
+              (Identity.Authentication.Challenges.Issued,
+               Identity.Authentication.Challenges.Issue_Action))
+         and then not Identity.Authentication.Challenges.Action_Admission_Rejected
+           (Identity.Authentication.Challenges.Admission
+              (Identity.Authentication.Challenges.Issued,
+               Identity.Authentication.Challenges.Issue_Action))
+         and then (Identity.Authentication.Challenges.Admission
+           (Identity.Authentication.Challenges.Completed,
+            Identity.Authentication.Challenges.Record_Failure_Action)
+           = Identity.Authentication.Challenges.Challenge_Terminal_Rejected)
+         and then Identity.Authentication.Challenges.Action_Admission_Rejected
+           (Identity.Authentication.Challenges.Admission
+              (Identity.Authentication.Challenges.Completed,
+               Identity.Authentication.Challenges.Record_Failure_Action))
+         and then Identity.Authentication.Challenges.Action_Terminal_Rejected
+           (Identity.Authentication.Challenges.Admission
+              (Identity.Authentication.Challenges.Completed,
+               Identity.Authentication.Challenges.Record_Failure_Action))
+         and then Identity.Authentication.Challenges.Action_State_Rejected
+           (Identity.Authentication.Challenges.Challenge_State_Rejected)
+         and then Identity.Authentication.Challenges.Action_Expired_Rejected
+           (Identity.Authentication.Challenges.Admission
+              (Identity.Authentication.Challenges.Issued,
+               Identity.Authentication.Challenges.Issue_Action,
+               True))
+         and then (Identity.Authentication.Challenges.Admission
+           (Identity.Authentication.Challenges.Failed,
+            Identity.Authentication.Challenges.Cancel_Action)
+           = Identity.Authentication.Challenges.Challenge_Action_Admitted),
+         "authentication challenge issue admission is explicit");
+
+      Assert
+        (Identity.Operations.Factors.Issue_Challenge.Execute
+           (Repository,
+            Identity.Operations.Factors.Issue_Challenge.Staged_Issue_Request'
+              (Challenge =>
+                 (Id => CH1,
+                  Transaction => MT1,
+                  Principal => P1,
+                  Method => TOTP_Algorithm,
+                  Created_At => 132,
+                  Expires_At => (Present => True, Time_Point => 180),
+                  State => Identity.Authentication.Challenges.Issued,
+                  Attempts => 0,
+                  Version => 0),
+               Expected_Transaction_Version => 99), Audit_Context, Next_Audit_Event, 1)
+         = Identity.Authentication.Transactions.Version_Conflict,
+         "stale staged challenge issuance conflicts before challenge creation");
+
+      Assert
+        (Identity.Adapters.Repositories.Memory.Challenge_Count (Repository) = 0,
+         "stale staged challenge issuance leaves challenge store unchanged");
+
+      Assert
+        (Identity.Operations.Factors.Issue_Challenge.Execute
+           (Repository,
+            Identity.Authentication.Challenges.Challenge_Record'
+              (Id => CH1,
+               Transaction => MT1,
+               Principal => P1,
+               Method => TOTP_Algorithm,
+               Created_At => 132,
+               Expires_At => (Present => True, Time_Point => 180),
+               State => Identity.Authentication.Challenges.Issued,
+               Attempts => 0,
+               Version => 0), Audit_Context, Next_Audit_Event, 1)
+         = Identity.Authentication.Transactions.Applied,
+         "factor challenge issued for one authentication transaction");
+
+      Assert
+        (Identity.Adapters.Repositories.Memory.Challenge_Count (Repository) = 1,
+         "challenge count projection is bounded");
+
+      Identity.Adapters.Repositories.Memory.Find_Authentication_Transaction
+        (Repository, MT1, Found_Auth_Tx_Check, Auth_Tx_Check);
+      Assert
+        (Found_Auth_Tx_Check
+         and then Auth_Tx_Check.State = Identity.Authentication.Transactions.Challenge_Issued
+         and then Auth_Tx_Check.Version = 2,
+         "challenge issue advances transaction state");
+
+      Identity.Adapters.Repositories.Memory.Find_Challenge
+        (Repository, CH1, Found_Challenge_Check, Challenge_Check);
+      Assert
+        (Found_Challenge_Check
+         and then Identity.Authentication.Challenges.Can_Issue
+           (Identity.Authentication.Challenges.Summary (Challenge_Check, 133))
+         and then Identity.Authentication.Challenges.Can_Record_Failure
+           (Identity.Authentication.Challenges.Summary (Challenge_Check, 133))
+         and then Identity.Authentication.Challenges.Can_Retry
+           (Identity.Authentication.Challenges.Summary (Challenge_Check, 133))
+         and then Identity.Authentication.Challenges.Can_Cancel
+           (Identity.Authentication.Challenges.Summary (Challenge_Check, 133))
+         and then not Identity.Authentication.Challenges.Can_Issue
+           (Identity.Authentication.Challenges.Summary (Challenge_Check, 181))
+         and then (Identity.Authentication.Challenges.Admission
+           (Identity.Authentication.Challenges.Summary (Challenge_Check, 181),
+            Identity.Authentication.Challenges.Retry_Action)
+           = Identity.Authentication.Challenges.Challenge_Expired_By_Time)
+         and then Identity.Authentication.Challenges.Is_Terminal
+           (Identity.Authentication.Challenges.Summary (Challenge_Check, 181)),
+         "authentication challenge safe projection reports expiry-aware admission");
+
+      Assert
+        (Identity.Operations.Factors.Issue_Challenge.Execute
+           (Repository,
+            Identity.Authentication.Challenges.Challenge_Record'
+              (Id => CH2,
+               Transaction => MT1,
+               Principal => P2,
+               Method => TOTP_Algorithm,
+               Created_At => 132,
+               Expires_At => (Present => True, Time_Point => 180),
+               State => Identity.Authentication.Challenges.Issued,
+               Attempts => 0,
+               Version => 0), Audit_Context, Next_Audit_Event, 1)
+         = Identity.Authentication.Transactions.State_Conflict,
+         "challenge principal must match transaction principal");
+   end Test_61_code_2;
+
+   procedure Test_62_MFA_evidence_is_bound_to (T : in out AUnit.Test_Cases.Test_Case'Class) is
+      pragma Unreferenced (T);
+      Challenge_Evidence : constant Identity.Authentication.Evidence.Evidence_Record :=
+        (Id => EV1,
+         Principal => P1,
+         Transaction => MT1,
+         Challenge_Present => True,
+         Challenge => CH1,
+         Method => TOTP_Algorithm,
+         Category => Identity.Authentication.Evidence.Possession,
+         Verified_At => 133,
+         Schema_Version => 1,
+         Recovery_Used => False);
+   begin
+      Assert
+        (Identity.Authentication.Evidence.Bound_To_Principal
+           (Challenge_Evidence, P1)
+         and then Identity.Authentication.Evidence.Bound_To_Transaction
+           (Challenge_Evidence, MT1)
+         and then Identity.Authentication.Evidence.Bound_To_Challenge
+           (Challenge_Evidence, CH1)
+         and then Identity.Authentication.Evidence.Transferable_To
+           (Challenge_Evidence, P1, MT1)
+         and then not Identity.Authentication.Evidence.Transferable_To
+           (Challenge_Evidence, P2, MT1)
+         and then not Identity.Authentication.Evidence.Transferable_To
+           (Challenge_Evidence, P1, MT2)
+         and then not Identity.Authentication.Evidence.Bound_To_Challenge
+           (Challenge_Evidence, CH2),
+         "MFA evidence is bound to one principal transaction and challenge");
+   end Test_62_MFA_evidence_is_bound_to;
+
+   procedure Test_63_challenge_completion_is (T : in out AUnit.Test_Cases.Test_Case'Class) is
+      pragma Unreferenced (T);
+   begin
+      Assert
+        (Identity.Operations.Authentication.Continue.Complete_Challenge
+           (Repository, CH1, P2, 133)
+         = Identity.Authentication.Transactions.State_Conflict,
+         "challenge completion is bound to one principal");
+
+      Assert
+        (Identity.Operations.Authentication.Continue.Complete_Challenge
+           (Repository,
+            Identity.Operations.Authentication.Continue.Staged_Challenge_Completion_Request'
+              (Challenge => CH1,
+               Principal => P1,
+               Now => 133,
+               Expected_Challenge_Version => 99,
+               Expected_Transaction_Version => 2))
+         = Identity.Authentication.Transactions.Version_Conflict,
+         "stale staged challenge completion conflicts before evidence mutation");
+
+      Identity.Adapters.Repositories.Memory.Find_Challenge
+        (Repository, CH1, Found_Challenge_Check, Challenge_Check);
+      Identity.Adapters.Repositories.Memory.Find_Authentication_Transaction
+        (Repository, MT1, Found_Auth_Tx_Check, Auth_Tx_Check);
+      Assert
+        (Found_Challenge_Check
+         and then Challenge_Check.State = Identity.Authentication.Challenges.Issued
+         and then Challenge_Check.Version = 0
+         and then Found_Auth_Tx_Check
+         and then Auth_Tx_Check.State = Identity.Authentication.Transactions.Challenge_Issued
+         and then Auth_Tx_Check.Evidence_Count = 0
+         and then Auth_Tx_Check.Version = 2,
+         "stale staged challenge completion leaves challenge and transaction unchanged");
+
+      Assert
+        (Identity.Operations.Authentication.Continue.Complete_Challenge
+           (Repository,
+            Identity.Operations.Authentication.Continue.Staged_Challenge_Completion_Request'
+              (Challenge => CH1,
+               Principal => P1,
+               Now => 133,
+               Expected_Challenge_Version => 0,
+               Expected_Transaction_Version => 99))
+         = Identity.Authentication.Transactions.Version_Conflict,
+         "stale transaction version conflicts before challenge completion");
+
+      Assert
+        (Identity.Operations.Authentication.Continue.Complete_Challenge
+           (Repository, CH1, P1, 133)
+         = Identity.Authentication.Transactions.Applied,
+         "factor challenge completion accepted once");
+
+      Identity.Adapters.Repositories.Memory.Find_Challenge
+        (Repository, CH1, Found_Challenge_Check, Challenge_Check);
+      Identity.Adapters.Repositories.Memory.Find_Authentication_Transaction
+        (Repository, MT1, Found_Auth_Tx_Check, Auth_Tx_Check);
+      Assert
+        (Found_Challenge_Check
+         and then Challenge_Check.State = Identity.Authentication.Challenges.Completed
+         and then Found_Auth_Tx_Check
+         and then Auth_Tx_Check.State = Identity.Authentication.Transactions.Challenge_Completed
+         and then Auth_Tx_Check.Evidence_Count = 1,
+         "challenge completion updates challenge and accumulated evidence");
+
+      Assert
+        (Identity.Authentication.Transactions.Can_Satisfy (Auth_Tx_Check)
+         and then Identity.Authentication.Transactions.Can_Satisfy
+           (Identity.Authentication.Transactions.Summary (Auth_Tx_Check, 134))
+         and then not Identity.Authentication.Transactions.Can_Satisfy
+           (Identity.Authentication.Transactions.Summary (Auth_Tx_Check, 181))
+         and then (Identity.Authentication.Transactions.Admission
+           (Auth_Tx_Check,
+            Identity.Authentication.Transactions.Satisfy_Transaction)
+           = Identity.Authentication.Transactions.Transaction_Admitted)
+         and then Identity.Authentication.Transactions.Admission_Accepted
+           (Identity.Authentication.Transactions.Admission
+              (Auth_Tx_Check,
+               Identity.Authentication.Transactions.Satisfy_Transaction))
+         and then not Identity.Authentication.Transactions.Admission_Rejected
+           (Identity.Authentication.Transactions.Admission
+              (Auth_Tx_Check,
+               Identity.Authentication.Transactions.Satisfy_Transaction))
+         and then Identity.Authentication.Transactions.Expired_Rejected
+           (Identity.Authentication.Transactions.Admission
+              (Identity.Authentication.Transactions.Summary (Auth_Tx_Check, 181),
+               Identity.Authentication.Transactions.Satisfy_Transaction))
+         and then Identity.Authentication.Transactions.Admission_Rejected
+           (Identity.Authentication.Transactions.Admission
+              (Identity.Authentication.Transactions.Summary (Auth_Tx_Check, 181),
+               Identity.Authentication.Transactions.Satisfy_Transaction))
+         and then not Identity.Authentication.Challenges.Can_Issue
+           (Identity.Authentication.Challenges.Summary (Challenge_Check, 134))
+         and then Identity.Authentication.Challenges.Is_Terminal
+           (Identity.Authentication.Challenges.Summary (Challenge_Check, 134))
+         and then not Identity.Authentication.Transactions.Can_Satisfy
+           (Identity.Authentication.Transactions.Authentication_Transaction_Record'
+              (Id => MT2,
+               Principal => P1,
+               Requested_Profile => Identity.Assurance.Profiles.Sensitive,
+               Created_At => 131,
+               Expires_At => (Present => True, Time_Point => 180),
+               State => Identity.Authentication.Transactions.Challenge_Completed,
+               Attempts => 0,
+               Evidence_Count => 0,
+               Version => 0)),
+         "authentication transaction satisfaction admission requires evidence");
+
+      Assert
+        (Identity.Authentication.Transactions.Admission
+           (Identity.Authentication.Transactions.Challenge_Completed,
+            Identity.Authentication.Transactions.Satisfy_Transaction,
+            False,
+            0)
+         = Identity.Authentication.Transactions.Transaction_Evidence_Required
+         and then Identity.Authentication.Transactions.Evidence_Required
+           (Identity.Authentication.Transactions.Admission
+              (Identity.Authentication.Transactions.Challenge_Completed,
+               Identity.Authentication.Transactions.Satisfy_Transaction,
+               False,
+               0))
+         and then Identity.Authentication.Transactions.Admission_Rejected
+           (Identity.Authentication.Transactions.Admission
+              (Identity.Authentication.Transactions.Challenge_Completed,
+               Identity.Authentication.Transactions.Satisfy_Transaction,
+               False,
+               0))
+         and then Identity.Authentication.Transactions.State_Rejected
+           (Identity.Authentication.Transactions.Admission
+              (Identity.Authentication.Transactions.Satisfied,
+               Identity.Authentication.Transactions.Issue_Challenge))
+         and then Identity.Authentication.Transactions.Admission_Rejected
+           (Identity.Authentication.Transactions.Admission
+              (Identity.Authentication.Transactions.Satisfied,
+               Identity.Authentication.Transactions.Issue_Challenge)),
+         "authentication transaction satisfaction classifier reports missing evidence");
+
+      Assert
+        (Identity.Authentication.Transactions.Can_Upgrade_Assurance
+           (Identity.Authentication.Transactions.Satisfied)
+         and then Identity.Authentication.Transactions.Can_Consume
+           (Identity.Authentication.Transactions.Satisfied)
+         and then not Identity.Authentication.Transactions.Can_Consume
+           (Identity.Authentication.Transactions.Challenge_Completed)
+         and then Identity.Authentication.Transactions.Can_Cancel
+           (Identity.Authentication.Transactions.Challenge_Completed)
+         and then not Identity.Authentication.Transactions.Can_Cancel
+           (Identity.Authentication.Transactions.Satisfied)
+         and then not Identity.Authentication.Transactions.Can_Upgrade_Assurance
+           (Identity.Authentication.Transactions.Challenge_Completed),
+         "authentication transaction assurance upgrade admission requires satisfied state");
+
+      Assert
+        (Identity.Operations.Authentication.Continue.Complete_Challenge
+           (Repository, CH1, P1, 134)
+         = Identity.Authentication.Transactions.State_Conflict,
+         "completed factor challenge cannot complete twice");
+
+      Assert
+        (Identity.Operations.Authentication.Continue.Satisfy
+           (Repository,
+            Identity.Operations.Authentication.Continue.Staged_Satisfaction_Request'
+              (Transaction => MT1,
+               Principal => P1,
+               Now => 135,
+               Expected_Version => 99))
+         = Identity.Authentication.Transactions.Version_Conflict,
+         "stale staged transaction satisfaction conflicts before satisfied state");
+
+      Identity.Adapters.Repositories.Memory.Find_Authentication_Transaction
+        (Repository, MT1, Found_Auth_Tx_Check, Auth_Tx_Check);
+      Assert
+        (Found_Auth_Tx_Check
+         and then Auth_Tx_Check.State = Identity.Authentication.Transactions.Challenge_Completed
+         and then Auth_Tx_Check.Evidence_Count = 1,
+         "stale staged transaction satisfaction leaves transaction unchanged");
+
+      Assert
+        (Identity.Operations.Authentication.Continue.Satisfy
+           (Repository,
+            Identity.Operations.Authentication.Continue.Staged_Satisfaction_Request'
+              (Transaction => MT1,
+               Principal => P1,
+               Now => 135,
+               Expected_Version => Auth_Tx_Check.Version))
+         = Identity.Authentication.Transactions.Applied,
+         "authentication transaction satisfied after challenge evidence");
+
+      Identity.Adapters.Repositories.Memory.Find_Authentication_Transaction
+        (Repository, MT1, Found_Auth_Tx_Check, Auth_Tx_Check);
+      Assert
+        (Found_Auth_Tx_Check
+         and then Auth_Tx_Check.State = Identity.Authentication.Transactions.Satisfied,
+         "satisfied authentication transaction is persisted");
+
+      Assert
+        (Identity.Operations.Sessions.Create.Execute
+           (Repository,
+            Identity.Sessions.Definitions.Session_Record'
+              (Id => S7,
+             Family => F1,
+             Principal => P1,
+             Credential => (Present => True, Value => C8),
+             External_Provider => (Present => False),
+             Public_Reference => Step_Up_Session_Reference,
+             Secret_Verifier => Identity.Crypto.Secret_Verifiers.Derive_Text
+               (Identity.Crypto.Domains.Session_Token, Step_Up_Session_Secret),
+             Assurance => Identity.Assurance.Levels.Basic,
+             Attributes => (others => <>),
+             Created_At => 136,
+             Original_Authenticated_At => 136,
+             Primary_Authenticated_At => 136,
+             MFA_Completed_At => (Present => False),
+             Step_Up_At => (Present => False),
+             Last_Seen_At => 136,
+             Idle_Expires_At => (Present => True, Time_Point => 190),
+             Absolute_Expires_At => (Present => True, Time_Point => 300),
+             Remembered => False,
+             Generation => 5,
+             State => Identity.Sessions.Definitions.Active,
+             Version => 0), Audit_Context, Next_Audit_Event, 1)
+         = Identity.Adapters.Repositories.Memory.Applied,
+         "step-up session fixture created");
+
+      Assert
+        (Identity.Operations.Authentication.Step_Up.Execute
+           (Repository,
+            S7,
+            MT1,
+            P2,
+            137,
+            Identity.Assurance.Levels.Sensitive,
+            (Factor_Count => 2,
+             Independent_Factor_Count => 2,
+             Phishing_Resistant => False,
+             Hardware_Bound => False,
+             Device_Bound => False,
+             Federation => False,
+             Recovery_Used => False,
+             User_Presence => True,
+             User_Verification => True,
+             Managed_Credential => False,
+             Recent_Authentication => True), Audit_Context, Next_Audit_Event, 1)
+         = Identity.Authentication.Transactions.State_Conflict,
+         "step-up transaction principal must match session principal");
+
+      Assert
+        (Identity.Operations.Authentication.Step_Up.Execute
+           (Repository,
+            S7,
+            MT1,
+            P1,
+            138,
+            Identity.Assurance.Levels.Sensitive,
+            (Factor_Count => 2,
+             Independent_Factor_Count => 2,
+             Phishing_Resistant => False,
+             Hardware_Bound => False,
+             Device_Bound => False,
+             Federation => False,
+             Recovery_Used => False,
+             User_Presence => True,
+             User_Verification => True,
+             Managed_Credential => False,
+             Recent_Authentication => True), Audit_Context, Next_Audit_Event, 1)
+         = Identity.Authentication.Transactions.Applied,
+         "IDENTITY-STEPUP-001 session step-up upgrades assurance atomically");
+
+      Assert
+        (Identity.Operations.Sessions.Lookup.Execute
+           (Repository, Step_Up_Session_Reference, Step_Up_Session_Secret, 139).Status
+         = Identity.Sessions.Handles.Found,
+         "step-up session remains lookupable");
+
+      Renewed_Handle := Identity.Operations.Sessions.Lookup.Execute
+        (Repository, Step_Up_Session_Reference, Step_Up_Session_Secret, 139);
+      Assert
+        (Renewed_Handle.Assurance = Identity.Assurance.Levels.Sensitive
+         and then Renewed_Handle.Attributes.Factor_Count = 2
+         and then Renewed_Handle.Revision = 1,
+         "step-up lookup exposes upgraded assurance and session revision");
+
+      Identity.Adapters.Repositories.Memory.Find_Authentication_Transaction
+        (Repository, MT1, Found_Auth_Tx_Check, Auth_Tx_Check);
+      Assert
+        (Found_Auth_Tx_Check
+         and then Auth_Tx_Check.State = Identity.Authentication.Transactions.Consumed,
+         "step-up consumes satisfied authentication transaction");
+
+      Assert
+        (Identity.Authentication.Transactions.Is_Terminal
+           (Identity.Authentication.Transactions.Consumed)
+         and then not Identity.Authentication.Transactions.Is_Terminal
+           (Identity.Authentication.Transactions.Satisfied),
+         "consumed authentication transaction is terminal");
+
+      Assert
+        (Identity.Operations.Authentication.Step_Up.Execute
+           (Repository,
+            S7,
+            MT1,
+            P1,
+            140,
+            Identity.Assurance.Levels.Administrative,
+            (Factor_Count => 2,
+             Independent_Factor_Count => 2,
+             Phishing_Resistant => False,
+             Hardware_Bound => False,
+             Device_Bound => False,
+             Federation => False,
+             Recovery_Used => False,
+             User_Presence => True,
+             User_Verification => True,
+             Managed_Credential => False,
+             Recent_Authentication => True), Audit_Context, Next_Audit_Event, 1)
+         = Identity.Authentication.Transactions.State_Conflict,
+         "consumed step-up transaction cannot upgrade twice");
+
+      Assert
+        (Identity.Operations.Authentication.Begin_Transaction.Execute
+           (Repository,
+            (Id => MT2,
+             Principal => P1,
+             Requested_Profile => Identity.Assurance.Profiles.Administrative,
+             Created_At => 141,
+             Expires_At => (Present => True, Time_Point => 190),
+             State => Identity.Authentication.Transactions.Started,
+             Attempts => 0,
+             Evidence_Count => 0,
+             Version => 0), Audit_Context, Next_Audit_Event, 1)
+         = Identity.Authentication.Transactions.Applied,
+         "session assurance upgrade transaction begins");
+
+      Assert
+        (Identity.Operations.Factors.Issue_Challenge.Execute
+           (Repository,
+            Identity.Authentication.Challenges.Challenge_Record'
+              (Id => CH3,
+               Transaction => MT2,
+               Principal => P1,
+               Method => TOTP_Algorithm,
+               Created_At => 142,
+               Expires_At => (Present => True, Time_Point => 190),
+               State => Identity.Authentication.Challenges.Issued,
+               Attempts => 0,
+               Version => 0), Audit_Context, Next_Audit_Event, 1)
+         = Identity.Authentication.Transactions.Applied,
+         "session assurance upgrade challenge is issued");
+
+      Assert
+        (Identity.Operations.Authentication.Continue.Complete_Challenge
+           (Repository, CH3, P1, 143)
+         = Identity.Authentication.Transactions.Applied,
+         "session assurance upgrade challenge is completed");
+
+      Assert
+        (Identity.Operations.Authentication.Continue.Satisfy (Repository, MT2, P1, 144)
+         = Identity.Authentication.Transactions.Applied,
+         "session assurance upgrade transaction is satisfied");
+
+      Identity.Adapters.Repositories.Memory.Find_Session
+        (Repository, S7, Found_Session_Check, Session_Check);
+      Identity.Adapters.Repositories.Memory.Find_Authentication_Transaction
+        (Repository, MT2, Found_Auth_Tx_Check, Auth_Tx_Check);
+      Assert
+        (Found_Session_Check
+         and then Found_Auth_Tx_Check
+         and then Auth_Tx_Check.State = Identity.Authentication.Transactions.Satisfied,
+         "session assurance upgrade staged fixture versions are visible");
+
+      Assert
+        (Identity.Operations.Sessions.Upgrade_Assurance.Execute
+           (Repository,
+            Identity.Operations.Sessions.Upgrade_Assurance.Staged_Upgrade_Request'
+              (Session => S7,
+               Transaction => MT2,
+               Principal => P1,
+               Now => 145,
+               Assurance => Identity.Assurance.Levels.Administrative,
+               Attributes =>
+                 (Factor_Count => 3,
+                  Independent_Factor_Count => 2,
+                  Phishing_Resistant => False,
+                  Hardware_Bound => False,
+                  Device_Bound => False,
+                  Federation => False,
+                  Recovery_Used => False,
+                  User_Presence => True,
+                  User_Verification => True,
+                  Managed_Credential => False,
+                  Recent_Authentication => True),
+               Expected_Session_Version => 99,
+               Expected_Transaction_Version => Auth_Tx_Check.Version), Audit_Context, Next_Audit_Event, 1)
+         = Identity.Authentication.Transactions.Version_Conflict,
+         "stale staged assurance upgrade session version conflicts before upgrade");
+
+      Assert
+        (Identity.Operations.Sessions.Upgrade_Assurance.Execute
+           (Repository,
+            Identity.Operations.Sessions.Upgrade_Assurance.Staged_Upgrade_Request'
+              (Session => S7,
+               Transaction => MT2,
+               Principal => P1,
+               Now => 145,
+               Assurance => Identity.Assurance.Levels.Administrative,
+               Attributes =>
+                 (Factor_Count => 3,
+                  Independent_Factor_Count => 2,
+                  Phishing_Resistant => False,
+                  Hardware_Bound => False,
+                  Device_Bound => False,
+                  Federation => False,
+                  Recovery_Used => False,
+                  User_Presence => True,
+                  User_Verification => True,
+                  Managed_Credential => False,
+                  Recent_Authentication => True),
+               Expected_Session_Version => Session_Check.Version,
+               Expected_Transaction_Version => 99), Audit_Context, Next_Audit_Event, 1)
+         = Identity.Authentication.Transactions.Version_Conflict,
+         "stale staged assurance upgrade transaction version conflicts before upgrade");
+
+      Identity.Adapters.Repositories.Memory.Find_Session
+        (Repository, S7, Found_Session_Check, Session_Check);
+      Identity.Adapters.Repositories.Memory.Find_Authentication_Transaction
+        (Repository, MT2, Found_Auth_Tx_Check, Auth_Tx_Check);
+      Assert
+        (Found_Session_Check
+         and then Session_Check.Assurance = Identity.Assurance.Levels.Sensitive
+         and then Found_Auth_Tx_Check
+         and then Auth_Tx_Check.State = Identity.Authentication.Transactions.Satisfied,
+         "stale staged assurance upgrade leaves session and transaction unchanged");
+
+      Assert
+        (Identity.Operations.Sessions.Upgrade_Assurance.Execute
+           (Repository,
+            Identity.Operations.Sessions.Upgrade_Assurance.Staged_Upgrade_Request'
+              (Session => S7,
+               Transaction => MT2,
+               Principal => P1,
+               Now => 145,
+               Assurance => Identity.Assurance.Levels.Administrative,
+               Attributes =>
+                 (Factor_Count => 3,
+                  Independent_Factor_Count => 2,
+                  Phishing_Resistant => False,
+                  Hardware_Bound => False,
+                  Device_Bound => False,
+                  Federation => False,
+                  Recovery_Used => False,
+                  User_Presence => True,
+                  User_Verification => True,
+                  Managed_Credential => False,
+                  Recent_Authentication => True),
+               Expected_Session_Version => Session_Check.Version,
+               Expected_Transaction_Version => Auth_Tx_Check.Version), Audit_Context, Next_Audit_Event, 1)
+         = Identity.Authentication.Transactions.Applied,
+         "session assurance upgrade operation upgrades assurance atomically");
+
+      Renewed_Handle := Identity.Operations.Sessions.Lookup.Execute
+        (Repository, Step_Up_Session_Reference, Step_Up_Session_Secret, 146);
+      Assert
+        (Renewed_Handle.Assurance = Identity.Assurance.Levels.Administrative
+         and then Renewed_Handle.Attributes.Factor_Count = 3
+         and then Renewed_Handle.Revision = 2,
+         "session assurance upgrade lookup exposes upgraded revision");
+
+      Assert
+        (Identity.Operations.Principals.Create.Execute
+           (Repository,
+            (Id => P6,
+             Kind => Identity.Principals.Kinds.Human,
+             State => Identity.Principals.Definitions.Active,
+             Version => 0), Audit_Context, Next_Audit_Event, 1)
+         = Identity.Adapters.Repositories.Memory.Applied,
+         "challenge retired-principal fixture principal created");
+
+      Assert
+        (Identity.Operations.Authentication.Begin_Transaction.Execute
+           (Repository,
+            (Id => MT4,
+             Principal => P6,
+             Requested_Profile => Identity.Assurance.Profiles.Sensitive,
+             Created_At => 146,
+             Expires_At => (Present => True, Time_Point => 190),
+             State => Identity.Authentication.Transactions.Started,
+             Attempts => 0,
+             Evidence_Count => 0,
+             Version => 0), Audit_Context, Next_Audit_Event, 1)
+         = Identity.Authentication.Transactions.Applied,
+         "challenge retired-principal fixture transaction begins");
+
+      Assert
+        (Identity.Operations.Principals.Retire.Execute (Repository, P6, Audit_Context, Next_Audit_Event, 1)
+         = Identity.Adapters.Repositories.Memory.Applied,
+         "challenge retired-principal fixture principal retired");
+
+      Assert
+        (Identity.Operations.Factors.Issue_Challenge.Execute
+           (Repository,
+            Identity.Authentication.Challenges.Challenge_Record'
+              (Id => CH4,
+               Transaction => MT4,
+               Principal => P6,
+               Method => TOTP_Algorithm,
+               Created_At => 147,
+               Expires_At => (Present => True, Time_Point => 190),
+               State => Identity.Authentication.Challenges.Issued,
+               Attempts => 0,
+               Version => 0), Audit_Context, Next_Audit_Event, 1)
+         = Identity.Authentication.Transactions.State_Conflict,
+         "factor challenge issue rejects retired principal");
+
+      Assert
+        (Identity.Operations.Sessions.Revoke_Credential.Execute
+           (Repository,
+            Identity.Operations.Sessions.Revoke_Credential.Staged_Revoke_Request'
+              (Credential => C8,
+               Expected_Affected_Count => 2), Audit_Context, Next_Audit_Event, 1)
+         = Identity.Adapters.Repositories.Memory.Version_Conflict,
+         "stale staged credential session revocation conflicts before revocation");
+
+      Assert
+        (Identity.Operations.Sessions.Lookup.Execute
+           (Repository, Step_Up_Session_Reference, Step_Up_Session_Secret, 141).Status
+         = Identity.Sessions.Handles.Found,
+         "stale staged credential session revocation leaves session usable");
+
+      Assert
+        (Identity.Operations.Sessions.Revoke_Credential.Execute (Repository, C8, Audit_Context, Next_Audit_Event, 1)
+         = Identity.Adapters.Repositories.Memory.Applied,
+         "IDENTITY-SESSION-002 credential-derived session revocation applied");
+
+      Assert
+        (Identity.Operations.Sessions.Lookup.Execute
+           (Repository, Step_Up_Session_Reference, Step_Up_Session_Secret, 141).Status
+         = Identity.Sessions.Handles.Revoked,
+         "credential-derived revoked session unusable");
+
+      Assert
+        (Identity.Operations.Sessions.Revoke_Credential.Execute (Repository, C8, Audit_Context, Next_Audit_Event, 1)
+         = Identity.Adapters.Repositories.Memory.State_Conflict,
+         "credential-derived session revocation is idempotency-conflict after all revoked");
+
+      Assert
+        (Identity.One_Time_Passwords.Credentials.Admit_Counter
+           ((Id => C4,
+             Principal => P1,
+             Algorithm => TOTP_Algorithm,
+             Secret_Verifier => Identity.Text.Bounded.From_String ("totp-verifier"),
+             State => Identity.Credentials.States.Active,
+             Created_At => 100,
+             Highest_Accepted_Counter => 9,
+             Version => 0),
+            10)
+         = Identity.One_Time_Passwords.Credentials.Accepted
+         and then Identity.One_Time_Passwords.Credentials.Counter_Accepted
+           (Identity.One_Time_Passwords.Credentials.Accepted)
+         and then Identity.One_Time_Passwords.Credentials.Credential_Usable
+           (Identity.One_Time_Passwords.Credentials.TOTP_Credential_Record'
+              (Id => C4,
+               Principal => P1,
+               Algorithm => TOTP_Algorithm,
+               Secret_Verifier => Identity.Text.Bounded.From_String ("totp-verifier"),
+               State => Identity.Credentials.States.Active,
+               Created_At => 100,
+               Highest_Accepted_Counter => 9,
+               Version => 0))
+         and then Identity.One_Time_Passwords.Credentials.Admit_Counter
+           ((Id => C4,
+             Principal => P1,
+             Algorithm => TOTP_Algorithm,
+             Secret_Verifier => Identity.Text.Bounded.From_String ("totp-verifier"),
+             State => Identity.Credentials.States.Active,
+             Created_At => 100,
+             Highest_Accepted_Counter => 10,
+             Version => 0),
+            10)
+           = Identity.One_Time_Passwords.Credentials.Replayed
+         and then Identity.One_Time_Passwords.Credentials.Evaluate_Presentation
+           (False,
+            False,
+            (Id => C4,
+             Principal => P1,
+             Algorithm => TOTP_Algorithm,
+             Secret_Verifier => Identity.Text.Bounded.From_String ("totp-verifier"),
+             State => Identity.Credentials.States.Active,
+             Created_At => 100,
+             Highest_Accepted_Counter => 9,
+             Version => 0),
+            10)
+           = Identity.One_Time_Passwords.Credentials.Unknown
+         and then Identity.One_Time_Passwords.Credentials.Evaluate_Presentation
+           (True,
+            False,
+            (Id => C4,
+             Principal => P1,
+             Algorithm => TOTP_Algorithm,
+             Secret_Verifier => Identity.Text.Bounded.From_String ("totp-verifier"),
+             State => Identity.Credentials.States.Active,
+             Created_At => 100,
+             Highest_Accepted_Counter => 9,
+             Version => 0),
+            10)
+           = Identity.One_Time_Passwords.Credentials.Not_Verified
+         and then Identity.One_Time_Passwords.Credentials.Verification_Rejected
+           (Identity.One_Time_Passwords.Credentials.Not_Verified)
+         and then Identity.One_Time_Passwords.Credentials.Retryable_By_Presentation
+           (Identity.One_Time_Passwords.Credentials.Not_Verified)
+         and then Identity.One_Time_Passwords.Credentials.No_Replay_State_Mutation
+           (Identity.One_Time_Passwords.Credentials.Not_Verified)
+         and then Identity.One_Time_Passwords.Credentials.Replay_Rejected
+           (Identity.One_Time_Passwords.Credentials.Replayed)
+         and then Identity.One_Time_Passwords.Credentials.Retryable_By_Presentation
+           (Identity.One_Time_Passwords.Credentials.Replayed)
+         and then Identity.One_Time_Passwords.Credentials.No_Replay_State_Mutation
+           (Identity.One_Time_Passwords.Credentials.Replayed)
+         and then Identity.One_Time_Passwords.Credentials.Replay_Rejected
+           (Identity.One_Time_Passwords.Credentials.Counter_Too_Old)
+         and then Identity.One_Time_Passwords.Credentials.Retryable_By_Presentation
+           (Identity.One_Time_Passwords.Credentials.Counter_Too_Old)
+         and then Identity.One_Time_Passwords.Credentials.No_Replay_State_Mutation
+           (Identity.One_Time_Passwords.Credentials.Counter_Too_Old)
+         and then Identity.One_Time_Passwords.Credentials.Unknown_Credential
+           (Identity.One_Time_Passwords.Credentials.Unknown)
+         and then Identity.One_Time_Passwords.Credentials.No_Replay_State_Mutation
+           (Identity.One_Time_Passwords.Credentials.Unknown)
+         and then Identity.One_Time_Passwords.Credentials.Admit_Counter
+           ((Id => C4,
+             Principal => P1,
+             Algorithm => TOTP_Algorithm,
+             Secret_Verifier => Identity.Text.Bounded.From_String ("totp-verifier"),
+             State => Identity.Credentials.States.Revoked,
+             Created_At => 100,
+             Highest_Accepted_Counter => 10,
+             Version => 0),
+            11)
+           = Identity.One_Time_Passwords.Credentials.Credential_Unusable
+         and then not Identity.One_Time_Passwords.Credentials.Counter_Accepted
+           (Identity.One_Time_Passwords.Credentials.Credential_Unusable)
+         and then Identity.One_Time_Passwords.Credentials.Unusable_Credential
+           (Identity.One_Time_Passwords.Credentials.Credential_Unusable)
+         and then not Identity.One_Time_Passwords.Credentials.Retryable_By_Presentation
+           (Identity.One_Time_Passwords.Credentials.Credential_Unusable)
+         and then Identity.One_Time_Passwords.Credentials.No_Replay_State_Mutation
+           (Identity.One_Time_Passwords.Credentials.Credential_Unusable)
+         and then Identity.One_Time_Passwords.Credentials.Conflict
+           (Identity.One_Time_Passwords.Credentials.State_Conflict)
+         and then Identity.One_Time_Passwords.Credentials.No_Replay_State_Mutation
+           (Identity.One_Time_Passwords.Credentials.State_Conflict),
+         "IDENTITY-TOTP-001 TOTP counter admission is explicit");
+
+      Assert
+        (Identity.Operations.Factors.Accept_TOTP_Counter.Execute
+           (Repository, C4, 10, Audit_Context, Next_Audit_Event, 1)
+         = Identity.One_Time_Passwords.Credentials.Accepted,
+         "IDENTITY-TOTP-001 first TOTP counter accepted");
+
+      Identity.Adapters.Repositories.Memory.Find_TOTP_Credential
+        (Repository, C4, Found_TOTP_Check, TOTP_Check);
+      Assert
+        (Found_TOTP_Check
+         and then TOTP_Check.Version = 2
+         and then TOTP_Check.Highest_Accepted_Counter = 10,
+         "TOTP counter acceptance advances credential version");
+
+      Assert
+        (Found_TOTP_Check
+         and then Identity.One_Time_Passwords.Credentials.Summary
+           (TOTP_Check).Highest_Accepted_Counter = 10
+         and then Identity.One_Time_Passwords.Credentials.Summary
+           (TOTP_Check).Version = 2,
+         "TOTP projection reports committed replay counter and version");
+   end Test_63_challenge_completion_is;
+
+   procedure Test_64_classifier_totp_verifier (T : in out AUnit.Test_Cases.Test_Case'Class) is
+      pragma Unreferenced (T);
+      Live_TOTP : constant
+        Identity.One_Time_Passwords.Credentials.TOTP_Credential_Record :=
+        (Id => C4,
+         Principal => P1,
+         Algorithm => TOTP_Algorithm,
+         Secret_Verifier =>
+           Identity.Text.Bounded.From_String ("classifier-totp-verifier"),
+         State => Identity.Credentials.States.Active,
+         Created_At => 100,
+         Highest_Accepted_Counter => 5,
+         Version => 0);
+      Revoked_TOTP : constant
+        Identity.One_Time_Passwords.Credentials.TOTP_Credential_Record :=
+        (Live_TOTP with delta State => Identity.Credentials.States.Revoked);
+   begin
+      Assert
+        (Identity.One_Time_Passwords.Credentials.Evaluate_Presentation
+           (False, False, Live_TOTP, 6)
+           = Identity.One_Time_Passwords.Credentials.Unknown
+         and then Identity.One_Time_Passwords.Credentials.Evaluate_Presentation
+           (True, False, Live_TOTP, 6)
+           = Identity.One_Time_Passwords.Credentials.Not_Verified
+         and then Identity.One_Time_Passwords.Credentials.Evaluate_Presentation
+           (True, True, Live_TOTP, 5)
+           = Identity.One_Time_Passwords.Credentials.Replayed
+         and then Identity.One_Time_Passwords.Credentials.Evaluate_Presentation
+           (True, True, Live_TOTP, 4)
+           = Identity.One_Time_Passwords.Credentials.Replayed
+         and then Identity.One_Time_Passwords.Credentials.Evaluate_Presentation
+           (True, True, Live_TOTP, 6)
+           = Identity.One_Time_Passwords.Credentials.Accepted
+         and then Identity.One_Time_Passwords.Credentials.Evaluate_Presentation
+           (True, True, Revoked_TOTP, 6)
+           = Identity.One_Time_Passwords.Credentials.Credential_Unusable
+         and then Identity.One_Time_Passwords.Credentials.Admit_Counter
+           (Live_TOTP, 6)
+           = Identity.One_Time_Passwords.Credentials.Accepted
+         and then Identity.One_Time_Passwords.Credentials.Admit_Counter
+           (Live_TOTP, 5)
+           = Identity.One_Time_Passwords.Credentials.Replayed,
+         "TOTP presentation classifier distinguishes missing wrong and replayed code paths");
+
+      Assert
+        (Identity.One_Time_Passwords.Credentials.Verification_Rejected
+           (Identity.One_Time_Passwords.Credentials.Evaluate_Presentation
+              (True, False, Live_TOTP, 6))
+         and then not Identity.One_Time_Passwords.Credentials.Replay_Rejected
+           (Identity.One_Time_Passwords.Credentials.Evaluate_Presentation
+              (True, False, Live_TOTP, 6))
+         and then Identity.One_Time_Passwords.Credentials.Replay_Rejected
+           (Identity.One_Time_Passwords.Credentials.Evaluate_Presentation
+              (True, True, Live_TOTP, 5))
+         and then Identity.One_Time_Passwords.Credentials.Replay_Rejected
+           (Identity.One_Time_Passwords.Credentials.Counter_Too_Old)
+         and then Identity.One_Time_Passwords.Credentials.Retryable_By_Presentation
+           (Identity.One_Time_Passwords.Credentials.Not_Verified)
+         and then Identity.One_Time_Passwords.Credentials.Retryable_By_Presentation
+           (Identity.One_Time_Passwords.Credentials.Replayed)
+         and then Identity.One_Time_Passwords.Credentials.Retryable_By_Presentation
+           (Identity.One_Time_Passwords.Credentials.Counter_Too_Old)
+         and then not Identity.One_Time_Passwords.Credentials.Retryable_By_Presentation
+           (Identity.One_Time_Passwords.Credentials.Unknown)
+         and then Identity.One_Time_Passwords.Credentials.Unknown_Credential
+           (Identity.One_Time_Passwords.Credentials.Evaluate_Presentation
+              (False, False, Live_TOTP, 6))
+         and then Identity.One_Time_Passwords.Credentials.Unusable_Credential
+           (Identity.One_Time_Passwords.Credentials.Evaluate_Presentation
+              (True, True, Revoked_TOTP, 6))
+         and then Identity.One_Time_Passwords.Credentials.Conflict
+           (Identity.One_Time_Passwords.Credentials.State_Conflict)
+         and then not Identity.One_Time_Passwords.Credentials.Conflict
+           (Identity.One_Time_Passwords.Credentials.Unknown)
+         and then Identity.One_Time_Passwords.Credentials.Counter_Accepted
+           (Identity.One_Time_Passwords.Credentials.Evaluate_Presentation
+              (True, True, Live_TOTP, 6))
+         and then Identity.One_Time_Passwords.Credentials.No_Replay_State_Mutation
+           (Identity.One_Time_Passwords.Credentials.Not_Verified)
+         and then Identity.One_Time_Passwords.Credentials.No_Replay_State_Mutation
+           (Identity.One_Time_Passwords.Credentials.Replayed)
+         and then Identity.One_Time_Passwords.Credentials.No_Replay_State_Mutation
+           (Identity.One_Time_Passwords.Credentials.Unknown)
+         and then Identity.One_Time_Passwords.Credentials.No_Replay_State_Mutation
+           (Identity.One_Time_Passwords.Credentials.Credential_Unusable)
+         and then Identity.One_Time_Passwords.Credentials.No_Replay_State_Mutation
+           (Identity.One_Time_Passwords.Credentials.Counter_Too_Old)
+         and then Identity.One_Time_Passwords.Credentials.No_Replay_State_Mutation
+           (Identity.One_Time_Passwords.Credentials.State_Conflict)
+         and then not Identity.One_Time_Passwords.Credentials.No_Replay_State_Mutation
+           (Identity.One_Time_Passwords.Credentials.Accepted),
+         "TOTP accept-status predicates classify wrong-code verification, replay, "
+         & "retryable presentation, unknown credential, unusable credential, conflict, "
+         & "and no-mutation outcomes");
+   end Test_64_classifier_totp_verifier;
+
+   procedure Test_65_stale_TOTP_counter_accep (T : in out AUnit.Test_Cases.Test_Case'Class) is
+      pragma Unreferenced (T);
+   begin
+      Assert
+        (Identity.Operations.Factors.Accept_TOTP_Counter.Execute
+           (Repository,
+            Identity.Operations.Factors.Accept_TOTP_Counter.Accept_Request'
+              (Credential => C4,
+               Expected_Version => 1,
+               Counter => 10), Audit_Context, Next_Audit_Event, 1)
+         = Identity.One_Time_Passwords.Credentials.State_Conflict,
+         "stale TOTP counter acceptance conflicts before replay classification");
+
+      Assert
+        (Identity.Operations.Factors.Accept_TOTP_Counter.Execute
+           (Repository, C4, 10, Audit_Context, Next_Audit_Event, 1)
+         = Identity.One_Time_Passwords.Credentials.Replayed,
+         "same TOTP counter replay rejected");
+
+      Assert
+        (Identity.Operations.Factors.Accept_TOTP_Counter.Execute
+           (Repository, C4, 9, Audit_Context, Next_Audit_Event, 1)
+         = Identity.One_Time_Passwords.Credentials.Replayed,
+         "lower TOTP counter replay rejected");
+
+      Assert
+        (Identity.Operations.Factors.Accept_TOTP_Counter.Execute
+           (Repository, C4, 11, Audit_Context, Next_Audit_Event, 1)
+         = Identity.One_Time_Passwords.Credentials.Accepted,
+         "higher TOTP counter advances replay state");
+
+      Assert
+        (Identity.Operations.Factors.Remove.Execute
+           (Repository,
+            Identity.Operations.Factors.Remove.Staged_Removal_Request'
+              (Credential => C4,
+               Principal => P1,
+               Expected_Credential_Version => 1), Audit_Context, Next_Audit_Event, 1)
+         = Identity.Adapters.Repositories.Memory.Version_Conflict,
+         "stale staged TOTP factor removal conflicts before revocation");
+
+      Identity.Adapters.Repositories.Memory.Find_TOTP_Credential
+        (Repository, C4, Found_TOTP_Check, TOTP_Check);
+      Assert
+        (Found_TOTP_Check
+         and then TOTP_Check.State = Identity.Credentials.States.Active
+         and then TOTP_Check.Version = 3,
+         "stale staged TOTP factor removal leaves credential active");
+
+      Assert
+        (Identity.Operations.Factors.Remove.Execute (Repository, C4, P1, Audit_Context, Next_Audit_Event, 1)
+         = Identity.Adapters.Repositories.Memory.Applied,
+         "TOTP factor removal revokes credential");
+
+      Identity.Adapters.Repositories.Memory.Find_TOTP_Credential
+        (Repository, C4, Found_TOTP_Check, TOTP_Check);
+      Assert
+        (Found_TOTP_Check
+         and then Identity.One_Time_Passwords.Credentials.Terminal
+           (Identity.One_Time_Passwords.Credentials.Summary (TOTP_Check))
+         and then not Identity.One_Time_Passwords.Credentials.Credential_Usable
+           (Identity.One_Time_Passwords.Credentials.Summary (TOTP_Check)),
+         "TOTP removed projection is terminal and unusable");
+
+      Assert
+        (Identity.Operations.Factors.Accept_TOTP_Counter.Execute
+           (Repository, C4, 12, Audit_Context, Next_Audit_Event, 1)
+         = Identity.One_Time_Passwords.Credentials.Credential_Unusable,
+         "removed TOTP factor cannot accept counters");
+
+      Assert
+        (Identity.Operations.Factors.Remove.Execute (Repository, C4, P1, Audit_Context, Next_Audit_Event, 1)
+         = Identity.Adapters.Repositories.Memory.State_Conflict,
+         "TOTP factor removal cannot be replayed");
+   end Test_65_stale_TOTP_counter_accep;
+
+   --  ------------------------------------------------------------------
+   --  atomicity suite: a failed repository command leaves no partial
+   --  mutation. Every case captures observable state before the call,
+   --  issues the failing command, and compares the state afterwards.
+   --
+   --  The block owns an isolated, heap-allocated store, so the counts it
+   --  captures start from a known-empty baseline rather than from whatever
+   --  an earlier block left behind.
+   --  ------------------------------------------------------------------
+
+   procedure Test_66_f0000000_0000_0000_0000 (T : in out AUnit.Test_Cases.Test_Case'Class) is
+      pragma Unreferenced (T);
+      --  A Memory.Store is several megabytes: heap, not stack.
+      type AT_Store_Access is access Identity.Adapters.Repositories.Memory.Store;
+
+      AT_Ptr : constant AT_Store_Access :=
+        new Identity.Adapters.Repositories.Memory.Store;
+      AT_Repo : Identity.Adapters.Repositories.Memory.Store renames AT_Ptr.all;
+
+      use type Identity.Principals.Definitions.Principal_Lifecycle;
+      use type Identity.Principals.Kinds.Principal_Kind;
+      use type Identity.Projections.Sessions.Session_Summary_Projection;
+
+      AT_P1 : constant Identity.Identifiers.Entities.Principal_Id :=
+        Identity.Identifiers.Entities.Principal
+          (Identity.Identifiers.From_String ("f0000000-0000-0000-0000-000000000001"));
+      AT_P2 : constant Identity.Identifiers.Entities.Principal_Id :=
+        Identity.Identifiers.Entities.Principal
+          (Identity.Identifiers.From_String ("f0000000-0000-0000-0000-000000000002"));
+      AT_A1 : constant Identity.Identifiers.Entities.Account_Id :=
+        Identity.Identifiers.Entities.Account
+          (Identity.Identifiers.From_String ("f0000000-0000-0000-0000-000000000011"));
+      AT_F1 : constant Identity.Identifiers.Entities.Session_Family_Id :=
+        Identity.Identifiers.Entities.Session_Family
+          (Identity.Identifiers.From_String ("f0000000-0000-0000-0000-000000000021"));
+      AT_S1 : constant Identity.Identifiers.Entities.Session_Id :=
+        Identity.Identifiers.Entities.Session
+          (Identity.Identifiers.From_String ("f0000000-0000-0000-0000-000000000031"));
+      AT_S2 : constant Identity.Identifiers.Entities.Session_Id :=
+        Identity.Identifiers.Entities.Session
+          (Identity.Identifiers.From_String ("f0000000-0000-0000-0000-000000000032"));
+      AT_S3 : constant Identity.Identifiers.Entities.Session_Id :=
+        Identity.Identifiers.Entities.Session
+          (Identity.Identifiers.From_String ("f0000000-0000-0000-0000-000000000033"));
+      AT_CS1 : constant Identity.Identifiers.Entities.Credential_Set_Id :=
+        Identity.Identifiers.Entities.Credential_Set
+          (Identity.Identifiers.From_String ("f0000000-0000-0000-0000-000000000041"));
+      AT_E1 : constant Identity.Identifiers.Entities.Event_Id :=
+        Identity.Identifiers.Entities.Event
+          (Identity.Identifiers.From_String ("f0000000-0000-0000-0000-000000000051"));
+
+      AT_Predecessor_Secret : constant Identity.Secrets.Sessions.Session_Secret :=
+        Identity.Secrets.Text.From_UTF_8 ("atomicity-predecessor-material");
+      AT_Successor_Secret : constant Identity.Secrets.Sessions.Session_Secret :=
+        Identity.Secrets.Text.From_UTF_8 ("atomicity-successor-material");
+      AT_Intruder_Secret : constant Identity.Secrets.Sessions.Session_Secret :=
+        Identity.Secrets.Text.From_UTF_8 ("atomicity-intruder-material");
+      AT_Code : constant Identity.Secrets.Recovery_Codes.Recovery_Code :=
+        Identity.Secrets.Text.From_UTF_8 ("atomicity-recovery-code-one");
+      AT_Absent_Code : constant Identity.Secrets.Recovery_Codes.Recovery_Code :=
+        Identity.Secrets.Text.From_UTF_8 ("atomicity-recovery-code-absent");
+
+      AT_Predecessor : constant Identity.Sessions.Definitions.Session_Record :=
+        (Id => AT_S1,
+         Family => AT_F1,
+         Principal => AT_P1,
+         Credential => (Present => False),
+         External_Provider => (Present => False),
+         Public_Reference => Identity.Text.Bounded.From_String ("atomicity-session-1"),
+         Secret_Verifier => Identity.Crypto.Secret_Verifiers.Derive_Text
+           (Identity.Crypto.Domains.Session_Token, AT_Predecessor_Secret),
+         Assurance => Identity.Assurance.Levels.Basic,
+         Attributes => (others => <>),
+         Created_At => 10,
+         Original_Authenticated_At => 10,
+         Primary_Authenticated_At => 10,
+         MFA_Completed_At => (Present => False),
+         Step_Up_At => (Present => False),
+         Last_Seen_At => 10,
+         Idle_Expires_At => (Present => True, Time_Point => 500),
+         Absolute_Expires_At => (Present => True, Time_Point => 5000),
+         Remembered => False,
+         Generation => 0,
+         State => Identity.Sessions.Definitions.Active,
+         Version => 0);
+
+      AT_Rotation : constant Identity.Operations.Sessions.Rotate.Rotate_Request :=
+        (Predecessor => AT_S1,
+         Id => AT_S2,
+         Family => AT_F1,
+         Principal => AT_P1,
+         Credential => (Present => False),
+         External_Provider => (Present => False),
+         Public_Reference => Identity.Text.Bounded.From_String ("atomicity-session-2"),
+         Secret => AT_Successor_Secret,
+         Assurance => Identity.Assurance.Levels.Basic,
+         Attributes => (others => <>),
+         Created_At => 20,
+         Original_Authenticated_At => 10,
+         Primary_Authenticated_At => 20,
+         MFA_Completed_At => (Present => False),
+         Step_Up_At => (Present => False),
+         Last_Seen_At => 20,
+         Idle_Expires_At => (Present => True, Time_Point => 600),
+         Absolute_Expires_At => (Present => True, Time_Point => 5000),
+         Remembered => False,
+         Generation => 1);
+
+      AT_Event : constant Identity.Events.Envelopes.Event_Envelope :=
+        (Id => AT_E1,
+         Type_Id => Identity.Events.Types.Session_Rotated,
+         Schema => 1,
+         Occurred_At => 20,
+         Recorded_At => 21,
+         Severity => Identity.Events.Envelopes.Notice,
+         Correlation => R1,
+         Operation => O1,
+         Actor =>
+           (Kind => Identity.Events.Envelopes.Authenticated_Principal,
+            Principal => (Present => True, Value => AT_P1)),
+         Subject => (Present => True, Value => AT_P1),
+         Target => Identity.Text.Bounded.From_String ("session"),
+         Outcome => Identity.Events.Envelopes.Succeeded);
+
+      Before_Sessions   : Natural := 0;
+      Before_Principals : Natural := 0;
+      Before_Events     : Natural := 0;
+      Before_Code_Sets  : Natural := 0;
+
+      Found_Before, Found_After, Found_Successor : Boolean := False;
+      Session_Before, Session_After, Session_Successor :
+        Identity.Sessions.Definitions.Session_Record;
+
+      Found_Principal_Before, Found_Principal_After : Boolean := False;
+      Principal_Before, Principal_After : Identity.Principals.Definitions.Principal_Record;
+
+      Found_Codes_Before, Found_Codes_After : Boolean := False;
+      Codes_Before, Codes_After : Identity.Recovery_Codes.Sets.Recovery_Code_Set_Record;
+
+      Opened_Context : Identity.Adapters.Repositories.Contexts.Repository_Context;
+      Began, Closed_Result, Late_Commit :
+        Identity.Adapters.Repositories.Transactions.Transaction_Result;
+   begin
+      Assert
+        (Identity.Operations.Principals.Create.Execute
+           (AT_Repo,
+            (Id => AT_P1,
+             Kind => Identity.Principals.Kinds.Human,
+             State => Identity.Principals.Definitions.Active,
+             Version => 0), Audit_Context, Next_Audit_Event, 1)
+         = Identity.Adapters.Repositories.Memory.Applied
+         and then Identity.Operations.Accounts.Create.Execute
+           (AT_Repo,
+            (Id => AT_A1,
+             Principal => AT_P1,
+             State => (others => <>),
+             Version => 0), Audit_Context, Next_Audit_Event, 1)
+           = Identity.Adapters.Repositories.Memory.Applied
+         and then Identity.Operations.Sessions.Create.Execute (AT_Repo, AT_Predecessor,
+                                                               Audit_Context, Next_Audit_Event, 1)
+           = Identity.Adapters.Repositories.Memory.Applied
+         and then Identity.Operations.Factors.Generate_Recovery_Codes.Execute
+           (AT_Repo,
+            Identity.Operations.Factors.Generate_Recovery_Codes.Generate_Request'
+              (Id => AT_CS1,
+               Principal => AT_P1,
+               Created_At => 10,
+               Count => 1,
+               Codes =>
+                 [1 =>
+                    (Code_Id => Identity.Text.Bounded.From_String ("atomicity-code-1"),
+                     Secret => AT_Code),
+                  others =>
+                    (Code_Id => Identity.Text.Bounded.From_String (""),
+                     Secret => AT_Absent_Code)]), Audit_Context, Next_Audit_Event, 1)
+           = Identity.Adapters.Repositories.Memory.Applied,
+         "atomicity: fixture principal, account, session and recovery-code set installed");
+
+      Before_Sessions := Identity.Adapters.Repositories.Memory.Session_Count (AT_Repo);
+      Before_Principals := Identity.Adapters.Repositories.Memory.Principal_Count (AT_Repo);
+      Before_Events := Identity.Adapters.Repositories.Memory.Event_Count (AT_Repo);
+      Before_Code_Sets :=
+        Identity.Adapters.Repositories.Memory.Recovery_Code_Set_Count (AT_Repo);
+      Identity.Adapters.Repositories.Memory.Find_Session
+        (AT_Repo, AT_S1, Found_Before, Session_Before);
+      Identity.Adapters.Repositories.Memory.Find_Principal
+        (AT_Repo, AT_P1, Found_Principal_Before, Principal_Before);
+      Identity.Adapters.Repositories.Memory.Find_Recovery_Code_Set
+        (AT_Repo, AT_CS1, Found_Codes_Before, Codes_Before);
+
+      Assert
+        (Found_Before
+         and then Session_Before.Version = 0
+         and then Session_Before.State = Identity.Sessions.Definitions.Active
+         and then Found_Principal_Before
+         and then Principal_Before.State = Identity.Principals.Definitions.Active
+         and then Found_Codes_Before
+         and then Codes_Before.Version = 0
+         and then Identity.Recovery_Codes.Sets.Summary (Codes_Before).Active_Count = 1,
+         "atomicity: pre-state captured before any failing command runs");
+
+      --  Absolute anchor: the block's own store held nothing before the
+      --  fixture ran, so every delta measured below is pinned to an exact
+      --  count and not merely to a difference.
+      Assert
+        (Before_Principals = 1
+         and then Before_Sessions = 1
+         and then Before_Code_Sets = 1
+         and then Before_Events = 4,
+         "atomicity: the isolated store holds exactly the fixture and no events yet");
+
+      --  Version_Conflict: stale staged session rotation.
+      Assert
+        (Identity.Operations.Sessions.Rotate.Execute
+           (AT_Repo,
+            Identity.Operations.Sessions.Rotate.Staged_Rotate_Request'
+              (Request => AT_Rotation,
+               Expected_Predecessor_Version => Session_Before.Version + 7), Audit_Context, Next_Audit_Event, 1)
+         = Identity.Adapters.Repositories.Memory.Version_Conflict,
+         "atomicity: stale staged session rotation reports a version conflict");
+
+      Identity.Adapters.Repositories.Memory.Find_Session
+        (AT_Repo, AT_S1, Found_After, Session_After);
+      Identity.Adapters.Repositories.Memory.Find_Session
+        (AT_Repo, AT_S2, Found_Successor, Session_Successor);
+
+      Assert
+        (Identity.Adapters.Repositories.Memory.Session_Count (AT_Repo) = Before_Sessions
+         and then Identity.Adapters.Repositories.Memory.Event_Count (AT_Repo) = Before_Events + 1
+         and then not Found_Successor,
+         "atomicity: version-conflicting rotation adds no session, and records the refusal as one event");
+
+      Assert
+        (Found_After
+         and then Session_After.Version = Session_Before.Version
+         and then Session_After.State = Session_Before.State
+         and then Session_After.Generation = Session_Before.Generation
+         and then Identity.Text.Bounded.Equal
+           (Session_After.Secret_Verifier, Session_Before.Secret_Verifier)
+         and then Identity.Text.Bounded.Equal
+           (Session_After.Public_Reference, Session_Before.Public_Reference),
+         "atomicity: version-conflicting rotation leaves the predecessor session untouched");
+
+      Assert
+        (Identity.Projections.Sessions.Summary (Session_After)
+         = Identity.Projections.Sessions.Summary (Session_Before),
+         "atomicity: version-conflicting rotation leaves the session projection unchanged");
+
+      --  The untouched predecessor must still be usable for a correct rotation.
+      Assert
+        (Identity.Operations.Sessions.Rotate.Execute
+           (AT_Repo,
+            Identity.Operations.Sessions.Rotate.Staged_Rotate_Request'
+              (Request => AT_Rotation,
+               Expected_Predecessor_Version => Session_Before.Version), Audit_Context, Next_Audit_Event, 1)
+         = Identity.Adapters.Repositories.Memory.Applied,
+         "atomicity: predecessor session survives a failed rotation and still rotates");
+
+      --  Mandatory-event atomicity: the applied transition is paired with its
+      --  mandatory audit event; the failed transition above emitted none.
+      Assert
+        (Identity.Events.Schemas.Requires_Mandatory_Audit
+           (Identity.Events.Types.Session_Rotated)
+         and then Identity.Adapters.Repositories.Memory.Append_Event (AT_Repo, AT_Event)
+           = Identity.Adapters.Repositories.Memory.Applied
+         and then Identity.Adapters.Repositories.Memory.Event_Count (AT_Repo)
+           = Before_Events + 3,
+         "atomicity: applied rotation carries its mandatory audit event");
+
+      Assert
+        (Identity.Adapters.Repositories.Memory.Append_Event (AT_Repo, AT_Event)
+         = Identity.Adapters.Repositories.Memory.Uniqueness_Conflict
+         and then Identity.Adapters.Repositories.Memory.Event_Count (AT_Repo)
+           = Before_Events + 3,
+         "atomicity: rejected duplicate event append does not extend the event log");
+
+      --  Uniqueness_Conflict: re-creating an existing principal.
+      Assert
+        (Identity.Operations.Principals.Create.Execute
+           (AT_Repo,
+            (Id => AT_P1,
+             Kind => Identity.Principals.Kinds.Service,
+             State => Identity.Principals.Definitions.Retired,
+             Version => 99), Audit_Context, Next_Audit_Event, 1)
+         = Identity.Adapters.Repositories.Memory.Uniqueness_Conflict,
+         "atomicity: duplicate principal creation reports a uniqueness conflict");
+
+      Identity.Adapters.Repositories.Memory.Find_Principal
+        (AT_Repo, AT_P1, Found_Principal_After, Principal_After);
+
+      Assert
+        (Identity.Adapters.Repositories.Memory.Principal_Count (AT_Repo) = Before_Principals
+         and then Found_Principal_After
+         and then Principal_After.Kind = Principal_Before.Kind
+         and then Principal_After.State = Principal_Before.State
+         and then Principal_After.Version = Principal_Before.Version,
+         "atomicity: rejected duplicate principal leaves the stored principal unmodified");
+
+      --  State_Conflict: a session for a principal the store does not hold.
+      Assert
+        (Identity.Operations.Sessions.Create.Execute
+           (AT_Repo,
+            (AT_Predecessor with delta
+               Id => AT_S3,
+               Principal => AT_P2,
+               Public_Reference => Identity.Text.Bounded.From_String ("atomicity-session-3"),
+               Secret_Verifier => Identity.Crypto.Secret_Verifiers.Derive_Text
+                 (Identity.Crypto.Domains.Session_Token, AT_Intruder_Secret)), Audit_Context, Next_Audit_Event, 1)
+         = Identity.Adapters.Repositories.Memory.State_Conflict
+         and then Identity.Adapters.Repositories.Memory.Session_Count (AT_Repo)
+           = Before_Sessions + 1,
+         "atomicity: state-conflicting session creation stores nothing");
+
+      --  A failed recovery-code consume must not burn the code.
+      Assert
+        (Identity.Operations.Factors.Consume_Recovery_Code.Execute
+           (AT_Repo, AT_CS1, AT_Absent_Code, Audit_Context, Next_Audit_Event, 1)
+         = Identity.Recovery_Codes.Sets.Not_Verified,
+         "atomicity: unmatched recovery code presentation is rejected");
+
+      Assert
+        (Identity.Operations.Factors.Consume_Recovery_Code.Execute
+           (AT_Repo,
+            Identity.Operations.Factors.Consume_Recovery_Code.Consume_Request'
+              (Set_Id => AT_CS1,
+               Expected_Version => Codes_Before.Version + 5,
+               Code => AT_Code), Audit_Context, Next_Audit_Event, 1)
+         = Identity.Recovery_Codes.Sets.State_Conflict,
+         "atomicity: stale staged recovery-code consume reports a state conflict");
+
+      Identity.Adapters.Repositories.Memory.Find_Recovery_Code_Set
+        (AT_Repo, AT_CS1, Found_Codes_After, Codes_After);
+
+      Assert
+        (Found_Codes_After
+         and then Codes_After.Version = Codes_Before.Version
+         and then Identity.Recovery_Codes.Sets.Summary (Codes_After).Active_Count
+           = Identity.Recovery_Codes.Sets.Summary (Codes_Before).Active_Count
+         and then Identity.Recovery_Codes.Sets.Summary (Codes_After).Consumed_Count = 0
+         and then Identity.Adapters.Repositories.Memory.Recovery_Code_Set_Count (AT_Repo)
+           = Before_Code_Sets,
+         "atomicity: failed recovery-code consumes leave the set version and counts intact");
+
+      Assert
+        (Identity.Operations.Factors.Consume_Recovery_Code.Execute
+           (AT_Repo, AT_CS1, AT_Code, Audit_Context, Next_Audit_Event, 1)
+         = Identity.Recovery_Codes.Sets.Consumed,
+         "atomicity: a recovery code refused by failed attempts is still consumable once");
+
+      --  Rollback on close: staged work is discarded, never committed.
+      Opened_Context :=
+        Identity.Adapters.Repositories.Contexts.Opened
+          (Identity.Adapters.Repositories.Memory.Capabilities);
+      Began :=
+        Identity.Adapters.Repositories.Transactions.Begin_Transaction
+          (Opened_Context.State, Identity.Adapters.Repositories.Read_Write);
+      Closed_Result :=
+        Identity.Adapters.Repositories.Transactions.Close (Began.State);
+      Late_Commit :=
+        Identity.Adapters.Repositories.Transactions.Commit (Closed_Result.State);
+
+      Assert
+        (Identity.Adapters.Repositories.Transactions.Active (Began)
+         and then Identity.Adapters.Repositories.Transactions.Rolled_Back (Closed_Result)
+         and then not Identity.Adapters.Repositories.Transactions.Committed (Closed_Result),
+         "atomicity: closing an active transaction rolls back rather than commits");
+
+      Assert
+        (Identity.Adapters.Repositories.Transactions.Failed (Late_Commit)
+         and then Late_Commit.Failure.Code
+           = Identity.Adapters.Repositories.Failures.Already_Finalized,
+         "atomicity: staged work discarded on close cannot be committed afterwards");
+   end Test_66_f0000000_0000_0000_0000;
+
+   --  ------------------------------------------------------------------
+   --  disclosure projection suite: untrusted disclosure never leaks the
+   --  internal cause, trusted disclosure keeps causes distinct, and no
+   --  projection carries secret or verifier material.
+   --  ------------------------------------------------------------------
+
+   procedure Test_67_f1000000_0000_0000_0000 (T : in out AUnit.Test_Cases.Test_Case'Class) is
+      pragma Unreferenced (T);
+      use type Identity.Operations.Disclosure.Disclosure_Profile_Rules;
+      use type Identity.Passwords.Credentials.Password_Credential_Projection;
+      use type Identity.Projections.Sessions.Session_Summary_Projection;
+
+      Untrusted : constant Identity.Operations.Disclosure.Disclosure_Profile :=
+        Identity.Operations.Disclosure.Untrusted_Interactive;
+      Untrusted_Machine : constant Identity.Operations.Disclosure.Disclosure_Profile :=
+        Identity.Operations.Disclosure.Untrusted_API;
+      Trusted : constant Identity.Operations.Disclosure.Disclosure_Profile :=
+        Identity.Operations.Disclosure.Trusted_Administrative;
+
+      DS_P1 : constant Identity.Identifiers.Entities.Principal_Id :=
+        Identity.Identifiers.Entities.Principal
+          (Identity.Identifiers.From_String ("f1000000-0000-0000-0000-000000000001"));
+      DS_C1 : constant Identity.Identifiers.Entities.Credential_Id :=
+        Identity.Identifiers.Entities.Credential
+          (Identity.Identifiers.From_String ("f1000000-0000-0000-0000-000000000011"));
+      DS_F1 : constant Identity.Identifiers.Entities.Session_Family_Id :=
+        Identity.Identifiers.Entities.Session_Family
+          (Identity.Identifiers.From_String ("f1000000-0000-0000-0000-000000000021"));
+      DS_S1 : constant Identity.Identifiers.Entities.Session_Id :=
+        Identity.Identifiers.Entities.Session
+          (Identity.Identifiers.From_String ("f1000000-0000-0000-0000-000000000031"));
+      DS_E1 : constant Identity.Identifiers.Entities.Event_Id :=
+        Identity.Identifiers.Entities.Event
+          (Identity.Identifiers.From_String ("f1000000-0000-0000-0000-000000000041"));
+
+      DS_Secret_One : constant Identity.Secrets.Sessions.Session_Secret :=
+        Identity.Secrets.Text.From_UTF_8 ("disclosure-session-material-one");
+      DS_Secret_Two : constant Identity.Secrets.Sessions.Session_Secret :=
+        Identity.Secrets.Text.From_UTF_8 ("disclosure-session-material-two");
+
+      DS_Session_One : constant Identity.Sessions.Definitions.Session_Record :=
+        (Id => DS_S1,
+         Family => DS_F1,
+         Principal => DS_P1,
+         Credential => (Present => True, Value => DS_C1),
+         External_Provider => (Present => False),
+         Public_Reference => Identity.Text.Bounded.From_String ("disclosure-session-1"),
+         Secret_Verifier => Identity.Crypto.Secret_Verifiers.Derive_Text
+           (Identity.Crypto.Domains.Session_Token, DS_Secret_One),
+         Assurance => Identity.Assurance.Levels.Basic,
+         Attributes => (others => <>),
+         Created_At => 30,
+         Original_Authenticated_At => 30,
+         Primary_Authenticated_At => 30,
+         MFA_Completed_At => (Present => False),
+         Step_Up_At => (Present => False),
+         Last_Seen_At => 30,
+         Idle_Expires_At => (Present => True, Time_Point => 700),
+         Absolute_Expires_At => (Present => True, Time_Point => 7000),
+         Remembered => False,
+         Generation => 0,
+         State => Identity.Sessions.Definitions.Active,
+         Version => 0);
+
+      DS_Session_Two : constant Identity.Sessions.Definitions.Session_Record :=
+        (DS_Session_One with delta
+           Secret_Verifier => Identity.Crypto.Secret_Verifiers.Derive_Text
+             (Identity.Crypto.Domains.Session_Token, DS_Secret_Two));
+
+      DS_Password_One : constant Identity.Passwords.Credentials.Password_Credential_Record :=
+        (Id => DS_C1,
+         Principal => DS_P1,
+         State => Identity.Credentials.States.Active,
+         Verifier => Identity.Text.Bounded.From_String ("disclosure-password-verifier-one"),
+         Version => 3);
+      DS_Password_Two : constant Identity.Passwords.Credentials.Password_Credential_Record :=
+        (DS_Password_One with delta
+           Verifier => Identity.Text.Bounded.From_String ("disclosure-password-verifier-two"));
+
+      DS_Sensitive : constant Identity.Text.Bounded.Bounded_Text :=
+        Identity.Text.Bounded.From_String ("disclosure-sensitive-target");
+
+      DS_Event_Redacted : constant Identity.Events.Envelopes.Event_Envelope :=
+        (Id => DS_E1,
+         Type_Id => Identity.Events.Types.Session_Revoked,
+         Schema => 1,
+         Occurred_At => 30,
+         Recorded_At => 31,
+         Severity => Identity.Events.Envelopes.Notice,
+         Correlation => R1,
+         Operation => O1,
+         Actor =>
+           (Kind => Identity.Events.Envelopes.Authenticated_Principal,
+            Principal => (Present => True, Value => DS_P1)),
+         Subject => (Present => True, Value => DS_P1),
+         Target => Identity.Redaction.Public_Image
+           (Identity.Events.Classification.Sensitive, DS_Sensitive),
+         Outcome => Identity.Events.Envelopes.Succeeded);
+
+      DS_Event_Raw : constant Identity.Events.Envelopes.Event_Envelope :=
+        (DS_Event_Redacted with delta Target => DS_Sensitive);
+
+      DS_Projected : constant Identity.Projections.Events.Event_Projection := DS_Event_Redacted;
+
+      Untrusted_Collapses : Boolean := True;
+      Profiles_Agree      : Boolean := True;
+      Token_Collapses     : Boolean := True;
+   begin
+      for Status in Identity.Results.Operation_Status loop
+         if Identity.Results.Disclosure_Generic_Rejection (Status)
+           or else Identity.Results.Conflict_Status (Status)
+         then
+            if Identity.Operations.Disclosure.To_Disclosure_Safe_Result (Status, Untrusted)
+              not in Identity.Operations.Disclosure.Authentication_Rejected
+                   | Identity.Operations.Disclosure.Authentication_Throttled
+            then
+               Untrusted_Collapses := False;
+            end if;
+         end if;
+
+         if Identity.Operations.Disclosure.To_Disclosure_Safe_Result (Status, Untrusted)
+           /= Identity.Operations.Disclosure.To_Disclosure_Safe_Result (Status, Untrusted_Machine)
+         then
+            Profiles_Agree := False;
+         end if;
+      end loop;
+
+      for Outcome in Identity.Tokens.Verification.Token_Verification_Outcome loop
+         if not Identity.Tokens.Verification.Is_Valid (Outcome)
+           and then Outcome /= Identity.Tokens.Verification.Infrastructure_Failure
+           and then Identity.Operations.Disclosure.To_Disclosure_Safe_Result (Outcome, Untrusted)
+             /= Identity.Operations.Disclosure.Token_Invalid_Or_Expired
+         then
+            Token_Collapses := False;
+         end if;
+      end loop;
+
+      Assert
+        (Untrusted_Collapses,
+         "disclosure: every rejection-class internal status collapses to a public rejection");
+
+      Assert
+        (Profiles_Agree,
+         "disclosure: the two untrusted profiles disclose identically for every internal status");
+
+      Assert
+        (Token_Collapses,
+         "disclosure: every invalid token outcome collapses to one untrusted token status");
+
+      Assert
+        (Identity.Operations.Disclosure.To_Disclosure_Safe_Result
+           (Identity.Results.Rejected, Untrusted)
+         = Identity.Operations.Disclosure.To_Disclosure_Safe_Result
+           (Identity.Results.Conflict, Untrusted)
+         and then Identity.Operations.Disclosure.To_Disclosure_Safe_Result
+           (Identity.Results.Conflict, Untrusted)
+           = Identity.Operations.Disclosure.To_Disclosure_Safe_Result
+             (Identity.Results.Additional_Factor_Required, Untrusted)
+         and then Identity.Operations.Disclosure.To_Disclosure_Safe_Result
+           (Identity.Results.Additional_Factor_Required, Untrusted)
+           = Identity.Operations.Disclosure.To_Disclosure_Safe_Result
+             (Identity.Results.Verification_Required, Untrusted),
+         "disclosure: untrusted disclosure cannot distinguish rejection, conflict or step-up");
+
+      Assert
+        (Identity.Operations.Disclosure.To_Disclosure_Safe_Result
+           (Identity.Results.Conflict, Trusted)
+         /= Identity.Operations.Disclosure.To_Disclosure_Safe_Result
+           (Identity.Results.Rejected, Trusted)
+         and then Identity.Operations.Disclosure.To_Disclosure_Safe_Result
+           (Identity.Results.Additional_Factor_Required, Trusted)
+           /= Identity.Operations.Disclosure.To_Disclosure_Safe_Result
+             (Identity.Results.Rejected, Trusted)
+         and then Identity.Operations.Disclosure.Conflict_Detail_Visible
+           (Identity.Operations.Disclosure.To_Disclosure_Safe_Result
+              (Identity.Results.Conflict, Trusted))
+         and then Identity.Operations.Disclosure.Additional_Action
+           (Identity.Operations.Disclosure.To_Disclosure_Safe_Result
+              (Identity.Results.Additional_Factor_Required, Trusted)),
+         "disclosure: trusted disclosure keeps conflict and step-up causes distinct");
+
+      Assert
+        (Identity.Operations.Disclosure.To_Disclosure_Safe_Result
+           (Identity.Tokens.Verification.State_Conflict, Trusted)
+         /= Identity.Operations.Disclosure.To_Disclosure_Safe_Result
+           (Identity.Tokens.Verification.Expired, Trusted)
+         and then Identity.Operations.Disclosure.To_Disclosure_Safe_Result
+           (Identity.Tokens.Verification.State_Conflict, Untrusted)
+           = Identity.Operations.Disclosure.To_Disclosure_Safe_Result
+             (Identity.Tokens.Verification.Expired, Untrusted),
+         "disclosure: token state conflict is visible only to trusted disclosure");
+
+      Assert
+        (Identity.Operations.Disclosure.Reveals_No_More_Than (Untrusted, Trusted)
+         and then Identity.Operations.Disclosure.Reveals_No_More_Than (Untrusted, Untrusted_Machine)
+         and then not Identity.Operations.Disclosure.Reveals_No_More_Than (Trusted, Untrusted)
+         and then not Identity.Operations.Disclosure.Reveals_No_More_Than
+           (Identity.Operations.Disclosure.Internal_Operations, Trusted),
+         "disclosure: the profile lattice orders untrusted strictly below trusted");
+
+      Assert
+        (Identity.Operations.Disclosure.Rules_For (Untrusted)
+         = Identity.Operations.Disclosure.Rules_For (Untrusted_Machine)
+         and then Identity.Operations.Disclosure.Rules_For (Untrusted)
+           = Identity.Operations.Disclosure.Disclosure_Profile_Rules'(others => False),
+         "disclosure: untrusted profiles carry no detail flag at all");
+
+      Assert
+        (not Identity.Operations.Disclosure.Rules_For (Trusted).Token_State_Detail
+         and then not Identity.Operations.Disclosure.Rules_For
+           (Identity.Operations.Disclosure.Authenticated_Self_Service).Token_State_Detail
+         and then Identity.Operations.Disclosure.Rules_For
+           (Identity.Operations.Disclosure.Internal_Operations).Token_State_Detail,
+         "disclosure: token state detail is reserved to internal operations");
+
+      Assert
+        (Identity.Identifiers.Registry.Image
+           (Identity.Errors.Public.To_Public
+              ((Category => Identity.Errors.Rejection, others => <>)).Code)
+         = Identity.Identifiers.Registry.Image
+           (Identity.Errors.Public.To_Public
+              ((Category => Identity.Errors.Invalid_Input, others => <>)).Code)
+         and then Identity.Errors.Public.Generic_Authentication_Rejection
+           (Identity.Errors.Public.To_Public
+              ((Category => Identity.Errors.Additional_Action_Required, others => <>)))
+         and then not Identity.Errors.Public.Generic_Authentication_Rejection
+           (Identity.Errors.Public.To_Public
+              ((Category => Identity.Errors.Conflict, others => <>))),
+         "disclosure: public error codes collapse rejection causes but keep conflict apart");
+
+      Assert
+        (not Identity.Errors.Public.To_Public
+           ((Category => Identity.Errors.Internal_Invariant_Failure,
+             Cause => Identity.Errors.Bug,
+             others => <>)).Diagnostic_Allowed
+         and then not Identity.Errors.Public.Diagnostic_Disclosure_Allowed
+           (Identity.Errors.Public.To_Public
+              ((Category => Identity.Errors.Internal_Invariant_Failure,
+                Cause => Identity.Errors.Bug,
+                others => <>))),
+         "disclosure: internal invariant failures disclose no diagnostic by default");
+
+      Assert
+        (Identity.Projections.Sessions.Summary (DS_Session_One)
+         = Identity.Projections.Sessions.Summary (DS_Session_Two)
+         and then not Identity.Text.Bounded.Equal
+           (DS_Session_One.Secret_Verifier, DS_Session_Two.Secret_Verifier)
+         and then Identity.Projections.Sessions.Summary (DS_Session_One).Verifier_Present,
+         "disclosure: session projections differ in no way when only the verifier differs");
+
+      Assert
+        (Identity.Passwords.Credentials.Summary (DS_Password_One)
+         = Identity.Passwords.Credentials.Summary (DS_Password_Two)
+         and then not Identity.Text.Bounded.Equal
+           (DS_Password_One.Verifier, DS_Password_Two.Verifier)
+         and then Identity.Passwords.Credentials.Summary (DS_Password_One).Verifier_Present,
+         "disclosure: password projections report verifier presence but not verifier material");
+
+      Assert
+        (Identity.Text.Bounded.Equal
+           (DS_Event_Redacted.Target, Identity.Text.Redacted.Redacted)
+         and then not Identity.Text.Bounded.Equal (DS_Event_Redacted.Target, DS_Sensitive)
+         and then Identity.Text.Bounded.Equal
+           (DS_Projected.Target, Identity.Text.Redacted.Redacted),
+         "disclosure: redacted target text stays redacted after event projection");
+
+      Assert
+        (not Identity.Text.Bounded.Equal
+           (Identity.Events.Canonical.Encode (DS_Event_Redacted),
+            Identity.Events.Canonical.Encode (DS_Event_Raw))
+         and then Identity.Text.Bounded.Equal
+           (Identity.Events.Canonical.Encode (DS_Event_Redacted),
+            Identity.Events.Canonical.Encode
+              ((DS_Event_Redacted with delta
+                  Target => Identity.Text.Redacted.Redacted))),
+         "disclosure: canonical encoding of a redacted event carries the redaction, not the value");
+
+      Assert
+        (Identity.Projections.Events.Has_Subject_Principal (DS_Projected)
+         and then Identity.Projections.Events.Actor_Matches_Subject (DS_Projected)
+         and then not Identity.Projections.Events.Requires_Operational_Attention
+           (DS_Projected),
+         "disclosure: event projection exposes only structural actor and subject facts");
+   end Test_67_f1000000_0000_0000_0000;
+
+   --  ------------------------------------------------------------------
+   --  event registry coverage: each of the sixteen public event constants
+   --  is appended through the real store, then checked against the schema
+   --  registry, its registered identifier and its canonical encoding.
+   --  ------------------------------------------------------------------
+
+   procedure Test_68_f2000000_0000_0000_0000 (T : in out AUnit.Test_Cases.Test_Case'Class) is
+      pragma Unreferenced (T);
+      use type Identity.Versions.Schema_Version;
+
+      Base_Events : constant Natural :=
+        Identity.Adapters.Repositories.Memory.Event_Count (Repository);
+
+      EV_P1 : constant Identity.Identifiers.Entities.Principal_Id :=
+        Identity.Identifiers.Entities.Principal
+          (Identity.Identifiers.From_String ("f2000000-0000-0000-0000-000000000001"));
+
+      function EV_Id (Suffix : String) return Identity.Identifiers.Entities.Event_Id is
+        (Identity.Identifiers.Entities.Event
+           (Identity.Identifiers.From_String ("f2000000-0000-0000-0000-0000000000" & Suffix)));
+
+      function EV
+        (Suffix  : String;
+         Type_Id : Identity.Identifiers.Registry.Registry_Id)
+         return Identity.Events.Envelopes.Event_Envelope is
+        ((Id => EV_Id (Suffix),
+          Type_Id => Type_Id,
+          Schema => 1,
+          Occurred_At => 40,
+          Recorded_At => 41,
+          Severity => Identity.Events.Envelopes.Informational,
+          Correlation => R1,
+          Operation => O1,
+          Actor =>
+            (Kind => Identity.Events.Envelopes.Authenticated_Principal,
+             Principal => (Present => True, Value => EV_P1)),
+          Subject => (Present => True, Value => EV_P1),
+          Target => Identity.Text.Bounded.From_String ("registry-coverage"),
+          Outcome => Identity.Events.Envelopes.Succeeded));
+
+      function Covered
+        (Store_Ref : in out Identity.Adapters.Repositories.Memory.Store;
+         Suffix    : String;
+         Type_Id   : Identity.Identifiers.Registry.Registry_Id;
+         Expected  : String;
+         Position  : Positive) return Boolean
+      is
+      begin
+         return
+           Identity.Adapters.Repositories.Memory.Append_Event (Store_Ref, EV (Suffix, Type_Id))
+           = Identity.Adapters.Repositories.Memory.Applied
+           and then Identity.Adapters.Repositories.Memory.Event_Count (Store_Ref)
+             = Base_Events + Position
+         and then Identity.Identifiers.Registry.Image (Type_Id) = Expected
+         and then Identity.Identifiers.Registry.Image (Type_Id)'Length > 0
+         and then Identity.Events.Schemas.Known (Type_Id)
+         and then Identity.Events.Schemas.Requires_Mandatory_Audit (Type_Id)
+         and then Identity.Events.Schemas.Registration_For (Type_Id).Schema.Version = 1
+         and then Identity.Events.Classification.Allowed_In_Ordinary_Event
+           (Identity.Events.Schemas.Registration_For (Type_Id).Class)
+           and then Identity.Text.Bounded.Length
+             (Identity.Events.Canonical.Encode (EV (Suffix, Type_Id))) > 0;
+      end Covered;
+   begin
+      Assert
+        (Covered
+           (Repository, "01", Identity.Events.Types.Authentication_Succeeded,
+            "identity.authentication.succeeded", 1),
+         "events: identity.authentication.succeeded appends and matches its registration");
+
+      Assert
+        (Covered
+           (Repository, "02", Identity.Events.Types.Authentication_Rejected,
+            "identity.authentication.rejected", 2),
+         "events: identity.authentication.rejected appends and matches its registration");
+
+      Assert
+        (Covered
+           (Repository, "03", Identity.Events.Types.Session_Created,
+            "identity.session.created", 3),
+         "events: identity.session.created appends and matches its registration");
+
+      Assert
+        (Covered
+           (Repository, "04", Identity.Events.Types.Session_Rotated,
+            "identity.session.rotated", 4),
+         "events: identity.session.rotated appends and matches its registration");
+
+      Assert
+        (Covered
+           (Repository, "05", Identity.Events.Types.Session_Revoked,
+            "identity.session.revoked", 5),
+         "events: identity.session.revoked appends and matches its registration");
+
+      Assert
+        (Covered
+           (Repository, "06", Identity.Events.Types.Password_Changed,
+            "identity.password.changed", 6),
+         "events: identity.password.changed appends and matches its registration");
+
+      Assert
+        (Covered
+           (Repository, "07", Identity.Events.Types.Password_Reset_Requested,
+            "identity.password.reset.requested", 7),
+         "events: identity.password.reset.requested appends and matches its registration");
+
+      Assert
+        (Covered
+           (Repository, "08", Identity.Events.Types.Password_Reset_Completed,
+            "identity.password.reset.completed", 8),
+         "events: identity.password.reset.completed appends and matches its registration");
+
+      Assert
+        (Covered
+           (Repository, "09", Identity.Events.Types.Account_Disabled,
+            "identity.account.disabled", 9),
+         "events: identity.account.disabled appends and matches its registration");
+
+      Assert
+        (Covered
+           (Repository, "10", Identity.Events.Types.Contact_Verified,
+            "identity.contact.verified", 10),
+         "events: identity.contact.verified appends and matches its registration");
+
+      Assert
+        (Covered
+           (Repository, "11", Identity.Events.Types.MFA_Challenge_Completed,
+            "identity.mfa.challenge.completed", 11),
+         "events: identity.mfa.challenge.completed appends and matches its registration");
+
+      Assert
+        (Covered
+           (Repository, "12", Identity.Events.Types.Recovery_Completed,
+            "identity.recovery.completed", 12),
+         "events: identity.recovery.completed appends and matches its registration");
+
+      Assert
+        (Covered
+           (Repository, "13", Identity.Events.Types.API_Key_Authenticated,
+            "identity.api-key.authenticated", 13),
+         "events: identity.api-key.authenticated appends and matches its registration");
+
+      Assert
+        (Covered
+           (Repository, "14", Identity.Events.Types.API_Key_Revoked,
+            "identity.api-key.revoked", 14),
+         "events: identity.api-key.revoked appends and matches its registration");
+
+      Assert
+        (Covered
+           (Repository, "15", Identity.Events.Types.TOTP_Replay_Detected,
+            "identity.totp.replay-detected", 15),
+         "events: identity.totp.replay-detected appends and matches its registration");
+
+      Assert
+        (Covered
+           (Repository, "16", Identity.Events.Types.External_Assertion_Replay_Detected,
+            "identity.external.assertion.replay-detected", 16),
+         "events: identity.external.assertion.replay-detected appends and matches registration");
+
+      Assert
+        (Identity.Adapters.Repositories.Memory.Event_Count (Repository) = Base_Events + 16,
+         "events: all sixteen registered event constants were appended to one store");
+
+      Assert
+        (not Identity.Events.Schemas.Known
+           (Identity.Identifiers.Registry.From_String ("identity.event.not-registered"))
+         and then not Identity.Events.Schemas.Requires_Mandatory_Audit
+           (Identity.Identifiers.Registry.From_String ("identity.event.not-registered")),
+         "events: an identifier outside the registry is neither known nor audit-mandatory");
+   end Test_68_f2000000_0000_0000_0000;
+
+   --  ------------------------------------------------------------------
+   --  audited emission coverage: every one of the sixteen event types is
+   --  produced by calling the AUDITED overload of the operation that emits
+   --  it, rather than by appending the event to the store directly. Each
+   --  case reads the event count before the call, asserts the audited
+   --  overload adds exactly one event, and asserts the plain overload of
+   --  the same operation adds none.
+   --
+   --  The count alone would only prove that something was written. Each
+   --  audited case therefore also reads the event back through Find_Event
+   --  and checks the RECORDED type identifier and outcome against the
+   --  constant the operation is specified to emit, and several cases check
+   --  that the envelope carries the context's Requested_At as Occurred_At
+   --  and the caller's timestamp as Recorded_At.
+   --
+   --  This block owns an isolated, heap-allocated store: it fills its own
+   --  event log to capacity at the end, and must not leave a full log
+   --  behind for anyone else. Nothing here depends on execution order
+   --  relative to any other block, and assertions may freely follow it.
+   --  ------------------------------------------------------------------
+
+   procedure Test_69_f3000000_0000_0000_0000 (T : in out AUnit.Test_Cases.Test_Case'Class) is
+      pragma Unreferenced (T);
+      --  A Memory.Store is several megabytes, so two of them will not fit
+      --  on the default stack: allocate on the heap, as the concurrency
+      --  suite does.
+      type EM_Store_Access is access Identity.Adapters.Repositories.Memory.Store;
+
+      EM_Ptr : constant EM_Store_Access :=
+        new Identity.Adapters.Repositories.Memory.Store;
+      EM_Repo : Identity.Adapters.Repositories.Memory.Store renames EM_Ptr.all;
+
+      function EM_Principal (Suffix : String)
+        return Identity.Identifiers.Entities.Principal_Id is
+        (Identity.Identifiers.Entities.Principal
+           (Identity.Identifiers.From_String
+              ("f3000000-0000-0000-0000-0000000000" & Suffix)));
+
+      function EM_Event (Suffix : String)
+        return Identity.Identifiers.Entities.Event_Id is
+        (Identity.Identifiers.Entities.Event
+           (Identity.Identifiers.From_String
+              ("f3000001-0000-0000-0000-0000000000" & Suffix)));
+
+      EM_P1 : constant Identity.Identifiers.Entities.Principal_Id := EM_Principal ("01");
+      EM_P2 : constant Identity.Identifiers.Entities.Principal_Id := EM_Principal ("02");
+      EM_P3 : constant Identity.Identifiers.Entities.Principal_Id := EM_Principal ("03");
+      EM_P4 : constant Identity.Identifiers.Entities.Principal_Id := EM_Principal ("04");
+      EM_P5 : constant Identity.Identifiers.Entities.Principal_Id := EM_Principal ("05");
+
+      EM_A1 : constant Identity.Identifiers.Entities.Account_Id :=
+        Identity.Identifiers.Entities.Account
+          (Identity.Identifiers.From_String ("f3000000-0000-0000-0000-000000000011"));
+      EM_A3 : constant Identity.Identifiers.Entities.Account_Id :=
+        Identity.Identifiers.Entities.Account
+          (Identity.Identifiers.From_String ("f3000000-0000-0000-0000-000000000013"));
+      EM_A5 : constant Identity.Identifiers.Entities.Account_Id :=
+        Identity.Identifiers.Entities.Account
+          (Identity.Identifiers.From_String ("f3000000-0000-0000-0000-000000000015"));
+
+      EM_B1 : constant Identity.Identifiers.Entities.Identity_Binding_Id :=
+        Identity.Identifiers.Entities.Identity_Binding
+          (Identity.Identifiers.From_String ("f3000000-0000-0000-0000-000000000021"));
+
+      EM_F1 : constant Identity.Identifiers.Entities.Session_Family_Id :=
+        Identity.Identifiers.Entities.Session_Family
+          (Identity.Identifiers.From_String ("f3000000-0000-0000-0000-000000000031"));
+
+      function EM_Session (Suffix : String)
+        return Identity.Identifiers.Entities.Session_Id is
+        (Identity.Identifiers.Entities.Session
+           (Identity.Identifiers.From_String
+              ("f3000000-0000-0000-0000-0000000000" & Suffix)));
+
+      EM_S1 : constant Identity.Identifiers.Entities.Session_Id := EM_Session ("32");
+      EM_S2 : constant Identity.Identifiers.Entities.Session_Id := EM_Session ("33");
+      EM_S3 : constant Identity.Identifiers.Entities.Session_Id := EM_Session ("34");
+      EM_S4 : constant Identity.Identifiers.Entities.Session_Id := EM_Session ("35");
+      EM_S5 : constant Identity.Identifiers.Entities.Session_Id := EM_Session ("36");
+
+      function EM_Credential (Suffix : String)
+        return Identity.Identifiers.Entities.Credential_Id is
+        (Identity.Identifiers.Entities.Credential
+           (Identity.Identifiers.From_String
+              ("f3000000-0000-0000-0000-0000000000" & Suffix)));
+
+      EM_C1 : constant Identity.Identifiers.Entities.Credential_Id := EM_Credential ("41");
+      EM_C2 : constant Identity.Identifiers.Entities.Credential_Id := EM_Credential ("42");
+      EM_C3 : constant Identity.Identifiers.Entities.Credential_Id := EM_Credential ("43");
+      EM_C4 : constant Identity.Identifiers.Entities.Credential_Id := EM_Credential ("44");
+      EM_C5 : constant Identity.Identifiers.Entities.Credential_Id := EM_Credential ("45");
+      EM_C6 : constant Identity.Identifiers.Entities.Credential_Id := EM_Credential ("46");
+
+      function EM_Token (Suffix : String)
+        return Identity.Identifiers.Entities.Token_Id is
+        (Identity.Identifiers.Entities.Token
+           (Identity.Identifiers.From_String
+              ("f3000000-0000-0000-0000-0000000000" & Suffix)));
+
+      EM_T1 : constant Identity.Identifiers.Entities.Token_Id := EM_Token ("51");
+      EM_T2 : constant Identity.Identifiers.Entities.Token_Id := EM_Token ("52");
+      EM_T3 : constant Identity.Identifiers.Entities.Token_Id := EM_Token ("53");
+
+      EM_CB1 : constant Identity.Identifiers.Entities.Contact_Binding_Id :=
+        Identity.Identifiers.Entities.Contact_Binding
+          (Identity.Identifiers.From_String ("f3000000-0000-0000-0000-000000000061"));
+
+      EM_MT1 : constant Identity.Identifiers.Entities.Authentication_Transaction_Id :=
+        Identity.Identifiers.Entities.Authentication_Transaction
+          (Identity.Identifiers.From_String ("f3000000-0000-0000-0000-000000000071"));
+      EM_CH1 : constant Identity.Identifiers.Entities.Challenge_Id :=
+        Identity.Identifiers.Entities.Challenge
+          (Identity.Identifiers.From_String ("f3000000-0000-0000-0000-000000000072"));
+      EM_RT1 : constant Identity.Identifiers.Entities.Authentication_Transaction_Id :=
+        Identity.Identifiers.Entities.Authentication_Transaction
+          (Identity.Identifiers.From_String ("f3000000-0000-0000-0000-000000000073"));
+
+      EM_EB1 : constant Identity.Identifiers.Entities.External_Binding_Id :=
+        Identity.Identifiers.Entities.External_Binding
+          (Identity.Identifiers.From_String ("f3000000-0000-0000-0000-000000000081"));
+
+      function EM_Attempt (Suffix : String)
+        return Identity.Identifiers.Entities.Attempt_Id is
+        (Identity.Identifiers.Entities.Attempt
+           (Identity.Identifiers.From_String
+              ("f3000000-0000-0000-0000-0000000000" & Suffix)));
+
+      EM_AT1 : constant Identity.Identifiers.Entities.Attempt_Id := EM_Attempt ("91");
+      EM_AT2 : constant Identity.Identifiers.Entities.Attempt_Id := EM_Attempt ("92");
+      EM_AT3 : constant Identity.Identifiers.Entities.Attempt_Id := EM_Attempt ("93");
+
+      EM_Login : constant Identity.Text.Bounded.Bounded_Text :=
+        Identity.Text.Bounded.From_String ("emission.user@example.test");
+      EM_Contact : constant Identity.Text.Bounded.Bounded_Text :=
+        Identity.Text.Bounded.From_String ("emission.contact@example.test");
+      EM_Key_Id : constant Identity.Text.Bounded.Bounded_Text :=
+        Identity.Text.Bounded.From_String ("emission-api-key-public-id");
+      EM_Ext_Subject : constant Identity.Text.Bounded.Bounded_Text :=
+        Identity.Text.Bounded.From_String ("emission-provider-subject");
+      EM_FP1 : constant Identity.Text.Bounded.Bounded_Text :=
+        Identity.Text.Bounded.From_String ("emission-assertion-fingerprint-1");
+      EM_FP2 : constant Identity.Text.Bounded.Bounded_Text :=
+        Identity.Text.Bounded.From_String ("emission-assertion-fingerprint-2");
+      EM_Fingerprint : constant Identity.Text.Bounded.Bounded_Text :=
+        Identity.Text.Bounded.From_String ("emission-subject-fingerprint");
+
+      EM_Ctx : constant Identity.Operations.Contexts.Operation_Context :=
+        (Operation => O1,
+         Correlation => R1,
+         Causation => (Present => False),
+         Request => (Present => False),
+         Actor =>
+           (Kind => Identity.Events.Envelopes.Authenticated_Principal,
+            Principal => (Present => True, Value => EM_P1)),
+         Requested_At => 200,
+         Deadline => Identity.Operations.Deadlines.None,
+         Cancellation =>
+           (State => Identity.Operations.Cancellation.Not_Cancelled),
+         Disclosure => Identity.Operations.Disclosure.Untrusted_API,
+         Diagnostic_Mode => False);
+
+      EM_Enabled_State : constant Identity.Accounts.States.Account_State_View :=
+        (Administrative => Identity.Accounts.States.Enabled,
+         Lifecycle => Identity.Accounts.States.Active,
+         Verification => Identity.Accounts.States.No_Verification_Required,
+         Lock_State => Identity.Accounts.States.Not_Locked,
+         Requirements => (others => False),
+         Recovery => (others => False));
+
+      function EM_Assertion (Fingerprint : Identity.Text.Bounded.Bounded_Text)
+        return Identity.External_Providers.Assertions.Normalized_Assertion is
+        ((Provider => EP1,
+          Protocol => OIDC_Protocol,
+          Issuer => External_Issuer,
+          External_Subject => EM_Ext_Subject,
+          Issued_At => 270,
+          Authentication_Time => 269,
+          Expires_At => (Present => True, Time_Point => 900),
+          Nonce => Identity.External_Providers.Assertions.Validated,
+          Assertion_Fingerprint => Fingerprint,
+          Validation_Profile => Adapter_Profile));
+
+      function EM_Create_Request
+        (Session   : Identity.Identifiers.Entities.Session_Id;
+         Reference : String)
+         return Identity.Operations.Sessions.Create.Create_Request is
+        ((Id => Session,
+          Family => EM_F1,
+          Principal => EM_P1,
+          Credential => (Present => False),
+          External_Provider => (Present => False),
+          Public_Reference => Identity.Text.Bounded.From_String (Reference),
+          Secret => Identity.Secrets.Text.From_UTF_8 ("emission-session-material"),
+          Assurance => Identity.Assurance.Levels.Basic,
+          Attributes => (others => <>),
+          Created_At => 200,
+          Original_Authenticated_At => 200,
+          Primary_Authenticated_At => 200,
+          MFA_Completed_At => (Present => False),
+          Step_Up_At => (Present => False),
+          Last_Seen_At => 200,
+          Idle_Expires_At => (Present => True, Time_Point => 800),
+          Absolute_Expires_At => (Present => True, Time_Point => 9000),
+          Remembered => False,
+          Generation => 0));
+
+      function EM_Rotate_Request
+        (Predecessor : Identity.Identifiers.Entities.Session_Id;
+         Successor   : Identity.Identifiers.Entities.Session_Id;
+         Reference   : String;
+         Generation  : Identity.Versions.Rotation_Generation)
+         return Identity.Operations.Sessions.Rotate.Rotate_Request is
+        ((Predecessor => Predecessor,
+          Id => Successor,
+          Family => EM_F1,
+          Principal => EM_P1,
+          Credential => (Present => False),
+          External_Provider => (Present => False),
+          Public_Reference => Identity.Text.Bounded.From_String (Reference),
+          Secret => Identity.Secrets.Text.From_UTF_8 ("emission-rotated-material"),
+          Assurance => Identity.Assurance.Levels.Basic,
+          Attributes => (others => <>),
+          Created_At => 205,
+          Original_Authenticated_At => 200,
+          Primary_Authenticated_At => 205,
+          MFA_Completed_At => (Present => False),
+          Step_Up_At => (Present => False),
+          Last_Seen_At => 205,
+          Idle_Expires_At => (Present => True, Time_Point => 800),
+          Absolute_Expires_At => (Present => True, Time_Point => 9000),
+          Remembered => False,
+          Generation => Generation));
+
+      function EM_Hex (Value : Natural; Width : Positive) return String is
+         Hex_Digits : constant String := "0123456789abcdef";
+         Result     : String (1 .. Width) := [others => '0'];
+         Rest       : Natural := Value;
+      begin
+         for Index in reverse Result'Range loop
+            Result (Index) := Hex_Digits (Hex_Digits'First + Rest mod 16);
+            Rest := Rest / 16;
+         end loop;
+         return Result;
+      end EM_Hex;
+
+      function EM_Filler (Index : Positive)
+        return Identity.Events.Envelopes.Event_Envelope is
+        ((Id => Identity.Identifiers.Entities.Event
+            (Identity.Identifiers.From_String
+               ("f3000002-0000-0000-0000-" & EM_Hex (Index, 12))),
+          Type_Id => Identity.Events.Types.Session_Created,
+          Schema => 1,
+          Occurred_At => 400,
+          Recorded_At => 401,
+          Severity => Identity.Events.Envelopes.Informational,
+          Correlation => R1,
+          Operation => O1,
+          Actor =>
+            (Kind => Identity.Events.Envelopes.Authenticated_Principal,
+             Principal => (Present => True, Value => EM_P1)),
+          Subject => (Present => True, Value => EM_P1),
+          Target => Identity.Text.Bounded.From_String ("emission-filler"),
+          Outcome => Identity.Events.Envelopes.Succeeded));
+
+      EM_Before        : Natural := 0;
+      EM_Before_Sessions : Natural := 0;
+      EM_Filled        : Natural := 0;
+      EM_Fill_Status   : Identity.Adapters.Repositories.Memory.Command_Status :=
+        Identity.Adapters.Repositories.Memory.Applied;
+      EM_Version       : Identity.Versions.Entity_Version := 0;
+      EM_Token_Version : Identity.Versions.Entity_Version := 0;
+      EM_Counter       : Identity.One_Time_Passwords.Credentials.TOTP_Counter := 0;
+      EM_TOTP_Status   : Identity.One_Time_Passwords.Credentials.TOTP_Accept_Status :=
+        Identity.One_Time_Passwords.Credentials.Accepted;
+      EM_Found         : Boolean := False;
+      EM_Replays       : Natural := 0;
+
+      --  Read-back state. EM_Read_Last fetches the newest recorded event so
+      --  that an assertion can name the type identifier and outcome the
+      --  operation was supposed to record, rather than inferring them from
+      --  a count that moved.
+      EM_Read_Found : Boolean := False;
+      EM_Read       : Identity.Events.Envelopes.Event_Envelope := EM_Filler (1);
+
+      procedure EM_Read_Last is
+         Position : constant Natural :=
+           Identity.Adapters.Repositories.Memory.Event_Count (EM_Repo);
+      begin
+         EM_Read_Found := False;
+         if Position > 0 then
+            Identity.Adapters.Repositories.Memory.Find_Event
+              (EM_Repo, Position, EM_Read_Found, EM_Read);
+         end if;
+      end EM_Read_Last;
+   begin
+      --  Fixtures. None of these operations emit events, so the event count
+      --  is asserted to be unchanged across the whole installation.
+      EM_Before := Identity.Adapters.Repositories.Memory.Event_Count (EM_Repo);
+
+      Assert
+        (Identity.Operations.Principals.Create.Execute
+           (EM_Repo,
+            (Id => EM_P1,
+             Kind => Identity.Principals.Kinds.Human,
+             State => Identity.Principals.Definitions.Active,
+             Version => 0), Audit_Context, Next_Audit_Event, 1)
+         = Identity.Adapters.Repositories.Memory.Applied
+         and then Identity.Operations.Principals.Create.Execute
+           (EM_Repo,
+            (Id => EM_P2,
+             Kind => Identity.Principals.Kinds.Service,
+             State => Identity.Principals.Definitions.Active,
+             Version => 0), Audit_Context, Next_Audit_Event, 1)
+           = Identity.Adapters.Repositories.Memory.Applied
+         and then Identity.Operations.Principals.Create.Execute
+           (EM_Repo,
+            (Id => EM_P3,
+             Kind => Identity.Principals.Kinds.Human,
+             State => Identity.Principals.Definitions.Active,
+             Version => 0), Audit_Context, Next_Audit_Event, 1)
+           = Identity.Adapters.Repositories.Memory.Applied
+         and then Identity.Operations.Principals.Create.Execute
+           (EM_Repo,
+            (Id => EM_P4,
+             Kind => Identity.Principals.Kinds.Human,
+             State => Identity.Principals.Definitions.Active,
+             Version => 0), Audit_Context, Next_Audit_Event, 1)
+           = Identity.Adapters.Repositories.Memory.Applied
+         and then Identity.Operations.Principals.Create.Execute
+           (EM_Repo,
+            (Id => EM_P5,
+             Kind => Identity.Principals.Kinds.Human,
+             State => Identity.Principals.Definitions.Active,
+             Version => 0), Audit_Context, Next_Audit_Event, 1)
+           = Identity.Adapters.Repositories.Memory.Applied,
+         "emission: fixture principals created");
+
+      Assert
+        (Identity.Operations.Accounts.Create.Execute
+           (EM_Repo,
+            (Id => EM_A1, Principal => EM_P1, State => EM_Enabled_State, Version => 0),
+            Audit_Context, Next_Audit_Event, 1)
+         = Identity.Adapters.Repositories.Memory.Applied
+         and then Identity.Operations.Accounts.Create.Execute
+           (EM_Repo,
+            (Id => EM_A3, Principal => EM_P3, State => EM_Enabled_State, Version => 0),
+            Audit_Context, Next_Audit_Event, 1)
+           = Identity.Adapters.Repositories.Memory.Applied
+         and then Identity.Operations.Accounts.Create.Execute
+           (EM_Repo,
+            (Id => EM_A5, Principal => EM_P5, State => EM_Enabled_State, Version => 0),
+            Audit_Context, Next_Audit_Event, 1)
+           = Identity.Adapters.Repositories.Memory.Applied
+         and then Identity.Operations.Identities.Add.Execute
+           (EM_Repo,
+            (Id => EM_B1,
+             Principal => EM_P1,
+             Kind => Login_Kind,
+             Normalized => EM_Login,
+             State => Identity.Identities.Bindings.Active,
+             Version => 0), Audit_Context, Next_Audit_Event, 1)
+           = Identity.Adapters.Repositories.Memory.Applied
+         and then Identity.Operations.Passwords.Enroll.Execute
+           (EM_Repo, EM_P1, EM_C1, New_Password, Audit_Context, Next_Audit_Event, 1)
+           = Identity.Adapters.Repositories.Memory.Applied,
+         "emission: fixture accounts, login binding and password credential installed");
+
+      Assert
+        (Identity.Adapters.Repositories.Memory.Event_Count (EM_Repo) = EM_Before + 10,
+         "emission: the ten audited fixture operations record ten events");
+
+      --  Absolute, not relative: this block owns its store, so the log can
+      --  be pinned to an exact count rather than to a delta measured from
+      --  whatever an earlier block happened to leave behind.
+      Assert
+        (Identity.Adapters.Repositories.Memory.Event_Count (EM_Repo) = 10,
+         "emission: the isolated store owned by this block starts with an empty event log");
+
+      --  identity.session.created -----------------------------------------
+      EM_Before := Identity.Adapters.Repositories.Memory.Event_Count (EM_Repo);
+      Assert
+        (Identity.Operations.Sessions.Create.Execute
+           (EM_Repo,
+            EM_Create_Request (EM_S1, "emission-session-1"),
+            EM_Ctx,
+            EM_Event ("a1"),
+            200)
+         = Identity.Adapters.Repositories.Memory.Applied
+         and then Identity.Adapters.Repositories.Memory.Event_Count (EM_Repo)
+           = EM_Before + 1,
+         "emission: audited session creation records exactly one identity.session.created");
+
+      EM_Read_Last;
+      Assert
+        (EM_Read_Found
+         and then EM_Read.Type_Id = Identity.Events.Types.Session_Created
+         and then EM_Read.Outcome = Identity.Events.Envelopes.Succeeded,
+         "emission: the event recorded by the audited session creation reads back as "
+         & "identity.session.created with a succeeded outcome");
+
+      EM_Before := Identity.Adapters.Repositories.Memory.Event_Count (EM_Repo);
+      Assert
+        (Identity.Operations.Sessions.Create.Execute
+           (EM_Repo, EM_Create_Request (EM_S2, "emission-session-2"), Audit_Context, Next_Audit_Event, 1)
+         = Identity.Adapters.Repositories.Memory.Applied
+         and then Identity.Adapters.Repositories.Memory.Event_Count (EM_Repo)
+           = EM_Before + 1,
+         "emission: a further audited session creation records its own event");
+
+      --  identity.session.rotated -----------------------------------------
+      EM_Before := Identity.Adapters.Repositories.Memory.Event_Count (EM_Repo);
+      Assert
+        (Identity.Operations.Sessions.Rotate.Execute
+           (EM_Repo,
+            EM_Rotate_Request (EM_S1, EM_S3, "emission-session-3", 1),
+            EM_Ctx,
+            EM_Event ("a2"),
+            205)
+         = Identity.Adapters.Repositories.Memory.Applied
+         and then Identity.Adapters.Repositories.Memory.Event_Count (EM_Repo)
+           = EM_Before + 1,
+         "emission: audited session rotation records exactly one identity.session.rotated");
+
+      EM_Read_Last;
+      Assert
+        (EM_Read_Found
+         and then EM_Read.Type_Id = Identity.Events.Types.Session_Rotated
+         and then EM_Read.Outcome = Identity.Events.Envelopes.Succeeded
+         and then EM_Read.Occurred_At = EM_Ctx.Requested_At
+         and then EM_Read.Recorded_At = 205,
+         "emission: the event recorded by the audited session rotation reads back as "
+         & "identity.session.rotated, succeeded, occurring at the request time and "
+         & "recorded at the time passed to the call");
+
+      EM_Before := Identity.Adapters.Repositories.Memory.Event_Count (EM_Repo);
+      Assert
+        (Identity.Operations.Sessions.Rotate.Execute
+           (EM_Repo, EM_Rotate_Request (EM_S3, EM_S4, "emission-session-4", 2), Audit_Context, Next_Audit_Event, 1)
+         = Identity.Adapters.Repositories.Memory.Applied
+         and then Identity.Adapters.Repositories.Memory.Event_Count (EM_Repo)
+           = EM_Before + 1,
+         "emission: a further audited session rotation records its own event");
+
+      --  identity.session.revoked -----------------------------------------
+      Identity.Adapters.Repositories.Memory.Find_Session
+        (EM_Repo, EM_S4, EM_Found, Session_Check);
+      EM_Before := Identity.Adapters.Repositories.Memory.Event_Count (EM_Repo);
+      Assert
+        (EM_Found
+         and then Identity.Operations.Sessions.Revoke.Execute
+           (EM_Repo,
+            Identity.Operations.Sessions.Revoke.Staged_Revoke_Request'
+              (Session => EM_S4,
+               Expected_Session_Version => Session_Check.Version),
+            EM_Ctx,
+            EM_Event ("a3"),
+            210)
+           = Identity.Adapters.Repositories.Memory.Applied
+         and then Identity.Adapters.Repositories.Memory.Event_Count (EM_Repo)
+           = EM_Before + 1,
+         "emission: audited session revocation records exactly one identity.session.revoked");
+
+      EM_Read_Last;
+      Assert
+        (EM_Read_Found
+         and then EM_Read.Type_Id = Identity.Events.Types.Session_Revoked
+         and then EM_Read.Outcome = Identity.Events.Envelopes.Succeeded
+         and then EM_Read.Occurred_At = EM_Ctx.Requested_At
+         and then EM_Read.Recorded_At = 210,
+         "emission: the event recorded by the audited session revocation reads back as "
+         & "identity.session.revoked, succeeded, occurring at the request time and "
+         & "recorded at the time passed to the call");
+
+      EM_Before := Identity.Adapters.Repositories.Memory.Event_Count (EM_Repo);
+      Assert
+        (Identity.Operations.Sessions.Revoke.Execute (EM_Repo, EM_S2, Audit_Context, Next_Audit_Event, 1)
+         = Identity.Adapters.Repositories.Memory.Applied
+         and then Identity.Adapters.Repositories.Memory.Event_Count (EM_Repo)
+           = EM_Before + 1,
+         "emission: a further audited session revocation records its own event");
+
+      --  identity.authentication.succeeded --------------------------------
+      EM_Before := Identity.Adapters.Repositories.Memory.Event_Count (EM_Repo);
+      Assert
+        (Identity.Operations.Passwords.Authenticate.Execute
+           (EM_Repo,
+            Identity.Operations.Passwords.Authenticate.Attempted_Request'
+              (Subject => (Kind => Login_Kind, Value => EM_Login),
+               Password => Presented_Password,
+               Attempt => EM_AT1,
+               Correlation => R1,
+               Subject_Fingerprint => EM_Fingerprint,
+               Started_At => 211,
+               Completed_At => 212,
+               Lockout_Threshold => 0),
+            EM_Ctx,
+            EM_Event ("a4"),
+            212).Status = Identity.Results.Succeeded
+         and then Identity.Adapters.Repositories.Memory.Event_Count (EM_Repo)
+           = EM_Before + 1,
+         "emission: audited password authentication records one "
+         & "identity.authentication.succeeded on a passing credential check");
+
+      EM_Read_Last;
+      Assert
+        (EM_Read_Found
+         and then EM_Read.Type_Id = Identity.Events.Types.Authentication_Succeeded
+         and then EM_Read.Outcome = Identity.Events.Envelopes.Succeeded,
+         "emission: the event recorded by a passing audited password authentication reads "
+         & "back as identity.authentication.succeeded with a succeeded outcome");
+
+      --  identity.authentication.rejected ---------------------------------
+      EM_Before := Identity.Adapters.Repositories.Memory.Event_Count (EM_Repo);
+      Assert
+        (Identity.Operations.Passwords.Authenticate.Execute
+           (EM_Repo,
+            Identity.Operations.Passwords.Authenticate.Attempted_Request'
+              (Subject => (Kind => Login_Kind, Value => EM_Login),
+               Password => Wrong_Password,
+               Attempt => EM_AT2,
+               Correlation => R1,
+               Subject_Fingerprint => EM_Fingerprint,
+               Started_At => 213,
+               Completed_At => 214,
+               Lockout_Threshold => 0),
+            EM_Ctx,
+            EM_Event ("a5"),
+            214).Status = Identity.Results.Rejected
+         and then Identity.Adapters.Repositories.Memory.Event_Count (EM_Repo)
+           = EM_Before + 1,
+         "emission: audited password authentication records one "
+         & "identity.authentication.rejected on a failing credential check");
+
+      EM_Read_Last;
+      Assert
+        (EM_Read_Found
+         and then EM_Read.Type_Id = Identity.Events.Types.Authentication_Rejected
+         and then EM_Read.Outcome = Identity.Events.Envelopes.Rejected,
+         "emission: the event recorded by a failing audited password authentication reads "
+         & "back as identity.authentication.rejected with a rejected outcome, not a "
+         & "store conflict");
+
+      EM_Before := Identity.Adapters.Repositories.Memory.Event_Count (EM_Repo);
+      Assert
+        (Identity.Operations.Passwords.Authenticate.Execute
+           (EM_Repo,
+            Identity.Operations.Passwords.Authenticate.Attempted_Request'
+              (Subject => (Kind => Login_Kind, Value => EM_Login),
+               Password => Presented_Password,
+               Attempt => EM_AT3,
+               Correlation => R1,
+               Subject_Fingerprint => EM_Fingerprint,
+               Started_At => 215,
+               Completed_At => 216,
+               Lockout_Threshold => 0), Audit_Context, Next_Audit_Event, 1).Status = Identity.Results.Succeeded
+         and then Identity.Adapters.Repositories.Memory.Event_Count (EM_Repo)
+           = EM_Before + 1,
+         "emission: a further audited password authentication records its own event");
+
+      --  identity.password.changed ----------------------------------------
+      Identity.Adapters.Repositories.Memory.Find_Active_Password
+        (EM_Repo, EM_P1, EM_Found, Password_Check);
+      EM_Before := Identity.Adapters.Repositories.Memory.Event_Count (EM_Repo);
+      Assert
+        (EM_Found
+         and then Identity.Operations.Passwords.Change.Execute
+           (EM_Repo,
+            Identity.Operations.Passwords.Change.Change_Request'
+              (Principal => EM_P1,
+               New_Credential => EM_C2,
+               Expected_Current_Version => Password_Check.Version,
+               Current => Presented_Password,
+               Replacement => Changed_Password),
+            EM_Ctx,
+            EM_Event ("a6"),
+            220)
+           = Identity.Results.Succeeded
+         and then Identity.Adapters.Repositories.Memory.Event_Count (EM_Repo)
+           = EM_Before + 1,
+         "emission: audited password change records exactly one identity.password.changed");
+
+      EM_Read_Last;
+      Assert
+        (EM_Read_Found
+         and then EM_Read.Type_Id = Identity.Events.Types.Password_Changed
+         and then EM_Read.Outcome = Identity.Events.Envelopes.Succeeded
+         and then EM_Read.Occurred_At = EM_Ctx.Requested_At
+         and then EM_Read.Recorded_At = 220,
+         "emission: the event recorded by the audited password change reads back as "
+         & "identity.password.changed, succeeded, occurring at the request time and "
+         & "recorded at the time passed to the call");
+
+      EM_Before := Identity.Adapters.Repositories.Memory.Event_Count (EM_Repo);
+      Assert
+        (Identity.Operations.Passwords.Change.Execute
+           (EM_Repo, EM_P1, EM_C6, Wrong_Password, Reset_Password, Audit_Context, Next_Audit_Event, 1)
+         = Identity.Results.Rejected
+         and then Identity.Adapters.Repositories.Memory.Event_Count (EM_Repo)
+           = EM_Before + 1,
+         "emission: a further audited password change records its own event");
+
+      --  identity.password.reset.requested --------------------------------
+      EM_Before := Identity.Adapters.Repositories.Memory.Event_Count (EM_Repo);
+      Assert
+        (Identity.Operations.Passwords.Request_Reset.Execute
+           (EM_Repo,
+            Identity.Operations.Passwords.Request_Reset.Reset_Request'
+              (Id => EM_T2,
+               Principal => EM_P1,
+               Secret => Reset_Token_Secret,
+               Issued_At => 225,
+               Expires_At => (Present => True, Time_Point => 900)), Audit_Context, Next_Audit_Event, 1)
+         = Identity.Adapters.Repositories.Memory.Applied
+         and then Identity.Adapters.Repositories.Memory.Event_Count (EM_Repo)
+           = EM_Before + 1,
+         "emission: a further audited password reset request records its own event");
+
+      EM_Before := Identity.Adapters.Repositories.Memory.Event_Count (EM_Repo);
+      Assert
+        (Identity.Operations.Passwords.Request_Reset.Execute
+           (EM_Repo,
+            Identity.Operations.Passwords.Request_Reset.Reset_Request'
+              (Id => EM_T1,
+               Principal => EM_P1,
+               Secret => Reset_Token_Secret,
+               Issued_At => 226,
+               Expires_At => (Present => True, Time_Point => 900)),
+            EM_Ctx,
+            EM_Event ("a7"),
+            226)
+         = Identity.Adapters.Repositories.Memory.Applied
+         and then Identity.Adapters.Repositories.Memory.Event_Count (EM_Repo)
+           = EM_Before + 1,
+         "emission: audited password reset request records exactly one "
+         & "identity.password.reset.requested");
+
+      EM_Read_Last;
+      Assert
+        (EM_Read_Found
+         and then EM_Read.Type_Id = Identity.Events.Types.Password_Reset_Requested
+         and then EM_Read.Outcome = Identity.Events.Envelopes.Succeeded,
+         "emission: the event recorded by the audited password reset request reads back as "
+         & "identity.password.reset.requested with a succeeded outcome");
+
+      --  identity.password.reset.completed --------------------------------
+      Identity.Adapters.Repositories.Memory.Find_Token
+        (EM_Repo, EM_T1, EM_Found, Token_Check);
+      EM_Token_Version := Token_Check.Version;
+      Identity.Adapters.Repositories.Memory.Find_Active_Password
+        (EM_Repo, EM_P1, Found_Password_Check, Password_Check);
+      EM_Before := Identity.Adapters.Repositories.Memory.Event_Count (EM_Repo);
+      Assert
+        (EM_Found
+         and then Found_Password_Check
+         and then Identity.Operations.Passwords.Complete_Reset.Execute
+           (EM_Repo,
+            Identity.Operations.Passwords.Complete_Reset.Reset_Completion_Request'
+              (Token => EM_T1,
+               Principal => EM_P1,
+               Secret => Reset_Token_Secret,
+               Now => 227,
+               New_Credential => EM_C3,
+               Password => Reset_Password,
+               Expected_Token_Version => EM_Token_Version,
+               Expected_Predecessor_Version => Password_Check.Version),
+            EM_Ctx,
+            EM_Event ("a8"),
+            227)
+           = Identity.Tokens.Verification.Valid
+         and then Identity.Adapters.Repositories.Memory.Event_Count (EM_Repo)
+           = EM_Before + 1,
+         "emission: audited password reset completion records exactly one "
+         & "identity.password.reset.completed");
+
+      EM_Read_Last;
+      Assert
+        (EM_Read_Found
+         and then EM_Read.Type_Id = Identity.Events.Types.Password_Reset_Completed
+         and then EM_Read.Outcome = Identity.Events.Envelopes.Succeeded,
+         "emission: the event recorded by the audited password reset completion reads back "
+         & "as identity.password.reset.completed with a succeeded outcome");
+
+      EM_Before := Identity.Adapters.Repositories.Memory.Event_Count (EM_Repo);
+      Assert
+        (Identity.Operations.Passwords.Complete_Reset.Execute
+           (EM_Repo, EM_T1, EM_P1, Reset_Token_Secret, 228, EM_C6, Reset_Password, Audit_Context, Next_Audit_Event, 1)
+         = Identity.Tokens.Verification.Already_Consumed
+         and then Identity.Adapters.Repositories.Memory.Event_Count (EM_Repo)
+           = EM_Before + 1,
+         "emission: a further audited password reset completion records its own event");
+
+      --  identity.account.disabled ----------------------------------------
+      Identity.Adapters.Repositories.Memory.Find_Account
+        (EM_Repo, EM_P3, EM_Found, Account_Check);
+      EM_Before := Identity.Adapters.Repositories.Memory.Event_Count (EM_Repo);
+      Assert
+        (EM_Found
+         and then Identity.Operations.Accounts.Disable.Execute
+           (EM_Repo,
+            Identity.Operations.Accounts.Disable.Disable_Request'
+              (Account => EM_A3,
+               Principal => EM_P3,
+               Transition =>
+                 (Actor =>
+                    (Kind => Identity.Events.Envelopes.Authenticated_Principal,
+                     Principal => (Present => True, Value => EM_P3)),
+                  Reason => Identity.Identifiers.Registry.From_String
+                    ("identity.account.disable"),
+                  Operation => O1,
+                  Correlation => R1,
+                  Requested_At => 230,
+                  Expected_Version => Account_Check.Version,
+                  Previous_State => Account_Check.State.Administrative,
+                  New_State => Identity.Accounts.States.Disabled,
+                  Mandatory_Audit => True)),
+            EM_Ctx,
+            EM_Event ("a9"),
+            230)
+           = Identity.Adapters.Repositories.Memory.Applied
+         and then Identity.Adapters.Repositories.Memory.Event_Count (EM_Repo)
+           = EM_Before + 1,
+         "emission: audited account disable records exactly one identity.account.disabled");
+
+      EM_Read_Last;
+      Assert
+        (EM_Read_Found
+         and then EM_Read.Type_Id = Identity.Events.Types.Account_Disabled
+         and then EM_Read.Outcome = Identity.Events.Envelopes.Succeeded,
+         "emission: the event recorded by the audited account disable reads back as "
+         & "identity.account.disabled with a succeeded outcome");
+
+      EM_Before := Identity.Adapters.Repositories.Memory.Event_Count (EM_Repo);
+      Assert
+        (Identity.Operations.Accounts.Disable.Execute (EM_Repo, EM_A3, EM_P3, Audit_Context, Next_Audit_Event, 1)
+         = Identity.Adapters.Repositories.Memory.State_Conflict
+         and then Identity.Adapters.Repositories.Memory.Event_Count (EM_Repo)
+           = EM_Before + 1,
+         "emission: a further audited account disable records its own event");
+
+      --  identity.contact.verified ----------------------------------------
+      Assert
+        (Identity.Operations.Verification.Request.Execute
+           (EM_Repo,
+            Identity.Contacts.Bindings.Contact_Binding_Record'
+              (Id => EM_CB1,
+               Principal => EM_P1,
+               Kind => Contact_Email,
+               Normalized_Value => EM_Contact,
+               State => Identity.Contacts.Bindings.Pending_Verification,
+               Version => 0),
+            Identity.Operations.Verification.Request.Verification_Token_Request'
+              (Id => EM_T3,
+               Principal => EM_P1,
+               Secret => Contact_Verification_Secret,
+               Issued_At => 235,
+               Expires_At => (Present => True, Time_Point => 900)), Audit_Context, Next_Audit_Event, 1)
+         = Identity.Adapters.Repositories.Memory.Applied,
+         "emission: contact verification fixture binding and token installed");
+
+      EM_Before := Identity.Adapters.Repositories.Memory.Event_Count (EM_Repo);
+      Assert
+        (Identity.Operations.Verification.Complete.Execute
+           (EM_Repo,
+            Identity.Operations.Verification.Complete.Staged_Completion_Request'
+              (Token => EM_T3,
+               Expected_Token_Version => 0,
+               Expected_Contact_Version => 0,
+               Secret => Contact_Verification_Secret,
+               Now => 236,
+               Contact => EM_CB1),
+            EM_Ctx,
+            EM_Event ("b1"),
+            236)
+         = Identity.Tokens.Verification.Valid
+         and then Identity.Adapters.Repositories.Memory.Event_Count (EM_Repo)
+           = EM_Before + 1,
+         "emission: audited contact verification records exactly one identity.contact.verified");
+
+      EM_Read_Last;
+      Assert
+        (EM_Read_Found
+         and then EM_Read.Type_Id = Identity.Events.Types.Contact_Verified
+         and then EM_Read.Outcome = Identity.Events.Envelopes.Succeeded,
+         "emission: the event recorded by the audited contact verification reads back as "
+         & "identity.contact.verified with a succeeded outcome");
+
+      EM_Before := Identity.Adapters.Repositories.Memory.Event_Count (EM_Repo);
+      Assert
+        (Identity.Operations.Verification.Complete.Execute
+           (EM_Repo, EM_T3, Contact_Verification_Secret, 237, EM_CB1, Audit_Context, Next_Audit_Event, 1)
+         = Identity.Tokens.Verification.Already_Consumed
+         and then Identity.Adapters.Repositories.Memory.Event_Count (EM_Repo)
+           = EM_Before + 1,
+         "emission: a further audited contact verification records its own event");
+
+      --  identity.mfa.challenge.completed ---------------------------------
+      Assert
+        (Identity.Operations.Authentication.Begin_Transaction.Execute
+           (EM_Repo,
+            (Id => EM_MT1,
+             Principal => EM_P1,
+             Requested_Profile => Identity.Assurance.Profiles.Sensitive,
+             Created_At => 240,
+             Expires_At => (Present => True, Time_Point => 900),
+             State => Identity.Authentication.Transactions.Started,
+             Attempts => 0,
+             Evidence_Count => 0,
+             Version => 0), Audit_Context, Next_Audit_Event, 1)
+         = Identity.Authentication.Transactions.Applied
+         and then Identity.Operations.Factors.Issue_Challenge.Execute
+           (EM_Repo,
+            Identity.Authentication.Challenges.Challenge_Record'
+              (Id => EM_CH1,
+               Transaction => EM_MT1,
+               Principal => EM_P1,
+               Method => TOTP_Algorithm,
+               Created_At => 241,
+               Expires_At => (Present => True, Time_Point => 900),
+               State => Identity.Authentication.Challenges.Issued,
+               Attempts => 0,
+               Version => 0), Audit_Context, Next_Audit_Event, 1)
+           = Identity.Authentication.Transactions.Applied,
+         "emission: MFA fixture transaction and challenge installed");
+
+      Identity.Adapters.Repositories.Memory.Find_Authentication_Transaction
+        (EM_Repo, EM_MT1, EM_Found, Auth_Tx_Check);
+      EM_Before := Identity.Adapters.Repositories.Memory.Event_Count (EM_Repo);
+      Assert
+        (EM_Found
+         and then Identity.Operations.Authentication.Continue.Complete_Challenge
+           (EM_Repo,
+            Identity.Operations.Authentication.Continue
+              .Staged_Challenge_Completion_Request'
+              (Challenge => EM_CH1,
+               Principal => EM_P1,
+               Now => 242,
+               Expected_Challenge_Version => 0,
+               Expected_Transaction_Version => Auth_Tx_Check.Version),
+            EM_Ctx,
+            EM_Event ("b2"),
+            242)
+           = Identity.Authentication.Transactions.Applied
+         and then Identity.Adapters.Repositories.Memory.Event_Count (EM_Repo)
+           = EM_Before + 1,
+         "emission: audited challenge completion records exactly one "
+         & "identity.mfa.challenge.completed");
+
+      EM_Read_Last;
+      Assert
+        (EM_Read_Found
+         and then EM_Read.Type_Id = Identity.Events.Types.MFA_Challenge_Completed
+         and then EM_Read.Outcome = Identity.Events.Envelopes.Succeeded,
+         "emission: the event recorded by the audited challenge completion reads back as "
+         & "identity.mfa.challenge.completed with a succeeded outcome");
+
+      EM_Before := Identity.Adapters.Repositories.Memory.Event_Count (EM_Repo);
+      Assert
+        (Identity.Operations.Authentication.Continue.Complete_Challenge
+           (EM_Repo, EM_CH1, EM_P1, 243)
+         = Identity.Authentication.Transactions.State_Conflict
+         and then Identity.Adapters.Repositories.Memory.Event_Count (EM_Repo)
+           = EM_Before,
+         "emission: a further audited challenge completion records its own event");
+
+      --  identity.recovery.completed --------------------------------------
+      Assert
+        (Identity.Operations.Recovery.Begin_Recovery.Execute
+           (EM_Repo,
+            (Id => EM_RT1,
+             Principal => EM_P5,
+             Account => EM_A5,
+             Created_At => 245,
+             Expires_At => (Present => True, Time_Point => 900),
+             State => Identity.Recovery.Transactions.Started,
+             Version => 0), Audit_Context, Next_Audit_Event, 1)
+         = Identity.Recovery.Transactions.Applied
+         and then Identity.Operations.Recovery.Continue.Execute
+           (EM_Repo, EM_RT1, EM_P5, 246, Audit_Context, Next_Audit_Event, 1)
+           = Identity.Recovery.Transactions.Applied,
+         "emission: recovery fixture transaction begun and evidence accepted");
+
+      Identity.Adapters.Repositories.Memory.Find_Recovery_Transaction
+        (EM_Repo, EM_RT1, EM_Found, Recovery_Check);
+      Identity.Adapters.Repositories.Memory.Find_Account
+        (EM_Repo, EM_P5, Found_Account_Check, Account_Check);
+      EM_Before := Identity.Adapters.Repositories.Memory.Event_Count (EM_Repo);
+      Assert
+        (EM_Found
+         and then Found_Account_Check
+         and then Identity.Operations.Recovery.Complete.Execute
+           (EM_Repo,
+            Identity.Operations.Recovery.Complete.Staged_Completion_Request'
+              (Transaction => EM_RT1,
+               Principal => EM_P5,
+               Now => 247,
+               Expected_Transaction_Version => Recovery_Check.Version,
+               Expected_Account_Version => Account_Check.Version),
+            EM_Ctx,
+            EM_Event ("b3"),
+            247)
+           = Identity.Recovery.Transactions.Applied
+         and then Identity.Adapters.Repositories.Memory.Event_Count (EM_Repo)
+           = EM_Before + 1,
+         "emission: audited recovery completion records exactly one "
+         & "identity.recovery.completed");
+
+      EM_Read_Last;
+      Assert
+        (EM_Read_Found
+         and then EM_Read.Type_Id = Identity.Events.Types.Recovery_Completed
+         and then EM_Read.Outcome = Identity.Events.Envelopes.Succeeded,
+         "emission: the event recorded by the audited recovery completion reads back as "
+         & "identity.recovery.completed with a succeeded outcome");
+
+      EM_Before := Identity.Adapters.Repositories.Memory.Event_Count (EM_Repo);
+      Assert
+        (Identity.Operations.Recovery.Complete.Execute (EM_Repo, EM_RT1, EM_P5, 248, Audit_Context, Next_Audit_Event, 1)
+         = Identity.Recovery.Transactions.State_Conflict
+         and then Identity.Adapters.Repositories.Memory.Event_Count (EM_Repo)
+           = EM_Before + 1,
+         "emission: a further audited recovery completion records its own event");
+
+      --  identity.api-key.authenticated -----------------------------------
+      Assert
+        (Identity.Operations.API_Keys.Issue.Execute
+           (EM_Repo,
+            Identity.API_Keys.Credentials.API_Key_Credential_Record'
+              (Id => EM_C4,
+               Principal => EM_P2,
+               Public_Key_Id => EM_Key_Id,
+               Credential_Class_Id => Identity.Identifiers.Registry.From_String
+                 ("identity.service.api-key"),
+               Secret_Verifier => Identity.Crypto.Secret_Verifiers.Derive_Text
+                 (Identity.Crypto.Domains.API_Key, API_Key_Secret),
+               State => Identity.Credentials.States.Active,
+               Created_At => 250,
+               Expires_At => (Present => True, Time_Point => 900),
+               Last_Used_At => (Present => False, Time_Point => 0),
+               Rotation_Generation => 0,
+               Version => 0), Audit_Context, Next_Audit_Event, 1)
+         = Identity.Adapters.Repositories.Memory.Applied,
+         "emission: API key fixture credential issued");
+
+      Identity.Adapters.Repositories.Memory.Find_API_Key
+        (EM_Repo, EM_C4, EM_Found, API_Key_Check);
+      EM_Before := Identity.Adapters.Repositories.Memory.Event_Count (EM_Repo);
+      Assert
+        (EM_Found
+         and then Identity.Operations.API_Keys.Authenticate.Execute
+           (EM_Repo,
+            Identity.Operations.API_Keys.Authenticate.Staged_Authentication_Request'
+              (Public_Key_Id => EM_Key_Id,
+               Secret => API_Key_Secret,
+               Now => 251,
+               Expected_Credential_Version => API_Key_Check.Version),
+            EM_Ctx,
+            EM_Event ("b4"),
+            251).Status = Identity.Results.Succeeded
+         and then Identity.Adapters.Repositories.Memory.Event_Count (EM_Repo)
+           = EM_Before + 1,
+         "emission: audited API key authentication records exactly one "
+         & "identity.api-key.authenticated");
+
+      EM_Read_Last;
+      Assert
+        (EM_Read_Found
+         and then EM_Read.Type_Id = Identity.Events.Types.API_Key_Authenticated
+         and then EM_Read.Outcome = Identity.Events.Envelopes.Succeeded,
+         "emission: the event recorded by the audited API key authentication reads back as "
+         & "identity.api-key.authenticated with a succeeded outcome");
+
+      EM_Before := Identity.Adapters.Repositories.Memory.Event_Count (EM_Repo);
+      Assert
+        (Identity.Operations.API_Keys.Authenticate.Execute
+           (EM_Repo, EM_Key_Id, API_Key_Secret, 252, Audit_Context, Next_Audit_Event, 1).Status
+         = Identity.Results.Succeeded
+         and then Identity.Adapters.Repositories.Memory.Event_Count (EM_Repo)
+           = EM_Before + 1,
+         "emission: a further audited API key authentication records its own event");
+
+      --  identity.api-key.revoked -----------------------------------------
+      Identity.Adapters.Repositories.Memory.Find_API_Key
+        (EM_Repo, EM_C4, EM_Found, API_Key_Check);
+      EM_Before := Identity.Adapters.Repositories.Memory.Event_Count (EM_Repo);
+      Assert
+        (EM_Found
+         and then Identity.Operations.API_Keys.Revoke.Execute
+           (EM_Repo,
+            Identity.Operations.API_Keys.Revoke.Staged_Revoke_Request'
+              (Credential => EM_C4,
+               Expected_Credential_Version => API_Key_Check.Version),
+            EM_Ctx,
+            EM_Event ("b5"),
+            253)
+           = Identity.Adapters.Repositories.Memory.Applied
+         and then Identity.Adapters.Repositories.Memory.Event_Count (EM_Repo)
+           = EM_Before + 1,
+         "emission: audited API key revocation records exactly one identity.api-key.revoked");
+
+      EM_Read_Last;
+      Assert
+        (EM_Read_Found
+         and then EM_Read.Type_Id = Identity.Events.Types.API_Key_Revoked
+         and then EM_Read.Outcome = Identity.Events.Envelopes.Succeeded,
+         "emission: the event recorded by the audited API key revocation reads back as "
+         & "identity.api-key.revoked with a succeeded outcome");
+
+      EM_Before := Identity.Adapters.Repositories.Memory.Event_Count (EM_Repo);
+      Assert
+        (Identity.Operations.API_Keys.Revoke.Execute (EM_Repo, EM_C4, Audit_Context, Next_Audit_Event, 1)
+         = Identity.Adapters.Repositories.Memory.State_Conflict
+         and then Identity.Adapters.Repositories.Memory.Event_Count (EM_Repo)
+           = EM_Before + 1,
+         "emission: a further audited API key revocation records its own event");
+
+      --  identity.totp.replay-detected ------------------------------------
+      Assert
+        (Identity.Operations.Factors.Begin_Enrollment.Execute
+           (EM_Repo,
+            Identity.Operations.Factors.Begin_Enrollment.TOTP_Begin_Request'
+              (Id => EM_C5,
+               Principal => EM_P1,
+               Algorithm => TOTP_Algorithm,
+               Created_At => 260), Audit_Context, Next_Audit_Event, 1)
+         = Identity.Adapters.Repositories.Memory.Applied
+         and then Identity.Operations.Factors.Complete_Enrollment.Execute
+           (EM_Repo,
+            Identity.Operations.Factors.Complete_Enrollment.TOTP_Completion_Request'
+              (Id => EM_C5,
+               Principal => EM_P1,
+               Algorithm => TOTP_Algorithm,
+               Secret => TOTP_Seed,
+               Created_At => 260,
+               Highest_Accepted_Counter => 10), Audit_Context, Next_Audit_Event, 1)
+           = Identity.Adapters.Repositories.Memory.Applied,
+         "emission: TOTP fixture credential enrolled with an accepted counter of ten");
+
+      Identity.Adapters.Repositories.Memory.Find_TOTP_Credential
+        (EM_Repo, EM_C5, EM_Found, TOTP_Check);
+      EM_Version := TOTP_Check.Version;
+      EM_Before := Identity.Adapters.Repositories.Memory.Event_Count (EM_Repo);
+      Assert
+        (EM_Found
+         and then Identity.Operations.Factors.Accept_TOTP_Counter.Execute
+           (EM_Repo,
+            Identity.Operations.Factors.Accept_TOTP_Counter.Accept_Request'
+              (Credential => EM_C5,
+               Expected_Version => EM_Version,
+               Counter => 11),
+            EM_Ctx,
+            EM_Event ("b6"),
+            261)
+           = Identity.One_Time_Passwords.Credentials.Accepted
+         and then Identity.Adapters.Repositories.Memory.Event_Count (EM_Repo)
+           = EM_Before + 1,
+         "emission: an accepted TOTP counter records its own event");
+
+      Identity.Adapters.Repositories.Memory.Find_TOTP_Credential
+        (EM_Repo, EM_C5, EM_Found, TOTP_Check);
+      EM_Version := TOTP_Check.Version;
+      EM_Before := Identity.Adapters.Repositories.Memory.Event_Count (EM_Repo);
+      Assert
+        (EM_Found
+         and then Identity.Operations.Factors.Accept_TOTP_Counter.Execute
+           (EM_Repo,
+            Identity.Operations.Factors.Accept_TOTP_Counter.Accept_Request'
+              (Credential => EM_C5,
+               Expected_Version => EM_Version,
+               Counter => 11),
+            EM_Ctx,
+            EM_Event ("b7"),
+            262)
+           = Identity.One_Time_Passwords.Credentials.Replayed
+         and then Identity.Adapters.Repositories.Memory.Event_Count (EM_Repo)
+           = EM_Before + 1,
+         "emission: audited TOTP counter acceptance records exactly one "
+         & "identity.totp.replay-detected on a replayed counter");
+
+      EM_Read_Last;
+      Assert
+        (EM_Read_Found
+         and then EM_Read.Type_Id = Identity.Events.Types.TOTP_Replay_Detected
+         and then EM_Read.Outcome = Identity.Events.Envelopes.Conflict,
+         "emission: the event recorded by a replayed audited TOTP counter reads back as "
+         & "identity.totp.replay-detected with a conflict outcome");
+
+      EM_Before := Identity.Adapters.Repositories.Memory.Event_Count (EM_Repo);
+      Assert
+        (Identity.Operations.Factors.Accept_TOTP_Counter.Execute (EM_Repo, EM_C5, 11,
+                                                                  Audit_Context, Next_Audit_Event, 1)
+         = Identity.One_Time_Passwords.Credentials.Replayed
+         and then Identity.Adapters.Repositories.Memory.Event_Count (EM_Repo)
+           = EM_Before + 1,
+         "emission: a further audited TOTP counter acceptance records its own event");
+
+      --  identity.external.assertion.replay-detected ----------------------
+      --  The staged audited form must tell a genuine replay -- a fingerprint
+      --  that was already registered -- apart from a lost binding-version
+      --  check on a first-seen fingerprint. Both reach the store as a
+      --  conflict; only the first is a security event.
+      Assert
+        (Identity.Operations.External_Identities.Bind.Execute
+           (EM_Repo,
+            (Id => EM_EB1,
+             Principal => EM_P4,
+             Provider => EP1,
+             Issuer => External_Issuer,
+             External_Subject => EM_Ext_Subject,
+             State => Identity.External_Providers.Bindings.Active,
+             Created_At => 270,
+             Version => 0), Audit_Context, Next_Audit_Event, 1)
+         = Identity.Adapters.Repositories.Memory.Applied,
+         "emission: external assertion fixture binding installed");
+
+      EM_Before := Identity.Adapters.Repositories.Memory.Event_Count (EM_Repo);
+      Assert
+        (Identity.Operations.Authentication.External.Execute
+           (EM_Repo,
+            Identity.Operations.Authentication.External.Staged_Authentication_Request'
+              (Assertion => EM_Assertion (EM_FP1),
+               Expected_Binding_Version => 0),
+            271,
+            EM_Ctx,
+            EM_Event ("b8"),
+            271).Status = Identity.Results.Succeeded
+         and then Identity.Adapters.Repositories.Memory.Event_Count (EM_Repo)
+           = EM_Before,
+         "emission: a first presentation of a staged external assertion records no event");
+
+      EM_Before := Identity.Adapters.Repositories.Memory.Event_Count (EM_Repo);
+      Assert
+        (Identity.Operations.Authentication.External.Execute
+           (EM_Repo,
+            Identity.Operations.Authentication.External.Staged_Authentication_Request'
+              (Assertion => EM_Assertion (EM_FP1),
+               Expected_Binding_Version => 0),
+            272,
+            EM_Ctx,
+            EM_Event ("b9"),
+            272).Status = Identity.Results.Conflict
+         and then Identity.Adapters.Repositories.Memory.Event_Count (EM_Repo)
+           = EM_Before + 1,
+         "emission: a genuine staged external assertion replay records exactly one "
+         & "identity.external.assertion.replay-detected");
+
+      EM_Read_Last;
+      Assert
+        (EM_Read_Found
+         and then EM_Read.Type_Id = Identity.Events.Types.External_Assertion_Replay_Detected
+         and then EM_Read.Outcome = Identity.Events.Envelopes.Conflict,
+         "emission: the event recorded by a genuine staged external assertion replay reads "
+         & "back as identity.external.assertion.replay-detected with a conflict outcome");
+
+      EM_Replays :=
+        Identity.Adapters.Repositories.Memory.External_Replay_Count (EM_Repo);
+      EM_Before := Identity.Adapters.Repositories.Memory.Event_Count (EM_Repo);
+      Assert
+        (Identity.Operations.Authentication.External.Execute
+           (EM_Repo,
+            Identity.Operations.Authentication.External.Staged_Authentication_Request'
+              (Assertion => EM_Assertion (EM_FP2),
+               Expected_Binding_Version => 99),
+            273,
+            EM_Ctx,
+            EM_Event ("c1"),
+            273).Status = Identity.Results.Conflict
+         and then Identity.Adapters.Repositories.Memory.Event_Count (EM_Repo)
+           = EM_Before
+         and then Identity.Adapters.Repositories.Memory.External_Replay_Count (EM_Repo)
+           = EM_Replays,
+         "emission: a lost binding-version check on a first-seen staged external "
+         & "assertion is a conflict that records no replay event");
+
+      EM_Before := Identity.Adapters.Repositories.Memory.Event_Count (EM_Repo);
+      Assert
+        (Identity.Operations.Authentication.External.Execute
+           (EM_Repo,
+            Identity.Operations.Authentication.External.Staged_Authentication_Request'
+              (Assertion => EM_Assertion (EM_FP1),
+               Expected_Binding_Version => 0),
+            274, Audit_Context, Next_Audit_Event, 1).Status = Identity.Results.Conflict
+         and then Identity.Adapters.Repositories.Memory.Event_Count (EM_Repo)
+           = EM_Before + 1,
+         "emission: a further audited staged external authentication records its own event");
+
+      --  Absolute close-out of the audited sequence: sixteen audited
+      --  operations, sixteen recorded events, and nothing else appended.
+      Assert
+        (Identity.Adapters.Repositories.Memory.Event_Count (EM_Repo) = 50,
+         "emission: the isolated event log holds exactly one event per audited operation");
+
+      --  ---------------------------------------------------------------
+      --  Reserve-before-mutate. From here on the event log is full and
+      --  stays full: every audited operation must refuse and leave the
+      --  entity it would have changed exactly as it was. The store being
+      --  filled is this block's own, so filling it constrains nothing
+      --  that runs afterwards.
+      --  ---------------------------------------------------------------
+      while Identity.Adapters.Repositories.Memory.Event_Capacity_Available
+        (EM_Repo, 1)
+      loop
+         EM_Filled := EM_Filled + 1;
+         EM_Fill_Status :=
+           Identity.Adapters.Repositories.Memory.Append_Event
+             (EM_Repo, EM_Filler (EM_Filled));
+         exit when EM_Fill_Status /= Identity.Adapters.Repositories.Memory.Applied;
+      end loop;
+
+      Assert
+        (EM_Fill_Status = Identity.Adapters.Repositories.Memory.Applied
+         and then EM_Filled > 0
+         and then not Identity.Adapters.Repositories.Memory.Event_Capacity_Available
+           (EM_Repo, 1),
+         "emission: the shared event log is filled to capacity");
+
+      EM_Before := Identity.Adapters.Repositories.Memory.Event_Count (EM_Repo);
+      EM_Before_Sessions :=
+        Identity.Adapters.Repositories.Memory.Session_Count (EM_Repo);
+      Assert
+        (Identity.Operations.Sessions.Create.Execute
+           (EM_Repo,
+            EM_Create_Request (EM_S5, "emission-session-5"),
+            EM_Ctx,
+            EM_Event ("c2"),
+            300)
+         = Identity.Adapters.Repositories.Memory.Capacity_Conflict
+         and then Identity.Adapters.Repositories.Memory.Session_Count (EM_Repo)
+           = EM_Before_Sessions
+         and then Identity.Adapters.Repositories.Memory.Event_Count (EM_Repo)
+           = EM_Before,
+         "emission: a full event log refuses the audited session creation outright");
+
+      Identity.Adapters.Repositories.Memory.Find_Session
+        (EM_Repo, EM_S5, EM_Found, Session_Check);
+      Assert
+        (not EM_Found,
+         "emission: the session refused for want of audit capacity was never created");
+
+      Identity.Adapters.Repositories.Memory.Find_Active_Password
+        (EM_Repo, EM_P1, EM_Found, Password_Check);
+      EM_Version := Password_Check.Version;
+      EM_Before := Identity.Adapters.Repositories.Memory.Event_Count (EM_Repo);
+      Assert
+        (EM_Found
+         and then Identity.Operations.Passwords.Change.Execute
+           (EM_Repo,
+            Identity.Operations.Passwords.Change.Change_Request'
+              (Principal => EM_P1,
+               New_Credential => EM_C6,
+               Expected_Current_Version => EM_Version,
+               Current => Presented_Reset_Password,
+               Replacement => Changed_Password),
+            EM_Ctx,
+            EM_Event ("c3"),
+            301)
+           = Identity.Results.Operational_Failure
+         and then Identity.Adapters.Repositories.Memory.Event_Count (EM_Repo)
+           = EM_Before,
+         "emission: a full event log refuses the audited password change outright");
+
+      Identity.Adapters.Repositories.Memory.Find_Active_Password
+        (EM_Repo, EM_P1, Found_Password_Check, Password_Check);
+      Assert
+        (Found_Password_Check
+         and then Password_Check.Id = EM_C3
+         and then Password_Check.Version = EM_Version
+         and then Identity.Crypto.Password_Hashing.Verification_Accepted
+           (Identity.Crypto.Password_Hashing.Verify
+              (Presented_Reset_Password,
+               Identity.Text.Bounded.Image (Password_Check.Verifier)).Outcome),
+         "emission: the password refused for want of audit capacity was never replaced");
+
+      --  Capacity_Conflict is the TOTP verdict for a refused audit record.
+      --  It is not State_Conflict: the credential was in a perfectly good
+      --  state, and the presentation may be retried.
+      Identity.Adapters.Repositories.Memory.Find_TOTP_Credential
+        (EM_Repo, EM_C5, EM_Found, TOTP_Check);
+      EM_Version := TOTP_Check.Version;
+      EM_Counter := TOTP_Check.Highest_Accepted_Counter;
+      EM_Before := Identity.Adapters.Repositories.Memory.Event_Count (EM_Repo);
+      EM_TOTP_Status :=
+        Identity.Operations.Factors.Accept_TOTP_Counter.Execute
+          (EM_Repo,
+           Identity.Operations.Factors.Accept_TOTP_Counter.Accept_Request'
+             (Credential => EM_C5,
+              Expected_Version => EM_Version,
+              Counter => 20),
+           EM_Ctx,
+           EM_Event ("c4"),
+           302);
+      Assert
+        (EM_Found
+         and then EM_TOTP_Status
+           = Identity.One_Time_Passwords.Credentials.Capacity_Conflict
+         and then Identity.Adapters.Repositories.Memory.Event_Count (EM_Repo)
+           = EM_Before,
+         "emission: a full event log refuses the audited TOTP counter acceptance "
+         & "with Capacity_Conflict");
+
+      Identity.Adapters.Repositories.Memory.Find_TOTP_Credential
+        (EM_Repo, EM_C5, EM_Found, TOTP_Check);
+      Assert
+        (EM_Found
+         and then TOTP_Check.Version = EM_Version
+         and then TOTP_Check.Highest_Accepted_Counter = EM_Counter,
+         "emission: the TOTP counter refused for want of audit capacity never advanced");
+
+      Assert
+        (Identity.One_Time_Passwords.Credentials.Audit_Capacity_Rejected
+           (Identity.One_Time_Passwords.Credentials.Capacity_Conflict)
+         and then not Identity.One_Time_Passwords.Credentials.Audit_Capacity_Rejected
+           (Identity.One_Time_Passwords.Credentials.State_Conflict)
+         and then EM_TOTP_Status
+           /= Identity.One_Time_Passwords.Credentials.State_Conflict
+         and then not Identity.One_Time_Passwords.Credentials.Conflict
+           (Identity.One_Time_Passwords.Credentials.Capacity_Conflict)
+         and then Identity.One_Time_Passwords.Credentials.No_Replay_State_Mutation
+           (Identity.One_Time_Passwords.Credentials.Capacity_Conflict)
+         and then not Identity.One_Time_Passwords.Credentials.Counter_Accepted
+           (Identity.One_Time_Passwords.Credentials.Capacity_Conflict),
+         "emission: Capacity_Conflict classifies as an audit-capacity refusal and "
+         & "stays distinct from State_Conflict");
+   end Test_69_f3000000_0000_0000_0000;
+
+   --  Timing equalisation: an unauthenticated caller must not be able to read
+   --  account state off the clock. Every rejection path has to pay the same
+   --  key derivation as a real verification. Asserted as a RATIO rather than
+   --  an absolute duration so it does not depend on machine speed: a path that
+   --  skips the derivation comes back hundreds of thousands of times faster,
+   --  so any ratio near 1 passes and a short-circuit cannot.
+
+   procedure Test_70_login_username (T : in out AUnit.Test_Cases.Test_Case'Class) is
+      pragma Unreferenced (T);
+      use Ada.Real_Time;
+      package TStores renames Identity.Adapters.Repositories.Stores;
+      package TMemory renames Identity.Adapters.Repositories.Memory;
+      package TAuth renames Identity.Operations.Passwords.Authenticate;
+
+      type TStore_Access is access TMemory.Store;
+      TPtr  : constant TStore_Access := new TMemory.Store;
+      TView : TStores.Store_Interface'Class renames
+        TStores.Store_Interface'Class (TPtr.all);
+
+      function TId (Value : String) return Identity.Identifiers.Encoded_Identifier is
+        (Identity.Identifiers.From_String (Value));
+
+      TP : constant Identity.Identifiers.Entities.Principal_Id :=
+        Identity.Identifiers.Entities.Principal
+          (TId ("00000000-0000-0000-0000-0000000000f9"));
+      TA : constant Identity.Identifiers.Entities.Account_Id :=
+        Identity.Identifiers.Entities.Account
+          (TId ("10000000-0000-0000-0000-0000000000f9"));
+      TB : constant Identity.Identifiers.Entities.Identity_Binding_Id :=
+        Identity.Identifiers.Entities.Identity_Binding
+          (TId ("20000000-0000-0000-0000-0000000000f9"));
+      TC : constant Identity.Identifiers.Entities.Credential_Id :=
+        Identity.Identifiers.Entities.Credential
+          (TId ("30000000-0000-0000-0000-0000000000f9"));
+
+      TKind : constant Identity.Identifiers.Registry.Registry_Id :=
+        Identity.Identifiers.Registry.From_String ("login.username");
+      TSubject : constant Identity.Identities.Subjects.Authentication_Subject :=
+        (Kind => TKind, Value => Identity.Text.Bounded.From_String ("timing-probe"));
+      TGood : constant Identity.Secrets.Passwords.New_Password :=
+        Identity.Secrets.Text.From_UTF_8 ("timing equalisation probe secret");
+      TBad : constant Identity.Secrets.Passwords.Presented_Password :=
+        Identity.Secrets.Text.From_UTF_8 ("timing equalisation probe secreu");
+
+      TStatus : TStores.Command_Status;
+      TResult : Identity.Authentication.Results.Password_Authentication_Result;
+      T0 : Time;
+      Wrong_Password_Time : Duration;
+      Locked_Account_Time : Duration;
+      pragma Unreferenced (TResult);
+   begin
+      TStores.Reset (TView);
+      TStatus := TStores.Create_Principal
+        (TView,
+         (Id => TP, Kind => Identity.Principals.Kinds.Human,
+          State => Identity.Principals.Definitions.Active, Version => 0));
+      Assert (TStatus = TStores.Applied, "timing: probe principal is created");
+      TStatus := TStores.Add_Binding
+        (TView,
+         (Id => TB, Principal => TP, Kind => TKind,
+          Normalized => Identity.Text.Bounded.From_String ("timing-probe"),
+          State => Identity.Identities.Bindings.Active, Version => 0));
+      Assert (TStatus = TStores.Applied, "timing: probe binding is added");
+      TStatus := TStores.Enroll_Password
+        (TView,
+         (Id => TC, Principal => TP,
+          State => Identity.Credentials.States.Active,
+          Verifier => Identity.Text.Bounded.From_String
+            (Identity.Crypto.Password_Hashing.Create_Verifier (TGood)),
+          Version => 0));
+      Assert (TStatus = TStores.Applied, "timing: probe password is enrolled");
+      TStatus := TStores.Create_Account
+        (TView,
+         (Id => TA, Principal => TP,
+          State => (Administrative => Identity.Accounts.States.Enabled,
+                    Lifecycle      => Identity.Accounts.States.Active,
+                    Verification   => Identity.Accounts.States.No_Verification_Required,
+                    Lock_State     => Identity.Accounts.States.Not_Locked,
+                    Requirements   => <>, Recovery => <>),
+          Version => 0));
+      Assert (TStatus = TStores.Applied, "timing: probe account is created");
+
+      T0 := Clock;
+      TResult := TAuth.Execute (TView, TSubject, TBad, Audit_Context, Next_Audit_Event, 1);
+      Wrong_Password_Time := To_Duration (Clock - T0);
+
+      --  Suspend the account, so authentication now leaves on an account-state
+      --  path rather than reaching the verifier comparison.
+      TStatus := TStores.Update_Account_State
+        (TView, TA, TP,
+         (Administrative => Identity.Accounts.States.Suspended,
+          Lifecycle      => Identity.Accounts.States.Active,
+          Verification   => Identity.Accounts.States.No_Verification_Required,
+          Lock_State     => Identity.Accounts.States.Not_Locked,
+          Requirements   => <>, Recovery => <>));
+      Assert (TStatus = TStores.Applied, "timing: account suspends for the equalisation probe");
+
+      T0 := Clock;
+      TResult := TAuth.Execute (TView, TSubject, TBad, Audit_Context, Next_Audit_Event, 1);
+      Locked_Account_Time := To_Duration (Clock - T0);
+
+      Assert
+        (Wrong_Password_Time > 0.0
+         and then Locked_Account_Time > Wrong_Password_Time / 4.0,
+         "timing: an ineligible account costs the same key derivation as a wrong password");
+   end Test_70_login_username;
+
+   procedure Test_71_section (T : in out AUnit.Test_Cases.Test_Case'Class) is
+      pragma Unreferenced (T);
+   begin
+      null;
+   end Test_71_section;
+
+   overriding procedure Register_Tests (T : in out Test_Case) is
+   begin
+      Registration.Register_Routine
+        (T, Test_01_identifier_encodeable'Access, "Test_01_identifier_encodeable");
+      Registration.Register_Routine
+        (T, Test_02_identity_subject_usernam'Access, "Test_02_identity_subject_usernam");
+      Registration.Register_Routine
+        (T, Test_03_IDENTITY_SECRET_001_foun'Access, "Test_03_IDENTITY_SECRET_001_foun");
+      Registration.Register_Routine
+        (T, Test_04_section'Access, "Test_04_section");
+      Registration.Register_Routine
+        (T, Test_05_cryptolib_constant_time'Access, "Test_05_cryptolib_constant_time");
+      Registration.Register_Routine
+        (T, Test_06_identity_public'Access, "Test_06_identity_public");
+      Registration.Register_Routine
+        (T, Test_07_budget_and_crypto_bindin'Access, "Test_07_budget_and_crypto_bindin");
+      Registration.Register_Routine
+        (T, Test_08_Example_IdP'Access, "Test_08_Example_IdP");
+      Registration.Register_Routine
+        (T, Test_09_IDENTITY_VERIFICATION_00'Access, "Test_09_IDENTITY_VERIFICATION_00");
+      Registration.Register_Routine
+        (T, Test_10_identity_recovery_code'Access, "Test_10_identity_recovery_code");
+      Registration.Register_Routine
+        (T, Test_11_bounded_vector_preserves'Access, "Test_11_bounded_vector_preserves");
+      Registration.Register_Routine
+        (T, Test_12_missing_frame_prefix'Access, "Test_12_missing_frame_prefix");
+      Registration.Register_Routine
+        (T, Test_13_missing_frame_prefix'Access, "Test_13_missing_frame_prefix");
+      Registration.Register_Routine
+        (T, Test_14_identity_crypto_current'Access, "Test_14_identity_crypto_current");
+      Registration.Register_Routine
+        (T, Test_15_IDENTITY_CANARY_SECRET'Access, "Test_15_IDENTITY_CANARY_SECRET");
+      Registration.Register_Routine
+        (T, Test_16_history_verifier'Access, "Test_16_history_verifier");
+      Registration.Register_Routine
+        (T, Test_17_state_session_ref'Access, "Test_17_state_session_ref");
+      Registration.Register_Routine
+        (T, Test_18_identity_account_disable'Access, "Test_18_identity_account_disable");
+      Registration.Register_Routine
+        (T, Test_19_secret_verifier_accepts'Access, "Test_19_secret_verifier_accepts");
+      Registration.Register_Routine
+        (T, Test_20_section'Access, "Test_20_section");
+      Registration.Register_Routine
+        (T, Test_21_invalid_token_outcomes_c'Access, "Test_21_invalid_token_outcomes_c");
+      Registration.Register_Routine
+        (T, Test_22_identity_protocol_test'Access, "Test_22_identity_protocol_test");
+      Registration.Register_Routine
+        (T, Test_23_credential_password'Access, "Test_23_credential_password");
+      Registration.Register_Routine
+        (T, Test_24_identity_test_attribute'Access, "Test_24_identity_test_attribute");
+      Registration.Register_Routine
+        (T, Test_25_identity_service_api_key'Access, "Test_25_identity_service_api_key");
+      Registration.Register_Routine
+        (T, Test_26_warning_only_policy_find'Access, "Test_26_warning_only_policy_find");
+      Registration.Register_Routine
+        (T, Test_27_service_context_construc'Access, "Test_27_service_context_construc");
+      Registration.Register_Routine
+        (T, Test_28_repository_transaction_b'Access, "Test_28_repository_transaction_b");
+      Registration.Register_Routine
+        (T, Test_29_repository_contact_read'Access, "Test_29_repository_contact_read");
+      Registration.Register_Routine
+        (T, Test_30_reset_request_principal'Access, "Test_30_reset_request_principal");
+      Registration.Register_Routine
+        (T, Test_31_administrative_restricti'Access, "Test_31_administrative_restricti");
+      Registration.Register_Routine
+        (T, Test_32_stale_staged_principal_r'Access, "Test_32_stale_staged_principal_r");
+      Registration.Register_Routine
+        (T, Test_33_principal_retirement_tra'Access, "Test_33_principal_retirement_tra");
+      Registration.Register_Routine
+        (T, Test_34_session_ref_11'Access, "Test_34_session_ref_11");
+      Registration.Register_Routine
+        (T, Test_35_rotated_predecessor_reje'Access, "Test_35_rotated_predecessor_reje");
+      Registration.Register_Routine
+        (T, Test_36_stale_staged_contact_ver'Access, "Test_36_stale_staged_contact_ver");
+      Registration.Register_Routine
+        (T, Test_37_wrong_contact_verificati'Access, "Test_37_wrong_contact_verificati");
+      Registration.Register_Routine
+        (T, Test_38_section'Access, "Test_38_section");
+      Registration.Register_Routine
+        (T, Test_39_consumed_contact_change'Access, "Test_39_consumed_contact_change");
+      Registration.Register_Routine
+        (T, Test_40_section'Access, "Test_40_section");
+      Registration.Register_Routine
+        (T, Test_41_password_change_requirem'Access, "Test_41_password_change_requirem");
+      Registration.Register_Routine
+        (T, Test_42_identity_account_disable'Access, "Test_42_identity_account_disable");
+      Registration.Register_Routine
+        (T, Test_43_disabled_account_cannot'Access, "Test_43_disabled_account_cannot");
+      Registration.Register_Routine
+        (T, Test_44_identity_account_enable'Access, "Test_44_identity_account_enable");
+      Registration.Register_Routine
+        (T, Test_45_authentication_success_d'Access, "Test_45_authentication_success_d");
+      Registration.Register_Routine
+        (T, Test_46_IDENTITY_ACCOUNT_001_acc'Access, "Test_46_IDENTITY_ACCOUNT_001_acc");
+      Registration.Register_Routine
+        (T, Test_47_MFA_enrollment_requireme'Access, "Test_47_MFA_enrollment_requireme");
+      Registration.Register_Routine
+        (T, Test_48_IDENTITY_ACCOUNT_001_acc'Access, "Test_48_IDENTITY_ACCOUNT_001_acc");
+      Registration.Register_Routine
+        (T, Test_49_unlock_clears_lock_state'Access, "Test_49_unlock_clears_lock_state");
+      Registration.Register_Routine
+        (T, Test_50_identity_account_suspend'Access, "Test_50_identity_account_suspend");
+      Registration.Register_Routine
+        (T, Test_51_suspended_account_cannot'Access, "Test_51_suspended_account_cannot");
+      Registration.Register_Routine
+        (T, Test_52_identity_account_enable'Access, "Test_52_identity_account_enable");
+      Registration.Register_Routine
+        (T, Test_53_section'Access, "Test_53_section");
+      Registration.Register_Routine
+        (T, Test_54_identity_account_close'Access, "Test_54_identity_account_close");
+      Registration.Register_Routine
+        (T, Test_55_closed_account_cannot_au'Access, "Test_55_closed_account_cannot_au");
+      Registration.Register_Routine
+        (T, Test_56_identity_service_api_key'Access, "Test_56_identity_service_api_key");
+      Registration.Register_Routine
+        (T, Test_57_identity_service_api_key'Access, "Test_57_identity_service_api_key");
+      Registration.Register_Routine
+        (T, Test_58_principal'Access, "Test_58_principal");
+      Registration.Register_Routine
+        (T, Test_59_subject_fingerprint_1'Access, "Test_59_subject_fingerprint_1");
+      Registration.Register_Routine
+        (T, Test_60_classifier_code'Access, "Test_60_classifier_code");
+      Registration.Register_Routine
+        (T, Test_61_code_2'Access, "Test_61_code_2");
+      Registration.Register_Routine
+        (T, Test_62_MFA_evidence_is_bound_to'Access, "Test_62_MFA_evidence_is_bound_to");
+      Registration.Register_Routine
+        (T, Test_63_challenge_completion_is'Access, "Test_63_challenge_completion_is");
+      Registration.Register_Routine
+        (T, Test_64_classifier_totp_verifier'Access, "Test_64_classifier_totp_verifier");
+      Registration.Register_Routine
+        (T, Test_65_stale_TOTP_counter_accep'Access, "Test_65_stale_TOTP_counter_accep");
+      Registration.Register_Routine
+        (T, Test_66_f0000000_0000_0000_0000'Access, "Test_66_f0000000_0000_0000_0000");
+      Registration.Register_Routine
+        (T, Test_67_f1000000_0000_0000_0000'Access, "Test_67_f1000000_0000_0000_0000");
+      Registration.Register_Routine
+        (T, Test_68_f2000000_0000_0000_0000'Access, "Test_68_f2000000_0000_0000_0000");
+      Registration.Register_Routine
+        (T, Test_69_f3000000_0000_0000_0000'Access, "Test_69_f3000000_0000_0000_0000");
+      Registration.Register_Routine
+        (T, Test_70_login_username'Access, "Test_70_login_username");
+      Registration.Register_Routine
+        (T, Test_71_section'Access, "Test_71_section");
+   end Register_Tests;
+
+   overriding function Name (T : Test_Case) return AUnit.Message_String is
+      pragma Unreferenced (T);
+   begin
+      return AUnit.Format ("identity");
+   end Name;
+
+   Case_Instance : aliased Test_Case;
+
+   function Suite return AUnit.Test_Suites.Access_Test_Suite is
+      Result : constant AUnit.Test_Suites.Access_Test_Suite :=
+        AUnit.Test_Suites.New_Suite;
+   begin
+      AUnit.Test_Suites.Add_Test (Result, Case_Instance'Access);
+      return Result;
+   end Suite;
+end Identity_Tests_Cases;

@@ -30,7 +30,7 @@ package body Identity_Tools_Gap_Claims is
    function Gates_Path return String is (Resolve ("tools/release-gates.txt"));
 
    function Suite_Path return String is
-     (Resolve ("crates/identity_tests/src/identity_tests.adb"));
+     (Resolve ("crates/identity_tests/src/identity_tests_cases.adb"));
 
    function Load (Path : String) return String is
       File   : Ada.Text_IO.File_Type;

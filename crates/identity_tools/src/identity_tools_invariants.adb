@@ -44,7 +44,7 @@ package body Identity_Tools_Invariants is
    function Evidence_Path (Source : Evidence_Source) return String is
      (case Source is
         when Test_Suite =>
-          Resolve ("crates/identity_tests/src/identity_tests.adb"),
+          Resolve ("crates/identity_tests/src/identity_tests_cases.adb"),
         when Gate_Self_Tests =>
           Resolve ("tools/gate-selftests.sh"),
         when Conformance =>

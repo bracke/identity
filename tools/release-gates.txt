@@ -49,13 +49,18 @@ generate release reports if any evidence file is missing or records a failure,
 so a suite that never ran cannot be reported as satisfied.
 
 - alr build of the library under -gnatwe (warnings are errors)
-- crates/identity_tests assertion suite                          [evidence: aunit]
-  748 assertions in one straight-line program. It reports every failure by its
-  message and continues, then prints
-  identity_tests:assertions:<n>:failures:<n> and exits non-zero if any failed.
-  It previously used AUnit's Assert, which raised on the first failure: a run
-  reported the AUnit library's own line number, said nothing about which check
-  broke, and hid every later failure behind the first.
+- crates/identity_tests AUnit suite                              [evidence: aunit]
+  71 registered test routines carrying 748 assertions, in
+  identity_tests_cases.adb. A failure is reported against the named routine
+  that contains it and the remaining routines still run; the AUnit reporter
+  prints the run/passed/failed totals and the executable exits non-zero on
+  any failure. It was previously one straight-line procedure, where a failure
+  reported the AUnit library's own line number and hid every later failure.
+
+  Registration order is deliberate and load-bearing: the routines share one
+  repository that accumulates state, so they are ordered, not independent.
+  This gives named attribution, not isolation. Making them independent means
+  decoupling the objects held at package-body level, which is a larger change.
   Includes dedicated blocks, each assertion message carrying its prefix:
   atomicity: (failed commands leave no partial mutation), disclosure:
   (untrusted projections collapse distinct causes), events: (registry and
