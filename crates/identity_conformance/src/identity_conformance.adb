@@ -1,4 +1,5 @@
 with Ada.Command_Line;
+with Ada.Directories;
 with Ada.Text_IO;
 with Identity.Accounts.Definitions;
 with Identity.Accounts.States;
@@ -742,7 +743,13 @@ procedure Identity_Conformance is
    --  the same profiles is what shows the SPI holds up against real storage.
    Persistent_Ptr   : constant Store_Access := new Memory.Store;
    Persistent_Store : Persistent.Store (Inner => Persistent_Ptr);
-   Snapshot_Path    : constant String := "generated/evidence/conformance-store.bin";
+   --  Resolved relative to the current directory, which differs between a
+   --  developer running this from the repo root and release-check.sh running
+   --  it from inside the crate. Create the directory rather than depending on
+   --  one existing, so a missing directory cannot be mistaken for a store
+   --  that failed to persist.
+   Snapshot_Dir     : constant String := "generated/evidence";
+   Snapshot_Path    : constant String := Snapshot_Dir & "/conformance-store.bin";
 
    Failed_Run : Boolean := False;
    Status     : Conformance.Conformance_Status;
@@ -762,6 +769,12 @@ begin
    declare
       Status : Memory.Snapshot_Status;
    begin
+      Ada.Directories.Create_Path (Snapshot_Dir);
+      --  A stale snapshot from an earlier run would make the durability check
+      --  pass on data this run never wrote.
+      if Ada.Directories.Exists (Snapshot_Path) then
+         Ada.Directories.Delete_File (Snapshot_Path);
+      end if;
       Persistent.Open (Persistent_Store, Snapshot_Path, Status);
    end;
 

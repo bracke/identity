@@ -1,3 +1,4 @@
+with Identity.Adapters.Repositories.Idempotency;
 with Identity.Crypto.Domains;
 with Identity.Crypto.Secret_Verifiers;
 with Identity.Events.Types;
@@ -83,5 +84,51 @@ package body Identity.Operations.Verification.Request is
       end;
 
       return Status;
+   end Execute;
+
+   function Execute
+     (Repository  : in out
+        Identity.Adapters.Repositories.Stores.Store_Interface'Class;
+      Contact     : Identity.Contacts.Bindings.Contact_Binding_Record;
+      Request     : Verification_Token_Request;
+      Context     : Identity.Operations.Contexts.Operation_Context;
+      Event       : Identity.Identifiers.Entities.Event_Id;
+      Recorded_At : Identity.Times.Instant;
+      Key         : Identity.Operations.Idempotency.Idempotency_Key)
+      return Identity.Operations.Replay.Command_Outcome
+   is
+      use type Identity.Adapters.Repositories.Stores.Command_Status;
+
+      Kind : constant Identity.Operations.Idempotency.Idempotent_Operation_Kind :=
+        Identity.Operations.Idempotency.Contact_Verification_Request;
+
+      --  Reserve before the transition, so a duplicate request is answered
+      --  from the record rather than by issuing a second token.
+      Reserved : constant Identity.Adapters.Repositories.Idempotency.Reservation :=
+        (if Identity.Operations.Idempotency.Valid (Key)
+         then Identity.Adapters.Repositories.Stores.Reserve_Idempotency
+                (Repository, Kind, Key)
+         else Identity.Operations.Replay.Unusable_Key (Kind));
+
+      Status : Identity.Adapters.Repositories.Stores.Command_Status;
+   begin
+      if not Identity.Adapters.Repositories.Idempotency.Fresh_Status
+        (Reserved.Status)
+      then
+         return Identity.Operations.Replay.Refused (Reserved);
+      end if;
+
+      Status := Execute (Repository, Contact, Request, Context, Event, Recorded_At);
+
+      if Status /= Identity.Adapters.Repositories.Stores.Applied then
+         --  Nothing was applied, so nothing may be replayed under this key.
+         return (Status => Status,
+                 Decision => Identity.Operations.Idempotency.Fresh);
+      end if;
+
+      return Identity.Operations.Replay.Completed
+        (Status,
+         Identity.Adapters.Repositories.Stores.Complete_Idempotency
+           (Repository, Kind, Key));
    end Execute;
 end Identity.Operations.Verification.Request;

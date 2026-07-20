@@ -7,11 +7,7 @@ package body Identity.Adapters.Repositories.Capabilities is
        Atomic_Token_Action           => True,
        Session_Family_Revocation     => True,
        Assertion_Replay_Registration => True,
-       --  The store provides idempotency records, but no operation reserves
-       --  an idempotency key yet, so advertising the capability would let
-       --  Admit_Command approve commands that rely on behaviour nothing
-       --  performs. Flip to True in the same change that wires it up.
-       Idempotency                   => False,
+       Idempotency                   => True,
        Deterministic_Event_Ordering  => True,
        Concurrent_Access             => False,
        Maximum_Atomic_Event_Count    => 64,

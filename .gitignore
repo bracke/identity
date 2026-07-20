@@ -12,3 +12,4 @@ generated/evidence/
 # Alire local build state (lockfiles, generated config projects)
 alire/
 crates/*/alire/
+crates/*/generated/

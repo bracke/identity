@@ -132,6 +132,50 @@ Emission is added as an overload on each operation, so callers that do not pass
 an operation context keep working unchanged -- and produce no audit trail. Code
 that needs an audit trail must use the context-taking entry points.
 
+Replay protection
+-----------------
+
+Five operations are triggered from outside and cannot be safely repeated:
+password reset request, contact verification request, recovery begin, API key
+issue and session rotate. These are exactly the members of
+Identity.Operations.Idempotency.Idempotent_Operation_Kind, and each now offers
+an overload taking an idempotency key alongside the operation context. That
+overload reserves the key through the SPI (Stores.Reserve_Idempotency) BEFORE
+the transition and closes the record (Stores.Complete_Idempotency) after it
+applies, so Full_Memory_Profile advertises Idempotency => True and the
+capability gate finds a real caller behind the flag.
+
+The semantics, kept identical across the five:
+
+- Fresh reservation: the transition runs. If it applied, the record is closed
+  and the verdict is Fresh. If it did not apply, the record stays open --
+  nothing happened, so nothing may later be replayed under that key.
+- Replayed reservation: the recorded outcome is returned and the transition is
+  NOT performed again. This is the whole point: no second reset token, no
+  second API key, no second recovery transaction, and no second audit event.
+- In_Progress, Conflict, Capacity_Exceeded, Infrastructure_Failure: the
+  transition is refused and the store is left untouched. In_Progress means an
+  earlier attempt under this key never completed; a caller that wants the
+  transition attempted again must present a fresh key.
+- An empty key is refused without touching the store, because every empty key
+  compares equal to every other and would collide across unrelated requests.
+
+The verdict carries both halves -- what the store did and whether this call is
+what did it -- in Identity.Operations.Replay.Command_Outcome (or
+Recovery_Outcome for the recovery transition status). Command_Status has no
+infrastructure verdict of its own, so a store fault reported by the reservation
+collapses onto State_Conflict while the decision half keeps the cause.
+
+Existing signatures are untouched: a caller that passes no key keeps the old
+behaviour and gets no replay protection, exactly as with audit emission.
+Identity.Operations.Replay declares only the shared result shape and the
+mappings; every reservation is made by the operation itself, so the capability
+is backed by the operations rather than by a helper standing in for them.
+
+Recovery begin gained an audited overload in the same change, emitting
+identity.recovery.began, since its idempotent form mutates through the SPI and
+must therefore leave a record like every other mutating operation.
+
 Be precise about what the audit-coverage gate proves. It requires every
 mutating operation to OFFER an audited path; it cannot require callers to take
 one. The marker reports both numbers -- audited-overloads and bypass-overloads
@@ -158,11 +202,6 @@ implemented.
   Migrate_Verifier re-derives a below-policy verifier during a successful
   authentication, but nothing forces a caller to invoke it: a replacement
   credential needs an identifier and this crate never invents identifiers.
-- Idempotency is not wired. The store keeps idempotency records and the SPI
-  exposes them, but no operation reserves an idempotency key, so
-  Full_Memory_Profile advertises Idempotency => False. Replaying a command is
-  therefore the caller's problem today. The capability gate keeps the flag
-  honest: flipping it to True without wiring a caller fails the release check.
 - A Memory.Store is 3.3 MB (fixed-capacity arrays sized for 512 events, 128
   sessions and so on), so two of them will not fit on a default 8 MB stack.
   Harnesses that need isolated stores must allocate them on the heap, as the

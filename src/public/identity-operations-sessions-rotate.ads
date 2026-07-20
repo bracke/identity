@@ -3,6 +3,8 @@ with Identity.Assurance.Attributes;
 with Identity.Assurance.Levels;
 with Identity.Identifiers.Entities;
 with Identity.Operations.Contexts;
+with Identity.Operations.Idempotency;
+with Identity.Operations.Replay;
 with Identity.Secrets.Sessions;
 with Identity.Sessions.Definitions;
 with Identity.Text.Bounded;
@@ -70,4 +72,18 @@ package Identity.Operations.Sessions.Rotate is
       Event       : Identity.Identifiers.Entities.Event_Id;
       Recorded_At : Identity.Times.Instant)
       return Identity.Adapters.Repositories.Stores.Command_Status;
+
+   --  Idempotent form. A client whose rotation response was lost retries with
+   --  the same request; without a reserved key the retry would retire the
+   --  successor it just received and hand back a third session, which is
+   --  indistinguishable from token theft to a family-reuse detector.
+   function Execute
+     (Repository  : in out
+        Identity.Adapters.Repositories.Stores.Store_Interface'Class;
+      Request     : Rotate_Request;
+      Context     : Identity.Operations.Contexts.Operation_Context;
+      Event       : Identity.Identifiers.Entities.Event_Id;
+      Recorded_At : Identity.Times.Instant;
+      Key         : Identity.Operations.Idempotency.Idempotency_Key)
+      return Identity.Operations.Replay.Command_Outcome;
 end Identity.Operations.Sessions.Rotate;

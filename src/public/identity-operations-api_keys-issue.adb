@@ -1,3 +1,4 @@
+with Identity.Adapters.Repositories.Idempotency;
 with Identity.Credentials.States;
 with Identity.Crypto.Domains;
 with Identity.Crypto.Secret_Verifiers;
@@ -91,5 +92,50 @@ package body Identity.Operations.API_Keys.Issue is
       end;
 
       return Status;
+   end Execute;
+
+   function Execute
+     (Repository  : in out
+        Identity.Adapters.Repositories.Stores.Store_Interface'Class;
+      Request     : Issue_Request;
+      Context     : Identity.Operations.Contexts.Operation_Context;
+      Event       : Identity.Identifiers.Entities.Event_Id;
+      Recorded_At : Identity.Times.Instant;
+      Key         : Identity.Operations.Idempotency.Idempotency_Key)
+      return Identity.Operations.Replay.Command_Outcome
+   is
+      use type Identity.Adapters.Repositories.Stores.Command_Status;
+
+      Kind : constant Identity.Operations.Idempotency.Idempotent_Operation_Kind :=
+        Identity.Operations.Idempotency.API_Key_Issue;
+
+      --  Reserve before the transition: a duplicate issue discovered after the
+      --  fact is a live credential that cannot be taken back silently.
+      Reserved : constant Identity.Adapters.Repositories.Idempotency.Reservation :=
+        (if Identity.Operations.Idempotency.Valid (Key)
+         then Identity.Adapters.Repositories.Stores.Reserve_Idempotency
+                (Repository, Kind, Key)
+         else Identity.Operations.Replay.Unusable_Key (Kind));
+
+      Status : Identity.Adapters.Repositories.Stores.Command_Status;
+   begin
+      if not Identity.Adapters.Repositories.Idempotency.Fresh_Status
+        (Reserved.Status)
+      then
+         return Identity.Operations.Replay.Refused (Reserved);
+      end if;
+
+      Status := Execute (Repository, Request, Context, Event, Recorded_At);
+
+      if Status /= Identity.Adapters.Repositories.Stores.Applied then
+         --  Nothing was applied, so nothing may be replayed under this key.
+         return (Status => Status,
+                 Decision => Identity.Operations.Idempotency.Fresh);
+      end if;
+
+      return Identity.Operations.Replay.Completed
+        (Status,
+         Identity.Adapters.Repositories.Stores.Complete_Idempotency
+           (Repository, Kind, Key));
    end Execute;
 end Identity.Operations.API_Keys.Issue;

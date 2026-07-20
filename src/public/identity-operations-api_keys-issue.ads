@@ -3,6 +3,8 @@ with Identity.API_Keys.Credentials;
 with Identity.Identifiers.Entities;
 with Identity.Identifiers.Registry;
 with Identity.Operations.Contexts;
+with Identity.Operations.Idempotency;
+with Identity.Operations.Replay;
 with Identity.Secrets.API_Keys;
 with Identity.Text.Bounded;
 with Identity.Times;
@@ -41,4 +43,18 @@ package Identity.Operations.API_Keys.Issue is
       Event       : Identity.Identifiers.Entities.Event_Id;
       Recorded_At : Identity.Times.Instant)
       return Identity.Adapters.Repositories.Stores.Command_Status;
+
+   --  Idempotent form. Issuance is triggered from outside and hands back a
+   --  credential that authenticates, so a retried request that issued a second
+   --  key would leave a usable credential nobody expects to exist. Reserving
+   --  the key first makes the retry report the recorded outcome instead.
+   function Execute
+     (Repository  : in out
+        Identity.Adapters.Repositories.Stores.Store_Interface'Class;
+      Request     : Issue_Request;
+      Context     : Identity.Operations.Contexts.Operation_Context;
+      Event       : Identity.Identifiers.Entities.Event_Id;
+      Recorded_At : Identity.Times.Instant;
+      Key         : Identity.Operations.Idempotency.Idempotency_Key)
+      return Identity.Operations.Replay.Command_Outcome;
 end Identity.Operations.API_Keys.Issue;
