@@ -1,0 +1,11 @@
+{
+  "version": "1.0.0-dev",
+  "comment": "Mutating operations deliberately not audited. Each needs a reason and a compensating control; the audit-coverage gate fails on an exemption that states neither, and on an operation that is unaudited without appearing here.",
+  "exemptions": [
+    {
+      "operation": "identity-operations-sessions-update_activity.adb",
+      "reason": "Records last-seen time on every authenticated request. Emitting an event per request would swamp the log at a volume that hides the events that matter, and the mutation carries no security decision: it advances an activity timestamp and revision, and cannot change who the session belongs to or what it may do.",
+      "compensating_control": "Session creation, rotation, renewal, assurance upgrade and every revocation path are audited, so the session's security-relevant lifecycle is fully recorded without the per-request noise."
+    }
+  ]
+}

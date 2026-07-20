@@ -55,7 +55,9 @@ package body Identity_Tools_Events is
       Session_Expired,
       Session_Purged,
       Contact_Verification_Requested,
-      Password_Verifier_Migrated);
+      Password_Verifier_Migrated,
+      Session_Renewed,
+      Session_Assurance_Upgraded);
 
    type Event_Presence is array (Event_Id) of Boolean;
 
@@ -179,7 +181,11 @@ package body Identity_Tools_Events is
         when Contact_Verification_Requested =>
           "identity.contact.verification.requested",
         when Password_Verifier_Migrated =>
-          "identity.password.verifier.migrated");
+          "identity.password.verifier.migrated",
+        when Session_Renewed =>
+          "identity.session.renewed",
+        when Session_Assurance_Upgraded =>
+          "identity.session.assurance-upgraded");
 
    procedure Scan
      (Path     : String;

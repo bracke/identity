@@ -107,4 +107,8 @@ package Identity.Events.Types is
      Identity.Identifiers.Registry.From_String ("identity.contact.verification.requested");
    Password_Verifier_Migrated : constant Identity.Identifiers.Registry.Registry_Id :=
      Identity.Identifiers.Registry.From_String ("identity.password.verifier.migrated");
+   Session_Renewed : constant Identity.Identifiers.Registry.Registry_Id :=
+     Identity.Identifiers.Registry.From_String ("identity.session.renewed");
+   Session_Assurance_Upgraded : constant Identity.Identifiers.Registry.Registry_Id :=
+     Identity.Identifiers.Registry.From_String ("identity.session.assurance-upgraded");
 end Identity.Events.Types;

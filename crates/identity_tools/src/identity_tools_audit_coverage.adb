@@ -19,6 +19,9 @@ package body Identity_Tools_Audit_Coverage is
    function Operations_Dir return String is
      (Resolve ("src/public"));
 
+   function Exemptions_Path return String is
+     (Resolve ("registries/audit-exemptions.json"));
+
    function Contains (Text : String; Pattern : String) return Boolean is
      (Ada.Strings.Fixed.Index (Text, Pattern) /= 0);
 
@@ -134,6 +137,9 @@ package body Identity_Tools_Audit_Coverage is
    end Collect_Mutating;
 
    procedure Validate (Report : out Validation_Report) is
+      Exemptions : constant String :=
+        (if Ada.Directories.Exists (Exemptions_Path)
+         then Load (Exemptions_Path) else "");
       Names  : Name_Array;
       Count  : Natural;
       Search : Ada.Directories.Search_Type;
@@ -183,6 +189,18 @@ package body Identity_Tools_Audit_Coverage is
                      Report.Mutating_Operations := Report.Mutating_Operations + 1;
                      if Contains (Body_Text, "Audit.Emit") then
                         Report.Audited_Operations := Report.Audited_Operations + 1;
+                     elsif Contains (Exemptions, """" & Simple & """") then
+                        --  Exempt, but only if it states why and what covers it.
+                        Report.Exemptions := Report.Exemptions + 1;
+                        if not Contains (Exemptions, """reason""")
+                          or else not Contains
+                                       (Exemptions, """compensating_control""")
+                        then
+                           Report.Unjustified_Exemptions :=
+                             Report.Unjustified_Exemptions + 1;
+                           Ada.Text_IO.Put_Line
+                             ("audit-coverage:unjustified-exemption:" & Simple);
+                        end if;
                      else
                         Report.Unaudited_Operations :=
                           Report.Unaudited_Operations + 1;
@@ -260,6 +278,7 @@ package body Identity_Tools_Audit_Coverage is
      (Report.Missing_Source = 0
       and then Report.Mutating_Primitives > 0
       and then Report.Mutating_Operations > 0
-      and then Report.Unaudited_Operations = 0);
+      and then Report.Unaudited_Operations = 0
+      and then Report.Unjustified_Exemptions = 0);
 
 end Identity_Tools_Audit_Coverage;

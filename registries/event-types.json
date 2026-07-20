@@ -51,6 +51,8 @@
     "identity.session.expired",
     "identity.session.purged",
     "identity.contact.verification.requested",
-    "identity.password.verifier.migrated"
+    "identity.password.verifier.migrated",
+    "identity.session.renewed",
+    "identity.session.assurance-upgraded"
   ]
 }

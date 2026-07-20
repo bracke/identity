@@ -25,6 +25,12 @@ package Identity_Tools_Audit_Coverage is
       Unaudited_Operations : Natural := 0;
       Audited_Overloads   : Natural := 0;
       Bypass_Overloads    : Natural := 0;
+      --  Deliberately unaudited operations, each requiring a stated reason
+      --  and compensating control in registries/audit-exemptions.json. An
+      --  exemption without both is not a decision, it is an omission with
+      --  paperwork.
+      Exemptions          : Natural := 0;
+      Unjustified_Exemptions : Natural := 0;
       Missing_Source      : Natural := 0;
    end record;
 

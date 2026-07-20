@@ -246,7 +246,11 @@ begin
       & ":audited-overloads:"
       & Natural'Image (Audit_Report.Audited_Overloads)
       & ":bypass-overloads:"
-      & Natural'Image (Audit_Report.Bypass_Overloads));
+      & Natural'Image (Audit_Report.Bypass_Overloads)
+      & ":exempt:"
+      & Natural'Image (Audit_Report.Exemptions)
+      & ":unjustified-exempt:"
+      & Natural'Image (Audit_Report.Unjustified_Exemptions));
 
    Identity_Tools_Gap_Claims.Validate (Gap_Report);
    Ada.Text_IO.Put_Line
