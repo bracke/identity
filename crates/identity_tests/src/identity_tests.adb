@@ -1,5 +1,7 @@
-with AUnit.Assertions;
+with Ada.Command_Line;
+with Ada.Exceptions;
 with Ada.Real_Time;
+with Ada.Text_IO;
 with Ada.Streams;
 with Identity.Adapters.Diagnostics;
 with Identity.Adapters.Event_Sinks;
@@ -312,7 +314,36 @@ with Identity.Verification.Results;
 with Identity.Versions;
 
 procedure Identity_Tests is
-   use AUnit.Assertions;
+   --  The suite is one long straight-line procedure. AUnit's Assert raises on
+   --  the first failure, which reported the library's own line number, hid
+   --  every later failure, and told the reader nothing about which of the 900+
+   --  checks broke. This local Assert hides it: failures are counted and
+   --  reported with their message, and the run continues so one pass shows
+   --  everything that is wrong.
+   Assertions_Run : Natural := 0;
+   Failures_Seen  : Natural := 0;
+
+   procedure Assert (Condition : Boolean; Message : String) is
+   begin
+      Assertions_Run := Assertions_Run + 1;
+      if not Condition then
+         Failures_Seen := Failures_Seen + 1;
+         Ada.Text_IO.Put_Line ("identity_tests:FAIL:" & Message);
+      end if;
+   end Assert;
+
+   function Count_Image (Value : Natural) return String is
+      Raw : constant String := Natural'Image (Value);
+   begin
+      return Raw (Raw'First + 1 .. Raw'Last);
+   end Count_Image;
+
+   procedure Report_Summary is
+   begin
+      Ada.Text_IO.Put_Line
+        ("identity_tests:assertions:" & Count_Image (Assertions_Run)
+         & ":failures:" & Count_Image (Failures_Seen));
+   end Report_Summary;
 
    Audit_Context : constant Identity.Operations.Contexts.Operation_Context :=
      (Operation    => Identity.Identifiers.Operations.Operation
@@ -17618,4 +17649,19 @@ begin
    end;
 
    null;
+
+   Report_Summary;
+   if Failures_Seen > 0 then
+      Ada.Command_Line.Set_Exit_Status (Ada.Command_Line.Failure);
+   end if;
+
+exception
+   --  Continuing past a failed assertion can lead to a later constraint
+   --  error. Report what was reached rather than losing the summary.
+   when Error : others =>
+      Ada.Text_IO.Put_Line
+        ("identity_tests:aborted:" & Ada.Exceptions.Exception_Name (Error)
+         & ":" & Ada.Exceptions.Exception_Message (Error));
+      Report_Summary;
+      Ada.Command_Line.Set_Exit_Status (Ada.Command_Line.Failure);
 end Identity_Tests;

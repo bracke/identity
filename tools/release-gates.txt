@@ -49,7 +49,13 @@ generate release reports if any evidence file is missing or records a failure,
 so a suite that never ran cannot be reported as satisfied.
 
 - alr build of the library under -gnatwe (warnings are errors)
-- crates/identity_tests AUnit assertion suite                    [evidence: aunit]
+- crates/identity_tests assertion suite                          [evidence: aunit]
+  748 assertions in one straight-line program. It reports every failure by its
+  message and continues, then prints
+  identity_tests:assertions:<n>:failures:<n> and exits non-zero if any failed.
+  It previously used AUnit's Assert, which raised on the first failure: a run
+  reported the AUnit library's own line number, said nothing about which check
+  broke, and hid every later failure behind the first.
   Includes dedicated blocks, each assertion message carrying its prefix:
   atomicity: (failed commands leave no partial mutation), disclosure:
   (untrusted projections collapse distinct causes), events: (registry and
