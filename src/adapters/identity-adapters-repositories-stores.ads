@@ -739,6 +739,15 @@ package Identity.Adapters.Repositories.Stores is
 
    function API_Key_Count (Repository : Store_Interface) return Natural is abstract;
 
+   --  Read back a recorded event by position (1 .. Event_Count), oldest
+   --  first. Without this a caller -- or a test -- can only count events and
+   --  infer what they contain from which branch was reachable.
+   procedure Find_Event
+     (Repository : Store_Interface;
+      Position   : Positive;
+      Found      : out Boolean;
+      Value      : out Identity.Events.Envelopes.Event_Envelope) is abstract;
+
    function Event_Count (Repository : Store_Interface) return Natural is abstract;
 
    function Attempt_Count (Repository : Store_Interface) return Natural is abstract;

@@ -1471,6 +1471,16 @@ package body Identity.Adapters.Repositories.Persistent is
       return Memory.API_Key_Count (Repository.Inner.all);
    end API_Key_Count;
 
+   overriding procedure Find_Event
+     (Repository : Store;
+      Position   : Positive;
+      Found      : out Boolean;
+      Value      : out Identity.Events.Envelopes.Event_Envelope)
+   is
+   begin
+      Memory.Find_Event (Repository.Inner.all, Position, Found, Value);
+   end Find_Event;
+
    overriding function Event_Count (Repository : Store) return Natural
    is
    begin

@@ -4415,6 +4415,28 @@ package body Identity.Adapters.Repositories.Memory is
       return Count;
    end API_Key_Count;
 
+   overriding procedure Find_Event
+     (Repository : Store;
+      Position   : Positive;
+      Found      : out Boolean;
+      Value      : out Identity.Events.Envelopes.Event_Envelope)
+   is
+      Seen : Natural := 0;
+   begin
+      Found := False;
+      Value := (others => <>);
+      for Slot of Repository.Events loop
+         if Slot.Present then
+            Seen := Seen + 1;
+            if Seen = Position then
+               Found := True;
+               Value := Slot.Value;
+               return;
+            end if;
+         end if;
+      end loop;
+   end Find_Event;
+
    overriding function Event_Count (Repository : Store) return Natural is
       Count : Natural := 0;
    begin

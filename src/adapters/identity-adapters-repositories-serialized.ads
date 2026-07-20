@@ -710,6 +710,12 @@ package Identity.Adapters.Repositories.Serialized is
 
    overriding function API_Key_Count (Repository : Store) return Natural;
 
+   overriding procedure Find_Event
+     (Repository : Store;
+      Position   : Positive;
+      Found      : out Boolean;
+      Value      : out Identity.Events.Envelopes.Event_Envelope);
+
    overriding function Event_Count (Repository : Store) return Natural;
 
    overriding function Attempt_Count (Repository : Store) return Natural;

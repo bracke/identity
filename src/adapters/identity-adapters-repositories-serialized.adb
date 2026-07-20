@@ -2701,6 +2701,22 @@ package body Identity.Adapters.Repositories.Serialized is
          raise;
    end API_Key_Count;
 
+   overriding procedure Find_Event
+     (Repository : Store;
+      Position   : Positive;
+      Found      : out Boolean;
+      Value      : out Identity.Events.Envelopes.Event_Envelope)
+   is
+   begin
+      Repository.Guard.Seize;
+      Stores.Find_Event (Repository.Inner.all, Position, Found, Value);
+      Repository.Guard.Release;
+   exception
+      when others =>
+         Repository.Guard.Release;
+         raise;
+   end Find_Event;
+
    overriding function Event_Count (Repository : Store) return Natural
    is
    begin

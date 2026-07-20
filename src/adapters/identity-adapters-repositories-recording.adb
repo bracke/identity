@@ -1366,6 +1366,16 @@ package body Identity.Adapters.Repositories.Recording is
       return Stores.API_Key_Count (Repository.Inner.all);
    end API_Key_Count;
 
+   overriding procedure Find_Event
+     (Repository : Store;
+      Position   : Positive;
+      Found      : out Boolean;
+      Value      : out Identity.Events.Envelopes.Event_Envelope)
+   is
+   begin
+      Stores.Find_Event (Repository.Inner.all, Position, Found, Value);
+   end Find_Event;
+
    overriding function Event_Count (Repository : Store) return Natural
    is
    begin

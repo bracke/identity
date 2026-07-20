@@ -6,6 +6,11 @@ How to run
 
     ./tools/release-check.sh
 
+CI runs exactly this script on every push and pull request
+(.github/workflows/release-check.yml) and uploads generated/evidence/ and
+generated/release/ as artifacts. If the workflow and the script ever disagree,
+the script is the definition.
+
 That script is the release gate. It builds the library, runs every suite,
 records each run's real outcome under generated/evidence/, and only then runs
 identity_tools, which validates the registries and generates the release
@@ -20,13 +25,20 @@ Public operations depend on Identity.Adapters.Repositories.Stores.Store_Interfac
 not on any adapter. Three adapters implement it:
 
 - Memory     -- the reference in-memory store (not task-safe).
+- Persistent -- write-through to a snapshot file after every mutating call;
+                the only adapter that touches real I/O.
 - Recording  -- wraps any store and counts delegated calls; exists to prove the
                 SPI is pluggable rather than merely declared.
 - Serialized -- wraps any store behind one lock to make it safe to share
                 between tasks; reports Concurrent_Access in its capabilities.
 
-The conformance harness runs all five certification profiles against both the
-memory and recording adapters through the identical code path.
+The conformance harness runs all five certification profiles against the
+memory, recording and persistent adapters through the identical code path, and
+afterwards reloads the persistent adapter's snapshot into a fresh store to
+check that durability actually held rather than assuming it.
+
+Durability is per call, not per transaction: a multi-command sequence is not
+atomic as a whole.
 
 Enforced gates
 --------------
@@ -147,7 +159,3 @@ implemented.
   Harnesses that need isolated stores must allocate them on the heap, as the
   conformance and concurrency harnesses do; the AUnit suite instead shares one
   store and uses distinct identifier prefixes, which is weaker isolation.
-- The conformance profiles are certified against the two adapters shipped here
-  (memory, and the recording decorator over it). No persistent adapter exists
-  yet, so the SPI has not been exercised against a store with real I/O,
-  transactions or external failure modes.
