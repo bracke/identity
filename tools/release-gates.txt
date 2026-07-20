@@ -268,8 +268,31 @@ implemented.
   Migrate_Verifier re-derives a below-policy verifier during a successful
   authentication, but nothing forces a caller to invoke it: a replacement
   credential needs an identifier and this crate never invents identifiers.
-- A Memory.Store is 3.3 MB (fixed-capacity arrays sized for 512 events, 128
-  sessions and so on), so two of them will not fit on a default 8 MB stack.
-  Harnesses that need isolated stores must allocate them on the heap, as the
-  conformance and concurrency harnesses do; the AUnit suite instead shares one
-  store and uses distinct identifier prefixes, which is weaker isolation.
+- Capacity is the binding limitation on using this crate for real, and raising
+  the constants is NOT the fix. Measured rather than assumed:
+
+    Memory.Store                      3.3 MB
+    snapshot write (persistent)       3.8 ms
+    Principal_Record                    48 B  x 64   =   3 KB
+    Event_Envelope                     825 B  x 512  = 412 KB
+    Attempt_Record                     760 B  x 512  = 380 KB
+    Session_Record                   1 360 B  x 128  = 170 KB
+    Identity binding                   704 B  x 128  =  88 KB
+
+  Two facts follow. First, principals are cheap (48 B) and the 64-principal cap
+  costs 3 KB -- the footprint is dominated by records that embed Bounded_Text,
+  which is a fixed 512-byte buffer whatever it holds, so a 130-character
+  verifier still occupies 516 bytes. Second, the persistent adapter writes the
+  whole store on every mutating call, so its cost is proportional to configured
+  capacity, not to stored data: an empty store costs the same 3.8 ms as a full
+  one, and a store sized for 4096 users would cost roughly ten times that on
+  every write even with one user in it.
+
+  So supporting realistic user counts needs two changes together -- a smaller
+  bounded text type for verifiers and references, and incremental or journaled
+  persistence instead of whole-store write-through. Raising the constants alone
+  would slow every write in proportion while leaving the per-record waste.
+
+  A consequence for tests: two stores will not fit on a default 8 MB stack, so
+  harnesses needing isolated stores heap-allocate them, as the conformance and
+  concurrency harnesses do.
