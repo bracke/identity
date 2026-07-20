@@ -128,6 +128,20 @@
       "compensating_tests": [
         "recovery code status predicates classify single-use and no-mutation outcomes"
       ]
+    },
+    {
+      "name": "Identity.Crypto.Password_Hashing",
+      "properties": [
+        "envelope-parsing-bounds",
+        "hex-decoding-safety"
+      ],
+      "security_critical": true,
+      "excluded": false,
+      "partial": true,
+      "partial_reason": "the parsing half is proved; Create_Verifier, Verify and Derive_Verifier are SPARK_Mode Off because they reach cryptolib and borrow controlled secret bytes",
+      "compensating_tests": [
+        "password verifier envelopes reject malformed, non-hex and out-of-range input"
+      ]
     }
   ],
   "required_properties": [

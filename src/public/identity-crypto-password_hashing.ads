@@ -1,7 +1,14 @@
 with Identity.Secrets.Passwords;
 with Identity.Text.Bounded;
 
-package Identity.Crypto.Password_Hashing is
+--  The parsing half of this package is in SPARK: Inspect, Validate_Parameters
+--  and Determine_Upgrade consume attacker-controlled envelope text, so their
+--  freedom from runtime errors is proved rather than reviewed. The three
+--  routines that reach cryptolib or borrow secret bytes are outside SPARK and
+--  are marked individually.
+package Identity.Crypto.Password_Hashing
+  with SPARK_Mode => On
+is
    --  PBKDF2-HMAC-SHA256 cost parameters. Default_Iterations follows the OWASP
    --  guidance for this PRF; envelopes below Minimum_Iterations are treated as
    --  requiring migration, and Maximum_Iterations bounds attacker-supplied
@@ -44,7 +51,8 @@ package Identity.Crypto.Password_Hashing is
    --  result that is not Created carries an empty envelope.
    function Derive_Verifier
      (Password : Identity.Secrets.Passwords.New_Password)
-      return Verifier_Creation;
+      return Verifier_Creation
+     with SPARK_Mode => Off;
 
    type Verification_Outcome is
      (Verified, Not_Verified, Malformed_Verifier, Unsupported_Format, Unsupported_Algorithm,
@@ -95,10 +103,12 @@ package Identity.Crypto.Password_Hashing is
      (Status in Upgrade_Recommended | Upgrade_Required);
 
    function Create_Verifier
-     (Password : Identity.Secrets.Passwords.New_Password) return String;
+     (Password : Identity.Secrets.Passwords.New_Password) return String
+     with SPARK_Mode => Off;
    function Verify
      (Password : Identity.Secrets.Passwords.Presented_Password;
-      Envelope : String) return Verification_Result;
+      Envelope : String) return Verification_Result
+     with SPARK_Mode => Off;
    function Inspect (Envelope : String) return Verification_Outcome;
    function Validate_Parameters (Envelope : String) return Verification_Outcome;
    function Determine_Upgrade (Envelope : String) return Migration_Status;

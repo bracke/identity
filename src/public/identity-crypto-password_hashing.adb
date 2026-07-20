@@ -6,7 +6,10 @@ with Identity.Crypto.CryptoLib.Password_Hashing;
 with Identity.Limits;
 with Identity.Secrets.Bytes;
 
-package body Identity.Crypto.Password_Hashing is
+package body Identity.Crypto.Password_Hashing
+  with SPARK_Mode => On
+is
+   use type Ada.Streams.Stream_Element_Offset;
    package Backend renames Identity.Crypto.CryptoLib.Password_Hashing;
 
    Prefix : constant String := "identity-pbkdf2-sha256:v2:";
@@ -27,31 +30,41 @@ package body Identity.Crypto.Password_Hashing is
    --  Hex helpers
    ---------------------------------------------------------------------------
 
-   function To_Hex (Data : Ada.Streams.Stream_Element_Array) return String is
-      Result : String (1 .. Data'Length * 2);
-      Pos    : Natural := Result'First;
+   --  Each byte's position is derived from its index rather than carried in a
+   --  running cursor, so the bounds follow from the index and are provable.
+   function To_Hex (Data : Ada.Streams.Stream_Element_Array) return String
+     with Pre  => Data'Length <= 64,
+          Post => To_Hex'Result'Length = Data'Length * 2
+   is
+      Result : String (1 .. Data'Length * 2) := [others => '0'];
+      Offset : Natural;
       Value  : Natural;
    begin
-      for B of Data loop
-         Value := Natural (B);
-         Result (Pos) := Hex_Digits (Value / 16 + 1);
-         Result (Pos + 1) := Hex_Digits (Value mod 16 + 1);
-         Pos := Pos + 2;
+      for Index in Data'Range loop
+         Offset := Natural (Index - Data'First) * 2;
+         Value := Natural (Data (Index));
+         Result (Offset + 1) := Hex_Digits (Value / 16 + 1);
+         Result (Offset + 2) := Hex_Digits (Value mod 16 + 1);
+         pragma Loop_Invariant (Offset + 2 <= Result'Last);
       end loop;
       return Result;
    end To_Hex;
 
-   function Hex_Value (Ch : Character; Valid : out Boolean) return Natural is
-   begin
-      Valid := True;
-      case Ch is
-         when '0' .. '9' => return Character'Pos (Ch) - Character'Pos ('0');
-         when 'a' .. 'f' => return Character'Pos (Ch) - Character'Pos ('a') + 10;
-         when others =>
-            Valid := False;
-            return 0;
-      end case;
-   end Hex_Value;
+   --  Returned as a record rather than through an out parameter: a function
+   --  with an out parameter is not legal in SPARK, and this parser consumes
+   --  attacker-controlled text, so it is worth having provable.
+   type Hex_Digit is record
+      Valid : Boolean := False;
+      Value : Natural range 0 .. 15 := 0;
+   end record;
+
+   function Hex_Value (Ch : Character) return Hex_Digit is
+     (case Ch is
+        when '0' .. '9' =>
+          (Valid => True, Value => Character'Pos (Ch) - Character'Pos ('0')),
+        when 'a' .. 'f' =>
+          (Valid => True, Value => Character'Pos (Ch) - Character'Pos ('a') + 10),
+        when others => (Valid => False, Value => 0));
 
    --  Decode Text into Data; Valid is False when Text is not exactly the
    --  expected length or contains a non-hex character.
@@ -59,28 +72,31 @@ package body Identity.Crypto.Password_Hashing is
      (Text  : String;
       Data  : out Ada.Streams.Stream_Element_Array;
       Valid : out Boolean)
+     with Pre => Data'Length <= 64 and then Text'Length <= 512
    is
-      Pos      : Natural := Text'First;
-      High     : Natural;
-      Low      : Natural;
-      Ok_High  : Boolean;
-      Ok_Low   : Boolean;
+      High   : Hex_Digit;
+      Low    : Hex_Digit;
+      Offset : Natural;
    begin
       Data := [others => 0];
       if Text'Length /= Data'Length * 2 then
          Valid := False;
          return;
       end if;
+
       for Index in Data'Range loop
-         High := Hex_Value (Text (Pos), Ok_High);
-         Low := Hex_Value (Text (Pos + 1), Ok_Low);
-         if not (Ok_High and then Ok_Low) then
+         --  Text'Length = Data'Length * 2 was just established, so both
+         --  positions are inside Text for every index.
+         Offset := Natural (Index - Data'First) * 2;
+         pragma Loop_Invariant (Offset + 1 <= Text'Length - 1);
+         High := Hex_Value (Text (Text'First + Offset));
+         Low := Hex_Value (Text (Text'First + Offset + 1));
+         if not (High.Valid and then Low.Valid) then
             Data := [others => 0];
             Valid := False;
             return;
          end if;
-         Data (Index) := Ada.Streams.Stream_Element (High * 16 + Low);
-         Pos := Pos + 2;
+         Data (Index) := Ada.Streams.Stream_Element (High.Value * 16 + Low.Value);
       end loop;
       Valid := True;
    end From_Hex;
@@ -106,7 +122,12 @@ package body Identity.Crypto.Password_Hashing is
       Iterations : Natural := 0;
       Valid      : Boolean;
    begin
-      if Envelope'Length <= Prefix'Length
+      --  An envelope is bounded public text. Rejecting anything longer here
+      --  both matches the storage bound and gives the position arithmetic
+      --  below a ceiling it can be checked against.
+      if Envelope'Length > Identity.Limits.Max_Public_Text_Bytes
+        or else Envelope'Last >= Natural'Last - 4
+        or else Envelope'Length <= Prefix'Length
         or else Envelope (Envelope'First .. Envelope'First + Prefix'Length - 1) /= Prefix
       then
          Result.Outcome := Unsupported_Format;
@@ -126,6 +147,9 @@ package body Identity.Crypto.Password_Hashing is
               Iterations * 10
               + (Character'Pos (Envelope (Digits_End)) - Character'Pos ('0'));
          end if;
+         pragma Loop_Invariant (Digits_End in Cursor .. Envelope'Last);
+         pragma Loop_Invariant (Iterations <= Maximum_Iterations * 10 + 9);
+         pragma Loop_Variant (Increases => Digits_End);
       end loop;
 
       if Digits_End < Cursor
@@ -180,6 +204,7 @@ package body Identity.Crypto.Password_Hashing is
    function Derive_Verifier
      (Password : Identity.Secrets.Passwords.New_Password)
       return Verifier_Creation
+     with SPARK_Mode => Off
    is
    begin
       return
@@ -194,6 +219,7 @@ package body Identity.Crypto.Password_Hashing is
 
    function Create_Verifier
      (Password : Identity.Secrets.Passwords.New_Password) return String
+     with SPARK_Mode => Off
    is
       Buffer : Ada.Streams.Stream_Element_Array
         (1 .. Ada.Streams.Stream_Element_Offset (Identity.Limits.Max_Secret_Bytes));
@@ -247,6 +273,7 @@ package body Identity.Crypto.Password_Hashing is
    function Verify
      (Password : Identity.Secrets.Passwords.Presented_Password;
       Envelope : String) return Verification_Result
+     with SPARK_Mode => Off
    is
       Parsed : constant Parsed_Envelope := Parse (Envelope);
       Buffer : Ada.Streams.Stream_Element_Array

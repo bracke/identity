@@ -211,17 +211,16 @@ but the trend is worth watching as more audited operations gain tests.
 Known gaps
 ----------
 
-- Proof covers 10 packages, not the library. GNATprove discharging 616 checks
+- Proof covers 11 packages, not the library. GNATprove discharging 760 checks
   with none unproved is a real result, but it is a result about
-  registries/proof-scope.json: nine proved packages and one justified
-  exclusion, against 369 public and adapter specs. The crypto and secret
-  handling packages are NOT among them -- Identity.Crypto.Password_Hashing,
-  .Secret_Verifiers, .Constant_Time, Identity.Secrets.Bytes and .Secrets.Text
-  are all outside the proof scope, including the envelope parser that consumes
-  attacker-controlled text. Bringing Password_Hashing in is blocked on a
-  concrete thing: its Hex_Value helper is a function with an "out" parameter,
-  which SPARK does not permit, so the parser needs refactoring first. Until
-  then the parser's bounds rest on review and tests, not proof.
+  registries/proof-scope.json: ten proved packages and one justified
+  exclusion, against 369 public and adapter specs. Identity.Crypto.
+  Password_Hashing is now included, and specifically its envelope parser --
+  the code that consumes attacker-controlled text -- with Create_Verifier,
+  Verify and Derive_Verifier left outside SPARK because they reach cryptolib
+  and borrow controlled secret bytes. Still outside the scope entirely:
+  Identity.Crypto.Secret_Verifiers, .Constant_Time, Identity.Secrets.Bytes and
+  .Secrets.Text. Their bounds rest on review and tests, not proof.
 
 These are listed as mandatory above the line in earlier revisions of this file
 but are NOT yet enforced. They are recorded here rather than being described as
