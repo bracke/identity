@@ -5,11 +5,27 @@ contracts. The V1 boundary keeps authentication facts separate from authorizatio
 no roles, permissions, tenant memberships, delegation, impersonation, scopes,
 obligations, overrides, or enforcement receipts are modeled in this crate.
 
-This repository currently contains the V1 foundation contracts: strongly typed
-identifiers, account state dimensions, credential state, redacted bounded secret
-containers, disclosure-safe result mapping, security-context projection,
-cryptographic domain separation, cryptolib isolation packages, event type
-registry, repository capability contracts, and documentation/registry seeds.
+The crate provides strongly typed identifiers, account and credential state,
+redacted bounded secret containers, disclosure-safe result mapping,
+security-context projection, password and bearer-secret verification, sessions
+and rotation, multi-factor and recovery flows, external-provider binding, and a
+repository service-provider interface with three adapters.
+
+Two properties are worth knowing before reading further.
+
+**Every operation that changes security state records an audit event.** Those
+operations are reachable only through a form taking an operation context, a
+fresh event identifier and a record time, so a change that leaves no audit
+record is not something this API can express. An event identifier must be
+distinct per call: the store rejects a duplicate and the operation reports that
+as a failure. `crates/identity_examples/src/identity_lifecycle.adb` shows the
+intended shape.
+
+**Repository access goes through an interface, not an adapter.** Public
+operations depend on `Identity.Adapters.Repositories.Stores.Store_Interface`.
+Three adapters implement it: `Memory` (the in-memory reference, not task-safe),
+`Persistent` (write-through to a durable snapshot) and `Serialized` (wraps any
+adapter to make it safe to share between tasks). The decorators compose.
 
 Direct cryptolib imports are confined to `Identity.Crypto.Cryptolib.*`.
 

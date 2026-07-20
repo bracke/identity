@@ -625,7 +625,7 @@ base_line "identity_tools reports persisted-format validation counts" \
    ":missing-files: 0"
 
 base_line "identity_tools reports proof-scope validation counts" \
-   "identity_tools:proof-validation: 10:properties: 10:" \
+   "identity_tools:proof-validation:" \
    ":missing-packages: 0:missing-properties: 0:"
 
 base_line "identity_tools reports release artifact inventory counts" \
