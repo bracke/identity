@@ -51,7 +51,17 @@ package Identity.Adapters.Repositories.Stores is
    --  Outcome of a repository command. Declared here rather than in an adapter
    --  so the interface does not depend on an implementation of itself.
    type Command_Status is
-     (Applied, Version_Conflict, State_Conflict, Uniqueness_Conflict, Capacity_Conflict);
+     (Applied,
+      Version_Conflict,
+      State_Conflict,
+      Uniqueness_Conflict,
+      Capacity_Conflict,
+      --  A cryptographic precondition of the command could not be met -- for
+      --  example the CSPRNG could not supply a salt for a new verifier.
+      --  Adapters never produce this; the operations layer does, so that a
+      --  crypto failure is reported as a classified result rather than as an
+      --  exception escaping an API that otherwise never raises.
+      Cryptographic_Conflict);
 
    --  Implemented by every repository adapter. Store creation is deliberately
    --  not a primitive: constructing a store is adapter-specific, so callers

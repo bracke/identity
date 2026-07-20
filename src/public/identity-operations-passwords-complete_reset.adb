@@ -21,10 +21,24 @@ package body Identity.Operations.Passwords.Complete_Reset is
       Gate : constant Identity.Tokens.Verification.Token_Verification_Outcome :=
         Identity.Adapters.Repositories.Stores.Verify_Token
           (Repository, Token, Identity.Tokens.Purposes.Password_Reset, Secret, Now);
+      Derived_Replacement : Identity.Text.Bounded.Bounded_Text;
    begin
       if Gate /= Identity.Tokens.Verification.Valid then
          return Gate;
       end if;
+
+      --  Derived only after the current password checks out, so a rejected
+      --  change does not pay for a key derivation. A CSPRNG failure is
+      --  reported as a classified result rather than raised.
+      declare
+         Derived : constant Identity.Crypto.Password_Hashing.Verifier_Creation :=
+           Identity.Crypto.Password_Hashing.Derive_Verifier (Password);
+      begin
+         if not Identity.Crypto.Password_Hashing.Created_Verifier (Derived) then
+            return Identity.Tokens.Verification.Infrastructure_Failure;
+         end if;
+         Derived_Replacement := Derived.Envelope;
+      end;
 
       return Identity.Adapters.Repositories.Stores.Complete_Password_Reset
         (Repository,
@@ -35,8 +49,7 @@ package body Identity.Operations.Passwords.Complete_Reset is
          (Id        => New_Credential,
           Principal => Principal,
           State     => Identity.Credentials.States.Active,
-          Verifier  => Identity.Text.Bounded.From_String
-            (Identity.Crypto.Password_Hashing.Create_Verifier (Password)),
+          Verifier  => Derived_Replacement,
           Version   => 0));
    end Execute;
 
@@ -54,10 +67,23 @@ package body Identity.Operations.Passwords.Complete_Reset is
            Identity.Tokens.Purposes.Password_Reset,
            Request.Secret,
            Request.Now);
+      Derived_Replacement : Identity.Text.Bounded.Bounded_Text;
    begin
       if Gate /= Identity.Tokens.Verification.Valid then
          return Gate;
       end if;
+
+      --  Derived only after the reset token checks out; a CSPRNG failure is
+      --  reported as a classified result rather than raised.
+      declare
+         Derived : constant Identity.Crypto.Password_Hashing.Verifier_Creation :=
+           Identity.Crypto.Password_Hashing.Derive_Verifier (Request.Password);
+      begin
+         if not Identity.Crypto.Password_Hashing.Created_Verifier (Derived) then
+            return Identity.Tokens.Verification.Infrastructure_Failure;
+         end if;
+         Derived_Replacement := Derived.Envelope;
+      end;
 
       return Identity.Adapters.Repositories.Stores.Complete_Password_Reset
         (Repository,
@@ -70,8 +96,7 @@ package body Identity.Operations.Passwords.Complete_Reset is
          (Id        => Request.New_Credential,
           Principal => Request.Principal,
           State     => Identity.Credentials.States.Active,
-          Verifier  => Identity.Text.Bounded.From_String
-            (Identity.Crypto.Password_Hashing.Create_Verifier (Request.Password)),
+          Verifier  => Derived_Replacement,
           Version   => 0));
    end Execute;
 

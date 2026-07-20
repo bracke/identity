@@ -2,6 +2,7 @@ with Identity.Adapters.Repositories.Stores;
 with Identity.Identifiers.Entities;
 with Identity.Identifiers.Registry;
 with Identity.One_Time_Passwords.Credentials;
+with Identity.Operations.Contexts;
 with Identity.Times;
 
 package Identity.Operations.Factors.Begin_Enrollment is
@@ -20,5 +21,17 @@ package Identity.Operations.Factors.Begin_Enrollment is
    function Execute
      (Repository : in out Identity.Adapters.Repositories.Stores.Store_Interface'Class;
       Request    : TOTP_Begin_Request)
+      return Identity.Adapters.Repositories.Stores.Command_Status;
+
+   --  Audited form. Emits identity.mfa.factor.enrollment-began, and refuses
+   --  the operation if the store cannot accept that event, so a half-built
+   --  factor never sits in the store unexplained.
+   function Execute
+     (Repository  : in out
+        Identity.Adapters.Repositories.Stores.Store_Interface'Class;
+      Request     : TOTP_Begin_Request;
+      Context     : Identity.Operations.Contexts.Operation_Context;
+      Event       : Identity.Identifiers.Entities.Event_Id;
+      Recorded_At : Identity.Times.Instant)
       return Identity.Adapters.Repositories.Stores.Command_Status;
 end Identity.Operations.Factors.Begin_Enrollment;

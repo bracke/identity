@@ -1,4 +1,5 @@
 with Identity.Secrets.Passwords;
+with Identity.Text.Bounded;
 
 package Identity.Crypto.Password_Hashing is
    --  PBKDF2-HMAC-SHA256 cost parameters. Default_Iterations follows the OWASP
@@ -12,7 +13,38 @@ package Identity.Crypto.Password_Hashing is
    --  Raised by Create_Verifier when the OS CSPRNG cannot supply a salt.
    --  Creating a verifier without unpredictable salt would silently weaken
    --  every stored password, so verifier creation fails closed instead.
+   --
+   --  Prefer Derive_Verifier in the operations layer: the rest of this crate
+   --  reports failure as a classified result, and a caller written against
+   --  that style has no reason to expect an exception.
    Entropy_Unavailable : exception;
+
+   type Creation_Status is
+     (Created,
+      --  The OS CSPRNG could not supply a salt; nothing was produced.
+      Entropy_Missing,
+      --  The key derivation itself failed.
+      Cryptographic_Failure);
+
+   type Verifier_Creation is record
+      Status   : Creation_Status := Entropy_Missing;
+      Envelope : Identity.Text.Bounded.Bounded_Text;
+   end record;
+
+   function Created_Verifier (Value : Verifier_Creation) return Boolean is
+     (Value.Status = Created);
+
+   function Entropy_Rejected (Value : Verifier_Creation) return Boolean is
+     (Value.Status = Entropy_Missing);
+
+   function Cryptographic_Failed (Value : Verifier_Creation) return Boolean is
+     (Value.Status = Cryptographic_Failure);
+
+   --  Non-raising form of Create_Verifier. Fails closed the same way -- a
+   --  result that is not Created carries an empty envelope.
+   function Derive_Verifier
+     (Password : Identity.Secrets.Passwords.New_Password)
+      return Verifier_Creation;
 
    type Verification_Outcome is
      (Verified, Not_Verified, Malformed_Verifier, Unsupported_Format, Unsupported_Algorithm,

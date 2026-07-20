@@ -11,7 +11,8 @@ package body Identity.Operations.Audit is
         when Stores.Version_Conflict
            | Stores.State_Conflict
            | Stores.Uniqueness_Conflict => Envelopes.Conflict,
-        when Stores.Capacity_Conflict => Envelopes.Failed);
+        when Stores.Capacity_Conflict
+           | Stores.Cryptographic_Conflict => Envelopes.Failed);
 
    function Outcome_Of
      (Status : Identity.Results.Operation_Status)
@@ -57,6 +58,19 @@ package body Identity.Operations.Audit is
           Envelopes.Conflict,
         when Identity.Authentication.Transactions.Capacity_Conflict =>
           Envelopes.Failed);
+
+   --  A consume attempt that finds no set, or a set whose version moved under
+   --  it, lost a race; a code that does not verify or was already spent is a
+   --  plain rejection of the presented secret.
+   function Outcome_Of
+     (Status : Identity.Recovery_Codes.Sets.Recovery_Code_Consume_Status)
+      return Envelopes.Event_Outcome is
+     (case Status is
+        when Identity.Recovery_Codes.Sets.Consumed => Envelopes.Succeeded,
+        when Identity.Recovery_Codes.Sets.Unknown
+           | Identity.Recovery_Codes.Sets.State_Conflict =>
+          Envelopes.Conflict,
+        when others => Envelopes.Rejected);
 
    function Severity_Of
      (Outcome : Envelopes.Event_Outcome) return Envelopes.Event_Severity is

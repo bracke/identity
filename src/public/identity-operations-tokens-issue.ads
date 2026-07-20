@@ -1,6 +1,7 @@
 with Identity.Adapters.Repositories.Stores;
 with Identity.Identifiers.Entities;
 with Identity.Identifiers.Registry;
+with Identity.Operations.Contexts;
 with Identity.Secrets.Bytes;
 with Identity.Times;
 with Identity.Tokens.Definitions;
@@ -26,5 +27,17 @@ package Identity.Operations.Tokens.Issue is
    function Execute
      (Repository : in out Identity.Adapters.Repositories.Stores.Store_Interface'Class;
       Request    : Issue_Request)
+      return Identity.Adapters.Repositories.Stores.Command_Status;
+
+   --  Audited form. Emits identity.token.issued for the transition, and
+   --  refuses the operation if the store cannot accept that event, so a token
+   --  that can act on an account never exists without its audit record.
+   function Execute
+     (Repository  : in out
+        Identity.Adapters.Repositories.Stores.Store_Interface'Class;
+      Request     : Issue_Request;
+      Context     : Identity.Operations.Contexts.Operation_Context;
+      Event       : Identity.Identifiers.Entities.Event_Id;
+      Recorded_At : Identity.Times.Instant)
       return Identity.Adapters.Repositories.Stores.Command_Status;
 end Identity.Operations.Tokens.Issue;

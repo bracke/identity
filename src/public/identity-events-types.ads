@@ -105,4 +105,6 @@ package Identity.Events.Types is
      Identity.Identifiers.Registry.From_String ("identity.session.purged");
    Contact_Verification_Requested : constant Identity.Identifiers.Registry.Registry_Id :=
      Identity.Identifiers.Registry.From_String ("identity.contact.verification.requested");
+   Password_Verifier_Migrated : constant Identity.Identifiers.Registry.Registry_Id :=
+     Identity.Identifiers.Registry.From_String ("identity.password.verifier.migrated");
 end Identity.Events.Types;

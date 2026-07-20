@@ -176,6 +176,21 @@ package body Identity.Crypto.Password_Hashing is
    --  Public operations
    ---------------------------------------------------------------------------
 
+   function Derive_Verifier
+     (Password : Identity.Secrets.Passwords.New_Password)
+      return Verifier_Creation
+   is
+   begin
+      return
+        (Status   => Created,
+         Envelope => Identity.Text.Bounded.From_String (Create_Verifier (Password)));
+   exception
+      when Entropy_Unavailable =>
+         return (Status => Entropy_Missing, Envelope => <>);
+      when others =>
+         return (Status => Cryptographic_Failure, Envelope => <>);
+   end Derive_Verifier;
+
    function Create_Verifier
      (Password : Identity.Secrets.Passwords.New_Password) return String
    is

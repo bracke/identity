@@ -38,6 +38,11 @@ so a suite that never ran cannot be reported as satisfied.
 
 - alr build of the library under -gnatwe (warnings are errors)
 - crates/identity_tests AUnit assertion suite                    [evidence: aunit]
+  Includes dedicated blocks, each assertion message carrying its prefix:
+  atomicity: (failed commands leave no partial mutation), disclosure:
+  (untrusted projections collapse distinct causes), events: (registry and
+  schema consistency) and emission: (each event type produced by the audited
+  operation that emits it).
 - crates/identity_conformance repository conformance             [evidence: conformance]
   Runs 39 real commands and queries against the in-memory store across the five
   certification profiles, and fails a profile unless the number of checks
@@ -128,15 +133,15 @@ These are listed as mandatory above the line in earlier revisions of this file
 but are NOT yet enforced. They are recorded here rather than being described as
 implemented.
 
-- Atomicity: no dedicated suite yet; the store's transaction/rollback behaviour
-  is covered only incidentally by the conformance harness.
+- Password verifier migration is caller-driven. Identity.Operations.Passwords.
+  Migrate_Verifier re-derives a below-policy verifier during a successful
+  authentication, but nothing forces a caller to invoke it: a replacement
+  credential needs an identifier and this crate never invents identifiers.
 - Idempotency is not wired. The store keeps idempotency records and the SPI
   exposes them, but no operation reserves an idempotency key, so
   Full_Memory_Profile advertises Idempotency => False. Replaying a command is
   therefore the caller's problem today. The capability gate keeps the flag
   honest: flipping it to True without wiring a caller fails the release check.
-- Disclosure projection suite: no dedicated suite exists; disclosure behaviour
-  is asserted piecemeal in the AUnit suite.
 - A Memory.Store is 3.3 MB (fixed-capacity arrays sized for 512 events, 128
   sessions and so on), so two of them will not fit on a default 8 MB stack.
   Harnesses that need isolated stores must allocate them on the heap, as the

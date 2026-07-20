@@ -50,6 +50,7 @@
     "identity.external.binding.created",
     "identity.session.expired",
     "identity.session.purged",
-    "identity.contact.verification.requested"
+    "identity.contact.verification.requested",
+    "identity.password.verifier.migrated"
   ]
 }

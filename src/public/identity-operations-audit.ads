@@ -5,6 +5,7 @@ with Identity.Identifiers.Entities;
 with Identity.Identifiers.Registry;
 with Identity.Operations.Contexts;
 with Identity.Recovery.Transactions;
+with Identity.Recovery_Codes.Sets;
 with Identity.Results;
 with Identity.Tokens.Verification;
 with Identity.Text.Bounded;
@@ -45,6 +46,10 @@ package Identity.Operations.Audit is
 
    function Outcome_Of
      (Status : Identity.Authentication.Transactions.Authentication_Transaction_Status)
+      return Identity.Events.Envelopes.Event_Outcome;
+
+   function Outcome_Of
+     (Status : Identity.Recovery_Codes.Sets.Recovery_Code_Consume_Status)
       return Identity.Events.Envelopes.Event_Outcome;
 
    --  Severity follows the outcome unless the caller states otherwise;

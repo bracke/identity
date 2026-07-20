@@ -54,7 +54,8 @@ package body Identity_Tools_Events is
       External_Binding_Created,
       Session_Expired,
       Session_Purged,
-      Contact_Verification_Requested);
+      Contact_Verification_Requested,
+      Password_Verifier_Migrated);
 
    type Event_Presence is array (Event_Id) of Boolean;
 
@@ -176,7 +177,9 @@ package body Identity_Tools_Events is
         when Session_Purged =>
           "identity.session.purged",
         when Contact_Verification_Requested =>
-          "identity.contact.verification.requested");
+          "identity.contact.verification.requested",
+        when Password_Verifier_Migrated =>
+          "identity.password.verifier.migrated");
 
    procedure Scan
      (Path     : String;

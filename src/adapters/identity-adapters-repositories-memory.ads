@@ -75,6 +75,8 @@ package Identity.Adapters.Repositories.Memory is
      renames Identity.Adapters.Repositories.Stores.Uniqueness_Conflict;
    Capacity_Conflict : Command_Status
      renames Identity.Adapters.Repositories.Stores.Capacity_Conflict;
+   Cryptographic_Conflict : Command_Status
+     renames Identity.Adapters.Repositories.Stores.Cryptographic_Conflict;
 
    --  One implementation of the repository SPI.
    type Store is new Identity.Adapters.Repositories.Stores.Store_Interface

@@ -21,6 +21,7 @@ package body Identity.Operations.Passwords.Change is
       Existing   : Identity.Passwords.Credentials.Password_Credential_Record;
       Verification : Identity.Crypto.Password_Hashing.Verification_Result;
       Status     : Identity.Adapters.Repositories.Stores.Command_Status;
+      Derived_Replacement : Identity.Text.Bounded.Bounded_Text;
    begin
       Identity.Adapters.Repositories.Stores.Find_Active_Password
         (Repository, Principal, Found, Existing);
@@ -36,6 +37,19 @@ package body Identity.Operations.Passwords.Change is
          return Identity.Results.Rejected;
       end if;
 
+      --  Derived only after the current password checks out, so a rejected
+      --  change does not pay for a key derivation. A CSPRNG failure is
+      --  reported as a classified result rather than raised.
+      declare
+         Derived : constant Identity.Crypto.Password_Hashing.Verifier_Creation :=
+           Identity.Crypto.Password_Hashing.Derive_Verifier (Replacement);
+      begin
+         if not Identity.Crypto.Password_Hashing.Created_Verifier (Derived) then
+            return Identity.Results.Operational_Failure;
+         end if;
+         Derived_Replacement := Derived.Envelope;
+      end;
+
       Status := Identity.Adapters.Repositories.Stores.Replace_Password
         (Repository,
          Existing.Id,
@@ -43,8 +57,7 @@ package body Identity.Operations.Passwords.Change is
          (Id        => New_Credential,
           Principal => Principal,
           State     => Identity.Credentials.States.Active,
-          Verifier  => Identity.Text.Bounded.From_String
-            (Identity.Crypto.Password_Hashing.Create_Verifier (Replacement)),
+          Verifier  => Derived_Replacement,
           Version   => 0));
 
       case Status is
@@ -54,7 +67,8 @@ package body Identity.Operations.Passwords.Change is
             | Identity.Adapters.Repositories.Stores.State_Conflict
             | Identity.Adapters.Repositories.Stores.Uniqueness_Conflict =>
             return Identity.Results.Conflict;
-         when Identity.Adapters.Repositories.Stores.Capacity_Conflict =>
+         when Identity.Adapters.Repositories.Stores.Cryptographic_Conflict
+            | Identity.Adapters.Repositories.Stores.Capacity_Conflict =>
             return Identity.Results.Operational_Failure;
       end case;
    end Execute;
@@ -71,6 +85,7 @@ package body Identity.Operations.Passwords.Change is
       Existing     : Identity.Passwords.Credentials.Password_Credential_Record;
       Verification : Identity.Crypto.Password_Hashing.Verification_Result;
       Status       : Identity.Adapters.Repositories.Stores.Command_Status;
+      Derived_Replacement : Identity.Text.Bounded.Bounded_Text;
    begin
       Identity.Adapters.Repositories.Stores.Find_Active_Password
         (Repository, Request.Principal, Found, Existing);
@@ -86,6 +101,19 @@ package body Identity.Operations.Passwords.Change is
          return Identity.Results.Rejected;
       end if;
 
+      --  Derived only after the current password checks out, so a rejected
+      --  change does not pay for a key derivation. A CSPRNG failure is
+      --  reported as a classified result rather than raised.
+      declare
+         Derived : constant Identity.Crypto.Password_Hashing.Verifier_Creation :=
+           Identity.Crypto.Password_Hashing.Derive_Verifier (Request.Replacement);
+      begin
+         if not Identity.Crypto.Password_Hashing.Created_Verifier (Derived) then
+            return Identity.Results.Operational_Failure;
+         end if;
+         Derived_Replacement := Derived.Envelope;
+      end;
+
       Status := Identity.Adapters.Repositories.Stores.Replace_Password
         (Repository,
          Existing.Id,
@@ -93,8 +121,7 @@ package body Identity.Operations.Passwords.Change is
          (Id        => Request.New_Credential,
           Principal => Request.Principal,
           State     => Identity.Credentials.States.Active,
-          Verifier  => Identity.Text.Bounded.From_String
-            (Identity.Crypto.Password_Hashing.Create_Verifier (Request.Replacement)),
+          Verifier  => Derived_Replacement,
           Version   => 0));
 
       case Status is
@@ -104,7 +131,8 @@ package body Identity.Operations.Passwords.Change is
             | Identity.Adapters.Repositories.Stores.State_Conflict
             | Identity.Adapters.Repositories.Stores.Uniqueness_Conflict =>
             return Identity.Results.Conflict;
-         when Identity.Adapters.Repositories.Stores.Capacity_Conflict =>
+         when Identity.Adapters.Repositories.Stores.Cryptographic_Conflict
+            | Identity.Adapters.Repositories.Stores.Capacity_Conflict =>
             return Identity.Results.Operational_Failure;
       end case;
    end Execute;

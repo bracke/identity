@@ -1,5 +1,6 @@
 with Identity.Adapters.Repositories.Stores;
 with Identity.Identifiers.Entities;
+with Identity.Operations.Contexts;
 with Identity.Recovery_Codes.Sets;
 with Identity.Secrets.Recovery_Codes;
 with Identity.Text.Bounded;
@@ -36,5 +37,17 @@ package Identity.Operations.Factors.Generate_Recovery_Codes is
    function Execute
      (Repository : in out Identity.Adapters.Repositories.Stores.Store_Interface'Class;
       Request    : Generate_Request)
+      return Identity.Adapters.Repositories.Stores.Command_Status;
+
+   --  Audited form. Emits identity.recovery-codes.generated for the install,
+   --  and refuses the operation if the store cannot accept that event, so a
+   --  fresh set of account-recovery secrets never appears unrecorded.
+   function Execute
+     (Repository  : in out
+        Identity.Adapters.Repositories.Stores.Store_Interface'Class;
+      Request     : Generate_Request;
+      Context     : Identity.Operations.Contexts.Operation_Context;
+      Event       : Identity.Identifiers.Entities.Event_Id;
+      Recorded_At : Identity.Times.Instant)
       return Identity.Adapters.Repositories.Stores.Command_Status;
 end Identity.Operations.Factors.Generate_Recovery_Codes;

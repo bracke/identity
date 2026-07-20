@@ -1,6 +1,7 @@
 with Identity.Adapters.Repositories.Stores;
 with Identity.Identifiers.Entities;
 with Identity.Identifiers.Registry;
+with Identity.Operations.Contexts;
 with Identity.Secrets.Tokens;
 with Identity.Times;
 with Identity.Tokens.Verification;
@@ -26,5 +27,17 @@ package Identity.Operations.Tokens.Consume is
    function Execute
      (Repository : in out Identity.Adapters.Repositories.Stores.Store_Interface'Class;
       Request    : Consume_Request)
+      return Identity.Tokens.Verification.Token_Verification_Outcome;
+
+   --  Audited form. Emits identity.token.consumed for the attempt -- rejected
+   --  presentations included, since a stream of them is what an attack looks
+   --  like -- and refuses the operation if the store cannot accept that event.
+   function Execute
+     (Repository  : in out
+        Identity.Adapters.Repositories.Stores.Store_Interface'Class;
+      Request     : Consume_Request;
+      Context     : Identity.Operations.Contexts.Operation_Context;
+      Event       : Identity.Identifiers.Entities.Event_Id;
+      Recorded_At : Identity.Times.Instant)
       return Identity.Tokens.Verification.Token_Verification_Outcome;
 end Identity.Operations.Tokens.Consume;

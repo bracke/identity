@@ -2,6 +2,7 @@ with Identity.Adapters.Repositories.Stores;
 with Identity.Identifiers.Entities;
 with Identity.Identifiers.Registry;
 with Identity.One_Time_Passwords.Credentials;
+with Identity.Operations.Contexts;
 with Identity.Secrets.One_Time_Passwords;
 with Identity.Times;
 with Identity.Versions;
@@ -34,5 +35,17 @@ package Identity.Operations.Factors.Complete_Enrollment is
    function Execute
      (Repository : in out Identity.Adapters.Repositories.Stores.Store_Interface'Class;
       Request    : Staged_TOTP_Completion_Request)
+      return Identity.Adapters.Repositories.Stores.Command_Status;
+
+   --  Audited form. Emits identity.mfa.factor.enrolled for the completion,
+   --  and refuses the operation if the store cannot accept that event, so a
+   --  factor never becomes usable without a record of its enrollment.
+   function Execute
+     (Repository  : in out
+        Identity.Adapters.Repositories.Stores.Store_Interface'Class;
+      Request     : Staged_TOTP_Completion_Request;
+      Context     : Identity.Operations.Contexts.Operation_Context;
+      Event       : Identity.Identifiers.Entities.Event_Id;
+      Recorded_At : Identity.Times.Instant)
       return Identity.Adapters.Repositories.Stores.Command_Status;
 end Identity.Operations.Factors.Complete_Enrollment;

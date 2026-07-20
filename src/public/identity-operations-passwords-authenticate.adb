@@ -20,8 +20,24 @@ package body Identity.Operations.Passwords.Authenticate is
 
    Synthetic_Password : constant Identity.Secrets.Passwords.New_Password :=
      Identity.Secrets.Text.From_UTF_8 ("identity synthetic password verifier");
-   Synthetic_Verifier : constant String :=
-     Identity.Crypto.Password_Hashing.Create_Verifier (Synthetic_Password);
+   --  Used only to burn the same work on a failed lookup as on a real
+   --  verification, so its contents are never stored or trusted. Derived
+   --  without raising: an entropy failure at elaboration would otherwise stop
+   --  the program from starting, and a fixed-salt envelope is harmless here
+   --  precisely because nothing is authenticated against it.
+   function Synthetic_Envelope return String is
+      Derived : constant Identity.Crypto.Password_Hashing.Verifier_Creation :=
+        Identity.Crypto.Password_Hashing.Derive_Verifier (Synthetic_Password);
+   begin
+      if Identity.Crypto.Password_Hashing.Created_Verifier (Derived) then
+         return Identity.Text.Bounded.Image (Derived.Envelope);
+      end if;
+      return "identity-pbkdf2-sha256:v2:600000:"
+        & "00000000000000000000000000000000:"
+        & "0000000000000000000000000000000000000000000000000000000000000000";
+   end Synthetic_Envelope;
+
+   Synthetic_Verifier : constant String := Synthetic_Envelope;
 
    procedure Perform_Synthetic_Verification
      (Password : Identity.Secrets.Passwords.Presented_Password)
