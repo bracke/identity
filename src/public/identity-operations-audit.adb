@@ -79,6 +79,21 @@ package body Identity.Operations.Audit is
         when Identity.Sessions.Handles.Found => Envelopes.Succeeded,
         when others => Envelopes.Rejected);
 
+   function Outcome_Of
+     (Status : Identity.One_Time_Passwords.Credentials.TOTP_Accept_Status)
+      return Envelopes.Event_Outcome is
+     (case Status is
+        when Identity.One_Time_Passwords.Credentials.Accepted =>
+          Envelopes.Succeeded,
+        when Identity.One_Time_Passwords.Credentials.Replayed =>
+          Envelopes.Conflict,
+        when Identity.One_Time_Passwords.Credentials.State_Conflict
+           | Identity.One_Time_Passwords.Credentials.Unknown =>
+          Envelopes.Conflict,
+        when Identity.One_Time_Passwords.Credentials.Capacity_Conflict =>
+          Envelopes.Failed,
+        when others => Envelopes.Rejected);
+
    function Severity_Of
      (Outcome : Envelopes.Event_Outcome) return Envelopes.Event_Severity is
      (case Outcome is

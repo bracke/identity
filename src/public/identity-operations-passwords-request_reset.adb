@@ -127,4 +127,47 @@ package body Identity.Operations.Passwords.Request_Reset is
          Identity.Adapters.Repositories.Stores.Complete_Idempotency
            (Repository, Kind, Key));
    end Execute;
+
+   function Execute
+     (Repository  : in out
+        Identity.Adapters.Repositories.Stores.Store_Interface'Class;
+      Token       : Identity.Tokens.Definitions.Action_Token_Record;
+      Context     : Identity.Operations.Contexts.Operation_Context;
+      Event       : Identity.Identifiers.Entities.Event_Id;
+      Recorded_At : Identity.Times.Instant)
+      return Identity.Adapters.Repositories.Stores.Command_Status
+   is
+      use type Identity.Adapters.Repositories.Stores.Command_Status;
+      Status : Identity.Adapters.Repositories.Stores.Command_Status;
+   begin
+      --  Reserve first: refusing here issues no token at all.
+      if not Identity.Operations.Audit.Capacity_Reserved (Repository) then
+         return Identity.Adapters.Repositories.Stores.Capacity_Conflict;
+      end if;
+
+      Status := Execute (Repository, Token);
+
+      declare
+         Emitted : constant Identity.Adapters.Repositories.Stores.Command_Status :=
+           Identity.Operations.Audit.Emit
+             (Repository  => Repository,
+              Context     => Context,
+              Event       => Event,
+              Type_Id     => Identity.Events.Types.Password_Reset_Requested,
+              Subject     =>
+                Identity.Operations.Audit.Subject_Of (Token.Principal),
+              Target      => Identity.Text.Bounded.From_String
+                (Identity.Identifiers.Entities.To_String (Token.Id)),
+              Outcome     => Identity.Operations.Audit.Outcome_Of (Status),
+              Recorded_At => Recorded_At);
+      begin
+         --  Capacity was reserved above, so a failure here is a real fault in
+         --  the store and must not be hidden behind a successful transition.
+         if Emitted /= Identity.Adapters.Repositories.Stores.Applied then
+            return Emitted;
+         end if;
+      end;
+
+      return Status;
+   end Execute;
 end Identity.Operations.Passwords.Request_Reset;

@@ -44,4 +44,20 @@ package Identity.Operations.Sessions.Upgrade_Assurance is
       Event       : Identity.Identifiers.Entities.Event_Id;
       Recorded_At : Identity.Times.Instant)
       return Identity.Authentication.Transactions.Authentication_Transaction_Status;
+
+   --  Audited upgrade taking the raised standing directly, for callers that
+   --  hold no expected versions to stage.
+   function Execute
+     (Repository  : in out
+        Identity.Adapters.Repositories.Stores.Store_Interface'Class;
+      Session     : Identity.Identifiers.Entities.Session_Id;
+      Transaction : Identity.Identifiers.Entities.Authentication_Transaction_Id;
+      Principal   : Identity.Identifiers.Entities.Principal_Id;
+      Now         : Identity.Times.Instant;
+      Assurance   : Identity.Assurance.Levels.Assurance_Level;
+      Attributes  : Identity.Assurance.Attributes.Assurance_Attributes;
+      Context     : Identity.Operations.Contexts.Operation_Context;
+      Event       : Identity.Identifiers.Entities.Event_Id;
+      Recorded_At : Identity.Times.Instant)
+      return Identity.Authentication.Transactions.Authentication_Transaction_Status;
 end Identity.Operations.Sessions.Upgrade_Assurance;

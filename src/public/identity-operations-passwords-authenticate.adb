@@ -293,4 +293,82 @@ package body Identity.Operations.Passwords.Authenticate is
 
       return Result;
    end Execute;
+
+   function Execute
+     (Repository  : in out
+        Identity.Adapters.Repositories.Stores.Store_Interface'Class;
+      Subject     : Identity.Identities.Subjects.Authentication_Subject;
+      Password    : Identity.Secrets.Passwords.Presented_Password;
+      Context     : Identity.Operations.Contexts.Operation_Context;
+      Event       : Identity.Identifiers.Entities.Event_Id;
+      Recorded_At : Identity.Times.Instant)
+      return Identity.Authentication.Results.Password_Authentication_Result
+   is
+      use type Identity.Adapters.Repositories.Stores.Command_Status;
+      use type Identity.Results.Operation_Status;
+
+      Result : Identity.Authentication.Results.Password_Authentication_Result;
+   begin
+      --  Reserve first: refusing here checks nothing at all, whereas a full
+      --  event log found afterwards would leave a completed credential check
+      --  with no record that it happened.
+      if not Identity.Operations.Audit.Capacity_Reserved (Repository) then
+         return
+           (Status    => Identity.Results.Operational_Failure,
+            Principal => (Present => False));
+      end if;
+
+      Result := Execute (Repository, Subject, Password);
+
+      declare
+         Succeeded : constant Boolean :=
+           Result.Status = Identity.Results.Succeeded;
+
+         --  A wrong password is a rejection, not a store conflict, so the
+         --  outcome is stated rather than derived from a command status.
+         Outcome : constant Identity.Events.Envelopes.Event_Outcome :=
+           (if Succeeded then Identity.Events.Envelopes.Succeeded
+            elsif Result.Status = Identity.Results.Conflict
+            then Identity.Events.Envelopes.Conflict
+            elsif Identity.Results.Operational (Result.Status)
+            then Identity.Events.Envelopes.Failed
+            else Identity.Events.Envelopes.Rejected);
+
+         --  This shape carries no subject fingerprint, and the presented
+         --  subject value must not be persisted verbatim, so the resolved
+         --  principal names the attempt when the lookup found one.
+         Emitted : constant Identity.Adapters.Repositories.Stores.Command_Status :=
+           Identity.Operations.Audit.Emit
+             (Repository  => Repository,
+              Context     => Context,
+              Event       => Event,
+              Type_Id     =>
+                (if Succeeded
+                 then Identity.Events.Types.Authentication_Succeeded
+                 else Identity.Events.Types.Authentication_Rejected),
+              Subject     =>
+                (if Result.Principal.Present
+                 then Identity.Operations.Audit.Subject_Of
+                        (Result.Principal.Value)
+                 else Identity.Operations.Audit.No_Subject),
+              Target      =>
+                (if Result.Principal.Present
+                 then Identity.Text.Bounded.From_String
+                        (Identity.Identifiers.Entities.To_String
+                           (Result.Principal.Value))
+                 else Identity.Text.Bounded.From_String ("")),
+              Outcome     => Outcome,
+              Recorded_At => Recorded_At);
+      begin
+         --  Capacity was reserved above, so a failure here is a real fault in
+         --  the store and must not be hidden behind a successful login.
+         if Emitted /= Identity.Adapters.Repositories.Stores.Applied then
+            return
+              (Status    => Identity.Results.Operational_Failure,
+               Principal => (Present => False));
+         end if;
+      end;
+
+      return Result;
+   end Execute;
 end Identity.Operations.Passwords.Authenticate;

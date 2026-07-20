@@ -86,4 +86,27 @@ package Identity.Operations.Sessions.Rotate is
       Recorded_At : Identity.Times.Instant;
       Key         : Identity.Operations.Idempotency.Idempotency_Key)
       return Identity.Operations.Replay.Command_Outcome;
+
+   --  Audited form taking the session pair directly, for callers that have
+   --  already built the successor record.
+   function Execute
+     (Repository  : in out
+        Identity.Adapters.Repositories.Stores.Store_Interface'Class;
+      Predecessor : Identity.Identifiers.Entities.Session_Id;
+      Successor   : Identity.Sessions.Definitions.Session_Record;
+      Context     : Identity.Operations.Contexts.Operation_Context;
+      Event       : Identity.Identifiers.Entities.Event_Id;
+      Recorded_At : Identity.Times.Instant)
+      return Identity.Adapters.Repositories.Stores.Command_Status;
+
+   --  Audited staged form. Same record as the unstaged audited form; the
+   --  expected predecessor version is what differs.
+   function Execute
+     (Repository  : in out
+        Identity.Adapters.Repositories.Stores.Store_Interface'Class;
+      Request     : Staged_Rotate_Request;
+      Context     : Identity.Operations.Contexts.Operation_Context;
+      Event       : Identity.Identifiers.Entities.Event_Id;
+      Recorded_At : Identity.Times.Instant)
+      return Identity.Adapters.Repositories.Stores.Command_Status;
 end Identity.Operations.Sessions.Rotate;

@@ -43,4 +43,19 @@ package Identity.Operations.Verification.Complete_Contact_Change is
       Event       : Identity.Identifiers.Entities.Event_Id;
       Recorded_At : Identity.Times.Instant)
       return Identity.Tokens.Verification.Token_Verification_Outcome;
+
+   --  Audited completion taking the presentation directly, for callers that
+   --  hold no expected versions to stage.
+   function Execute
+     (Repository  : in out
+        Identity.Adapters.Repositories.Stores.Store_Interface'Class;
+      Token       : Identity.Identifiers.Entities.Token_Id;
+      Secret      : Identity.Secrets.Tokens.Verification_Token_Secret;
+      Now         : Identity.Times.Instant;
+      Predecessor : Identity.Identifiers.Entities.Contact_Binding_Id;
+      Successor   : Identity.Identifiers.Entities.Contact_Binding_Id;
+      Context     : Identity.Operations.Contexts.Operation_Context;
+      Event       : Identity.Identifiers.Entities.Event_Id;
+      Recorded_At : Identity.Times.Instant)
+      return Identity.Tokens.Verification.Token_Verification_Outcome;
 end Identity.Operations.Verification.Complete_Contact_Change;

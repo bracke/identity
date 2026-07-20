@@ -41,4 +41,18 @@ package Identity.Operations.Passwords.Change is
       Event       : Identity.Identifiers.Entities.Event_Id;
       Recorded_At : Identity.Times.Instant)
       return Identity.Results.Operation_Status;
+
+   --  Audited form taking the change directly. A rejected current-password
+   --  check is audited as a rejection, not as a store conflict.
+   function Execute
+     (Repository  : in out
+        Identity.Adapters.Repositories.Stores.Store_Interface'Class;
+      Principal      : Identity.Identifiers.Entities.Principal_Id;
+      New_Credential : Identity.Identifiers.Entities.Credential_Id;
+      Current        : Identity.Secrets.Passwords.Presented_Password;
+      Replacement    : Identity.Secrets.Passwords.New_Password;
+      Context        : Identity.Operations.Contexts.Operation_Context;
+      Event          : Identity.Identifiers.Entities.Event_Id;
+      Recorded_At    : Identity.Times.Instant)
+      return Identity.Results.Operation_Status;
 end Identity.Operations.Passwords.Change;

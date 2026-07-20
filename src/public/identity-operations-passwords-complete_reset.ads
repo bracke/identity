@@ -46,4 +46,20 @@ package Identity.Operations.Passwords.Complete_Reset is
       Event       : Identity.Identifiers.Entities.Event_Id;
       Recorded_At : Identity.Times.Instant)
       return Identity.Tokens.Verification.Token_Verification_Outcome;
+
+   --  Audited form taking the completion directly. An invalid token is
+   --  audited as a rejection.
+   function Execute
+     (Repository  : in out
+        Identity.Adapters.Repositories.Stores.Store_Interface'Class;
+      Token          : Identity.Identifiers.Entities.Token_Id;
+      Principal      : Identity.Identifiers.Entities.Principal_Id;
+      Secret         : Identity.Secrets.Tokens.Reset_Token_Secret;
+      Now            : Identity.Times.Instant;
+      New_Credential : Identity.Identifiers.Entities.Credential_Id;
+      Password       : Identity.Secrets.Passwords.New_Password;
+      Context        : Identity.Operations.Contexts.Operation_Context;
+      Event          : Identity.Identifiers.Entities.Event_Id;
+      Recorded_At    : Identity.Times.Instant)
+      return Identity.Tokens.Verification.Token_Verification_Outcome;
 end Identity.Operations.Passwords.Complete_Reset;

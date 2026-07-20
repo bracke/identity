@@ -57,4 +57,15 @@ package Identity.Operations.API_Keys.Issue is
       Recorded_At : Identity.Times.Instant;
       Key         : Identity.Operations.Idempotency.Idempotency_Key)
       return Identity.Operations.Replay.Command_Outcome;
+
+   --  Audited form of the shape above. Same event, same subject and
+   --  target, same refusal rule as the audited request form.
+   function Execute
+     (Repository  : in out
+        Identity.Adapters.Repositories.Stores.Store_Interface'Class;
+      Credential  : Identity.API_Keys.Credentials.API_Key_Credential_Record;
+      Context     : Identity.Operations.Contexts.Operation_Context;
+      Event       : Identity.Identifiers.Entities.Event_Id;
+      Recorded_At : Identity.Times.Instant)
+      return Identity.Adapters.Repositories.Stores.Command_Status;
 end Identity.Operations.API_Keys.Issue;

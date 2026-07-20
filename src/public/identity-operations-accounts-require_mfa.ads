@@ -33,4 +33,16 @@ package Identity.Operations.Accounts.Require_MFA is
       Event       : Identity.Identifiers.Entities.Event_Id;
       Recorded_At : Identity.Times.Instant)
       return Identity.Adapters.Repositories.Stores.Command_Status;
+
+   --  Audited form of the shape above. Same event, same subject and
+   --  target, same refusal rule as the audited request form.
+   function Execute
+     (Repository  : in out
+        Identity.Adapters.Repositories.Stores.Store_Interface'Class;
+      Account     : Identity.Identifiers.Entities.Account_Id;
+      Principal   : Identity.Identifiers.Entities.Principal_Id;
+      Context     : Identity.Operations.Contexts.Operation_Context;
+      Event       : Identity.Identifiers.Entities.Event_Id;
+      Recorded_At : Identity.Times.Instant)
+      return Identity.Adapters.Repositories.Stores.Command_Status;
 end Identity.Operations.Accounts.Require_MFA;

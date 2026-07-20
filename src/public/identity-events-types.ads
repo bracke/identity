@@ -111,4 +111,6 @@ package Identity.Events.Types is
      Identity.Identifiers.Registry.From_String ("identity.session.renewed");
    Session_Assurance_Upgraded : constant Identity.Identifiers.Registry.Registry_Id :=
      Identity.Identifiers.Registry.From_String ("identity.session.assurance-upgraded");
+   TOTP_Counter_Accepted : constant Identity.Identifiers.Registry.Registry_Id :=
+     Identity.Identifiers.Registry.From_String ("identity.totp.counter-accepted");
 end Identity.Events.Types;

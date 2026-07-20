@@ -36,4 +36,16 @@ package Identity.Operations.Factors.Accept_TOTP_Counter is
       Event       : Identity.Identifiers.Entities.Event_Id;
       Recorded_At : Identity.Times.Instant)
       return Identity.One_Time_Passwords.Credentials.TOTP_Accept_Status;
+
+   --  Audited form of the shape above. Same event, same subject and
+   --  target, same refusal rule as the audited request form.
+   function Execute
+     (Repository  : in out
+        Identity.Adapters.Repositories.Stores.Store_Interface'Class;
+      Credential  : Identity.Identifiers.Entities.Credential_Id;
+      Counter     : Identity.One_Time_Passwords.Credentials.TOTP_Counter;
+      Context     : Identity.Operations.Contexts.Operation_Context;
+      Event       : Identity.Identifiers.Entities.Event_Id;
+      Recorded_At : Identity.Times.Instant)
+      return Identity.One_Time_Passwords.Credentials.TOTP_Accept_Status;
 end Identity.Operations.Factors.Accept_TOTP_Counter;

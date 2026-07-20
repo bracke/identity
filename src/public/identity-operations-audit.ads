@@ -3,6 +3,7 @@ with Identity.Authentication.Transactions;
 with Identity.Events.Envelopes;
 with Identity.Identifiers.Entities;
 with Identity.Identifiers.Registry;
+with Identity.One_Time_Passwords.Credentials;
 with Identity.Operations.Contexts;
 with Identity.Recovery.Transactions;
 with Identity.Recovery_Codes.Sets;
@@ -57,6 +58,10 @@ package Identity.Operations.Audit is
    --  reference; there is no stored state for it to have raced with.
    function Outcome_Of
      (Status : Identity.Sessions.Handles.Session_Lookup_Status)
+      return Identity.Events.Envelopes.Event_Outcome;
+
+   function Outcome_Of
+     (Status : Identity.One_Time_Passwords.Credentials.TOTP_Accept_Status)
       return Identity.Events.Envelopes.Event_Outcome;
 
    --  Severity follows the outcome unless the caller states otherwise;

@@ -40,4 +40,16 @@ package Identity.Operations.Factors.Consume_Recovery_Code is
       Event       : Identity.Identifiers.Entities.Event_Id;
       Recorded_At : Identity.Times.Instant)
       return Recovery_Code_Consume_Status;
+
+   --  Audited form of the shape above. Same event, same subject and
+   --  target, same refusal rule as the audited request form.
+   function Execute
+     (Repository  : in out
+        Identity.Adapters.Repositories.Stores.Store_Interface'Class;
+      Set_Id      : Identity.Identifiers.Entities.Credential_Set_Id;
+      Code        : Identity.Secrets.Recovery_Codes.Recovery_Code;
+      Context     : Identity.Operations.Contexts.Operation_Context;
+      Event       : Identity.Identifiers.Entities.Event_Id;
+      Recorded_At : Identity.Times.Instant)
+      return Recovery_Code_Consume_Status;
 end Identity.Operations.Factors.Consume_Recovery_Code;

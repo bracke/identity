@@ -167,4 +167,91 @@ package body Identity.Operations.Sessions.Rotate is
          Identity.Adapters.Repositories.Stores.Complete_Idempotency
            (Repository, Kind, Key));
    end Execute;
+
+   function Execute
+     (Repository  : in out
+        Identity.Adapters.Repositories.Stores.Store_Interface'Class;
+      Predecessor : Identity.Identifiers.Entities.Session_Id;
+      Successor   : Identity.Sessions.Definitions.Session_Record;
+      Context     : Identity.Operations.Contexts.Operation_Context;
+      Event       : Identity.Identifiers.Entities.Event_Id;
+      Recorded_At : Identity.Times.Instant)
+      return Identity.Adapters.Repositories.Stores.Command_Status
+   is
+      use type Identity.Adapters.Repositories.Stores.Command_Status;
+      Status : Identity.Adapters.Repositories.Stores.Command_Status;
+   begin
+      --  Reserve first: a rotation that cannot be recorded is refused rather
+      --  than applied, so the predecessor is never retired unaudited.
+      if not Identity.Operations.Audit.Capacity_Reserved (Repository) then
+         return Identity.Adapters.Repositories.Stores.Capacity_Conflict;
+      end if;
+
+      Status := Execute (Repository, Predecessor, Successor);
+
+      declare
+         Emitted : constant Identity.Adapters.Repositories.Stores.Command_Status :=
+           Identity.Operations.Audit.Emit
+             (Repository  => Repository,
+              Context     => Context,
+              Event       => Event,
+              Type_Id     => Identity.Events.Types.Session_Rotated,
+              Subject     =>
+                Identity.Operations.Audit.Subject_Of (Successor.Principal),
+              Target      => Successor.Public_Reference,
+              Outcome     => Identity.Operations.Audit.Outcome_Of (Status),
+              Recorded_At => Recorded_At);
+      begin
+         --  Capacity was reserved above, so a failure here is a real fault in
+         --  the store and must not be hidden behind a successful transition.
+         if Emitted /= Identity.Adapters.Repositories.Stores.Applied then
+            return Emitted;
+         end if;
+      end;
+
+      return Status;
+   end Execute;
+
+   function Execute
+     (Repository  : in out
+        Identity.Adapters.Repositories.Stores.Store_Interface'Class;
+      Request     : Staged_Rotate_Request;
+      Context     : Identity.Operations.Contexts.Operation_Context;
+      Event       : Identity.Identifiers.Entities.Event_Id;
+      Recorded_At : Identity.Times.Instant)
+      return Identity.Adapters.Repositories.Stores.Command_Status
+   is
+      use type Identity.Adapters.Repositories.Stores.Command_Status;
+      Status : Identity.Adapters.Repositories.Stores.Command_Status;
+   begin
+      --  Reserve first: a rotation that cannot be recorded is refused rather
+      --  than applied, so the predecessor is never retired unaudited.
+      if not Identity.Operations.Audit.Capacity_Reserved (Repository) then
+         return Identity.Adapters.Repositories.Stores.Capacity_Conflict;
+      end if;
+
+      Status := Execute (Repository, Request);
+
+      declare
+         Emitted : constant Identity.Adapters.Repositories.Stores.Command_Status :=
+           Identity.Operations.Audit.Emit
+             (Repository  => Repository,
+              Context     => Context,
+              Event       => Event,
+              Type_Id     => Identity.Events.Types.Session_Rotated,
+              Subject     =>
+                Identity.Operations.Audit.Subject_Of (Request.Request.Principal),
+              Target      => Request.Request.Public_Reference,
+              Outcome     => Identity.Operations.Audit.Outcome_Of (Status),
+              Recorded_At => Recorded_At);
+      begin
+         --  Capacity was reserved above, so a failure here is a real fault in
+         --  the store and must not be hidden behind a successful transition.
+         if Emitted /= Identity.Adapters.Repositories.Stores.Applied then
+            return Emitted;
+         end if;
+      end;
+
+      return Status;
+   end Execute;
 end Identity.Operations.Sessions.Rotate;

@@ -50,4 +50,15 @@ package Identity.Operations.Factors.Generate_Recovery_Codes is
       Event       : Identity.Identifiers.Entities.Event_Id;
       Recorded_At : Identity.Times.Instant)
       return Identity.Adapters.Repositories.Stores.Command_Status;
+
+   --  Audited form of the shape above. Same event, same subject and
+   --  target, same refusal rule as the audited request form.
+   function Execute
+     (Repository  : in out
+        Identity.Adapters.Repositories.Stores.Store_Interface'Class;
+      Codes       : Identity.Recovery_Codes.Sets.Recovery_Code_Set_Record;
+      Context     : Identity.Operations.Contexts.Operation_Context;
+      Event       : Identity.Identifiers.Entities.Event_Id;
+      Recorded_At : Identity.Times.Instant)
+      return Identity.Adapters.Repositories.Stores.Command_Status;
 end Identity.Operations.Factors.Generate_Recovery_Codes;

@@ -185,4 +185,50 @@ package body Identity.Operations.Passwords.Change is
 
       return Status;
    end Execute;
+
+   function Execute
+     (Repository  : in out
+        Identity.Adapters.Repositories.Stores.Store_Interface'Class;
+      Principal      : Identity.Identifiers.Entities.Principal_Id;
+      New_Credential : Identity.Identifiers.Entities.Credential_Id;
+      Current        : Identity.Secrets.Passwords.Presented_Password;
+      Replacement    : Identity.Secrets.Passwords.New_Password;
+      Context        : Identity.Operations.Contexts.Operation_Context;
+      Event          : Identity.Identifiers.Entities.Event_Id;
+      Recorded_At    : Identity.Times.Instant)
+      return Identity.Results.Operation_Status
+   is
+      use type Identity.Adapters.Repositories.Stores.Command_Status;
+      Status : Identity.Results.Operation_Status;
+   begin
+      --  Reserve first: refusing here leaves the stored password untouched.
+      if not Identity.Operations.Audit.Capacity_Reserved (Repository) then
+         return Identity.Results.Operational_Failure;
+      end if;
+
+      Status := Execute (Repository, Principal, New_Credential, Current, Replacement);
+
+      declare
+         Emitted : constant Identity.Adapters.Repositories.Stores.Command_Status :=
+           Identity.Operations.Audit.Emit
+             (Repository  => Repository,
+              Context     => Context,
+              Event       => Event,
+              Type_Id     => Identity.Events.Types.Password_Changed,
+              Subject     =>
+                Identity.Operations.Audit.Subject_Of (Principal),
+              Target      => Identity.Text.Bounded.From_String
+                (Identity.Identifiers.Entities.To_String (New_Credential)),
+              Outcome     => Identity.Operations.Audit.Outcome_Of (Status),
+              Recorded_At => Recorded_At);
+      begin
+         --  Capacity was reserved above, so a failure here is a real fault in
+         --  the store and must not be hidden behind a successful transition.
+         if Emitted /= Identity.Adapters.Repositories.Stores.Applied then
+            return Identity.Results.Operational_Failure;
+         end if;
+      end;
+
+      return Status;
+   end Execute;
 end Identity.Operations.Passwords.Change;

@@ -56,4 +56,16 @@ package Identity.Operations.Verification.Request is
       Recorded_At : Identity.Times.Instant;
       Key         : Identity.Operations.Idempotency.Idempotency_Key)
       return Identity.Operations.Replay.Command_Outcome;
+
+   --  Audited form taking the token record directly, for callers that have
+   --  already built it.
+   function Execute
+     (Repository  : in out
+        Identity.Adapters.Repositories.Stores.Store_Interface'Class;
+      Contact     : Identity.Contacts.Bindings.Contact_Binding_Record;
+      Token       : Identity.Tokens.Definitions.Action_Token_Record;
+      Context     : Identity.Operations.Contexts.Operation_Context;
+      Event       : Identity.Identifiers.Entities.Event_Id;
+      Recorded_At : Identity.Times.Instant)
+      return Identity.Adapters.Repositories.Stores.Command_Status;
 end Identity.Operations.Verification.Request;

@@ -33,4 +33,16 @@ package Identity.Operations.Identities.Revoke is
       Event       : Identity.Identifiers.Entities.Event_Id;
       Recorded_At : Identity.Times.Instant)
       return Identity.Adapters.Repositories.Stores.Command_Status;
+
+   --  Audited form taking the binding and principal directly, for callers
+   --  that hold no expected version to stage.
+   function Execute
+     (Repository  : in out
+        Identity.Adapters.Repositories.Stores.Store_Interface'Class;
+      Binding     : Identity.Identifiers.Entities.Identity_Binding_Id;
+      Principal   : Identity.Identifiers.Entities.Principal_Id;
+      Context     : Identity.Operations.Contexts.Operation_Context;
+      Event       : Identity.Identifiers.Entities.Event_Id;
+      Recorded_At : Identity.Times.Instant)
+      return Identity.Adapters.Repositories.Stores.Command_Status;
 end Identity.Operations.Identities.Revoke;

@@ -37,4 +37,17 @@ package Identity.Operations.Recovery.Complete is
       Event       : Identity.Identifiers.Entities.Event_Id;
       Recorded_At : Identity.Times.Instant)
       return Identity.Recovery.Transactions.Recovery_Transition_Status;
+
+   --  Audited completion taking the transaction, principal and clock
+   --  reading directly.
+   function Execute
+     (Repository  : in out
+        Identity.Adapters.Repositories.Stores.Store_Interface'Class;
+      Transaction : Identity.Identifiers.Entities.Authentication_Transaction_Id;
+      Principal   : Identity.Identifiers.Entities.Principal_Id;
+      Now         : Identity.Times.Instant;
+      Context     : Identity.Operations.Contexts.Operation_Context;
+      Event       : Identity.Identifiers.Entities.Event_Id;
+      Recorded_At : Identity.Times.Instant)
+      return Identity.Recovery.Transactions.Recovery_Transition_Status;
 end Identity.Operations.Recovery.Complete;

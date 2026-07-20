@@ -72,4 +72,49 @@ package body Identity.Operations.Verification.Complete is
 
       return Outcome;
    end Execute;
+
+   function Execute
+     (Repository  : in out
+        Identity.Adapters.Repositories.Stores.Store_Interface'Class;
+      Token       : Identity.Identifiers.Entities.Token_Id;
+      Secret      : Identity.Secrets.Tokens.Verification_Token_Secret;
+      Now         : Identity.Times.Instant;
+      Contact     : Identity.Identifiers.Entities.Contact_Binding_Id;
+      Context     : Identity.Operations.Contexts.Operation_Context;
+      Event       : Identity.Identifiers.Entities.Event_Id;
+      Recorded_At : Identity.Times.Instant)
+      return Identity.Tokens.Verification.Token_Verification_Outcome
+   is
+      use type Identity.Adapters.Repositories.Stores.Command_Status;
+      Outcome : Identity.Tokens.Verification.Token_Verification_Outcome;
+   begin
+      --  Reserve first: refusing here marks nothing verified.
+      if not Identity.Operations.Audit.Capacity_Reserved (Repository) then
+         return Identity.Tokens.Verification.Infrastructure_Failure;
+      end if;
+
+      Outcome := Execute (Repository, Token, Secret, Now, Contact);
+
+      declare
+         Emitted : constant Identity.Adapters.Repositories.Stores.Command_Status :=
+           Identity.Operations.Audit.Emit
+             (Repository  => Repository,
+              Context     => Context,
+              Event       => Event,
+              Type_Id     => Identity.Events.Types.Contact_Verified,
+              Subject     => Identity.Operations.Audit.No_Subject,
+              Target      => Identity.Text.Bounded.From_String
+                (Identity.Identifiers.Entities.To_String (Contact)),
+              Outcome     => Identity.Operations.Audit.Outcome_Of (Outcome),
+              Recorded_At => Recorded_At);
+      begin
+         --  Capacity was reserved above, so a failure here is a real fault in
+         --  the store and must not be hidden behind a successful transition.
+         if Emitted /= Identity.Adapters.Repositories.Stores.Applied then
+            return Identity.Tokens.Verification.Infrastructure_Failure;
+         end if;
+      end;
+
+      return Outcome;
+   end Execute;
 end Identity.Operations.Verification.Complete;

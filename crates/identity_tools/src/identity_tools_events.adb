@@ -57,7 +57,8 @@ package body Identity_Tools_Events is
       Contact_Verification_Requested,
       Password_Verifier_Migrated,
       Session_Renewed,
-      Session_Assurance_Upgraded);
+      Session_Assurance_Upgraded,
+      TOTP_Counter_Accepted);
 
    type Event_Presence is array (Event_Id) of Boolean;
 
@@ -185,7 +186,9 @@ package body Identity_Tools_Events is
         when Session_Renewed =>
           "identity.session.renewed",
         when Session_Assurance_Upgraded =>
-          "identity.session.assurance-upgraded");
+          "identity.session.assurance-upgraded",
+        when TOTP_Counter_Accepted =>
+          "identity.totp.counter-accepted");
 
    procedure Scan
      (Path     : String;

@@ -33,4 +33,15 @@ package Identity.Operations.Recovery.Cancel is
       Event       : Identity.Identifiers.Entities.Event_Id;
       Recorded_At : Identity.Times.Instant)
       return Identity.Recovery.Transactions.Recovery_Transition_Status;
+
+   --  Audited cancellation taking the transaction and principal directly.
+   function Execute
+     (Repository  : in out
+        Identity.Adapters.Repositories.Stores.Store_Interface'Class;
+      Transaction : Identity.Identifiers.Entities.Authentication_Transaction_Id;
+      Principal   : Identity.Identifiers.Entities.Principal_Id;
+      Context     : Identity.Operations.Contexts.Operation_Context;
+      Event       : Identity.Identifiers.Entities.Event_Id;
+      Recorded_At : Identity.Times.Instant)
+      return Identity.Recovery.Transactions.Recovery_Transition_Status;
 end Identity.Operations.Recovery.Cancel;

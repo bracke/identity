@@ -53,6 +53,7 @@
     "identity.contact.verification.requested",
     "identity.password.verifier.migrated",
     "identity.session.renewed",
-    "identity.session.assurance-upgraded"
+    "identity.session.assurance-upgraded",
+    "identity.totp.counter-accepted"
   ]
 }

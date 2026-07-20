@@ -44,4 +44,18 @@ package Identity.Operations.Passwords.Authenticate is
       Event       : Identity.Identifiers.Entities.Event_Id;
       Recorded_At : Identity.Times.Instant)
       return Identity.Authentication.Results.Password_Authentication_Result;
+
+   --  Audited form taking the subject and password directly. Emits the same
+   --  succeeded/rejected pair as the request form. The plain form of this
+   --  shape only reads the store; writing the record is what obliges this one
+   --  to take Repository as in out.
+   function Execute
+     (Repository  : in out
+        Identity.Adapters.Repositories.Stores.Store_Interface'Class;
+      Subject     : Identity.Identities.Subjects.Authentication_Subject;
+      Password    : Identity.Secrets.Passwords.Presented_Password;
+      Context     : Identity.Operations.Contexts.Operation_Context;
+      Event       : Identity.Identifiers.Entities.Event_Id;
+      Recorded_At : Identity.Times.Instant)
+      return Identity.Authentication.Results.Password_Authentication_Result;
 end Identity.Operations.Passwords.Authenticate;

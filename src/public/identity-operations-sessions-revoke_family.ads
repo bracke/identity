@@ -30,4 +30,15 @@ package Identity.Operations.Sessions.Revoke_Family is
       Event       : Identity.Identifiers.Entities.Event_Id;
       Recorded_At : Identity.Times.Instant)
       return Identity.Adapters.Repositories.Stores.Command_Status;
+
+   --  Audited form taking the family directly, for callers that hold no
+   --  expected count to stage.
+   function Execute
+     (Repository  : in out
+        Identity.Adapters.Repositories.Stores.Store_Interface'Class;
+      Family      : Identity.Identifiers.Entities.Session_Family_Id;
+      Context     : Identity.Operations.Contexts.Operation_Context;
+      Event       : Identity.Identifiers.Entities.Event_Id;
+      Recorded_At : Identity.Times.Instant)
+      return Identity.Adapters.Repositories.Stores.Command_Status;
 end Identity.Operations.Sessions.Revoke_Family;

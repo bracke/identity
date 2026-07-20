@@ -40,4 +40,18 @@ package Identity.Operations.Tokens.Consume is
       Event       : Identity.Identifiers.Entities.Event_Id;
       Recorded_At : Identity.Times.Instant)
       return Identity.Tokens.Verification.Token_Verification_Outcome;
+
+   --  Audited form taking the presentation directly. Rejected attempts are
+   --  recorded too, since a stream of them is what an attack looks like.
+   function Execute
+     (Repository  : in out
+        Identity.Adapters.Repositories.Stores.Store_Interface'Class;
+      Token       : Identity.Identifiers.Entities.Token_Id;
+      Purpose     : Identity.Identifiers.Registry.Registry_Id;
+      Secret      : Identity.Secrets.Tokens.Reset_Token_Secret;
+      Now         : Identity.Times.Instant;
+      Context     : Identity.Operations.Contexts.Operation_Context;
+      Event       : Identity.Identifiers.Entities.Event_Id;
+      Recorded_At : Identity.Times.Instant)
+      return Identity.Tokens.Verification.Token_Verification_Outcome;
 end Identity.Operations.Tokens.Consume;

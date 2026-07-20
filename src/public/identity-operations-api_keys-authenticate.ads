@@ -38,4 +38,17 @@ package Identity.Operations.API_Keys.Authenticate is
       Event       : Identity.Identifiers.Entities.Event_Id;
       Recorded_At : Identity.Times.Instant)
       return Identity.Authentication.Results.Password_Authentication_Result;
+
+   --  Audited form of the shape above. Same event, same subject and
+   --  target, same refusal rule as the audited request form.
+   function Execute
+     (Repository    : in out
+        Identity.Adapters.Repositories.Stores.Store_Interface'Class;
+      Public_Key_Id : Identity.Text.Bounded.Bounded_Text;
+      Secret        : Identity.Secrets.API_Keys.API_Key_Secret;
+      Now           : Identity.Times.Instant;
+      Context       : Identity.Operations.Contexts.Operation_Context;
+      Event         : Identity.Identifiers.Entities.Event_Id;
+      Recorded_At   : Identity.Times.Instant)
+      return Identity.Authentication.Results.Password_Authentication_Result;
 end Identity.Operations.API_Keys.Authenticate;

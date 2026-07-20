@@ -145,4 +145,53 @@ package body Identity.Operations.Passwords.Complete_Reset is
 
       return Outcome;
    end Execute;
+
+   function Execute
+     (Repository  : in out
+        Identity.Adapters.Repositories.Stores.Store_Interface'Class;
+      Token          : Identity.Identifiers.Entities.Token_Id;
+      Principal      : Identity.Identifiers.Entities.Principal_Id;
+      Secret         : Identity.Secrets.Tokens.Reset_Token_Secret;
+      Now            : Identity.Times.Instant;
+      New_Credential : Identity.Identifiers.Entities.Credential_Id;
+      Password       : Identity.Secrets.Passwords.New_Password;
+      Context        : Identity.Operations.Contexts.Operation_Context;
+      Event          : Identity.Identifiers.Entities.Event_Id;
+      Recorded_At    : Identity.Times.Instant)
+      return Identity.Tokens.Verification.Token_Verification_Outcome
+   is
+      use type Identity.Adapters.Repositories.Stores.Command_Status;
+      Outcome : Identity.Tokens.Verification.Token_Verification_Outcome;
+   begin
+      --  Reserve first: refusing here consumes neither the token nor the
+      --  existing password.
+      if not Identity.Operations.Audit.Capacity_Reserved (Repository) then
+         return Identity.Tokens.Verification.Infrastructure_Failure;
+      end if;
+
+      Outcome := Execute (Repository, Token, Principal, Secret, Now, New_Credential, Password);
+
+      declare
+         Emitted : constant Identity.Adapters.Repositories.Stores.Command_Status :=
+           Identity.Operations.Audit.Emit
+             (Repository  => Repository,
+              Context     => Context,
+              Event       => Event,
+              Type_Id     => Identity.Events.Types.Password_Reset_Completed,
+              Subject     =>
+                Identity.Operations.Audit.Subject_Of (Principal),
+              Target      => Identity.Text.Bounded.From_String
+                (Identity.Identifiers.Entities.To_String (Token)),
+              Outcome     => Identity.Operations.Audit.Outcome_Of (Outcome),
+              Recorded_At => Recorded_At);
+      begin
+         --  Capacity was reserved above, so a failure here is a real fault in
+         --  the store and must not be hidden behind a successful transition.
+         if Emitted /= Identity.Adapters.Repositories.Stores.Applied then
+            return Identity.Tokens.Verification.Infrastructure_Failure;
+         end if;
+      end;
+
+      return Outcome;
+   end Execute;
 end Identity.Operations.Passwords.Complete_Reset;
