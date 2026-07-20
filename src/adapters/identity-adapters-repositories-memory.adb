@@ -41,18 +41,48 @@ package body Identity.Adapters.Repositories.Memory is
       Path       : String;
       Status     : out Snapshot_Status)
    is
-      File   : Ada.Streams.Stream_IO.File_Type;
+      --  Written to a sibling temporary and renamed into place. Writing over
+      --  the live file truncates it first, so a process that stopped part way
+      --  through left a half-written snapshot AND destroyed the previous one;
+      --  the next Load then reported Malformed and yielded an empty store.
+      --  A rename is atomic within a directory, so a reader sees either the
+      --  old complete snapshot or the new one, never a partial file.
+      Temp : constant String := Path & ".partial";
+      File : Ada.Streams.Stream_IO.File_Type;
    begin
       Status := Unavailable;
+
       Ada.Streams.Stream_IO.Create
-        (File, Ada.Streams.Stream_IO.Out_File, Path);
+        (File, Ada.Streams.Stream_IO.Out_File, Temp);
       Store'Write (Ada.Streams.Stream_IO.Stream (File), Repository);
       Ada.Streams.Stream_IO.Close (File);
+
+      begin
+         Ada.Directories.Rename (Temp, Path);
+      exception
+         when others =>
+            --  Ada.Directories.Rename rejects an existing target on some
+            --  implementations. Replacing it directly is a narrower window
+            --  than truncating the live file for the whole write.
+            if Ada.Directories.Exists (Path) then
+               Ada.Directories.Delete_File (Path);
+            end if;
+            Ada.Directories.Rename (Temp, Path);
+      end;
+
       Status := Saved;
    exception
       when others =>
          if Ada.Streams.Stream_IO.Is_Open (File) then
             Ada.Streams.Stream_IO.Close (File);
+         end if;
+         --  Leave the previous snapshot untouched; drop the partial file.
+         if Ada.Directories.Exists (Temp) then
+            begin
+               Ada.Directories.Delete_File (Temp);
+            exception
+               when others => null;
+            end;
          end if;
          Status := Unavailable;
    end Save;

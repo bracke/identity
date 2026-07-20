@@ -6,9 +6,11 @@
 --  the SPI survives contact with storage that can be absent, truncated or
 --  foreign, rather than only with an in-memory record.
 --
---  Durability is per call, not per transaction: a crash *during* a write
---  leaves the previous snapshot intact because the file is replaced, but a
---  multi-command sequence is not atomic as a whole.
+--  Durability is per call, not per transaction. A single write is atomic: the
+--  snapshot is written to a sibling temporary and renamed into place, so a
+--  process that stops part way through leaves the previous complete snapshot
+--  readable. A multi-command sequence is still not atomic as a whole -- a
+--  crash between two commands leaves the first applied and the second not.
 
 with Identity.API_Keys.Credentials;
 with Identity.Accounts.Definitions;
