@@ -176,14 +176,17 @@ Recovery begin gained an audited overload in the same change, emitting
 identity.recovery.began, since its idempotent form mutates through the SPI and
 must therefore leave a record like every other mutating operation.
 
-Be precise about what the audit-coverage gate proves. It requires every
-mutating operation to OFFER an audited path; it cannot require callers to take
-one. The marker reports both numbers -- audited-overloads and bypass-overloads
--- and the bypass figure is large (currently 111 plain overloads against 48
-audited ones), because emission was added additively so existing callers kept
-compiling. Any of those plain overloads still mutates without leaving a record.
-Closing that surface means removing the plain overloads, which is a breaking
-change deferred past V1.
+The unaudited entry points are gone. Every mutating operation is reachable only
+through a form taking (Context, Event, Recorded_At), so changing security state
+without leaving a record is not something the API can express. The marker
+reports both figures: 113 audited overloads against 4 remaining plain ones,
+and those four are correct -- sessions-lookup, sessions-enumerate and
+tokens-verify are read-only, and sessions-update_activity is the exemption
+recorded in registries/audit-exemptions.json.
+
+Event identifiers must be distinct per call: the store rejects a duplicate id
+with Uniqueness_Conflict and the audited operations surface that as a failure,
+so a caller supplies a fresh id each time rather than a shared constant.
 
 The event vocabulary is 51 constants, and the events gate requires the registry
 and the public constants to agree exactly (identity_tools:events, currently
