@@ -185,11 +185,18 @@ compiling. Any of those plain overloads still mutates without leaving a record.
 Closing that surface means removing the plain overloads, which is a breaking
 change deferred past V1.
 
-All 16 declared event types are driven through their audited operation in the
-suite, each asserting the audited overload appends exactly one event while the
-plain overload of the same operation appends none. The store exposes no event
-read-back primitive, so type and outcome are pinned by arranging exactly one
-emitting branch to be reachable per case rather than by inspecting the record.
+The event vocabulary is 51 constants, and the events gate requires the registry
+and the public constants to agree exactly (identity_tools:events, currently
+51/51). The suite drives the audited emission cases through their operation,
+each asserting that the audited overload appends exactly one event while the
+plain overload of the same operation appends none, and -- since the SPI gained
+Find_Event -- reading the recorded envelope back to assert its actual Type_Id
+and Outcome rather than inferring them from which branch was reachable.
+
+Not every one of the 51 types has an emission case: the suite covers the
+sixteen that existed when those tests were written. The audit-coverage gate is
+what guarantees the remaining types are emitted by some operation; the suite is
+what checks the recorded contents of the ones it covers.
 
 Known gaps
 ----------
