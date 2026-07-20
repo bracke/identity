@@ -43,11 +43,36 @@ package body Identity_Tools_Audit_Coverage is
 
    --  Collect the names of primitives declared with "Repository : in out
    --  Store_Interface" -- the ones that can change stored state.
+   --  Collapse runs of spaces to one. The SPI aligns parameter colons, so a
+   --  fixed-spacing search matched only the declarations that happened to use
+   --  a single space -- 40 of 55 -- and every operation mutating only through
+   --  one of the other 15 was silently scored as non-mutating.
+   function Collapsed (Text : String) return String is
+      Result : String (1 .. Text'Length);
+      Last   : Natural := 0;
+      Space  : Boolean := False;
+   begin
+      for Ch of Text loop
+         if Ch = ' ' or else Ch = ASCII.HT then
+            Space := True;
+         else
+            if Space and then Last > 0 then
+               Last := Last + 1;
+               Result (Last) := ' ';
+            end if;
+            Space := False;
+            Last := Last + 1;
+            Result (Last) := Ch;
+         end if;
+      end loop;
+      return Result (1 .. Last);
+   end Collapsed;
+
    procedure Collect_Mutating
      (Names : out Name_Array;
       Count : out Natural)
    is
-      Text   : constant String := Load (Interface_Path);
+      Text   : constant String := Collapsed (Load (Interface_Path));
       Cursor : Natural := Text'First;
       Marker : constant String := "Repository : in out Store_Interface";
    begin
