@@ -18550,6 +18550,126 @@ package body Identity_Tests_Cases is
       end;
    end Test_77_security_context_tracks_account_change;
 
+   --  The Identity-owned assembly (Projections.Authentication.To_Security_Context)
+   --  must map REAL persisted account state into the downstream context:
+   --  eligibility from Accounts.States.Evaluate, structured restrictions from
+   --  the account's requirement/recovery flags, and the revision from the
+   --  account version. This is the "no operation ever builds an authenticated
+   --  context" gap being closed against actual store state.
+   procedure Test_78_security_context_assembly_from_account
+     (T : in out AUnit.Test_Cases.Test_Case'Class)
+   is
+      pragma Unreferenced (T);
+      package SC renames Identity.Authentication.Security_Contexts;
+      package PA renames Identity.Projections.Authentication;
+
+      type AS_Store_Access is
+        access Identity.Adapters.Repositories.Memory.Store;
+      AS_Ptr : constant AS_Store_Access :=
+        new Identity.Adapters.Repositories.Memory.Store;
+      ST : Identity.Adapters.Repositories.Stores.Store_Interface'Class renames
+        Identity.Adapters.Repositories.Stores.Store_Interface'Class (AS_Ptr.all);
+
+      function AS_Id (Suffix : String)
+        return Identity.Identifiers.Encoded_Identifier is
+        (Identity.Identifiers.From_String
+           ("fb000000-0000-0000-0000-0000000000" & Suffix));
+
+      PR : constant Identity.Identifiers.Entities.Principal_Id :=
+        Identity.Identifiers.Entities.Principal (AS_Id ("01"));
+      AC : constant Identity.Identifiers.Entities.Account_Id :=
+        Identity.Identifiers.Entities.Account (AS_Id ("02"));
+      SS : constant Identity.Identifiers.Entities.Session_Id :=
+        Identity.Identifiers.Entities.Session (AS_Id ("03"));
+
+      --  An active account that already requires a password change.
+      Initial_State : constant Identity.Accounts.States.Account_State_View :=
+        (Administrative => Identity.Accounts.States.Enabled,
+         Lifecycle      => Identity.Accounts.States.Active,
+         Verification   => Identity.Accounts.States.Verified,
+         Lock_State     => Identity.Accounts.States.Not_Locked,
+         Requirements   =>
+           (Password_Change_Required => True, others => False),
+         Recovery       => (others => False));
+
+      Session_Facts : constant PA.Optional_Session_Facts :=
+        (Present => True, Id => SS, Version => 7,
+         Absolute_Expires_At => (Present => True, Value => 9_999));
+
+      Command     : Identity.Adapters.Repositories.Stores.Command_Status;
+      Found       : Boolean;
+      Account_Rec : Identity.Accounts.Definitions.Account_Record;
+      Ctx1, Ctx2  : SC.Security_Context;
+   begin
+      Command := Identity.Adapters.Repositories.Stores.Create_Principal
+        (ST, (Id => PR, Kind => Identity.Principals.Kinds.Human,
+              State => Identity.Principals.Definitions.Active, Version => 0));
+      Assert (Command = Identity.Adapters.Repositories.Stores.Applied,
+              "sec-ctx-asm: principal created");
+      Command := Identity.Adapters.Repositories.Stores.Create_Account
+        (ST, (Id => AC, Principal => PR, State => Initial_State, Version => 0));
+      Assert (Command = Identity.Adapters.Repositories.Stores.Applied,
+              "sec-ctx-asm: account created");
+
+      Identity.Adapters.Repositories.Stores.Find_Account (ST, PR, Found, Account_Rec);
+      Ctx1 := PA.To_Security_Context
+        (Principal                 => PR,
+         Kind                      => Identity.Principals.Kinds.Human,
+         Assurance                 => Identity.Assurance.Levels.Interactive,
+         Attributes                => (others => <>),
+         Account_State             => Account_Rec.State,
+         Account_Version           => Account_Rec.Version,
+         Original_Authenticated_At => 100,
+         Primary_Authenticated_At  => 100,
+         Session                   => Session_Facts);
+
+      Assert (Found and then Ctx1.Eligible,
+              "sec-ctx-asm: an enabled active account is eligible");
+      Assert (Ctx1.Restrictions.Password_Change_Required,
+              "sec-ctx-asm: the account's password-change requirement maps through");
+      Assert (Ctx1.Session.Present and then Ctx1.Session_Revision = 7,
+              "sec-ctx-asm: the session revision is derived from the session version");
+
+      --  Disable the account: a real transition that both blocks eligibility
+      --  and advances the account version.
+      Identity.Adapters.Repositories.Stores.Find_Account (ST, PR, Found, Account_Rec);
+      Command := Identity.Operations.Accounts.Disable.Execute
+        (ST,
+         (Account => AC, Principal => PR,
+          Transition =>
+            (Actor => (Kind => Identity.Events.Envelopes.Authenticated_Principal,
+                       Principal => (Present => True, Value => PR)),
+             Reason => Identity.Identifiers.Registry.From_String
+               ("identity.account.disable"),
+             Operation => Identity.Identifiers.Operations.Operation (AS_Id ("aa")),
+             Correlation => Identity.Identifiers.Operations.Correlation (AS_Id ("bb")),
+             Requested_At => 200,
+             Expected_Version => Account_Rec.Version,
+             Previous_State => Account_Rec.State.Administrative,
+             New_State => Identity.Accounts.States.Disabled,
+             Mandatory_Audit => True)),
+         Audit_Context, Next_Audit_Event, 1);
+      Assert (Command = Identity.Adapters.Repositories.Stores.Applied,
+              "sec-ctx-asm: account disabled");
+
+      Identity.Adapters.Repositories.Stores.Find_Account (ST, PR, Found, Account_Rec);
+      Ctx2 := PA.To_Security_Context
+        (Principal                 => PR,
+         Kind                      => Identity.Principals.Kinds.Human,
+         Assurance                 => Identity.Assurance.Levels.Interactive,
+         Attributes                => (others => <>),
+         Account_State             => Account_Rec.State,
+         Account_Version           => Account_Rec.Version,
+         Original_Authenticated_At => 100,
+         Primary_Authenticated_At  => 100,
+         Session                   => Session_Facts);
+
+      Assert (not Ctx2.Eligible,
+              "sec-ctx-asm: a disabled account produces an ineligible context");
+      Assert (Ctx2.Authentication_Revision /= Ctx1.Authentication_Revision,
+              "sec-ctx-asm: the account transition advanced the context revision");
+   end Test_78_security_context_assembly_from_account;
+
    overriding procedure Register_Tests (T : in out Test_Case) is
    begin
       Registration.Register_Routine
@@ -18712,6 +18832,9 @@ package body Identity_Tests_Cases is
       Registration.Register_Routine
         (T, Test_77_security_context_tracks_account_change'Access,
          "Test_77_security_context_tracks_account_change");
+      Registration.Register_Routine
+        (T, Test_78_security_context_assembly_from_account'Access,
+         "Test_78_security_context_assembly_from_account");
    end Register_Tests;
 
    overriding function Name (T : Test_Case) return AUnit.Message_String is
