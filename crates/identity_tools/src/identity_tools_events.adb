@@ -52,6 +52,7 @@ package body Identity_Tools_Events is
       Recovery_Continued,
       Recovery_Cancelled,
       Contact_Change_Began,
+      Contact_Change_Advanced,
       Contact_Change_Completed,
       External_Binding_Created,
       Session_Expired,
@@ -173,6 +174,8 @@ package body Identity_Tools_Events is
           "identity.recovery.cancelled",
         when Contact_Change_Began =>
           "identity.contact.change.began",
+        when Contact_Change_Advanced =>
+          "identity.contact.change.advanced",
         when Contact_Change_Completed =>
           "identity.contact.change.completed",
         when External_Binding_Created =>

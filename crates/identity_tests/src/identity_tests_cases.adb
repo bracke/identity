@@ -178,6 +178,7 @@ with Identity.Operations.Recovery.Begin_Recovery;
 with Identity.Operations.Recovery.Cancel;
 with Identity.Operations.Recovery.Complete;
 with Identity.Operations.Recovery.Continue;
+with Identity.Operations.Verification.Advance_Contact_Change;
 with Identity.Operations.Verification.Begin_Contact_Change;
 with Identity.Operations.Verification.Complete;
 with Identity.Operations.Verification.Complete_Contact_Change;
@@ -11258,6 +11259,60 @@ package body Identity_Tests_Cases is
          and then Token_Check.State = Identity.Tokens.Definitions.Consumed
          and then Token_Check.Version = 1,
          "contact change consumes token and advances version");
+
+      --  Drive the T7 change (still in New_Contact_Verification) through the
+      --  mid-flow gates the audit found unreachable: record old-contact
+      --  confirmation, start cooling-off, then cancel. Each state is observed
+      --  through the new Find_Contact_Change read.
+      declare
+         package CC renames Identity.Verification.Changes;
+         package Adv renames Identity.Operations.Verification.Advance_Contact_Change;
+         CC_Found : Boolean;
+         CC_Rec   : CC.Contact_Change_Record;
+      begin
+         Identity.Adapters.Repositories.Memory.Find_Contact_Change
+           (Repository, T7, CC_Found, CC_Rec);
+         Assert (CC_Found
+                 and then CC.Awaiting_New_Contact_Verification (CC_Rec.State),
+                 "contact-change: begun change is observable in New_Contact_Verification");
+
+         Assert (Adv.Execute
+                   (Repository, T7, P1, CC.Record_Old_Confirmation, CC_Rec.Version,
+                    Audit_Context, Next_Audit_Event, 1)
+                 = Identity.Adapters.Repositories.Memory.Applied,
+                 "contact-change: record old-contact confirmation applied");
+         Identity.Adapters.Repositories.Memory.Find_Contact_Change
+           (Repository, T7, CC_Found, CC_Rec);
+         Assert (CC.Awaiting_Old_Contact_Confirmation (CC_Rec.State),
+                 "contact-change: Old_Contact_Confirmation is now reachable");
+
+         Assert (Adv.Execute
+                   (Repository, T7, P1, CC.Start_Cooling_Off, CC_Rec.Version,
+                    Audit_Context, Next_Audit_Event, 1)
+                 = Identity.Adapters.Repositories.Memory.Applied,
+                 "contact-change: start cooling-off applied");
+         Identity.Adapters.Repositories.Memory.Find_Contact_Change
+           (Repository, T7, CC_Found, CC_Rec);
+         Assert (CC.Cooling_Off_Active (CC_Rec.State),
+                 "contact-change: Cooling_Off is now reachable");
+
+         Assert (Adv.Execute
+                   (Repository, T7, P1, CC.Cancel_Change, CC_Rec.Version,
+                    Audit_Context, Next_Audit_Event, 1)
+                 = Identity.Adapters.Repositories.Memory.Applied,
+                 "contact-change: cancel applied");
+         Identity.Adapters.Repositories.Memory.Find_Contact_Change
+           (Repository, T7, CC_Found, CC_Rec);
+         Assert (CC.Cancelled_State (CC_Rec.State)
+                 and then CC.Is_Terminal (CC_Rec.State),
+                 "contact-change: Cancelled reached (terminal)");
+
+         Assert (Adv.Execute
+                   (Repository, T7, P1, CC.Start_Cooling_Off, CC_Rec.Version,
+                    Audit_Context, Next_Audit_Event, 1)
+                 = Identity.Adapters.Repositories.Memory.State_Conflict,
+                 "contact-change: a terminal change refuses further advancement");
+      end;
    end Test_37_wrong_contact_verificati;
 
    procedure Test_38_section (T : in out AUnit.Test_Cases.Test_Case'Class) is
@@ -12484,7 +12539,7 @@ package body Identity_Tests_Cases is
          "event append is explicit and immutable");
 
       Assert
-        (Identity.Adapters.Repositories.Memory.Event_Count (Repository) = 145,
+        (Identity.Adapters.Repositories.Memory.Event_Count (Repository) = 149,
          "event count projection is bounded");
 
       Assert
@@ -17930,6 +17985,7 @@ package body Identity_Tests_Cases is
             Identity.Events.Types.Recovery_Continued,
             Identity.Events.Types.Recovery_Cancelled,
             Identity.Events.Types.Contact_Change_Began,
+            Identity.Events.Types.Contact_Change_Advanced,
             Identity.Events.Types.Contact_Change_Completed,
             Identity.Events.Types.External_Binding_Created,
             Identity.Events.Types.Session_Expired,

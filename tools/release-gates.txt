@@ -228,11 +228,11 @@ These figures are produced by identity_tools, not maintained by
 hand. If the release check reports this block stale, paste the
 text it prints -- do not edit the numbers to match.
 
-  event types                 54
-  mutating operations         59
-  ..audited                   58
+  event types                 55
+  mutating operations         60
+  ..audited                   59
   ..exempt (justified)        1
-  audited overloads           115
+  audited overloads           116
   context-free overloads      4
   proved packages             12
   security invariants         80

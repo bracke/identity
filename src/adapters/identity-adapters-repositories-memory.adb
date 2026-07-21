@@ -2572,9 +2572,13 @@ package body Identity.Adapters.Repositories.Memory is
          Expected_Change_Version)
       then
          return Identity.Tokens.Verification.State_Conflict;
-      elsif not Identity.Verification.Changes.Can_Complete
+      elsif not Identity.Verification.Changes.Can_Activate_After_Gates
         (Repository.Contact_Changes (Change_Index).Value.State)
       then
+         --  Activation is admissible from the direct path (new-contact
+         --  verified) and from the gated paths (old-contact confirmed or
+         --  cooling-off elapsed), so a change that took the extra gates can
+         --  still complete.
          return Identity.Tokens.Verification.State_Conflict;
       end if;
 
@@ -2633,6 +2637,71 @@ package body Identity.Adapters.Repositories.Memory is
 
       return Identity.Tokens.Verification.Valid;
    end Complete_Contact_Change;
+
+   overriding function Advance_Contact_Change
+     (Repository       : in out Store;
+      Token            : Identity.Identifiers.Entities.Token_Id;
+      Principal        : Identity.Identifiers.Entities.Principal_Id;
+      Action           : Identity.Verification.Changes.Contact_Change_Action;
+      Expected_Version : Identity.Versions.Entity_Version)
+      return Command_Status
+   is
+      package CC renames Identity.Verification.Changes;
+      Target : CC.Contact_Change_State;
+   begin
+      --  Only the mid-flow gate/terminal actions advance through this path;
+      --  begin and activation have their own primitives.
+      case Action is
+         when CC.Record_Old_Confirmation =>
+            Target := CC.Old_Contact_Confirmation;
+         when CC.Start_Cooling_Off =>
+            Target := CC.Cooling_Off;
+         when CC.Cancel_Change =>
+            Target := CC.Cancelled;
+         when CC.Expire_Change =>
+            Target := CC.Expired;
+         when others =>
+            return State_Conflict;
+      end case;
+
+      for Slot of Repository.Contact_Changes loop
+         if Slot.Present and then Same_Token (Slot.Value.Token, Token) then
+            if not Same_Principal (Slot.Value.Principal, Principal) then
+               return State_Conflict;
+            elsif not Identity.Versions.Same_Entity_Version
+              (Slot.Value.Version, Expected_Version)
+            then
+               return Version_Conflict;
+            elsif CC.Admission_Rejected (CC.Admission (Slot.Value.State, Action)) then
+               return State_Conflict;
+            end if;
+
+            Slot.Value.State := Target;
+            Slot.Value.Version :=
+              Identity.Versions.Next_Entity_Version (Slot.Value.Version);
+            return Applied;
+         end if;
+      end loop;
+
+      return State_Conflict;
+   end Advance_Contact_Change;
+
+   overriding procedure Find_Contact_Change
+     (Repository : Store;
+      Token      : Identity.Identifiers.Entities.Token_Id;
+      Found      : out Boolean;
+      Value      : out Identity.Verification.Changes.Contact_Change_Record)
+   is
+   begin
+      Found := False;
+      for Slot of Repository.Contact_Changes loop
+         if Slot.Present and then Same_Token (Slot.Value.Token, Token) then
+            Value := Slot.Value;
+            Found := True;
+            return;
+         end if;
+      end loop;
+   end Find_Contact_Change;
 
    overriding procedure Find_Contact_Binding
      (Repository : Store;

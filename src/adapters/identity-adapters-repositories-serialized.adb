@@ -1416,6 +1416,46 @@ package body Identity.Adapters.Repositories.Serialized is
          raise;
    end Complete_Contact_Change;
 
+   overriding function Advance_Contact_Change
+     (Repository       : in out Store;
+      Token            : Identity.Identifiers.Entities.Token_Id;
+      Principal        : Identity.Identifiers.Entities.Principal_Id;
+      Action           : Identity.Verification.Changes.Contact_Change_Action;
+      Expected_Version : Identity.Versions.Entity_Version)
+      return Stores.Command_Status
+   is
+   begin
+      Repository.Guard.Seize;
+      declare
+         Result : constant Stores.Command_Status :=
+           Stores.Advance_Contact_Change
+             (Repository.Inner.all, Token, Principal, Action, Expected_Version);
+      begin
+         Repository.Guard.Release;
+         return Result;
+      end;
+   exception
+      when others =>
+         Repository.Guard.Release;
+         raise;
+   end Advance_Contact_Change;
+
+   overriding procedure Find_Contact_Change
+     (Repository : Store;
+      Token      : Identity.Identifiers.Entities.Token_Id;
+      Found      : out Boolean;
+      Value      : out Identity.Verification.Changes.Contact_Change_Record)
+   is
+   begin
+      Repository.Guard.Seize;
+      Stores.Find_Contact_Change (Repository.Inner.all, Token, Found, Value);
+      Repository.Guard.Release;
+   exception
+      when others =>
+         Repository.Guard.Release;
+         raise;
+   end Find_Contact_Change;
+
    overriding procedure Find_Contact_Binding
      (Repository : Store;
       Contact    : Identity.Identifiers.Entities.Contact_Binding_Id;

@@ -95,6 +95,8 @@ package Identity.Events.Types is
      Identity.Identifiers.Registry.From_String ("identity.recovery.cancelled");
    Contact_Change_Began : constant Identity.Identifiers.Registry.Registry_Id :=
      Identity.Identifiers.Registry.From_String ("identity.contact.change.began");
+   Contact_Change_Advanced : constant Identity.Identifiers.Registry.Registry_Id :=
+     Identity.Identifiers.Registry.From_String ("identity.contact.change.advanced");
    Contact_Change_Completed : constant Identity.Identifiers.Registry.Registry_Id :=
      Identity.Identifiers.Registry.From_String ("identity.contact.change.completed");
    External_Binding_Created : constant Identity.Identifiers.Registry.Registry_Id :=

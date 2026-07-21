@@ -418,6 +418,29 @@ package Identity.Adapters.Repositories.Stores is
       Successor                    : Identity.Identifiers.Entities.Contact_Binding_Id)
       return Identity.Tokens.Verification.Token_Verification_Outcome is abstract;
 
+   --  Advance a contact change through one of its mid-flow admission actions --
+   --  recording old-contact confirmation, starting the cooling-off period,
+   --  cancelling, or expiring -- so those states are reachable rather than a
+   --  dead branch of the change state machine. Admission-checked against the
+   --  current state; the change version guards the transition. Located by the
+   --  change's token.
+   function Advance_Contact_Change
+     (Repository       : in out Store_Interface;
+      Token            : Identity.Identifiers.Entities.Token_Id;
+      Principal        : Identity.Identifiers.Entities.Principal_Id;
+      Action           : Identity.Verification.Changes.Contact_Change_Action;
+      Expected_Version : Identity.Versions.Entity_Version)
+      return Command_Status is abstract;
+
+   --  Read a contact change by its token, so its state and version are
+   --  observable (needed to stage an advance and to project progress).
+   procedure Find_Contact_Change
+     (Repository : Store_Interface;
+      Token      : Identity.Identifiers.Entities.Token_Id;
+      Found      : out Boolean;
+      Value      : out Identity.Verification.Changes.Contact_Change_Record)
+      is abstract;
+
    procedure Find_Contact_Binding
      (Repository : Store_Interface;
       Contact    : Identity.Identifiers.Entities.Contact_Binding_Id;

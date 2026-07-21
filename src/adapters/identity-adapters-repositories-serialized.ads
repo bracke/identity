@@ -394,6 +394,20 @@ package Identity.Adapters.Repositories.Serialized is
       Successor                    : Identity.Identifiers.Entities.Contact_Binding_Id)
       return Identity.Tokens.Verification.Token_Verification_Outcome;
 
+   overriding function Advance_Contact_Change
+     (Repository       : in out Store;
+      Token            : Identity.Identifiers.Entities.Token_Id;
+      Principal        : Identity.Identifiers.Entities.Principal_Id;
+      Action           : Identity.Verification.Changes.Contact_Change_Action;
+      Expected_Version : Identity.Versions.Entity_Version)
+      return Stores.Command_Status;
+
+   overriding procedure Find_Contact_Change
+     (Repository : Store;
+      Token      : Identity.Identifiers.Entities.Token_Id;
+      Found      : out Boolean;
+      Value      : out Identity.Verification.Changes.Contact_Change_Record);
+
    overriding procedure Find_Contact_Binding
      (Repository : Store;
       Contact    : Identity.Identifiers.Entities.Contact_Binding_Id;

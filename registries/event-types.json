@@ -46,6 +46,7 @@
     "identity.recovery.continued",
     "identity.recovery.cancelled",
     "identity.contact.change.began",
+    "identity.contact.change.advanced",
     "identity.contact.change.completed",
     "identity.external.binding.created",
     "identity.session.expired",

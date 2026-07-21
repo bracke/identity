@@ -737,6 +737,31 @@ package body Identity.Adapters.Repositories.Recording is
          Successor);
    end Complete_Contact_Change;
 
+   overriding function Advance_Contact_Change
+     (Repository       : in out Store;
+      Token            : Identity.Identifiers.Entities.Token_Id;
+      Principal        : Identity.Identifiers.Entities.Principal_Id;
+      Action           : Identity.Verification.Changes.Contact_Change_Action;
+      Expected_Version : Identity.Versions.Entity_Version)
+      return Stores.Command_Status
+   is
+   begin
+      Repository.Calls := Repository.Calls + 1;
+      Repository.Total := Repository.Total + 1;
+      return Stores.Advance_Contact_Change
+        (Repository.Inner.all, Token, Principal, Action, Expected_Version);
+   end Advance_Contact_Change;
+
+   overriding procedure Find_Contact_Change
+     (Repository : Store;
+      Token      : Identity.Identifiers.Entities.Token_Id;
+      Found      : out Boolean;
+      Value      : out Identity.Verification.Changes.Contact_Change_Record)
+   is
+   begin
+      Stores.Find_Contact_Change (Repository.Inner.all, Token, Found, Value);
+   end Find_Contact_Change;
+
    overriding procedure Find_Contact_Binding
      (Repository : Store;
       Contact    : Identity.Identifiers.Entities.Contact_Binding_Id;
