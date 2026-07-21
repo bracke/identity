@@ -19141,6 +19141,60 @@ package body Identity_Tests_Cases is
               "mfa-resolve: Cancelled reached (terminal)");
    end Test_82_mfa_transaction_reject_cancel;
 
+   --  The conflict taxonomy (spec 35) had three dead values: Replay_Conflict,
+   --  Idempotency_Conflict and Serialization_Conflict were never produced. They
+   --  are now reachable by classifying real idempotency outcomes: a replayed
+   --  idempotent op, a concurrent in-flight op under one key, and a stored
+   --  mismatch. This drives the store to produce those outcomes and classifies
+   --  them into the canonical taxonomy.
+   procedure Test_83_conflict_taxonomy_reachable
+     (T : in out AUnit.Test_Cases.Test_Case'Class)
+   is
+      pragma Unreferenced (T);
+      package CF renames Identity.Adapters.Repositories.Conflicts;
+      package IdA renames Identity.Adapters.Repositories.Idempotency;
+      package IdO renames Identity.Operations.Idempotency;
+      use type CF.Conflict_Category;
+
+      type CX_Store_Access is
+        access Identity.Adapters.Repositories.Memory.Store;
+      CX_Ptr : constant CX_Store_Access :=
+        new Identity.Adapters.Repositories.Memory.Store;
+      SR : Identity.Adapters.Repositories.Stores.Store_Interface'Class renames
+        Identity.Adapters.Repositories.Stores.Store_Interface'Class (CX_Ptr.all);
+
+      Key : constant IdO.Idempotency_Key :=
+        IdO.From_String ("conflict-taxonomy-probe");
+      R1, R2, R4 : IdA.Reservation;
+      R3         : IdA.Reservation;
+      pragma Unreferenced (R1, R3);
+   begin
+      --  First reservation is fresh; a second before completion is in flight.
+      R1 := Identity.Adapters.Repositories.Stores.Reserve_Idempotency
+        (SR, IdO.Recovery_Begin, Key);
+      R2 := Identity.Adapters.Repositories.Stores.Reserve_Idempotency
+        (SR, IdO.Recovery_Begin, Key);
+      Assert (R2.Status = IdA.In_Progress
+              and then CF.Is_Conflict (R2.Status)
+              and then CF.Classify (R2.Status) = CF.Serialization_Conflict,
+              "conflicts: a concurrent in-flight idempotent op is a Serialization_Conflict");
+
+      --  After completion, replaying the key is a replay.
+      R3 := Identity.Adapters.Repositories.Stores.Complete_Idempotency
+        (SR, IdO.Recovery_Begin, Key);
+      R4 := Identity.Adapters.Repositories.Stores.Reserve_Idempotency
+        (SR, IdO.Recovery_Begin, Key);
+      Assert (R4.Status = IdA.Replayed
+              and then CF.Classify (R4.Status) = CF.Replay_Conflict,
+              "conflicts: a replayed idempotent op is a Replay_Conflict");
+
+      --  The remaining taxonomy values map through, and Fresh is no conflict.
+      Assert (CF.Classify (IdA.Conflict) = CF.Idempotency_Conflict
+              and then CF.Classify (IdA.Capacity_Exceeded) = CF.Capacity_Conflict
+              and then not CF.Is_Conflict (IdA.Fresh),
+              "conflicts: idempotency-conflict and capacity classify; Fresh is not a conflict");
+   end Test_83_conflict_taxonomy_reachable;
+
    overriding procedure Register_Tests (T : in out Test_Case) is
    begin
       Registration.Register_Routine
@@ -19318,6 +19372,9 @@ package body Identity_Tests_Cases is
       Registration.Register_Routine
         (T, Test_82_mfa_transaction_reject_cancel'Access,
          "Test_82_mfa_transaction_reject_cancel");
+      Registration.Register_Routine
+        (T, Test_83_conflict_taxonomy_reachable'Access,
+         "Test_83_conflict_taxonomy_reachable");
    end Register_Tests;
 
    overriding function Name (T : Test_Case) return AUnit.Message_String is
