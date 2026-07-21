@@ -51,8 +51,15 @@ package body Identity_Tools_Release_Reports is
       Ada.Text_IO.Create (File, Ada.Text_IO.Out_File, Path (Id));
       case Id is
          when Artifact_Inventory =>
-            Ada.Text_IO.Put_Line (File, "artifact-count:"
+            --  Two distinct counts, not one: how many artifacts the release
+            --  requires (from the registry) versus how many identity_tools
+            --  generates here. Reporting only the former read as if all were
+            --  produced; the remaining required artifacts are repository
+            --  documents collected outside this generator.
+            Ada.Text_IO.Put_Line (File, "required-artifact-count:"
               & Natural'Image (Identity_Tools_Release_Artifacts.Required_Artifact_Count));
+            Ada.Text_IO.Put_Line (File, "generated-report-count:"
+              & Natural'Image (Expected_Output_Count));
             Ada.Text_IO.Put_Line (File, "prohibited-material-count:"
               & Natural'Image (Identity_Tools_Release_Artifacts.Prohibited_Material_Count));
             Ada.Text_IO.Put_Line (File, "provenance-field-count:"

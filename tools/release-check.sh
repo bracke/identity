@@ -49,6 +49,17 @@ if ! out=$(alr build 2>&1); then
   exit 1
 fi
 
+echo "== library (release profile) =="
+# The release provenance asserts a release-profile build; enforce it here so
+# that claim is backed rather than assumed. Development-profile builds below
+# still run the suites (and their -gnatwe/style gates).
+if ! out=$(alr build --release 2>&1); then
+  echo "$out" | tail -20
+  echo "release-check:library-release:failed"
+  exit 1
+fi
+echo "release-check:library-release:passed"
+
 echo "== aunit suite =="
 run_crate aunit "$ROOT/crates/identity_tests" identity_tests
 
@@ -76,7 +87,7 @@ if ! command -v gnatprove >/dev/null 2>&1; then
 else
   # -f forces a complete analysis. Without it GNATprove reuses cached results
   # and reports only the units it re-analysed, so the recorded check count
-  # swings with cache state -- 616 on a clean tree, 170 on a warm one -- and a
+  # swings with cache state -- 789 on a clean tree, 170 on a warm one -- and a
   # reader cannot tell a cached run from a collapse in coverage. The extra
   # cost is about 17 seconds.
   prove_out=$(gnatprove -P identity.gpr -aP "$ROOT/../cryptolib" \

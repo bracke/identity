@@ -85,7 +85,7 @@ so a suite that never ran cannot be reported as satisfied.
   correct one.
 - GNATprove over registries/proof-scope.json                     [evidence: gnatprove]
   Fails on any unproved check, any SPARK legality error, and any non-excluded
-  proof-scope package that was not analysed. Currently 616 checks, 0 unproved.
+  proof-scope package that was not analysed. Currently 789 checks, 0 unproved.
 - tools/gate-selftests.sh gate self-tests                        [evidence: gate-selftests]
   Mutation-tests the gates themselves: each case copies the tree, breaks one
   piece of evidence, and requires identity_tools to fail with that gate's own
@@ -252,10 +252,10 @@ but the trend is worth watching as more audited operations gain tests.
 Known gaps
 ----------
 
-- Proof covers 12 packages, not the library. GNATprove discharging 760 checks
+- Proof covers 12 packages, not the library. GNATprove discharging 789 checks
   with none unproved is a real result, but it is a result about
-  registries/proof-scope.json: ten proved packages and one justified
-  exclusion, against 369 public and adapter specs. The two places that parse
+  registries/proof-scope.json: eleven proved packages and one justified
+  exclusion, against 373 public and adapter specs. The two places that parse
   attacker-controlled input are both proved: Identity.Crypto.Password_Hashing's
   envelope parser, and Identity.Secrets.Text.Validate_UTF_8. Each is partial --
   the routines that reach cryptolib or handle controlled secret types stay
