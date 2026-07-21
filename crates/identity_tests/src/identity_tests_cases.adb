@@ -18061,6 +18061,124 @@ package body Identity_Tests_Cases is
          "emission: the migration records identity.password.verifier.migrated");
    end Test_73_migration_event_read_back;
 
+   --  ------------------------------------------------------------------
+   --  Brute-force protection: after Lockout_Threshold failed password
+   --  attempts the account is locked, and the correct password is then
+   --  rejected too. This is the whole point of a lockout, and nothing
+   --  exercised it end to end -- a lockout that records attempts but never
+   --  blocks would pass every earlier test.
+   --  ------------------------------------------------------------------
+   procedure Test_74_lockout_blocks_after_threshold
+     (T : in out AUnit.Test_Cases.Test_Case'Class)
+   is
+      pragma Unreferenced (T);
+
+      type LO_Store_Access is
+        access Identity.Adapters.Repositories.Memory.Store;
+      LO_Ptr : constant LO_Store_Access :=
+        new Identity.Adapters.Repositories.Memory.Store;
+      LO : Identity.Adapters.Repositories.Stores.Store_Interface'Class renames
+        Identity.Adapters.Repositories.Stores.Store_Interface'Class (LO_Ptr.all);
+
+      function LO_Id (Suffix : String)
+        return Identity.Identifiers.Encoded_Identifier is
+        (Identity.Identifiers.From_String
+           ("fc000000-0000-0000-0000-0000000000" & Suffix));
+
+      LO_P : constant Identity.Identifiers.Entities.Principal_Id :=
+        Identity.Identifiers.Entities.Principal (LO_Id ("01"));
+      LO_A : constant Identity.Identifiers.Entities.Account_Id :=
+        Identity.Identifiers.Entities.Account (LO_Id ("02"));
+      LO_B : constant Identity.Identifiers.Entities.Identity_Binding_Id :=
+        Identity.Identifiers.Entities.Identity_Binding (LO_Id ("03"));
+      LO_C : constant Identity.Identifiers.Entities.Credential_Id :=
+        Identity.Identifiers.Entities.Credential (LO_Id ("04"));
+      LO_Login : constant Identity.Identifiers.Registry.Registry_Id :=
+        Identity.Identifiers.Registry.From_String ("login.username");
+      LO_Subject : constant Identity.Identities.Subjects.Authentication_Subject :=
+        (Kind => LO_Login,
+         Value => Identity.Text.Bounded.From_String ("lockout-probe"));
+      LO_Good : constant Identity.Secrets.Passwords.New_Password :=
+        Identity.Secrets.Text.From_UTF_8 ("lockout regression secret");
+      LO_Good_P : constant Identity.Secrets.Passwords.Presented_Password :=
+        Identity.Secrets.Text.From_UTF_8 ("lockout regression secret");
+      LO_Bad_P : constant Identity.Secrets.Passwords.Presented_Password :=
+        Identity.Secrets.Text.From_UTF_8 ("lockout regression secreu");
+      Threshold : constant Identity.Versions.Attempt_Count := 3;
+
+      function LO_Attempt (N : Natural)
+        return Identity.Identifiers.Entities.Attempt_Id
+      is
+         Raw : constant String := Natural'Image (N);
+         Pad : String (1 .. 2) := "00";
+      begin
+         Pad (Pad'Last - (Raw'Length - 2) .. Pad'Last) := Raw (Raw'First + 1 .. Raw'Last);
+         return Identity.Identifiers.Entities.Attempt
+           (LO_Id ("1" & Pad (2 .. 2)));
+      end LO_Attempt;
+
+      function LO_Request
+        (N  : Natural;
+         Pw : Identity.Secrets.Passwords.Presented_Password)
+         return Identity.Operations.Passwords.Authenticate.Attempted_Request is
+        (Subject => LO_Subject, Password => Pw, Attempt => LO_Attempt (N),
+         Correlation => Audit_Context.Correlation,
+         Subject_Fingerprint =>
+           Identity.Text.Bounded.From_String ("lockout-probe-fp"),
+         Started_At => Identity.Times.Instant (N),
+         Completed_At => Identity.Times.Instant (N),
+         Lockout_Threshold => Threshold);
+
+      Command : Identity.Adapters.Repositories.Stores.Command_Status;
+      Res : Identity.Authentication.Results.Password_Authentication_Result;
+      All_Bad_Rejected : Boolean := True;
+   begin
+      Command := Identity.Adapters.Repositories.Stores.Create_Principal
+        (LO, (Id => LO_P, Kind => Identity.Principals.Kinds.Human,
+              State => Identity.Principals.Definitions.Active, Version => 0));
+      Assert (Command = Identity.Adapters.Repositories.Stores.Applied,
+              "lockout: probe principal is created");
+      Command := Identity.Adapters.Repositories.Stores.Create_Account
+        (LO, (Id => LO_A, Principal => LO_P,
+              State => (Administrative => Identity.Accounts.States.Enabled,
+                        Lifecycle => Identity.Accounts.States.Active,
+                        Verification =>
+                          Identity.Accounts.States.No_Verification_Required,
+                        Lock_State => Identity.Accounts.States.Not_Locked,
+                        Requirements => <>, Recovery => <>),
+              Version => 0));
+      Assert (Command = Identity.Adapters.Repositories.Stores.Applied,
+              "lockout: probe account is created");
+      Command := Identity.Adapters.Repositories.Stores.Add_Binding
+        (LO, (Id => LO_B, Principal => LO_P, Kind => LO_Login,
+              Normalized => Identity.Text.Bounded.From_String ("lockout-probe"),
+              State => Identity.Identities.Bindings.Active, Version => 0));
+      Assert (Command = Identity.Adapters.Repositories.Stores.Applied,
+              "lockout: probe login binding is added");
+      Command := Identity.Operations.Passwords.Enroll.Execute
+        (LO, LO_P, LO_C, LO_Good, Audit_Context, Next_Audit_Event, 1);
+      Assert (Command = Identity.Adapters.Repositories.Stores.Applied,
+              "lockout: probe password is enrolled");
+
+      --  Exhaust the threshold with wrong passwords.
+      for N in 1 .. 3 loop
+         Res := Identity.Operations.Passwords.Authenticate.Execute
+           (LO, LO_Request (N, LO_Bad_P), Audit_Context, Next_Audit_Event,
+            Identity.Times.Instant (N));
+         if Res.Status = Identity.Results.Succeeded then
+            All_Bad_Rejected := False;
+         end if;
+      end loop;
+      Assert (All_Bad_Rejected, "lockout: every wrong-password attempt is rejected");
+
+      --  The correct password is now rejected too: the account is locked.
+      Res := Identity.Operations.Passwords.Authenticate.Execute
+        (LO, LO_Request (9, LO_Good_P), Audit_Context, Next_Audit_Event, 9);
+      Assert
+        (Res.Status /= Identity.Results.Succeeded,
+         "lockout: the correct password is rejected once the threshold is reached");
+   end Test_74_lockout_blocks_after_threshold;
+
    overriding procedure Register_Tests (T : in out Test_Case) is
    begin
       Registration.Register_Routine
@@ -18211,6 +18329,9 @@ package body Identity_Tests_Cases is
       Registration.Register_Routine
         (T, Test_73_migration_event_read_back'Access,
          "Test_73_migration_event_read_back");
+      Registration.Register_Routine
+        (T, Test_74_lockout_blocks_after_threshold'Access,
+         "Test_74_lockout_blocks_after_threshold");
    end Register_Tests;
 
    overriding function Name (T : Test_Case) return AUnit.Message_String is
