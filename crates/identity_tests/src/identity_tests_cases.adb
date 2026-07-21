@@ -18870,6 +18870,129 @@ package body Identity_Tests_Cases is
               "recovery-path: a terminal recovery refuses further advancement");
    end Test_80_recovery_approval_path;
 
+   --  The remaining recovery states (spec 23): additional-evidence, rejected,
+   --  attempt-limit-reached and superseded were all unreachable. This drives a
+   --  distinct transaction into each so no state of the machine is dead.
+   procedure Test_81_recovery_terminal_states
+     (T : in out AUnit.Test_Cases.Test_Case'Class)
+   is
+      pragma Unreferenced (T);
+      package RT renames Identity.Recovery.Transactions;
+      package RC renames Identity.Operations.Recovery.Continue;
+
+      type RB_Store_Access is
+        access Identity.Adapters.Repositories.Memory.Store;
+      RB_Ptr : constant RB_Store_Access :=
+        new Identity.Adapters.Repositories.Memory.Store;
+      SR : Identity.Adapters.Repositories.Stores.Store_Interface'Class renames
+        Identity.Adapters.Repositories.Stores.Store_Interface'Class (RB_Ptr.all);
+
+      function RB_Id (Suffix : String)
+        return Identity.Identifiers.Encoded_Identifier is
+        (Identity.Identifiers.From_String
+           ("f9000000-0000-0000-0000-0000000000" & Suffix));
+
+      PR : constant Identity.Identifiers.Entities.Principal_Id :=
+        Identity.Identifiers.Entities.Principal (RB_Id ("01"));
+      AC : constant Identity.Identifiers.Entities.Account_Id :=
+        Identity.Identifiers.Entities.Account (RB_Id ("02"));
+
+      Account_View : constant Identity.Accounts.States.Account_State_View :=
+        (Administrative => Identity.Accounts.States.Enabled,
+         Lifecycle      => Identity.Accounts.States.Active,
+         Verification   => Identity.Accounts.States.Verified,
+         Lock_State     => Identity.Accounts.States.Not_Locked,
+         Requirements   => (others => False),
+         Recovery       => (others => False));
+
+      Command : Identity.Adapters.Repositories.Stores.Command_Status;
+      Found   : Boolean;
+      Rec     : RT.Recovery_Transaction_Record;
+
+      function TX (Suffix : String)
+        return Identity.Identifiers.Entities.Authentication_Transaction_Id is
+        (Identity.Identifiers.Entities.Authentication_Transaction (RB_Id (Suffix)));
+
+      procedure Begin_At (Id : Identity.Identifiers.Entities.Authentication_Transaction_Id)
+      is
+         S : constant RT.Recovery_Transition_Status :=
+           Identity.Operations.Recovery.Begin_Recovery.Execute
+             (SR,
+              (Id => Id, Principal => PR, Account => AC, Created_At => 100,
+               Expires_At => (Present => True, Time_Point => 9_000),
+               State => RT.Started, Version => 0),
+              Audit_Context, Next_Audit_Event, 1);
+      begin
+         Assert (S = RT.Applied, "recovery-terminal: begin applied");
+      end Begin_At;
+
+      function Advance
+        (Id : Identity.Identifiers.Entities.Authentication_Transaction_Id;
+         Action : RT.Recovery_Transaction_Action)
+        return RT.Recovery_Transition_Status
+      is
+         Cur : RT.Recovery_Transaction_Record;
+         Ok  : Boolean;
+      begin
+         Identity.Adapters.Repositories.Stores.Find_Recovery_Transaction (SR, Id, Ok, Cur);
+         return RC.Execute
+           (SR, Id, PR, Action, 500, Cur.Version,
+            Audit_Context, Next_Audit_Event, 1);
+      end Advance;
+
+      --  Accepting evidence has its own primitive (not Advance_Recovery).
+      function Accept_Evidence
+        (Id : Identity.Identifiers.Entities.Authentication_Transaction_Id)
+        return RT.Recovery_Transition_Status is
+        (RC.Execute (SR, Id, PR, 200, Audit_Context, Next_Audit_Event, 1));
+   begin
+      Command := Identity.Adapters.Repositories.Stores.Create_Principal
+        (SR, (Id => PR, Kind => Identity.Principals.Kinds.Human,
+              State => Identity.Principals.Definitions.Active, Version => 0));
+      Assert (Command = Identity.Adapters.Repositories.Stores.Applied,
+              "recovery-terminal: principal created");
+      Command := Identity.Adapters.Repositories.Stores.Create_Account
+        (SR, (Id => AC, Principal => PR, State => Account_View, Version => 0));
+      Assert (Command = Identity.Adapters.Repositories.Stores.Applied,
+              "recovery-terminal: account created");
+
+      --  Additional evidence required, then re-accepted.
+      Begin_At (TX ("11"));
+      Assert (Accept_Evidence (TX ("11")) = RT.Applied
+              and then Advance (TX ("11"), RT.Require_Additional_Recovery_Evidence)
+                       = RT.Applied,
+              "recovery-terminal: additional evidence can be required");
+      Identity.Adapters.Repositories.Stores.Find_Recovery_Transaction (SR, TX ("11"), Found, Rec);
+      Assert (Rec.State = RT.Additional_Evidence_Required,
+              "recovery-terminal: Additional_Evidence_Required reached");
+      Assert (Accept_Evidence (TX ("11")) = RT.Applied,
+              "recovery-terminal: further evidence is accepted from the additional state");
+
+      --  Rejected.
+      Begin_At (TX ("12"));
+      Assert (Advance (TX ("12"), RT.Reject_Recovery) = RT.Applied,
+              "recovery-terminal: reject applied");
+      Identity.Adapters.Repositories.Stores.Find_Recovery_Transaction (SR, TX ("12"), Found, Rec);
+      Assert (Rec.State = RT.Rejected and then RT.Failed_Terminal (Rec.State),
+              "recovery-terminal: Rejected reached and is a failed terminal");
+
+      --  Attempt limit reached.
+      Begin_At (TX ("13"));
+      Assert (Advance (TX ("13"), RT.Reach_Recovery_Attempt_Limit) = RT.Applied,
+              "recovery-terminal: attempt limit applied");
+      Identity.Adapters.Repositories.Stores.Find_Recovery_Transaction (SR, TX ("13"), Found, Rec);
+      Assert (Rec.State = RT.Attempt_Limit_Reached,
+              "recovery-terminal: Attempt_Limit_Reached reached");
+
+      --  Superseded.
+      Begin_At (TX ("14"));
+      Assert (Advance (TX ("14"), RT.Supersede_Recovery) = RT.Applied,
+              "recovery-terminal: supersede applied");
+      Identity.Adapters.Repositories.Stores.Find_Recovery_Transaction (SR, TX ("14"), Found, Rec);
+      Assert (Rec.State = RT.Superseded,
+              "recovery-terminal: Superseded reached");
+   end Test_81_recovery_terminal_states;
+
    overriding procedure Register_Tests (T : in out Test_Case) is
    begin
       Registration.Register_Routine
@@ -19041,6 +19164,9 @@ package body Identity_Tests_Cases is
       Registration.Register_Routine
         (T, Test_80_recovery_approval_path'Access,
          "Test_80_recovery_approval_path");
+      Registration.Register_Routine
+        (T, Test_81_recovery_terminal_states'Access,
+         "Test_81_recovery_terminal_states");
    end Register_Tests;
 
    overriding function Name (T : Test_Case) return AUnit.Message_String is

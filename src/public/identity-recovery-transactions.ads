@@ -13,6 +13,13 @@ package Identity.Recovery.Transactions is
       Approved,
       Credential_Reestablishment_Required,
       Restricted_Authentication_Established,
+      --  Completed is the fully-unrestricted successful terminal. The default
+      --  recovery flow deliberately does NOT reach it: recovery-derived
+      --  authentication is restricted (spec 23), so a successful recovery ends
+      --  at Restricted_Authentication_Established. Completed is reserved for a
+      --  future administrative full-recovery path and is intentionally not
+      --  produced by any action here -- Successful_Terminal accepts it so that
+      --  path, when added, needs no change to the terminal predicates.
       Completed,
       Rejected,
       Attempt_Limit_Reached,
@@ -54,10 +61,14 @@ package Identity.Recovery.Transactions is
    type Recovery_Transaction_Action is
      (Begin_Recovery,
       Accept_Recovery_Evidence,
+      Require_Additional_Recovery_Evidence,
       Approve_Recovery,
       Require_Recovery_Credential_Reestablishment,
       Establish_Recovery_Restricted_Authentication,
       Complete_Recovery,
+      Reject_Recovery,
+      Reach_Recovery_Attempt_Limit,
+      Supersede_Recovery,
       Cancel_Recovery);
 
    type Recovery_Transaction_Admission_Status is
@@ -125,6 +136,13 @@ package Identity.Recovery.Transactions is
            elsif Is_Terminal (State)
            then Recovery_Transaction_Terminal_Rejected
            else Recovery_Transaction_State_Rejected),
+        when Require_Additional_Recovery_Evidence =>
+          --  Evidence was accepted but more is needed before approval.
+          (if State = Evidence_Accepted
+           then Recovery_Transaction_Admitted
+           elsif Is_Terminal (State)
+           then Recovery_Transaction_Terminal_Rejected
+           else Recovery_Transaction_State_Rejected),
         when Approve_Recovery =>
           (if State = Evidence_Accepted
            then Recovery_Transaction_Admitted
@@ -149,6 +167,26 @@ package Identity.Recovery.Transactions is
            elsif Is_Terminal (State)
            then Recovery_Transaction_Terminal_Rejected
            else Recovery_Transaction_State_Rejected),
+        when Reject_Recovery =>
+          --  An operator or policy denies the recovery; admissible from any
+          --  live state.
+          (if not Is_Terminal (State)
+           then Recovery_Transaction_Admitted
+           else Recovery_Transaction_Terminal_Rejected),
+        when Reach_Recovery_Attempt_Limit =>
+          --  Too many failed evidence attempts; only meaningful while evidence
+          --  is still being gathered.
+          (if State in Evidence_Required | Additional_Evidence_Required | Evidence_Accepted
+           then Recovery_Transaction_Admitted
+           elsif Is_Terminal (State)
+           then Recovery_Transaction_Terminal_Rejected
+           else Recovery_Transaction_State_Rejected),
+        when Supersede_Recovery =>
+          --  A newer recovery for the same principal supersedes this one;
+          --  admissible from any live state.
+          (if not Is_Terminal (State)
+           then Recovery_Transaction_Admitted
+           else Recovery_Transaction_Terminal_Rejected),
         when Cancel_Recovery =>
           (if State not in
                 Restricted_Authentication_Established

@@ -3100,12 +3100,20 @@ package body Identity.Adapters.Repositories.Memory is
       --  Only the mid-flow admission actions advance through this path; the
       --  begin/accept/complete/cancel actions have their own primitives.
       case Action is
+         when RT.Require_Additional_Recovery_Evidence =>
+            Target := RT.Additional_Evidence_Required;
          when RT.Approve_Recovery =>
             Target := RT.Approved;
          when RT.Require_Recovery_Credential_Reestablishment =>
             Target := RT.Credential_Reestablishment_Required;
          when RT.Establish_Recovery_Restricted_Authentication =>
             Target := RT.Restricted_Authentication_Established;
+         when RT.Reject_Recovery =>
+            Target := RT.Rejected;
+         when RT.Reach_Recovery_Attempt_Limit =>
+            Target := RT.Attempt_Limit_Reached;
+         when RT.Supersede_Recovery =>
+            Target := RT.Superseded;
          when others =>
             return RT.State_Conflict;
       end case;
