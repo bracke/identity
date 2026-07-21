@@ -1,6 +1,9 @@
 with Identity.Assurance.Attributes;
 with Identity.Assurance.Levels;
+with Identity.Authentication.Evidence;
 with Identity.Identifiers.Entities;
+with Identity.Identifiers.Registry;
+with Identity.Limits;
 with Identity.Principals.Kinds;
 with Identity.Times;
 with Identity.Times.Durations;
@@ -10,6 +13,58 @@ package Identity.Authentication.Security_Contexts is
    pragma Pure;
 
    type Authentication_State is (Anonymous, Authenticated);
+
+   --  Authentication methods that produced this context (spec 4A), bounded by
+   --  Identity.Limits.Max_Methods_Per_Context.
+   type Context_Method is record
+      Method   : Identity.Identifiers.Registry.Registry_Id;
+      Category : Identity.Authentication.Evidence.Factor_Category :=
+                   Identity.Authentication.Evidence.Knowledge;
+   end record;
+   subtype Method_Count is
+     Natural range 0 .. Identity.Limits.Max_Methods_Per_Context;
+   type Context_Method_Items is
+     array (1 .. Identity.Limits.Max_Methods_Per_Context) of Context_Method;
+   type Authentication_Method_Set is record
+      Count : Method_Count := 0;
+      Items : Context_Method_Items;
+   end record;
+
+   --  Safe references to the authentication events behind this context (spec
+   --  4A): identifiers only, never event payloads.
+   subtype Event_Ref_Count is
+     Natural range 0 .. Identity.Limits.Max_Evidence_Per_Context;
+   type Context_Event_Items is
+     array (1 .. Identity.Limits.Max_Evidence_Per_Context)
+       of Identity.Identifiers.Entities.Event_Id;
+   type Authentication_Event_Refs is record
+      Count : Event_Ref_Count := 0;
+      Items : Context_Event_Items;
+   end record;
+
+   --  Approved external-provider reference (spec 4A), present only when the
+   --  authentication was federated.
+   type Optional_External_Provider (Present : Boolean := False) is record
+      case Present is
+         when True =>
+            Value : Identity.Identifiers.Entities.External_Provider_Id;
+         when False =>
+            null;
+      end case;
+   end record;
+
+   --  Structured recovery and credential-action restrictions (spec 4A/6),
+   --  replacing the former lone Recovery_Restricted Boolean. Downstream
+   --  consumers read these; Identity does not enforce resource access.
+   type Action_Restrictions is record
+      Recovery_Restricted                 : Boolean := False;
+      No_Remember_Me                      : Boolean := False;
+      Restricted_Session                  : Boolean := False;
+      Password_Change_Required            : Boolean := False;
+      MFA_Enrollment_Required             : Boolean := False;
+      Credential_Reestablishment_Required : Boolean := False;
+      Recent_Authentication_Required      : Boolean := False;
+   end record;
 
    type Optional_Session_Id (Present : Boolean := False) is record
       case Present is
@@ -38,6 +93,9 @@ package Identity.Authentication.Security_Contexts is
             Kind                  : Identity.Principals.Kinds.Principal_Kind;
             Assurance             : Identity.Assurance.Levels.Assurance_Level;
             Attributes            : Identity.Assurance.Attributes.Assurance_Attributes;
+            Methods               : Authentication_Method_Set;
+            Provider              : Optional_External_Provider;
+            Event_Refs            : Authentication_Event_Refs;
             Original_Authenticated_At : Identity.Times.Instant;
             Primary_Authenticated_At  : Identity.Times.Instant;
             MFA_Completed_At      : Optional_Instant;
@@ -47,7 +105,7 @@ package Identity.Authentication.Security_Contexts is
             Authentication_Revision : Identity.Versions.Authentication_State_Revision;
             Evidence_Revision     : Identity.Versions.Evidence_Revision;
             Session_Revision      : Identity.Versions.Session_Revision;
-            Recovery_Restricted   : Boolean;
+            Restrictions          : Action_Restrictions;
             Eligible              : Boolean;
       end case;
    end record;
@@ -81,11 +139,14 @@ package Identity.Authentication.Security_Contexts is
       Original_Authenticated_At : Identity.Times.Instant;
       Primary_Authenticated_At  : Identity.Times.Instant;
       Revisions                 : Revision_Baseline;
+      Methods                   : Authentication_Method_Set := (Count => 0, Items => <>);
+      Provider                  : Optional_External_Provider := (Present => False);
+      Event_Refs                : Authentication_Event_Refs := (Count => 0, Items => <>);
       MFA_Completed_At          : Optional_Instant := (Present => False);
       Step_Up_At                : Optional_Instant := (Present => False);
       Session                   : Optional_Session_Id := (Present => False);
       Validity_Boundary         : Optional_Instant := (Present => False);
-      Recovery_Restricted       : Boolean := False;
+      Restrictions              : Action_Restrictions := (others => False);
       Eligible                  : Boolean := True) return Security_Context;
 
    --  Derive the downstream revisions from the persisted entity versions they

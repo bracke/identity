@@ -20,11 +20,14 @@ package body Identity.Authentication.Security_Contexts is
       Original_Authenticated_At : Identity.Times.Instant;
       Primary_Authenticated_At  : Identity.Times.Instant;
       Revisions                 : Revision_Baseline;
+      Methods                   : Authentication_Method_Set := (Count => 0, Items => <>);
+      Provider                  : Optional_External_Provider := (Present => False);
+      Event_Refs                : Authentication_Event_Refs := (Count => 0, Items => <>);
       MFA_Completed_At          : Optional_Instant := (Present => False);
       Step_Up_At                : Optional_Instant := (Present => False);
       Session                   : Optional_Session_Id := (Present => False);
       Validity_Boundary         : Optional_Instant := (Present => False);
-      Recovery_Restricted       : Boolean := False;
+      Restrictions              : Action_Restrictions := (others => False);
       Eligible                  : Boolean := True) return Security_Context is
    begin
       return
@@ -33,6 +36,9 @@ package body Identity.Authentication.Security_Contexts is
          Kind                      => Kind,
          Assurance                 => Assurance,
          Attributes                => Attributes,
+         Methods                   => Methods,
+         Provider                  => Provider,
+         Event_Refs                => Event_Refs,
          Original_Authenticated_At => Original_Authenticated_At,
          Primary_Authenticated_At  => Primary_Authenticated_At,
          MFA_Completed_At          => MFA_Completed_At,
@@ -42,7 +48,7 @@ package body Identity.Authentication.Security_Contexts is
          Authentication_Revision   => Revisions.Authentication,
          Evidence_Revision         => Revisions.Evidence,
          Session_Revision          => Revisions.Session,
-         Recovery_Restricted       => Recovery_Restricted,
+         Restrictions              => Restrictions,
          Eligible                  => Eligible);
    end Authenticated_Context;
 

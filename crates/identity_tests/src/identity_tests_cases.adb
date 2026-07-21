@@ -1172,6 +1172,9 @@ package body Identity_Tests_Cases is
          Kind => Identity.Principals.Kinds.Human,
          Assurance => Evaluation.Level,
          Attributes => Attributes,
+         Methods => (Count => 0, Items => <>),
+         Provider => (Present => False),
+         Event_Refs => (Count => 0, Items => <>),
          Original_Authenticated_At => 5,
          Primary_Authenticated_At => 5,
          MFA_Completed_At => (Present => True, Value => 6),
@@ -1181,7 +1184,7 @@ package body Identity_Tests_Cases is
          Authentication_Revision => 1,
          Evidence_Revision => 1,
          Session_Revision => 1,
-         Recovery_Restricted => False,
+         Restrictions => (others => False),
          Eligible => True);
       Baseline : constant Identity.Authentication.Security_Contexts.Revision_Baseline :=
         Identity.Authentication.Security_Contexts.Current_Revisions (Authenticated_Context);
@@ -18502,6 +18505,49 @@ package body Identity_Tests_Cases is
               "sec-ctx: disabling the account advanced its persisted version");
       Assert (SC.Revision_Changed (Ctx, SC.Revisions_From (V1, 0, 0, False)),
               "sec-ctx: a real account state change makes the downstream context stale");
+
+      --  The 4A fields (methods, provider, event refs, structured restrictions)
+      --  are carried, not decorative: build a populated context and read them.
+      declare
+         Rich : constant SC.Security_Context := SC.Authenticated_Context
+           (Principal                 => PR,
+            Kind                      => Identity.Principals.Kinds.Human,
+            Assurance                 => Identity.Assurance.Levels.Interactive,
+            Attributes                => (others => <>),
+            Original_Authenticated_At => 100,
+            Primary_Authenticated_At  => 100,
+            Revisions                 => SC.Revisions_From (V1, 3, 0, False),
+            Methods                   =>
+              (Count => 1,
+               Items =>
+                 [1 => (Method => Identity.Identifiers.Registry.From_String
+                          ("identity.totp.sha1"),
+                        Category => Identity.Authentication.Evidence.Possession),
+                  others => <>]),
+            Provider                  =>
+              (Present => True,
+               Value => Identity.Identifiers.Entities.External_Provider (SC_Id ("cc"))),
+            Event_Refs                =>
+              (Count => 1,
+               Items => [1 => Identity.Identifiers.Entities.Event (SC_Id ("dd")),
+                         others => <>]),
+            Restrictions              =>
+              (Recovery_Restricted => True, MFA_Enrollment_Required => True,
+               others => False));
+      begin
+         Assert (Rich.Methods.Count = 1
+                 and then Rich.Methods.Items (1).Category
+                          = Identity.Authentication.Evidence.Possession,
+                 "sec-ctx: the context carries its authentication methods");
+         Assert (Rich.Provider.Present,
+                 "sec-ctx: the context carries an approved external-provider ref");
+         Assert (Rich.Event_Refs.Count = 1,
+                 "sec-ctx: the context carries safe authentication-event refs");
+         Assert (Rich.Restrictions.Recovery_Restricted
+                 and then Rich.Restrictions.MFA_Enrollment_Required
+                 and then not Rich.Restrictions.No_Remember_Me,
+                 "sec-ctx: recovery and credential-action restrictions are structured");
+      end;
    end Test_77_security_context_tracks_account_change;
 
    overriding procedure Register_Tests (T : in out Test_Case) is
