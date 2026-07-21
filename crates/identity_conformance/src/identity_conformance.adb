@@ -11,6 +11,11 @@ with Identity.Adapters.Repositories.Stores;
 with Identity.API_Keys.Credentials;
 with Identity.Authentication.Results;
 with Identity.Credentials.States;
+with Identity.Secrets.Passwords;
+with Identity.Operations.Passwords.Enroll;
+with Identity.Operations.Passwords.Authenticate;
+with Identity.Operations.Contexts;
+with Identity.Identities.Subjects;
 with Identity.Crypto.Capabilities;
 with Identity.Crypto.CryptoLib.Capabilities;
 with Identity.Crypto.Domains;
@@ -21,6 +26,8 @@ with Identity.Identifiers;
 with Identity.Identifiers.Entities;
 with Identity.Identifiers.Registry;
 with Identity.Identities.Bindings;
+with Identity.Identifiers.Operations;
+with Identity.Events.Envelopes;
 with Identity.Identities.Resolution;
 with Identity.Principals.Definitions;
 with Identity.Principals.Kinds;
@@ -847,6 +854,100 @@ begin
       else
          Ada.Text_IO.Put_Line
            ("identity_conformance:adapter:persistent:snapshot-not-durable");
+         Failed_Run := True;
+      end if;
+   end;
+
+   --  A durable auth store is worthless if a credential stops working after a
+   --  restart, and the count check above does not exercise that. Seed a fresh
+   --  store with a full login fixture, save it, reload into another store, and
+   --  require the enrolled password to still authenticate -- and the wrong one
+   --  to still be rejected -- through the reloaded store.
+   declare
+      Cred_Path : constant String := Snapshot_Dir & "/conformance-credential.bin";
+      Writer    : constant Store_Access := new Memory.Store;
+      Reader    : constant Store_Access := new Memory.Store;
+      WV : Stores.Store_Interface'Class renames
+        Stores.Store_Interface'Class (Writer.all);
+      RV : Stores.Store_Interface'Class renames
+        Stores.Store_Interface'Class (Reader.all);
+      Subject : constant Identity.Identities.Subjects.Authentication_Subject :=
+        (Kind => Login_Kind, Value => Alice);
+      Good : constant Identity.Secrets.Passwords.New_Password :=
+        Identity.Secrets.Text.From_UTF_8 ("conformance durable credential secret");
+      Good_P : constant Identity.Secrets.Passwords.Presented_Password :=
+        Identity.Secrets.Text.From_UTF_8 ("conformance durable credential secret");
+      Wrong_P : constant Identity.Secrets.Passwords.Presented_Password :=
+        Identity.Secrets.Text.From_UTF_8 ("conformance durable credential secreu");
+      Ctx : constant Identity.Operations.Contexts.Operation_Context :=
+        (Operation =>
+           Identity.Identifiers.Operations.Operation
+             (Identity.Identifiers.From_String
+                ("7f000000-0000-0000-0000-0000000000d0")),
+         Correlation =>
+           Identity.Identifiers.Operations.Correlation
+             (Identity.Identifiers.From_String
+                ("7f100000-0000-0000-0000-0000000000d0")),
+         Causation => (Present => False), Request => (Present => False),
+         Actor => (Kind => Identity.Events.Envelopes.Unauthenticated,
+                   Principal => (Present => False)),
+         Requested_At => 1, Deadline => (Present => False, Time_Point => 0),
+         others => <>);
+      function Ev (Suffix : String)
+        return Identity.Identifiers.Entities.Event_Id is
+        (Identity.Identifiers.Entities.Event
+           (Identity.Identifiers.From_String
+              ("7f200000-0000-0000-0000-0000000000" & Suffix)));
+      Status  : Memory.Snapshot_Status;
+      Command : Stores.Command_Status;
+      Applied : Boolean;
+      Reloaded_OK, Wrong_Rejected : Boolean;
+   begin
+      --  A leftover credential snapshot from an earlier run would let this
+      --  check pass on stale data even if this run's save failed.
+      if Ada.Directories.Exists (Cred_Path) then
+         Ada.Directories.Delete_File (Cred_Path);
+      end if;
+
+      Applied := True;
+      Command := Stores.Create_Principal (WV, Active_Principal (P1));
+      Applied := Applied and then Command = Stores.Applied;
+      Command := Stores.Create_Account (WV,
+        (Id => Account_Of ("d1"), Principal => P1,
+         State => Active_Account_State, Version => 0));
+      Applied := Applied and then Command = Stores.Applied;
+      Command := Stores.Add_Binding (WV,
+        (Id => Binding_Of ("d1"), Principal => P1, Kind => Login_Kind,
+         Normalized => Alice,
+         State => Identity.Identities.Bindings.Active, Version => 0));
+      Applied := Applied and then Command = Stores.Applied;
+      Command := Identity.Operations.Passwords.Enroll.Execute
+        (WV, P1, Credential_Of ("d1"), Good, Ctx, Ev ("01"), 1);
+      Applied := Applied and then Command = Stores.Applied;
+
+      Memory.Save (Writer.all, Cred_Path, Status);
+      if Status /= Memory.Saved then
+         Applied := False;
+      end if;
+      Memory.Load (Reader.all, Cred_Path, Status);
+
+      Reloaded_OK :=
+        Identity.Results.Succeeded =
+          Identity.Operations.Passwords.Authenticate.Execute
+            (RV, Subject, Good_P, Ctx, Ev ("02"), 2).Status;
+      Wrong_Rejected :=
+        Identity.Results.Succeeded /=
+          Identity.Operations.Passwords.Authenticate.Execute
+            (RV, Subject, Wrong_P, Ctx, Ev ("03"), 3).Status;
+
+      if Applied and then Status = Memory.Loaded
+        and then Reloaded_OK and then Wrong_Rejected
+      then
+         Ada.Text_IO.Put_Line
+           ("identity_conformance:adapter:persistent:credential-survives-reload:passed");
+      else
+         Ada.Text_IO.Put_Line
+           ("identity_conformance:adapter:persistent:credential-survives-reload:failed");
          Failed_Run := True;
       end if;
    end;

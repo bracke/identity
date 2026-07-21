@@ -35,7 +35,11 @@ not on any adapter. Three adapters implement it:
 The conformance harness runs all five certification profiles against the
 memory, recording and persistent adapters through the identical code path, and
 afterwards reloads the persistent adapter's snapshot into a fresh store to
-check that durability actually held rather than assuming it.
+check that durability actually held rather than assuming it -- both that the
+principal state survives (snapshot-reloaded) and that an enrolled credential
+still authenticates through the reloaded store while a wrong password is still
+rejected (credential-survives-reload), the property that actually matters for
+an auth store surviving a restart.
 
 Durability is per call, not per transaction: a multi-command sequence is not
 atomic as a whole.
