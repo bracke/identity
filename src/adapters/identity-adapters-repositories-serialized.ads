@@ -259,6 +259,15 @@ package Identity.Adapters.Repositories.Serialized is
       Expected_Version    : Identity.Versions.Entity_Version)
       return Identity.Authentication.Transactions.Authentication_Transaction_Status;
 
+   overriding function Resolve_Authentication_Transaction
+     (Repository       : in out Store;
+      Transaction      : Identity.Identifiers.Entities.Authentication_Transaction_Id;
+      Principal        : Identity.Identifiers.Entities.Principal_Id;
+      Action           : Identity.Authentication.Transactions.Authentication_Transaction_Action;
+      Now              : Identity.Times.Instant;
+      Expected_Version : Identity.Versions.Entity_Version)
+      return Identity.Authentication.Transactions.Authentication_Transaction_Status;
+
    overriding function Upgrade_Session_Assurance
      (Repository  : in out Store;
       Session     : Identity.Identifiers.Entities.Session_Id;

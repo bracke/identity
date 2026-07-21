@@ -925,6 +925,31 @@ package body Identity.Adapters.Repositories.Serialized is
          raise;
    end Satisfy_Authentication_Transaction;
 
+   overriding function Resolve_Authentication_Transaction
+     (Repository       : in out Store;
+      Transaction      : Identity.Identifiers.Entities.Authentication_Transaction_Id;
+      Principal        : Identity.Identifiers.Entities.Principal_Id;
+      Action           : Identity.Authentication.Transactions.Authentication_Transaction_Action;
+      Now              : Identity.Times.Instant;
+      Expected_Version : Identity.Versions.Entity_Version)
+      return Identity.Authentication.Transactions.Authentication_Transaction_Status
+   is
+   begin
+      Repository.Guard.Seize;
+      declare
+         Result : constant Identity.Authentication.Transactions.Authentication_Transaction_Status :=
+           Stores.Resolve_Authentication_Transaction
+             (Repository.Inner.all, Transaction, Principal, Action, Now, Expected_Version);
+      begin
+         Repository.Guard.Release;
+         return Result;
+      end;
+   exception
+      when others =>
+         Repository.Guard.Release;
+         raise;
+   end Resolve_Authentication_Transaction;
+
    overriding function Upgrade_Session_Assurance
      (Repository  : in out Store;
       Session     : Identity.Identifiers.Entities.Session_Id;

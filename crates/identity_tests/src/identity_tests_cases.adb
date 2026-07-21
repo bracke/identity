@@ -19049,6 +19049,98 @@ package body Identity_Tests_Cases is
               "recovery-terminal: Superseded reached");
    end Test_81_recovery_terminal_states;
 
+   --  MFA transactions (spec 15) could be satisfied but never rejected or
+   --  cancelled: those terminal states were dead. This begins two transactions
+   --  and drives one to Rejected and one to Cancelled through the new audited
+   --  Continue.Resolve path, then proves a terminal transaction refuses further
+   --  resolution.
+   procedure Test_82_mfa_transaction_reject_cancel
+     (T : in out AUnit.Test_Cases.Test_Case'Class)
+   is
+      pragma Unreferenced (T);
+      package TR renames Identity.Authentication.Transactions;
+      package RC renames Identity.Operations.Authentication.Continue;
+
+      type MT_Store_Access is
+        access Identity.Adapters.Repositories.Memory.Store;
+      MT_Ptr : constant MT_Store_Access :=
+        new Identity.Adapters.Repositories.Memory.Store;
+      SR : Identity.Adapters.Repositories.Stores.Store_Interface'Class renames
+        Identity.Adapters.Repositories.Stores.Store_Interface'Class (MT_Ptr.all);
+
+      function MT_Id (Suffix : String)
+        return Identity.Identifiers.Encoded_Identifier is
+        (Identity.Identifiers.From_String
+           ("f8000000-0000-0000-0000-0000000000" & Suffix));
+
+      PR : constant Identity.Identifiers.Entities.Principal_Id :=
+        Identity.Identifiers.Entities.Principal (MT_Id ("01"));
+
+      function MT (Suffix : String)
+        return Identity.Identifiers.Entities.Authentication_Transaction_Id is
+        (Identity.Identifiers.Entities.Authentication_Transaction (MT_Id (Suffix)));
+
+      Command : Identity.Adapters.Repositories.Stores.Command_Status;
+      Found   : Boolean;
+      Rec     : TR.Authentication_Transaction_Record;
+
+      procedure Begin_At (Id : Identity.Identifiers.Entities.Authentication_Transaction_Id)
+      is
+         S : constant TR.Authentication_Transaction_Status :=
+           Identity.Operations.Authentication.Begin_Transaction.Execute
+             (SR,
+              (Id => Id, Principal => PR,
+               Requested_Profile => Identity.Assurance.Profiles.Sensitive,
+               Created_At => 100,
+               Expires_At => (Present => True, Time_Point => 9_000),
+               State => TR.Started, Attempts => 0, Evidence_Count => 0, Version => 0),
+              Audit_Context, Next_Audit_Event, 1);
+      begin
+         Assert (S = TR.Applied, "mfa-resolve: transaction begins");
+      end Begin_At;
+
+      function Resolve
+        (Id : Identity.Identifiers.Entities.Authentication_Transaction_Id;
+         Action : TR.Authentication_Transaction_Action)
+        return TR.Authentication_Transaction_Status
+      is
+         Cur : TR.Authentication_Transaction_Record;
+         Ok  : Boolean;
+      begin
+         Identity.Adapters.Repositories.Stores.Find_Authentication_Transaction
+           (SR, Id, Ok, Cur);
+         return RC.Resolve
+           (SR, Id, PR, Action, 500, Cur.Version,
+            Audit_Context, Next_Audit_Event, 1);
+      end Resolve;
+   begin
+      Command := Identity.Adapters.Repositories.Stores.Create_Principal
+        (SR, (Id => PR, Kind => Identity.Principals.Kinds.Human,
+              State => Identity.Principals.Definitions.Active, Version => 0));
+      Assert (Command = Identity.Adapters.Repositories.Stores.Applied,
+              "mfa-resolve: principal created");
+
+      --  Reject.
+      Begin_At (MT ("11"));
+      Assert (Resolve (MT ("11"), TR.Reject_Transaction) = TR.Applied,
+              "mfa-resolve: reject applied");
+      Identity.Adapters.Repositories.Stores.Find_Authentication_Transaction
+        (SR, MT ("11"), Found, Rec);
+      Assert (Rec.State = TR.Rejected and then TR.Is_Terminal (Rec.State),
+              "mfa-resolve: Rejected reached (terminal)");
+      Assert (Resolve (MT ("11"), TR.Cancel_Transaction) = TR.State_Conflict,
+              "mfa-resolve: a terminal transaction refuses further resolution");
+
+      --  Cancel.
+      Begin_At (MT ("12"));
+      Assert (Resolve (MT ("12"), TR.Cancel_Transaction) = TR.Applied,
+              "mfa-resolve: cancel applied");
+      Identity.Adapters.Repositories.Stores.Find_Authentication_Transaction
+        (SR, MT ("12"), Found, Rec);
+      Assert (Rec.State = TR.Cancelled and then TR.Is_Terminal (Rec.State),
+              "mfa-resolve: Cancelled reached (terminal)");
+   end Test_82_mfa_transaction_reject_cancel;
+
    overriding procedure Register_Tests (T : in out Test_Case) is
    begin
       Registration.Register_Routine
@@ -19223,6 +19315,9 @@ package body Identity_Tests_Cases is
       Registration.Register_Routine
         (T, Test_81_recovery_terminal_states'Access,
          "Test_81_recovery_terminal_states");
+      Registration.Register_Routine
+        (T, Test_82_mfa_transaction_reject_cancel'Access,
+         "Test_82_mfa_transaction_reject_cancel");
    end Register_Tests;
 
    overriding function Name (T : Test_Case) return AUnit.Message_String is

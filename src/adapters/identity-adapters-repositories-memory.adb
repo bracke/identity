@@ -1656,6 +1656,51 @@ package body Identity.Adapters.Repositories.Memory is
       return Identity.Authentication.Transactions.Unknown;
    end Satisfy_Authentication_Transaction;
 
+   overriding function Resolve_Authentication_Transaction
+     (Repository       : in out Store;
+      Transaction      : Identity.Identifiers.Entities.Authentication_Transaction_Id;
+      Principal        : Identity.Identifiers.Entities.Principal_Id;
+      Action           : Identity.Authentication.Transactions.Authentication_Transaction_Action;
+      Now              : Identity.Times.Instant;
+      Expected_Version : Identity.Versions.Entity_Version)
+      return Identity.Authentication.Transactions.Authentication_Transaction_Status
+   is
+      package Txn renames Identity.Authentication.Transactions;
+      Target : Txn.Authentication_Transaction_State;
+   begin
+      case Action is
+         when Txn.Reject_Transaction => Target := Txn.Rejected;
+         when Txn.Cancel_Transaction => Target := Txn.Cancelled;
+         when others                => return Txn.State_Conflict;
+      end case;
+
+      for Slot of Repository.Authentication_Transactions loop
+         if Slot.Present and then Same_Transaction (Slot.Value.Id, Transaction) then
+            if not Same_Principal (Slot.Value.Principal, Principal) then
+               return Txn.State_Conflict;
+            elsif not Identity.Versions.Same_Entity_Version
+              (Slot.Value.Version, Expected_Version)
+            then
+               return Txn.Version_Conflict;
+            elsif Txn.Expired_At (Slot.Value, Now) then
+               Slot.Value.State := Txn.Expired;
+               Slot.Value.Version :=
+                 Identity.Versions.Next_Entity_Version (Slot.Value.Version);
+               return Txn.State_Conflict;
+            elsif Txn.Admission_Rejected (Txn.Admission (Slot.Value, Action)) then
+               return Txn.State_Conflict;
+            end if;
+
+            Slot.Value.State := Target;
+            Slot.Value.Version :=
+              Identity.Versions.Next_Entity_Version (Slot.Value.Version);
+            return Txn.Applied;
+         end if;
+      end loop;
+
+      return Txn.Unknown;
+   end Resolve_Authentication_Transaction;
+
    overriding function Upgrade_Session_Assurance
      (Repository  : in out Store;
       Session     : Identity.Identifiers.Entities.Session_Id;

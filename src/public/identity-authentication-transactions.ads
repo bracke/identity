@@ -28,6 +28,7 @@ package Identity.Authentication.Transactions is
       Satisfy_Transaction,
       Upgrade_Assurance,
       Consume_Transaction,
+      Reject_Transaction,
       Cancel_Transaction);
 
    type Transaction_Admission_Status is
@@ -154,6 +155,12 @@ package Identity.Authentication.Transactions is
               (if State = Satisfied
                then Transaction_Admitted
                else Transaction_State_Rejected),
+            when Reject_Transaction =>
+              --  Policy or a failed factor denies the transaction; admissible
+              --  from any live, non-terminal state.
+              (if State not in Satisfied | Rejected | Expired | Cancelled | Consumed
+               then Transaction_Admitted
+               else Transaction_State_Rejected),
             when Cancel_Transaction =>
               (if State not in Satisfied | Rejected | Expired | Cancelled | Consumed
                then Transaction_Admitted
@@ -226,6 +233,16 @@ package Identity.Authentication.Transactions is
    function Can_Consume
      (Transaction : Authentication_Transaction_Projection) return Boolean is
      (Admission_Accepted (Admission (Transaction, Consume_Transaction)));
+
+   --  Primary_Evidence_Accepted is skipped by design: a transaction begins
+   --  only after primary evidence (the password) has already been accepted, so
+   --  Begin lands directly in Additional_Factor_Required. The state is retained
+   --  as a valid Issue_Challenge precursor for flows that accept primary
+   --  evidence inside the transaction.
+
+   function Can_Reject
+     (State : Authentication_Transaction_State) return Boolean is
+     (Admission_Accepted (Admission (State, Reject_Transaction)));
 
    function Can_Cancel
      (State : Authentication_Transaction_State) return Boolean is

@@ -56,4 +56,21 @@ package Identity.Operations.Authentication.Continue is
      (Repository : in out Identity.Adapters.Repositories.Stores.Store_Interface'Class;
       Request    : Staged_Satisfaction_Request)
       return Identity.Authentication.Transactions.Authentication_Transaction_Status;
+
+   --  Resolve an in-progress transaction unsuccessfully -- rejected by policy
+   --  or a failed factor (Reject_Transaction), or cancelled by the caller
+   --  (Cancel_Transaction). Before this, Rejected and Cancelled were dead
+   --  states with no path. Audited under identity.authentication.rejected.
+   function Resolve
+     (Repository       : in out
+        Identity.Adapters.Repositories.Stores.Store_Interface'Class;
+      Transaction      : Identity.Identifiers.Entities.Authentication_Transaction_Id;
+      Principal        : Identity.Identifiers.Entities.Principal_Id;
+      Action           : Identity.Authentication.Transactions.Authentication_Transaction_Action;
+      Now              : Identity.Times.Instant;
+      Expected_Version : Identity.Versions.Entity_Version;
+      Context          : Identity.Operations.Contexts.Operation_Context;
+      Event            : Identity.Identifiers.Entities.Event_Id;
+      Recorded_At      : Identity.Times.Instant)
+      return Identity.Authentication.Transactions.Authentication_Transaction_Status;
 end Identity.Operations.Authentication.Continue;
