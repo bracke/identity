@@ -7,6 +7,9 @@ with Identity_Tools_Crypto_Validation;
 with Identity_Tools_Documentation;
 with Identity_Tools_Events;
 with Identity_Tools_Facts;
+with Ada.Directories;
+with Ada.Strings.Unbounded;
+with Project_Tools.Text;
 with Identity_Tools_Gap_Claims;
 with Identity_Tools_Evidence;
 with Identity_Tools_Invariants;
@@ -38,6 +41,23 @@ procedure Identity_Tools is
    Gates_Passed        : Boolean;
    Release_Report      : Identity_Tools_Release_Validation.Validation_Report;
    Workflow_Report     : Identity_Tools_Workflows.Validation_Report;
+
+   function Count_Test_Routines return Natural is
+      Path : constant String :=
+        (if Ada.Directories.Exists
+              ("crates/identity_tests/src/identity_tests_cases.adb")
+         then "crates/identity_tests/src/identity_tests_cases.adb"
+         else "../../crates/identity_tests/src/identity_tests_cases.adb");
+   begin
+      if not Ada.Directories.Exists (Path) then
+         return 0;
+      end if;
+      return Project_Tools.Text.Count
+        (Ada.Strings.Unbounded.To_String
+           (Project_Tools.Text.Read_Text_File (Path)),
+         "Register_Routine");
+   end Count_Test_Routines;
+
 begin
    Ada.Text_IO.Put_Line
      ("identity_tools:"
@@ -273,7 +293,8 @@ begin
       Audited_Overloads   => Audit_Report.Audited_Overloads,
       Bypass_Overloads    => Audit_Report.Bypass_Overloads,
       Proved_Packages     => Proof_Report.Package_Count,
-      Invariants          => Invariant_Report.Invariant_Count);
+      Invariants          => Invariant_Report.Invariant_Count,
+      Test_Routines       => Count_Test_Routines);
    Ada.Text_IO.Put_Line
      ("identity_tools:facts:"
       & Natural'Image (Facts_Report.Blocks_Checked)

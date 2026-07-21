@@ -27,7 +27,8 @@ package Identity_Tools_Facts is
       Audited_Overloads   : Natural;
       Bypass_Overloads    : Natural;
       Proved_Packages     : Natural;
-      Invariants          : Natural) return String;
+      Invariants          : Natural;
+      Test_Routines       : Natural) return String;
 
    procedure Validate
      (Report              : out Validation_Report;
@@ -38,7 +39,8 @@ package Identity_Tools_Facts is
       Audited_Overloads   : Natural;
       Bypass_Overloads    : Natural;
       Proved_Packages     : Natural;
-      Invariants          : Natural);
+      Invariants          : Natural;
+      Test_Routines       : Natural);
 
    function Passed (Report : Validation_Report) return Boolean;
 end Identity_Tools_Facts;

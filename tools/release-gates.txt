@@ -50,8 +50,9 @@ so a suite that never ran cannot be reported as satisfied.
 
 - alr build of the library under -gnatwe (warnings are errors)
 - crates/identity_tests AUnit suite                              [evidence: aunit]
-  71 registered test routines carrying 748 assertions, in
-  identity_tests_cases.adb. A failure is reported against the named routine
+  Registered AUnit test routines in identity_tests_cases.adb (the count is in
+  the generated facts block above). A failure is reported against the named
+  routine
   that contains it and the remaining routines still run; the AUnit reporter
   prints the run/passed/failed totals and the executable exits non-zero on
   any failure. It was previously one straight-line procedure, where a failure
@@ -231,6 +232,7 @@ text it prints -- do not edit the numbers to match.
   context-free overloads      4
   proved packages             12
   security invariants         80
+  registered test routines    73
 <!-- end generated: identity-facts -->
 
 Cost

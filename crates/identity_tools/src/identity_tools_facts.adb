@@ -30,7 +30,8 @@ package body Identity_Tools_Facts is
       Audited_Overloads   : Natural;
       Bypass_Overloads    : Natural;
       Proved_Packages     : Natural;
-      Invariants          : Natural) return String
+      Invariants          : Natural;
+      Test_Routines       : Natural) return String
    is
       Buffer : Unbounded_String;
       procedure Line (Text : String) is
@@ -52,6 +53,7 @@ package body Identity_Tools_Facts is
       Line ("  context-free overloads      " & Image (Bypass_Overloads));
       Line ("  proved packages             " & Image (Proved_Packages));
       Line ("  security invariants         " & Image (Invariants));
+      Line ("  registered test routines    " & Image (Test_Routines));
       Append (Buffer, End_Marker);
       return To_String (Buffer);
    end Rendered;
@@ -65,13 +67,14 @@ package body Identity_Tools_Facts is
       Audited_Overloads   : Natural;
       Bypass_Overloads    : Natural;
       Proved_Packages     : Natural;
-      Invariants          : Natural)
+      Invariants          : Natural;
+      Test_Routines       : Natural)
    is
       Generated : constant String :=
         Rendered
           (Event_Types, Mutating_Operations, Audited_Operations,
            Exempt_Operations, Audited_Overloads, Bypass_Overloads,
-           Proved_Packages, Invariants);
+           Proved_Packages, Invariants, Test_Routines);
       Errors : Natural := 0;
    begin
       Report := (others => 0);
