@@ -25,6 +25,7 @@ with Identity.Adapters.Repositories.Failures;
 with Identity.Adapters.Repositories.Identities;
 with Identity.Adapters.Repositories.Idempotency;
 with Identity.Adapters.Repositories.Memory;
+with Identity.Adapters.Repositories.Recording;
 with Identity.Authentication.Results;
 with Identity.Identities.Subjects;
 with Identity.Adapters.Repositories.Stores;
@@ -19195,6 +19196,82 @@ package body Identity_Tests_Cases is
               "conflicts: idempotency-conflict and capacity classify; Fresh is not a conflict");
    end Test_83_conflict_taxonomy_reachable;
 
+   --  Fault injection (spec 50): the failure-checkpoint facility was wired into
+   --  no operation. The Recording adapter now consults an armed script and
+   --  fails at Before_Command_Apply before delegating, so an injected failure
+   --  leaves the inner store entirely unchanged. This proves all-or-nothing by
+   --  injection rather than only by natural conflict: the reference store runs
+   --  each command atomically, so the only observable states are before the
+   --  command (old) and after it (new).
+   procedure Test_84_fault_injection_atomicity
+     (T : in out AUnit.Test_Cases.Test_Case'Class)
+   is
+      pragma Unreferenced (T);
+      package Rec renames Identity.Adapters.Repositories.Recording;
+      package Faults renames Identity.Testing.Failures;
+
+      type FI_Store_Access is
+        access Identity.Adapters.Repositories.Memory.Store;
+      FI_Ptr : constant FI_Store_Access :=
+        new Identity.Adapters.Repositories.Memory.Store;
+      Wrapped : Rec.Store
+        (Inner => Identity.Adapters.Repositories.Stores.Store_Interface'Class
+                    (FI_Ptr.all)'Access);
+      SR : Identity.Adapters.Repositories.Stores.Store_Interface'Class renames
+        Identity.Adapters.Repositories.Stores.Store_Interface'Class (Wrapped);
+
+      function FI_Id (Suffix : String)
+        return Identity.Identifiers.Encoded_Identifier is
+        (Identity.Identifiers.From_String
+           ("f7000000-0000-0000-0000-0000000000" & Suffix));
+
+      PR : constant Identity.Identifiers.Entities.Principal_Id :=
+        Identity.Identifiers.Entities.Principal (FI_Id ("01"));
+      AC : constant Identity.Identifiers.Entities.Account_Id :=
+        Identity.Identifiers.Entities.Account (FI_Id ("02"));
+      Account_View : constant Identity.Accounts.States.Account_State_View :=
+        (Administrative => Identity.Accounts.States.Enabled,
+         Lifecycle      => Identity.Accounts.States.Active,
+         Verification   => Identity.Accounts.States.Verified,
+         Lock_State     => Identity.Accounts.States.Not_Locked,
+         Requirements   => (others => False),
+         Recovery       => (others => False));
+
+      Command : Identity.Adapters.Repositories.Stores.Command_Status;
+      Found   : Boolean;
+      Account_Rec : Identity.Accounts.Definitions.Account_Record;
+   begin
+      Command := Identity.Adapters.Repositories.Stores.Create_Principal
+        (SR, (Id => PR, Kind => Identity.Principals.Kinds.Human,
+              State => Identity.Principals.Definitions.Active, Version => 0));
+      Assert (Command = Identity.Adapters.Repositories.Stores.Applied,
+              "fault-inject: an unarmed adapter applies normally");
+
+      --  Arm a single failure at Before_Command_Apply.
+      Rec.Arm_Failure
+        (Wrapped,
+         (Checkpoint => Faults.Before_Command_Apply, Armed => True,
+          Remaining => 1, Consumed => 0));
+
+      Command := Identity.Adapters.Repositories.Stores.Create_Account
+        (SR, (Id => AC, Principal => PR, State => Account_View, Version => 0));
+      Assert (Command = Identity.Adapters.Repositories.Stores.Capacity_Conflict,
+              "fault-inject: an injected failure blocks the command");
+
+      Identity.Adapters.Repositories.Stores.Find_Account (SR, PR, Found, Account_Rec);
+      Assert (not Found,
+              "fault-inject: an injected failure leaves the store entirely unchanged (old)");
+
+      --  The checkpoint is consumed; the retry commits, state entirely new.
+      Command := Identity.Adapters.Repositories.Stores.Create_Account
+        (SR, (Id => AC, Principal => PR, State => Account_View, Version => 0));
+      Assert (Command = Identity.Adapters.Repositories.Stores.Applied,
+              "fault-inject: once the injected failure is consumed the command applies");
+      Identity.Adapters.Repositories.Stores.Find_Account (SR, PR, Found, Account_Rec);
+      Assert (Found,
+              "fault-inject: the retry creates the account (state entirely new)");
+   end Test_84_fault_injection_atomicity;
+
    overriding procedure Register_Tests (T : in out Test_Case) is
    begin
       Registration.Register_Routine
@@ -19375,6 +19452,9 @@ package body Identity_Tests_Cases is
       Registration.Register_Routine
         (T, Test_83_conflict_taxonomy_reachable'Access,
          "Test_83_conflict_taxonomy_reachable");
+      Registration.Register_Routine
+        (T, Test_84_fault_injection_atomicity'Access,
+         "Test_84_fault_injection_atomicity");
    end Register_Tests;
 
    overriding function Name (T : Test_Case) return AUnit.Message_String is

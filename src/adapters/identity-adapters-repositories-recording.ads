@@ -12,6 +12,7 @@ with Identity.Accounts.States;
 with Identity.Adapters.Repositories.Capabilities;
 with Identity.Adapters.Repositories.Idempotency;
 with Identity.Adapters.Repositories.Stores;
+with Identity.Testing.Failures;
 with Identity.Assurance.Attributes;
 with Identity.Assurance.Levels;
 with Identity.Attempts.Definitions;
@@ -60,6 +61,17 @@ package Identity.Adapters.Repositories.Recording is
    --  Reset does not clear it, so it is usable as evidence that traffic
    --  really passed through the decorator across a multi-phase run.
    function Total_Call_Count (Repository : Store) return Natural;
+
+   --  Arm a deterministic failure at a named checkpoint (spec 50 fault
+   --  injection). While armed, the representative Command_Status mutating
+   --  primitives fail at Before_Command_Apply -- before delegating to the inner
+   --  store -- so the inner state is left entirely unchanged, letting a test
+   --  prove all-or-nothing behaviour by injection rather than only by natural
+   --  conflicts. An unarmed script (the default) changes nothing, so the
+   --  conformance harness is unaffected.
+   procedure Arm_Failure
+     (Repository : in out Store;
+      Script     : Identity.Testing.Failures.Failure_Script);
 
    overriding procedure Reset (Repository : in out Store);
 
@@ -779,7 +791,8 @@ package Identity.Adapters.Repositories.Recording is
 private
    type Store (Inner : access Stores.Store_Interface'Class) is
      new Stores.Store_Interface with record
-      Calls : Natural := 0;
-      Total : Natural := 0;
+      Calls    : Natural := 0;
+      Total    : Natural := 0;
+      Failures : Identity.Testing.Failures.Failure_Script;
    end record;
 end Identity.Adapters.Repositories.Recording;

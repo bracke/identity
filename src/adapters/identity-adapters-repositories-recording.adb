@@ -1,7 +1,29 @@
 package body Identity.Adapters.Repositories.Recording is
+   package Faults renames Identity.Testing.Failures;
+
    function Call_Count (Repository : Store) return Natural is (Repository.Calls);
 
    function Total_Call_Count (Repository : Store) return Natural is (Repository.Total);
+
+   procedure Arm_Failure
+     (Repository : in out Store;
+      Script     : Identity.Testing.Failures.Failure_Script) is
+   begin
+      Repository.Failures := Script;
+   end Arm_Failure;
+
+   --  Consult the armed failure script at Point; True means inject a failure
+   --  here (and the checkpoint is consumed), so the caller returns a conflict
+   --  before delegating and the inner store is never touched.
+   function Injected
+     (Repository : in out Store;
+      Point      : Faults.Failure_Checkpoint) return Boolean
+   is
+      Triggered : Boolean;
+   begin
+      Faults.Consume (Repository.Failures, Point, Triggered);
+      return Triggered;
+   end Injected;
 
    overriding procedure Reset (Repository : in out Store)
    is
@@ -24,6 +46,9 @@ package body Identity.Adapters.Repositories.Recording is
    begin
       Repository.Calls := Repository.Calls + 1;
       Repository.Total := Repository.Total + 1;
+      if Injected (Repository, Faults.Before_Command_Apply) then
+         return Stores.Capacity_Conflict;
+      end if;
       return Stores.Create_Principal (Repository.Inner.all, Principal);
    end Create_Principal;
 
@@ -55,6 +80,9 @@ package body Identity.Adapters.Repositories.Recording is
    begin
       Repository.Calls := Repository.Calls + 1;
       Repository.Total := Repository.Total + 1;
+      if Injected (Repository, Faults.Before_Command_Apply) then
+         return Stores.Capacity_Conflict;
+      end if;
       return Stores.Create_Account (Repository.Inner.all, Account);
    end Create_Account;
 
@@ -68,6 +96,9 @@ package body Identity.Adapters.Repositories.Recording is
    begin
       Repository.Calls := Repository.Calls + 1;
       Repository.Total := Repository.Total + 1;
+      if Injected (Repository, Faults.Before_Command_Apply) then
+         return Stores.Capacity_Conflict;
+      end if;
       return Stores.Update_Account_State (Repository.Inner.all, Account, Principal, State);
    end Update_Account_State;
 
