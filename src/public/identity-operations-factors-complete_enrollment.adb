@@ -1,11 +1,51 @@
+with Ada.Streams;
 with Identity.Credentials.States;
-with Identity.Crypto.Domains;
-with Identity.Crypto.Secret_Verifiers;
+with Identity.Crypto.CryptoLib.Entropy;
 with Identity.Events.Types;
+with Identity.Limits;
 with Identity.Operations.Audit;
+with Identity.Operations.Factors.Verify_TOTP;
+with Identity.Secrets.Bytes;
 with Identity.Text.Bounded;
 
 package body Identity.Operations.Factors.Complete_Enrollment is
+   package Box renames Identity.Crypto.CryptoLib.Secret_Box;
+   use type Box.Seal_Status;
+   use type Ada.Streams.Stream_Element_Offset;
+
+   --  Seal the shared secret for storage. A failure (no entropy for the nonce,
+   --  an over-long secret, or a seal error) yields an empty verifier, which
+   --  makes the stored credential unusable for verification rather than
+   --  storing something unverifiable -- fail closed.
+   function Seal_Verifier
+     (Secret : Identity.Secrets.One_Time_Passwords.TOTP_Secret;
+      Key    : Box.Key_Bytes) return Identity.Text.Bounded.Bounded_Text
+   is
+      Buffer : Ada.Streams.Stream_Element_Array
+        (1 .. Ada.Streams.Stream_Element_Offset (Identity.Limits.Max_Secret_Bytes));
+      Last   : Natural;
+      Nonce  : Ada.Streams.Stream_Element_Array (1 .. 12);
+   begin
+      if not Identity.Crypto.CryptoLib.Entropy.Fill_Bytes (Nonce) then
+         return Identity.Text.Bounded.From_String ("");
+      end if;
+      Identity.Secrets.Bytes.Borrow (Secret, Buffer, Last);
+      if Ada.Streams.Stream_Element_Offset (Last) > Box.Max_Secret_Length then
+         return Identity.Text.Bounded.From_String ("");
+      end if;
+      declare
+         Sealed : constant Box.Sealed_Secret :=
+           Box.Seal
+             (Key, Nonce,
+              Buffer (1 .. Ada.Streams.Stream_Element_Offset (Last)));
+      begin
+         if Sealed.Status /= Box.Sealed then
+            return Identity.Text.Bounded.From_String ("");
+         end if;
+         return Identity.Text.Bounded.From_String
+           (Verify_TOTP.Encode_Box (Sealed.Data));
+      end;
+   end Seal_Verifier;
    function Execute
      (Repository : in out Identity.Adapters.Repositories.Stores.Store_Interface'Class;
       Credential : Identity.One_Time_Passwords.Credentials.TOTP_Credential_Record)
@@ -25,8 +65,7 @@ package body Identity.Operations.Factors.Complete_Enrollment is
          (Id              => Request.Id,
           Principal       => Request.Principal,
           Algorithm       => Request.Algorithm,
-          Secret_Verifier => Identity.Crypto.Secret_Verifiers.Derive_Text
-            (Identity.Crypto.Domains.TOTP_Secret, Request.Secret),
+          Secret_Verifier => Seal_Verifier (Request.Secret, Request.Sealing_Key),
           State           => Identity.Credentials.States.Active,
           Created_At      => Request.Created_At,
           Highest_Accepted_Counter => Request.Highest_Accepted_Counter,
@@ -43,8 +82,8 @@ package body Identity.Operations.Factors.Complete_Enrollment is
          (Id              => Request.Request.Id,
           Principal       => Request.Request.Principal,
           Algorithm       => Request.Request.Algorithm,
-          Secret_Verifier => Identity.Crypto.Secret_Verifiers.Derive_Text
-            (Identity.Crypto.Domains.TOTP_Secret, Request.Request.Secret),
+          Secret_Verifier =>
+            Seal_Verifier (Request.Request.Secret, Request.Request.Sealing_Key),
           State           => Identity.Credentials.States.Active,
           Created_At      => Request.Request.Created_At,
           Highest_Accepted_Counter => Request.Request.Highest_Accepted_Counter,

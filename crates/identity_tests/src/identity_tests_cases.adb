@@ -91,6 +91,9 @@ with Identity.Crypto.Registries;
 with Identity.Crypto.Secret_Verifiers;
 with Identity.Crypto.CryptoLib.Entropy;
 with Identity.Crypto.CryptoLib.Event_Integrity;
+with Identity.Crypto.CryptoLib.Secret_Box;
+with Identity.Crypto.CryptoLib.TOTP;
+with Interfaces;
 with Identity.Crypto.CryptoLib.Capabilities;
 with Identity.Crypto.CryptoLib.MACs;
 with Identity.Crypto.CryptoLib.One_Time_Passwords;
@@ -182,6 +185,7 @@ with Identity.Operations.Verification.Request;
 with Identity.Operations.Factors.Consume_Recovery_Code;
 with Identity.Operations.Factors.Accept_TOTP_Counter;
 with Identity.Operations.Factors.Begin_Enrollment;
+with Identity.Operations.Factors.Verify_TOTP;
 with Identity.Operations.Factors.Complete_Enrollment;
 with Identity.Operations.Factors.Generate_Recovery_Codes;
 with Identity.Operations.Factors.Regenerate_Recovery_Codes;
@@ -1035,6 +1039,10 @@ package body Identity_Tests_Cases is
      Identity.Secrets.Text.From_UTF_8 ("totp secret seed");
    TOTP_Seed_2 : constant Identity.Secrets.One_Time_Passwords.TOTP_Secret :=
      Identity.Secrets.Text.From_UTF_8 ("second totp secret seed");
+   --  Key the TOTP shared secret is sealed under at rest in these tests. In a
+   --  real deployment the caller manages this; the crate never persists it.
+   TOTP_Sealing_Key :
+     constant Identity.Crypto.CryptoLib.Secret_Box.Key_Bytes := [others => 16#5A#];
    Renewed_Handle : Identity.Sessions.Handles.Session_Handle;
    Session_Summaries : Identity.Projections.Sessions.Session_Summary_List;
 
@@ -14129,6 +14137,7 @@ package body Identity_Tests_Cases is
                     Principal => P1,
                     Algorithm => TOTP_Algorithm,
                     Secret => TOTP_Seed_2,
+                    Sealing_Key => TOTP_Sealing_Key,
                     Created_At => 130,
                     Highest_Accepted_Counter => 0),
                Expected_Credential_Version => 1), Audit_Context, Next_Audit_Event, 1)
@@ -14167,22 +14176,39 @@ package body Identity_Tests_Cases is
                Principal => P1,
                Algorithm => TOTP_Algorithm,
                Secret => TOTP_Seed_2,
+               Sealing_Key => TOTP_Sealing_Key,
                Created_At => 130,
                Highest_Accepted_Counter => 0), Audit_Context, Next_Audit_Event, 1)
          = Identity.Adapters.Repositories.Memory.Applied,
-         "IDENTITY-TOTP-002 TOTP completion request derives verifier from secret container");
+         "IDENTITY-TOTP-002 TOTP completion request seals verifier from secret container");
 
       Identity.Adapters.Repositories.Memory.Find_TOTP_Credential
         (Repository, C11, Found_TOTP_Check, TOTP_Check);
-      Assert
-        (Found_TOTP_Check
-         and then TOTP_Check.State = Identity.Credentials.States.Active
-         and then Identity.Text.Bounded.Equal
-           (TOTP_Check.Secret_Verifier,
-            Identity.Crypto.Secret_Verifiers.Derive_Text
-              (Identity.Crypto.Domains.TOTP_Secret, TOTP_Seed_2))
-         and then TOTP_Check.Version = 1,
-         "TOTP completion request stores derived verifier only");
+      declare
+         Sealed : constant Ada.Streams.Stream_Element_Array :=
+           Identity.Operations.Factors.Verify_TOTP.Decode_Box
+             (Identity.Text.Bounded.Image (TOTP_Check.Secret_Verifier));
+         Opened : constant Identity.Crypto.CryptoLib.Secret_Box.Opened_Secret :=
+           Identity.Crypto.CryptoLib.Secret_Box.Open (TOTP_Sealing_Key, Sealed);
+         Seed_Buf  : Ada.Streams.Stream_Element_Array (1 .. 64);
+         Seed_Last : Natural;
+         use type Ada.Streams.Stream_Element_Array;
+         use type Identity.Crypto.CryptoLib.Secret_Box.Open_Status;
+      begin
+         Identity.Secrets.Bytes.Borrow (TOTP_Seed_2, Seed_Buf, Seed_Last);
+         --  The stored verifier is not a one-way hash -- it is the secret
+         --  sealed under the caller's key, so it opens back to exactly the
+         --  enrolled secret. That recoverability is what lets the crate
+         --  recompute and verify a code, which a hash never could.
+         Assert
+           (Found_TOTP_Check
+            and then TOTP_Check.State = Identity.Credentials.States.Active
+            and then TOTP_Check.Version = 1
+            and then Opened.Status = Identity.Crypto.CryptoLib.Secret_Box.Opened
+            and then Opened.Data
+              = Seed_Buf (1 .. Ada.Streams.Stream_Element_Offset (Seed_Last)),
+            "TOTP completion seals the secret recoverably, not as a one-way hash");
+      end;
 
       Assert
         (Found_TOTP_Check
@@ -17423,6 +17449,7 @@ package body Identity_Tests_Cases is
                Principal => EM_P1,
                Algorithm => TOTP_Algorithm,
                Secret => TOTP_Seed,
+               Sealing_Key => TOTP_Sealing_Key,
                Created_At => 260,
                Highest_Accepted_Counter => 10), Audit_Context, Next_Audit_Event, 1)
            = Identity.Adapters.Repositories.Memory.Applied,
@@ -18268,6 +18295,117 @@ package body Identity_Tests_Cases is
          "expiry: a second sweep expires nothing already expired");
    end Test_75_session_expiry_boundary;
 
+   --  End-to-end TOTP verification: enroll a secret sealed at rest, then verify
+   --  a code the way a real authenticator app would produce it -- the crate
+   --  recomputes it from the recovered secret. This is the whole point of
+   --  option (a): the crate verifies codes itself instead of handing the secret
+   --  back to every consumer to verify. Covers accept, replay, wrong code, and
+   --  the wrong at-rest key.
+   procedure Test_76_TOTP_end_to_end_verify
+     (T : in out AUnit.Test_Cases.Test_Case'Class)
+   is
+      pragma Unreferenced (T);
+
+      type TV_Store_Access is
+        access Identity.Adapters.Repositories.Memory.Store;
+      TV_Ptr : constant TV_Store_Access :=
+        new Identity.Adapters.Repositories.Memory.Store;
+      TV : Identity.Adapters.Repositories.Stores.Store_Interface'Class renames
+        Identity.Adapters.Repositories.Stores.Store_Interface'Class (TV_Ptr.all);
+
+      function TV_Id (Suffix : String)
+        return Identity.Identifiers.Encoded_Identifier is
+        (Identity.Identifiers.From_String
+           ("fe000000-0000-0000-0000-0000000000" & Suffix));
+
+      TV_P : constant Identity.Identifiers.Entities.Principal_Id :=
+        Identity.Identifiers.Entities.Principal (TV_Id ("01"));
+      TV_C : constant Identity.Identifiers.Entities.Credential_Id :=
+        Identity.Identifiers.Entities.Credential (TV_Id ("02"));
+
+      --  The bytes the authenticator app and the crate share.
+      Seed_Buf  : Ada.Streams.Stream_Element_Array (1 .. 64);
+      Seed_Last : Natural;
+
+      Now      : constant Identity.Times.Instant := 1_600_000_000;
+      Command  : Identity.Adapters.Repositories.Stores.Command_Status;
+      Wrong_Key : constant Identity.Crypto.CryptoLib.Secret_Box.Key_Bytes :=
+        [others => 16#00#];
+   begin
+      Identity.Secrets.Bytes.Borrow (TOTP_Seed, Seed_Buf, Seed_Last);
+      Command :=
+        Identity.Adapters.Repositories.Stores.Create_Principal
+          (TV, (Id => TV_P, Kind => Identity.Principals.Kinds.Human,
+                State => Identity.Principals.Definitions.Active, Version => 0));
+      Assert (Command = Identity.Adapters.Repositories.Stores.Applied,
+              "totp-e2e: probe principal is created");
+
+      Command := Identity.Operations.Factors.Begin_Enrollment.Execute
+        (TV, Identity.Operations.Factors.Begin_Enrollment.TOTP_Begin_Request'
+           (Id => TV_C, Principal => TV_P, Algorithm => TOTP_Algorithm,
+            Created_At => 90), Audit_Context, Next_Audit_Event, 1);
+      Assert (Command = Identity.Adapters.Repositories.Stores.Applied,
+              "totp-e2e: enrollment begins with a pending credential");
+
+      Command := Identity.Operations.Factors.Complete_Enrollment.Execute
+        (TV, Identity.Operations.Factors.Complete_Enrollment.TOTP_Completion_Request'
+           (Id => TV_C, Principal => TV_P, Algorithm => TOTP_Algorithm,
+            Secret => TOTP_Seed, Sealing_Key => TOTP_Sealing_Key,
+            Created_At => 100, Highest_Accepted_Counter => 0),
+         Audit_Context, Next_Audit_Event, 1);
+      Assert (Command = Identity.Adapters.Repositories.Stores.Applied,
+              "totp-e2e: enrollment seals the secret and activates the credential");
+
+      declare
+         --  What the app shows at this instant, computed the RFC 6238 way.
+         App_Code : constant Natural :=
+           Identity.Crypto.CryptoLib.TOTP.Compute_Code
+             (Seed_Buf (1 .. Ada.Streams.Stream_Element_Offset (Seed_Last)),
+              Identity.Crypto.CryptoLib.TOTP.Time_Step
+                (Interfaces.Unsigned_64 (Now), 30, 0),
+              Identity.Crypto.CryptoLib.TOTP.SHA1, 6);
+      begin
+         --  A correct code the crate has never seen is accepted...
+         Assert
+           (Identity.Operations.Factors.Verify_TOTP.Execute
+              (TV, (Credential => TV_C, Presented_Code => App_Code, Now => Now,
+                    Skew_Steps => 1, Opening_Key => TOTP_Sealing_Key),
+               Audit_Context, Next_Audit_Event, 1)
+            = Identity.One_Time_Passwords.Credentials.Accepted,
+            "totp-e2e: a correct, unused code is accepted");
+
+         --  ...and the same code, at the same step, is a replay afterwards.
+         Assert
+           (Identity.Operations.Factors.Verify_TOTP.Execute
+              (TV, (Credential => TV_C, Presented_Code => App_Code, Now => Now,
+                    Skew_Steps => 1, Opening_Key => TOTP_Sealing_Key),
+               Audit_Context, Next_Audit_Event, 1)
+            = Identity.One_Time_Passwords.Credentials.Replayed,
+            "totp-e2e: reusing an accepted code is detected as a replay");
+
+         --  A wrong code, a step past the last accepted one, does not verify.
+         Assert
+           (Identity.Operations.Factors.Verify_TOTP.Execute
+              (TV, (Credential => TV_C,
+                    Presented_Code => (App_Code + 1) mod 1_000_000,
+                    Now => Now + 60, Skew_Steps => 1,
+                    Opening_Key => TOTP_Sealing_Key),
+               Audit_Context, Next_Audit_Event, 1)
+            = Identity.One_Time_Passwords.Credentials.Not_Verified,
+            "totp-e2e: a wrong code does not verify");
+
+         --  The wrong at-rest key cannot open the secret, so nothing verifies
+         --  and nothing about the credential is disclosed.
+         Assert
+           (Identity.Operations.Factors.Verify_TOTP.Execute
+              (TV, (Credential => TV_C, Presented_Code => App_Code,
+                    Now => Now + 120, Skew_Steps => 1, Opening_Key => Wrong_Key),
+               Audit_Context, Next_Audit_Event, 1)
+            = Identity.One_Time_Passwords.Credentials.Not_Verified,
+            "totp-e2e: a wrong at-rest key yields no verification");
+      end;
+   end Test_76_TOTP_end_to_end_verify;
+
    overriding procedure Register_Tests (T : in out Test_Case) is
    begin
       Registration.Register_Routine
@@ -18424,6 +18562,9 @@ package body Identity_Tests_Cases is
       Registration.Register_Routine
         (T, Test_75_session_expiry_boundary'Access,
          "Test_75_session_expiry_boundary");
+      Registration.Register_Routine
+        (T, Test_76_TOTP_end_to_end_verify'Access,
+         "Test_76_TOTP_end_to_end_verify");
    end Register_Tests;
 
    overriding function Name (T : Test_Case) return AUnit.Message_String is

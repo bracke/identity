@@ -232,11 +232,11 @@ text it prints -- do not edit the numbers to match.
   mutating operations         59
   ..audited                   58
   ..exempt (justified)        1
-  audited overloads           113
+  audited overloads           114
   context-free overloads      4
   proved packages             12
   security invariants         80
-  registered test routines    75
+  registered test routines    76
 <!-- end generated: identity-facts -->
 
 Cost

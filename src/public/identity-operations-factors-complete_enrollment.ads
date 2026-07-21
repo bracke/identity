@@ -3,6 +3,7 @@ with Identity.Identifiers.Entities;
 with Identity.Identifiers.Registry;
 with Identity.One_Time_Passwords.Credentials;
 with Identity.Operations.Contexts;
+with Identity.Crypto.CryptoLib.Secret_Box;
 with Identity.Secrets.One_Time_Passwords;
 with Identity.Times;
 with Identity.Versions;
@@ -13,6 +14,10 @@ package Identity.Operations.Factors.Complete_Enrollment is
       Principal       : Identity.Identifiers.Entities.Principal_Id;
       Algorithm       : Identity.Identifiers.Registry.Registry_Id;
       Secret          : Identity.Secrets.One_Time_Passwords.TOTP_Secret;
+      --  Key the shared secret is sealed under at rest. TOTP is symmetric, so
+      --  the secret must be recoverable to verify a code; it is stored sealed,
+      --  not hashed. The caller manages this key; the crate never persists it.
+      Sealing_Key     : Identity.Crypto.CryptoLib.Secret_Box.Key_Bytes;
       Created_At      : Identity.Times.Instant := 0;
       Highest_Accepted_Counter : Identity.One_Time_Passwords.Credentials.TOTP_Counter := 0;
    end record;

@@ -26,13 +26,26 @@ implying coverage.
 
 Ranked by what their disclosure or forgery would cost.
 
-**Authentication secrets — never persisted in recoverable form.**
-Passwords, session bearer credentials, action-token secrets (reset, contact
-verification, contact change), API-key secrets, recovery codes, TOTP seeds,
-pepper material, and key material. The crate's central persistence rule is that
-none of these are stored: only derived verifier envelopes are
-(`IDENTITY-SECRET-001`, `IDENTITY-SECRET-002`, `IDENTITY-SESSION-001`,
-`IDENTITY-TOKEN-002`, `IDENTITY-APIKEY-001`, `IDENTITY-RECOVERY-001`).
+**Authentication secrets — persisted only one-way, with one deliberate
+exception.** Passwords, session bearer credentials, action-token secrets (reset,
+contact verification, contact change), API-key secrets, recovery codes, pepper
+material, and key material. The crate's central persistence rule is that none of
+these are stored: only derived verifier envelopes are (`IDENTITY-SECRET-001`,
+`IDENTITY-SECRET-002`, `IDENTITY-SESSION-001`, `IDENTITY-TOKEN-002`,
+`IDENTITY-APIKEY-001`, `IDENTITY-RECOVERY-001`).
+
+The exception is the TOTP shared secret. TOTP is symmetric: verifying a code
+means recomputing it from the same secret, so a one-way hash could never verify
+and the crate would have to hand the secret back to every caller to verify —
+which is not verification the crate performs. Instead the shared secret is
+stored **sealed** (AES-256-GCM, `Identity.Crypto.CryptoLib.Secret_Box`) under a
+key the caller supplies at enrollment and again at verification; the crate never
+persists that key. A database read alone therefore yields ciphertext with an
+integrity tag, not a usable seed. The at-rest key is the caller's to manage, and
+its compromise **together with** a database read does expose TOTP seeds — a
+narrower exposure than a plaintext seed, but a real one, and the reason TOTP is
+called out separately from the one-way secrets above (`IDENTITY-TOTP-001`,
+`IDENTITY-CRYPTO-004`).
 
 **Verifier records and their parameters.** Envelopes disclose algorithm and cost
 parameters. Those parameters are themselves an attack surface: an
@@ -154,7 +167,7 @@ mechanism, and the invariant ids that pin it.
 | Threat | Control | Invariants |
 |---|---|---|
 | `offline-cracking` | Passwords are accepted only through bounded UTF-8-validated secret containers and persisted only as PBKDF2-HMAC-SHA256 verifier envelopes with a 16-byte per-credential salt. Cost is bounded on both sides so a weak envelope is flagged for migration and an expensive one cannot be used as a DoS. | `IDENTITY-SECRET-001`, `IDENTITY-PASSWORD-POLICY-001`, `IDENTITY-CRYPTO-002`, `IDENTITY-CRYPTO-004` |
-| `database-read-compromise` | No table holds a usable secret. Sessions store a public reference plus a domain-separated verifier; API keys store a public key id plus a verifier; recovery codes and TOTP store verifier text and replay counters only. A full read yields nothing directly presentable. | `IDENTITY-SESSION-001`, `IDENTITY-APIKEY-001`, `IDENTITY-RECOVERY-001`, `IDENTITY-SECRET-002`, `IDENTITY-PROJECTION-001` |
+| `database-read-compromise` | No table holds a directly usable secret. Sessions store a public reference plus a domain-separated verifier; API keys store a public key id plus a verifier; recovery codes store verifier text and single-use state. TOTP is the one symmetric case: the seed is stored **sealed** (AES-256-GCM) under a caller-managed key the crate never persists, plus a replay counter — a read alone yields ciphertext with an integrity tag, and recovering the seed additionally requires the caller's at-rest key. A full read otherwise yields nothing directly presentable. | `IDENTITY-SESSION-001`, `IDENTITY-APIKEY-001`, `IDENTITY-RECOVERY-001`, `IDENTITY-SECRET-002`, `IDENTITY-PROJECTION-001`, `IDENTITY-CRYPTO-004` |
 | `credential-theft` | Sessions may carry a bounded optional credential reference, so replacing or revoking a credential revokes exactly the sessions derived from it. | `IDENTITY-SESSION-002` |
 | `api-key-theft` | Verifier-only storage, bounded active-key capacity, mandatory expiration, and rotation with positive overlap. | `IDENTITY-APIKEY-001`, `IDENTITY-CREDENTIAL-POLICY-001`, `IDENTITY-SERVICE-001` |
 | `key-compromise`, `active-token-theft` | Key references are non-secret and domain-bound, and lifecycle separates active creation keys from historical verification-only keys. A verification-only key cannot mint new verifier material. | `IDENTITY-KEYS-001`, `IDENTITY-ADAPTER-KEYS-001` |
