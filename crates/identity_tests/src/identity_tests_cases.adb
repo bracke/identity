@@ -18753,6 +18753,123 @@ package body Identity_Tests_Cases is
          "disclosure: the projection is monotone -- a stricter profile leaks a subset");
    end Test_79_disclosure_gates_every_dimension;
 
+   --  The recovery approval path (spec 23) must actually be reachable. The
+   --  audit found Approved and Credential_Reestablishment_Required unreachable
+   --  -- no store command or operation produced them. This drives a recovery
+   --  the whole way: begin -> accept evidence -> approve -> require credential
+   --  re-establishment -> establish restricted authentication, asserting each
+   --  state is reached and that establishing restricted auth marks the account.
+   procedure Test_80_recovery_approval_path
+     (T : in out AUnit.Test_Cases.Test_Case'Class)
+   is
+      pragma Unreferenced (T);
+      package RT renames Identity.Recovery.Transactions;
+      package RC renames Identity.Operations.Recovery.Continue;
+
+      type RV_Store_Access is
+        access Identity.Adapters.Repositories.Memory.Store;
+      RV_Ptr : constant RV_Store_Access :=
+        new Identity.Adapters.Repositories.Memory.Store;
+      SR : Identity.Adapters.Repositories.Stores.Store_Interface'Class renames
+        Identity.Adapters.Repositories.Stores.Store_Interface'Class (RV_Ptr.all);
+
+      function RV_Id (Suffix : String)
+        return Identity.Identifiers.Encoded_Identifier is
+        (Identity.Identifiers.From_String
+           ("fa000000-0000-0000-0000-0000000000" & Suffix));
+
+      PR : constant Identity.Identifiers.Entities.Principal_Id :=
+        Identity.Identifiers.Entities.Principal (RV_Id ("01"));
+      AC : constant Identity.Identifiers.Entities.Account_Id :=
+        Identity.Identifiers.Entities.Account (RV_Id ("02"));
+      TX : constant Identity.Identifiers.Entities.Authentication_Transaction_Id :=
+        Identity.Identifiers.Entities.Authentication_Transaction (RV_Id ("03"));
+
+      Account_View : constant Identity.Accounts.States.Account_State_View :=
+        (Administrative => Identity.Accounts.States.Enabled,
+         Lifecycle      => Identity.Accounts.States.Active,
+         Verification   => Identity.Accounts.States.Verified,
+         Lock_State     => Identity.Accounts.States.Not_Locked,
+         Requirements   => (others => False),
+         Recovery       => (others => False));
+
+      Command     : Identity.Adapters.Repositories.Stores.Command_Status;
+      Status      : RT.Recovery_Transition_Status;
+      Found       : Boolean;
+      Rec         : RT.Recovery_Transaction_Record;
+      Account_Rec : Identity.Accounts.Definitions.Account_Record;
+
+      --  Advance one mid-flow action, re-reading the transaction version first
+      --  so the version guard is satisfied.
+      function Advance (Action : RT.Recovery_Transaction_Action)
+        return RT.Recovery_Transition_Status is
+      begin
+         Identity.Adapters.Repositories.Stores.Find_Recovery_Transaction
+           (SR, TX, Found, Rec);
+         return RC.Execute
+           (SR, TX, PR, Action, 500, Rec.Version,
+            Audit_Context, Next_Audit_Event, 1);
+      end Advance;
+   begin
+      Command := Identity.Adapters.Repositories.Stores.Create_Principal
+        (SR, (Id => PR, Kind => Identity.Principals.Kinds.Human,
+              State => Identity.Principals.Definitions.Active, Version => 0));
+      Assert (Command = Identity.Adapters.Repositories.Stores.Applied,
+              "recovery-path: principal created");
+      Command := Identity.Adapters.Repositories.Stores.Create_Account
+        (SR, (Id => AC, Principal => PR, State => Account_View, Version => 0));
+      Assert (Command = Identity.Adapters.Repositories.Stores.Applied,
+              "recovery-path: account created");
+
+      Status := Identity.Operations.Recovery.Begin_Recovery.Execute
+        (SR,
+         (Id => TX, Principal => PR, Account => AC, Created_At => 100,
+          Expires_At => (Present => True, Time_Point => 9_000),
+          State => RT.Started, Version => 0),
+         Audit_Context, Next_Audit_Event, 1);
+      Assert (Status = RT.Applied, "recovery-path: begin -> evidence required");
+      Identity.Adapters.Repositories.Stores.Find_Recovery_Transaction (SR, TX, Found, Rec);
+      Assert (Found and then Rec.State = RT.Evidence_Required,
+              "recovery-path: state is Evidence_Required");
+
+      Status := RC.Execute (SR, TX, PR, 200, Audit_Context, Next_Audit_Event, 1);
+      Assert (Status = RT.Applied, "recovery-path: accept evidence applied");
+      Identity.Adapters.Repositories.Stores.Find_Recovery_Transaction (SR, TX, Found, Rec);
+      Assert (Rec.State = RT.Evidence_Accepted,
+              "recovery-path: state is Evidence_Accepted");
+
+      --  The three mid-flow transitions the audit found unreachable.
+      Assert (Advance (RT.Approve_Recovery) = RT.Applied,
+              "recovery-path: approve applied");
+      Identity.Adapters.Repositories.Stores.Find_Recovery_Transaction (SR, TX, Found, Rec);
+      Assert (Rec.State = RT.Approved,
+              "recovery-path: Approved is now reachable");
+
+      Assert (Advance (RT.Require_Recovery_Credential_Reestablishment) = RT.Applied,
+              "recovery-path: require credential reestablishment applied");
+      Identity.Adapters.Repositories.Stores.Find_Recovery_Transaction (SR, TX, Found, Rec);
+      Assert (Rec.State = RT.Credential_Reestablishment_Required,
+              "recovery-path: Credential_Reestablishment_Required is now reachable");
+
+      Assert (Advance (RT.Establish_Recovery_Restricted_Authentication) = RT.Applied,
+              "recovery-path: establish restricted authentication applied");
+      Identity.Adapters.Repositories.Stores.Find_Recovery_Transaction (SR, TX, Found, Rec);
+      Assert (Rec.State = RT.Restricted_Authentication_Established,
+              "recovery-path: restricted authentication established (terminal)");
+
+      --  Establishing restricted auth marked the account, exactly as
+      --  completing recovery does.
+      Identity.Adapters.Repositories.Stores.Find_Account (SR, PR, Found, Account_Rec);
+      Assert (Found
+              and then Account_Rec.State.Recovery.Restricted_Session
+              and then Account_Rec.State.Requirements.Credential_Reestablishment_Required,
+              "recovery-path: restricted release marks the account's recovery restrictions");
+
+      --  A further advance on a terminal state is refused, not silently applied.
+      Assert (Advance (RT.Approve_Recovery) = RT.State_Conflict,
+              "recovery-path: a terminal recovery refuses further advancement");
+   end Test_80_recovery_approval_path;
+
    overriding procedure Register_Tests (T : in out Test_Case) is
    begin
       Registration.Register_Routine
@@ -18921,6 +19038,9 @@ package body Identity_Tests_Cases is
       Registration.Register_Routine
         (T, Test_79_disclosure_gates_every_dimension'Access,
          "Test_79_disclosure_gates_every_dimension");
+      Registration.Register_Routine
+        (T, Test_80_recovery_approval_path'Access,
+         "Test_80_recovery_approval_path");
    end Register_Tests;
 
    overriding function Name (T : Test_Case) return AUnit.Message_String is

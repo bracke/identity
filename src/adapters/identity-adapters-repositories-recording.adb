@@ -885,6 +885,22 @@ package body Identity.Adapters.Repositories.Recording is
       return Stores.Cancel_Recovery (Repository.Inner.all, Transaction, Principal, Expected_Version);
    end Cancel_Recovery;
 
+   overriding function Advance_Recovery
+     (Repository       : in out Store;
+      Transaction      : Identity.Identifiers.Entities.Authentication_Transaction_Id;
+      Principal        : Identity.Identifiers.Entities.Principal_Id;
+      Action           : Identity.Recovery.Transactions.Recovery_Transaction_Action;
+      Now              : Identity.Times.Instant;
+      Expected_Version : Identity.Versions.Entity_Version)
+      return Identity.Recovery.Transactions.Recovery_Transition_Status
+   is
+   begin
+      Repository.Calls := Repository.Calls + 1;
+      Repository.Total := Repository.Total + 1;
+      return Stores.Advance_Recovery
+        (Repository.Inner.all, Transaction, Principal, Action, Now, Expected_Version);
+   end Advance_Recovery;
+
    overriding procedure Find_Recovery_Transaction
      (Repository  : Store;
       Transaction : Identity.Identifiers.Entities.Authentication_Transaction_Id;

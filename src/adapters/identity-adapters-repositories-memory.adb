@@ -3083,6 +3083,91 @@ package body Identity.Adapters.Repositories.Memory is
       return Identity.Recovery.Transactions.Unknown;
    end Cancel_Recovery;
 
+   overriding function Advance_Recovery
+     (Repository       : in out Store;
+      Transaction      : Identity.Identifiers.Entities.Authentication_Transaction_Id;
+      Principal        : Identity.Identifiers.Entities.Principal_Id;
+      Action           : Identity.Recovery.Transactions.Recovery_Transaction_Action;
+      Now              : Identity.Times.Instant;
+      Expected_Version : Identity.Versions.Entity_Version)
+      return Identity.Recovery.Transactions.Recovery_Transition_Status
+   is
+      package RT renames Identity.Recovery.Transactions;
+      Target        : RT.Recovery_Transaction_State;
+      Account_Index : Natural := 0;
+      use type RT.Recovery_Transaction_Action;
+   begin
+      --  Only the mid-flow admission actions advance through this path; the
+      --  begin/accept/complete/cancel actions have their own primitives.
+      case Action is
+         when RT.Approve_Recovery =>
+            Target := RT.Approved;
+         when RT.Require_Recovery_Credential_Reestablishment =>
+            Target := RT.Credential_Reestablishment_Required;
+         when RT.Establish_Recovery_Restricted_Authentication =>
+            Target := RT.Restricted_Authentication_Established;
+         when others =>
+            return RT.State_Conflict;
+      end case;
+
+      for Slot of Repository.Recovery_Transactions loop
+         if Slot.Present and then Same_Transaction (Slot.Value.Id, Transaction) then
+            if not Same_Principal (Slot.Value.Principal, Principal) then
+               return RT.State_Conflict;
+            elsif not Identity.Versions.Same_Entity_Version
+              (Slot.Value.Version, Expected_Version)
+            then
+               return RT.Version_Conflict;
+            elsif RT.Expired_At (Slot.Value, Now) then
+               Slot.Value.State := RT.Expired;
+               Slot.Value.Version :=
+                 Identity.Versions.Next_Entity_Version (Slot.Value.Version);
+               return RT.State_Conflict;
+            elsif RT.Admission_Rejected (RT.Admission (Slot.Value.State, Action)) then
+               return RT.State_Conflict;
+            end if;
+
+            --  Establishing restricted authentication also marks the account's
+            --  recovery restrictions, exactly as Complete_Recovery does, so the
+            --  released session is restricted rather than fully privileged.
+            if Action = RT.Establish_Recovery_Restricted_Authentication then
+               for Index in Repository.Accounts'Range loop
+                  if Repository.Accounts (Index).Present
+                    and then Same_Account
+                      (Repository.Accounts (Index).Value.Id, Slot.Value.Account)
+                  then
+                     Account_Index := Index;
+                     exit;
+                  end if;
+               end loop;
+
+               if Account_Index = 0
+                 or else not Same_Principal
+                   (Repository.Accounts (Account_Index).Value.Principal, Principal)
+               then
+                  return RT.State_Conflict;
+               end if;
+
+               Repository.Accounts (Account_Index).Value.State.Recovery.Restricted_Session := True;
+               Repository.Accounts (Account_Index).Value.State.Recovery.Required_Credential_Reestablishment := True;
+               Repository.Accounts (Account_Index).Value.State.Recovery.No_Remember_Me := True;
+               Repository.Accounts (Account_Index).Value.State.Recovery.Limited_Lifetime := True;
+               Repository.Accounts (Account_Index).Value.State.Requirements.Credential_Reestablishment_Required := True;
+               Repository.Accounts (Account_Index).Value.Version :=
+                 Identity.Versions.Next_Entity_Version
+                   (Repository.Accounts (Account_Index).Value.Version);
+            end if;
+
+            Slot.Value.State := Target;
+            Slot.Value.Version :=
+              Identity.Versions.Next_Entity_Version (Slot.Value.Version);
+            return RT.Applied;
+         end if;
+      end loop;
+
+      return RT.Unknown;
+   end Advance_Recovery;
+
    overriding procedure Find_Recovery_Transaction
      (Repository  : Store;
       Transaction : Identity.Identifiers.Entities.Authentication_Transaction_Id;

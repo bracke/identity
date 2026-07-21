@@ -492,6 +492,22 @@ package Identity.Adapters.Repositories.Stores is
       Expected_Version : Identity.Versions.Entity_Version)
       return Identity.Recovery.Transactions.Recovery_Transition_Status is abstract;
 
+   --  Advance a recovery transaction through one of the mid-flow admission
+   --  actions -- approval, requiring credential re-establishment, or
+   --  establishing restricted authentication -- so the approval path is
+   --  reachable rather than a dead branch of the state machine. The action is
+   --  admission-checked against the current state and the transaction version
+   --  guards the transition; establishing restricted authentication also marks
+   --  the account's recovery restrictions, exactly as Complete_Recovery does.
+   function Advance_Recovery
+     (Repository       : in out Store_Interface;
+      Transaction      : Identity.Identifiers.Entities.Authentication_Transaction_Id;
+      Principal        : Identity.Identifiers.Entities.Principal_Id;
+      Action           : Identity.Recovery.Transactions.Recovery_Transaction_Action;
+      Now              : Identity.Times.Instant;
+      Expected_Version : Identity.Versions.Entity_Version)
+      return Identity.Recovery.Transactions.Recovery_Transition_Status is abstract;
+
    procedure Find_Recovery_Transaction
      (Repository  : Store_Interface;
       Transaction : Identity.Identifiers.Entities.Authentication_Transaction_Id;

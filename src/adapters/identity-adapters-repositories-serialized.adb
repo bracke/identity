@@ -1701,6 +1701,37 @@ package body Identity.Adapters.Repositories.Serialized is
          raise;
    end Cancel_Recovery;
 
+   overriding function Advance_Recovery
+     (Repository       : in out Store;
+      Transaction      : Identity.Identifiers.Entities.Authentication_Transaction_Id;
+      Principal        : Identity.Identifiers.Entities.Principal_Id;
+      Action           : Identity.Recovery.Transactions.Recovery_Transaction_Action;
+      Now              : Identity.Times.Instant;
+      Expected_Version : Identity.Versions.Entity_Version)
+      return Identity.Recovery.Transactions.Recovery_Transition_Status
+   is
+   begin
+      Repository.Guard.Seize;
+      declare
+         Result : constant Identity.Recovery.Transactions.Recovery_Transition_Status :=
+           Stores.Advance_Recovery
+             (Repository.Inner.all,
+              Transaction,
+              Principal,
+              Action,
+              Now,
+              Expected_Version);
+      begin
+         Repository.Guard.Release;
+         return Result;
+      end;
+   exception
+      when others =>
+         --  Never strand the lock if the inner adapter propagates.
+         Repository.Guard.Release;
+         raise;
+   end Advance_Recovery;
+
    overriding procedure Find_Recovery_Transaction
      (Repository  : Store;
       Transaction : Identity.Identifiers.Entities.Authentication_Transaction_Id;
