@@ -2,16 +2,17 @@ package body Identity.Operations.Disclosure is
    function Rules_For (Profile : Disclosure_Profile) return Disclosure_Profile_Rules is
    begin
       case Profile is
-         when Untrusted_Interactive | Untrusted_API =>
-            return
-              (Subject_Existence_Detail => False,
-               Factor_Enrollment_Detail => False,
-               Lockout_Detail => False,
-               Retry_Timing_Detail => False,
-               Contact_Destination_Detail => False,
-               Diagnostic_Identifiers => False,
-               Conflict_Detail => False,
-               Token_State_Detail => False);
+         when Untrusted_Interactive =>
+            --  A human at a login form learns nothing beyond the generic
+            --  outcome: no timing, no lockout, no subject existence.
+            return (others => False);
+         when Untrusted_API =>
+            --  A machine client additionally gets a back-off time so it can
+            --  honour rate limits (HTTP 429 Retry-After semantics). Retry
+            --  timing carries transport throttle back-off, not account
+            --  lockout -- that stays behind Lockout_Detail, which this profile
+            --  does not grant -- so it is not a subject-existence oracle.
+            return (Retry_Timing_Detail => True, others => False);
          when Authenticated_Self_Service =>
             return
               (Subject_Existence_Detail => False,
@@ -131,4 +132,74 @@ package body Identity.Operations.Disclosure is
             return Token_Invalid_Or_Expired;
       end case;
    end To_Disclosure_Safe_Result;
+
+   function Project
+     (Facts   : Disclosure_Facts;
+      Profile : Disclosure_Profile := Untrusted_Interactive) return Disclosure_View
+   is
+      use Identity.Results;
+      Rules : constant Disclosure_Profile_Rules := Rules_For (Profile);
+   begin
+      return
+        (Status              => To_Disclosure_Safe_Result (Facts.Status, Profile),
+         Subject_Known       =>
+           (if Rules.Subject_Existence_Detail
+            then (Present => True, Value => Facts.Subject_Known)
+            else (Present => False)),
+         Lockout             =>
+           (if Rules.Lockout_Detail
+            then (Present => True, Value => Facts.Locked)
+            else (Present => False)),
+         Retry_After_Seconds =>
+           (if Rules.Retry_Timing_Detail
+            then (Present => True, Value => Facts.Retry_After_Seconds)
+            else (Present => False)),
+         Contact_Present     =>
+           (if Rules.Contact_Destination_Detail
+            then (Present => True, Value => Facts.Contact_Present)
+            else (Present => False)),
+         Diagnostic_Present  =>
+           (if Rules.Diagnostic_Identifiers
+            then (Present => True, Value => Facts.Diagnostic_Present)
+            else (Present => False)),
+         Token_State         =>
+           (if Rules.Token_State_Detail
+            then (Present => True, Value => Facts.Token_State)
+            else (Present => False)),
+         Factor_Action       =>
+           (if Rules.Factor_Enrollment_Detail
+            then (Present => True,
+                  Value => Facts.Status in Additional_Factor_Required
+                                         | Password_Change_Required
+                                         | Verification_Required
+                                         | Recovery_Action_Required)
+            else (Present => False)),
+         Conflict_Detailed   =>
+           Rules.Conflict_Detail and then Facts.Status = Conflict);
+   end Project;
+
+   function Discloses_No_More_Than
+     (Narrow, Wide : Disclosure_View) return Boolean
+   is
+      function Subset (N, W : Optional_Boolean) return Boolean is
+        (not N.Present or else (W.Present and then W.Value = N.Value));
+   begin
+      return
+        Subset (Narrow.Subject_Known, Wide.Subject_Known)
+        and then Subset (Narrow.Contact_Present, Wide.Contact_Present)
+        and then Subset (Narrow.Diagnostic_Present, Wide.Diagnostic_Present)
+        and then Subset (Narrow.Factor_Action, Wide.Factor_Action)
+        and then (not Narrow.Lockout.Present
+                  or else (Wide.Lockout.Present
+                           and then Wide.Lockout.Value = Narrow.Lockout.Value))
+        and then (not Narrow.Retry_After_Seconds.Present
+                  or else (Wide.Retry_After_Seconds.Present
+                           and then Wide.Retry_After_Seconds.Value
+                                    = Narrow.Retry_After_Seconds.Value))
+        and then (not Narrow.Token_State.Present
+                  or else (Wide.Token_State.Present
+                           and then Wide.Token_State.Value
+                                    = Narrow.Token_State.Value))
+        and then (not Narrow.Conflict_Detailed or else Wide.Conflict_Detailed);
+   end Discloses_No_More_Than;
 end Identity.Operations.Disclosure;

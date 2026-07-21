@@ -6079,7 +6079,8 @@ package body Identity_Tests_Cases is
         (not Untrusted_Rules.Subject_Existence_Detail
          and then not Untrusted_Rules.Factor_Enrollment_Detail
          and then not Untrusted_Rules.Lockout_Detail
-         and then not Untrusted_Rules.Retry_Timing_Detail
+         --  The API profile grants only machine-readable retry timing.
+         and then Untrusted_Rules.Retry_Timing_Detail
          and then not Untrusted_Rules.Contact_Destination_Detail
          and then not Untrusted_Rules.Diagnostic_Identifiers
          and then not Untrusted_Rules.Conflict_Detail
@@ -16124,10 +16125,19 @@ package body Identity_Tests_Cases is
 
       Assert
         (Identity.Operations.Disclosure.Rules_For (Untrusted)
-         = Identity.Operations.Disclosure.Rules_For (Untrusted_Machine)
-         and then Identity.Operations.Disclosure.Rules_For (Untrusted)
-           = Identity.Operations.Disclosure.Disclosure_Profile_Rules'(others => False),
-         "disclosure: untrusted profiles carry no detail flag at all");
+           = Identity.Operations.Disclosure.Disclosure_Profile_Rules'(others => False)
+         and then Identity.Operations.Disclosure.Rules_For (Untrusted_Machine)
+           /= Identity.Operations.Disclosure.Rules_For (Untrusted)
+         and then Identity.Operations.Disclosure.Rules_For
+           (Untrusted_Machine).Retry_Timing_Detail
+         and then not Identity.Operations.Disclosure.Rules_For
+           (Untrusted_Machine).Subject_Existence_Detail
+         and then not Identity.Operations.Disclosure.Rules_For
+           (Untrusted_Machine).Lockout_Detail
+         and then Identity.Operations.Disclosure.Reveals_No_More_Than
+           (Untrusted, Untrusted_Machine),
+         "disclosure: interactive untrusted reveals nothing; the API profile adds "
+         & "only machine-readable retry timing, still below self-service");
 
       Assert
         (not Identity.Operations.Disclosure.Rules_For (Trusted).Token_State_Detail
@@ -18670,6 +18680,79 @@ package body Identity_Tests_Cases is
               "sec-ctx-asm: the account transition advanced the context revision");
    end Test_78_security_context_assembly_from_account;
 
+   --  The disclosure projection (spec 29) must actually gate every dimension by
+   --  profile: the six dimensions the audit found dead (subject existence,
+   --  lockout, retry timing, contact, diagnostic id, token state) must be
+   --  suppressed for untrusted audiences and present for internal ones, and a
+   --  stricter profile must provably disclose no more than a looser one.
+   procedure Test_79_disclosure_gates_every_dimension
+     (T : in out AUnit.Test_Cases.Test_Case'Class)
+   is
+      pragma Unreferenced (T);
+      package D renames Identity.Operations.Disclosure;
+      use type Identity.Operations.Disclosure.Lockout_Disclosure;
+      use type Identity.Operations.Disclosure.Token_State_Disclosure;
+
+      --  One rejection where every detail is "hot": if a dimension leaks, this
+      --  input makes it visible.
+      Facts : constant D.Disclosure_Facts :=
+        (Status              => Identity.Results.Rejected,
+         Subject_Known       => True,
+         Locked              => D.Indefinitely_Locked,
+         Retry_After_Seconds => 30,
+         Contact_Present     => True,
+         Diagnostic_Present  => True,
+         Token_State         => D.Token_Expired);
+
+      Interactive : constant D.Disclosure_View :=
+        D.Project (Facts, D.Untrusted_Interactive);
+      Machine     : constant D.Disclosure_View :=
+        D.Project (Facts, D.Untrusted_API);
+      Internal    : constant D.Disclosure_View :=
+        D.Project (Facts, D.Internal_Operations);
+   begin
+      --  Interactive untrusted: nothing beyond the coarse status.
+      Assert
+        (not Interactive.Subject_Known.Present
+         and then not Interactive.Lockout.Present
+         and then not Interactive.Retry_After_Seconds.Present
+         and then not Interactive.Contact_Present.Present
+         and then not Interactive.Diagnostic_Present.Present
+         and then not Interactive.Token_State.Present,
+         "disclosure: interactive untrusted view suppresses all six gated dimensions");
+
+      --  The API/interactive split is real: retry timing crosses only for API.
+      Assert
+        (Machine.Retry_After_Seconds.Present
+         and then Machine.Retry_After_Seconds.Value = 30
+         and then not Interactive.Retry_After_Seconds.Present
+         and then not Machine.Lockout.Present
+         and then not Machine.Subject_Known.Present,
+         "disclosure: the API profile adds retry timing and nothing else");
+
+      --  Internal operations: every dimension present with the true value.
+      Assert
+        (Internal.Subject_Known.Present and then Internal.Subject_Known.Value
+         and then Internal.Lockout.Present
+         and then Internal.Lockout.Value = D.Indefinitely_Locked
+         and then Internal.Retry_After_Seconds.Present
+         and then Internal.Contact_Present.Present
+         and then Internal.Diagnostic_Present.Present
+         and then Internal.Token_State.Present
+         and then Internal.Token_State.Value = D.Token_Expired,
+         "disclosure: internal operations view exposes every dimension");
+
+      --  The safety property: stricter discloses no more than looser, and not
+      --  the reverse.
+      Assert
+        (D.Discloses_No_More_Than (Interactive, Machine)
+         and then D.Discloses_No_More_Than (Machine, Internal)
+         and then D.Discloses_No_More_Than (Interactive, Internal)
+         and then not D.Discloses_No_More_Than (Internal, Interactive)
+         and then not D.Discloses_No_More_Than (Machine, Interactive),
+         "disclosure: the projection is monotone -- a stricter profile leaks a subset");
+   end Test_79_disclosure_gates_every_dimension;
+
    overriding procedure Register_Tests (T : in out Test_Case) is
    begin
       Registration.Register_Routine
@@ -18835,6 +18918,9 @@ package body Identity_Tests_Cases is
       Registration.Register_Routine
         (T, Test_78_security_context_assembly_from_account'Access,
          "Test_78_security_context_assembly_from_account");
+      Registration.Register_Routine
+        (T, Test_79_disclosure_gates_every_dimension'Access,
+         "Test_79_disclosure_gates_every_dimension");
    end Register_Tests;
 
    overriding function Name (T : Test_Case) return AUnit.Message_String is
