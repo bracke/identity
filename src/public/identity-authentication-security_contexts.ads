@@ -67,6 +67,40 @@ package Identity.Authentication.Security_Contexts is
       Authenticated_Expired);
 
    function Anonymous_Context return Security_Context;
+
+   --  Build an Authenticated security context. This is the producer the
+   --  downstream projection uses (see Identity.Projections.Authentication):
+   --  every field is supplied from already-projected authentication facts, so
+   --  the Pure contract holds. Before this existed the Authenticated variant
+   --  had no constructor and nothing could produce one.
+   function Authenticated_Context
+     (Principal                 : Identity.Identifiers.Entities.Principal_Id;
+      Kind                      : Identity.Principals.Kinds.Principal_Kind;
+      Assurance                 : Identity.Assurance.Levels.Assurance_Level;
+      Attributes                : Identity.Assurance.Attributes.Assurance_Attributes;
+      Original_Authenticated_At : Identity.Times.Instant;
+      Primary_Authenticated_At  : Identity.Times.Instant;
+      Revisions                 : Revision_Baseline;
+      MFA_Completed_At          : Optional_Instant := (Present => False);
+      Step_Up_At                : Optional_Instant := (Present => False);
+      Session                   : Optional_Session_Id := (Present => False);
+      Validity_Boundary         : Optional_Instant := (Present => False);
+      Recovery_Restricted       : Boolean := False;
+      Eligible                  : Boolean := True) return Security_Context;
+
+   --  Derive the downstream revisions from the persisted entity versions they
+   --  track. The revisions are not independent counters some operation must
+   --  remember to bump: they ARE the account, evidence, and session versions,
+   --  which the store already advances on every relevant change (account state
+   --  transition, evidence change, session rotation/activity/assurance). A
+   --  stale downstream context is detected by comparing these against a freshly
+   --  derived baseline.
+   function Revisions_From
+     (Account_Version  : Identity.Versions.Entity_Version;
+      Evidence_Version : Identity.Versions.Entity_Version;
+      Session_Version  : Identity.Versions.Entity_Version;
+      Session_Present  : Boolean) return Revision_Baseline;
+
    function Current_Revisions (Context : Security_Context) return Revision_Baseline;
    function Revision_Changed
      (Context : Security_Context;

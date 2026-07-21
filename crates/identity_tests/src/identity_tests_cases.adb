@@ -18406,6 +18406,104 @@ package body Identity_Tests_Cases is
       end;
    end Test_76_TOTP_end_to_end_verify;
 
+   --  The downstream security context (spec 4A) must be producible and its
+   --  revisions must actually change when the facts they track change. This
+   --  builds a real Authenticated context via the producer, then performs a
+   --  real store transition (account disable, which advances the account
+   --  version) and proves the context is detected as stale -- the revisions
+   --  track persisted state, they are not inert fields.
+   procedure Test_77_security_context_tracks_account_change
+     (T : in out AUnit.Test_Cases.Test_Case'Class)
+   is
+      pragma Unreferenced (T);
+      package SC renames Identity.Authentication.Security_Contexts;
+
+      type SC_Store_Access is
+        access Identity.Adapters.Repositories.Memory.Store;
+      SC_Ptr : constant SC_Store_Access :=
+        new Identity.Adapters.Repositories.Memory.Store;
+      ST : Identity.Adapters.Repositories.Stores.Store_Interface'Class renames
+        Identity.Adapters.Repositories.Stores.Store_Interface'Class (SC_Ptr.all);
+
+      function SC_Id (Suffix : String)
+        return Identity.Identifiers.Encoded_Identifier is
+        (Identity.Identifiers.From_String
+           ("fc000000-0000-0000-0000-0000000000" & Suffix));
+
+      PR : constant Identity.Identifiers.Entities.Principal_Id :=
+        Identity.Identifiers.Entities.Principal (SC_Id ("01"));
+      AC : constant Identity.Identifiers.Entities.Account_Id :=
+        Identity.Identifiers.Entities.Account (SC_Id ("02"));
+
+      Account_View : constant Identity.Accounts.States.Account_State_View :=
+        (Administrative => Identity.Accounts.States.Enabled,
+         Lifecycle      => Identity.Accounts.States.Active,
+         Verification   => Identity.Accounts.States.Verified,
+         Lock_State     => Identity.Accounts.States.Not_Locked,
+         Requirements   => (others => False),
+         Recovery       => (others => False));
+
+      Command     : Identity.Adapters.Repositories.Stores.Command_Status;
+      Found       : Boolean;
+      Account_Rec : Identity.Accounts.Definitions.Account_Record;
+      V0, V1      : Identity.Versions.Entity_Version;
+      Ctx         : SC.Security_Context;
+   begin
+      Command := Identity.Adapters.Repositories.Stores.Create_Principal
+        (ST, (Id => PR, Kind => Identity.Principals.Kinds.Human,
+              State => Identity.Principals.Definitions.Active, Version => 0));
+      Assert (Command = Identity.Adapters.Repositories.Stores.Applied,
+              "sec-ctx: probe principal created");
+      Command := Identity.Adapters.Repositories.Stores.Create_Account
+        (ST, (Id => AC, Principal => PR, State => Account_View, Version => 0));
+      Assert (Command = Identity.Adapters.Repositories.Stores.Applied,
+              "sec-ctx: probe account created");
+
+      Identity.Adapters.Repositories.Stores.Find_Account (ST, PR, Found, Account_Rec);
+      V0 := Account_Rec.Version;
+
+      Ctx := SC.Authenticated_Context
+        (Principal                 => PR,
+         Kind                      => Identity.Principals.Kinds.Human,
+         Assurance                 => Identity.Assurance.Levels.Basic,
+         Attributes                => (others => <>),
+         Original_Authenticated_At => 100,
+         Primary_Authenticated_At  => 100,
+         Revisions                 => SC.Revisions_From (V0, 0, 0, False));
+      Assert (Found and then Ctx.State = SC.Authenticated,
+              "sec-ctx: the producer builds a real Authenticated context");
+      Assert (not SC.Revision_Changed (Ctx, SC.Revisions_From (V0, 0, 0, False)),
+              "sec-ctx: an unchanged account version leaves the context fresh");
+
+      --  A real, audited store transition that advances the account version.
+      Identity.Adapters.Repositories.Stores.Find_Account (ST, PR, Found, Account_Rec);
+      Command := Identity.Operations.Accounts.Disable.Execute
+        (ST,
+         (Account => AC, Principal => PR,
+          Transition =>
+            (Actor => (Kind => Identity.Events.Envelopes.Authenticated_Principal,
+                       Principal => (Present => True, Value => PR)),
+             Reason => Identity.Identifiers.Registry.From_String
+               ("identity.account.disable"),
+             Operation => Identity.Identifiers.Operations.Operation (SC_Id ("aa")),
+             Correlation => Identity.Identifiers.Operations.Correlation (SC_Id ("bb")),
+             Requested_At => 200,
+             Expected_Version => Account_Rec.Version,
+             Previous_State => Account_Rec.State.Administrative,
+             New_State => Identity.Accounts.States.Disabled,
+             Mandatory_Audit => True)),
+         Audit_Context, Next_Audit_Event, 1);
+      Assert (Command = Identity.Adapters.Repositories.Stores.Applied,
+              "sec-ctx: account is disabled");
+
+      Identity.Adapters.Repositories.Stores.Find_Account (ST, PR, Found, Account_Rec);
+      V1 := Account_Rec.Version;
+      Assert (V1 /= V0,
+              "sec-ctx: disabling the account advanced its persisted version");
+      Assert (SC.Revision_Changed (Ctx, SC.Revisions_From (V1, 0, 0, False)),
+              "sec-ctx: a real account state change makes the downstream context stale");
+   end Test_77_security_context_tracks_account_change;
+
    overriding procedure Register_Tests (T : in out Test_Case) is
    begin
       Registration.Register_Routine
@@ -18565,6 +18663,9 @@ package body Identity_Tests_Cases is
       Registration.Register_Routine
         (T, Test_76_TOTP_end_to_end_verify'Access,
          "Test_76_TOTP_end_to_end_verify");
+      Registration.Register_Routine
+        (T, Test_77_security_context_tracks_account_change'Access,
+         "Test_77_security_context_tracks_account_change");
    end Register_Tests;
 
    overriding function Name (T : Test_Case) return AUnit.Message_String is

@@ -12,6 +12,56 @@ package body Identity.Authentication.Security_Contexts is
    function Anonymous_Context return Security_Context is
      ((State => Anonymous, Valid_Until => (Present => False)));
 
+   function Authenticated_Context
+     (Principal                 : Identity.Identifiers.Entities.Principal_Id;
+      Kind                      : Identity.Principals.Kinds.Principal_Kind;
+      Assurance                 : Identity.Assurance.Levels.Assurance_Level;
+      Attributes                : Identity.Assurance.Attributes.Assurance_Attributes;
+      Original_Authenticated_At : Identity.Times.Instant;
+      Primary_Authenticated_At  : Identity.Times.Instant;
+      Revisions                 : Revision_Baseline;
+      MFA_Completed_At          : Optional_Instant := (Present => False);
+      Step_Up_At                : Optional_Instant := (Present => False);
+      Session                   : Optional_Session_Id := (Present => False);
+      Validity_Boundary         : Optional_Instant := (Present => False);
+      Recovery_Restricted       : Boolean := False;
+      Eligible                  : Boolean := True) return Security_Context is
+   begin
+      return
+        (State                     => Authenticated,
+         Principal                 => Principal,
+         Kind                      => Kind,
+         Assurance                 => Assurance,
+         Attributes                => Attributes,
+         Original_Authenticated_At => Original_Authenticated_At,
+         Primary_Authenticated_At  => Primary_Authenticated_At,
+         MFA_Completed_At          => MFA_Completed_At,
+         Step_Up_At                => Step_Up_At,
+         Session                   => Session,
+         Validity_Boundary         => Validity_Boundary,
+         Authentication_Revision   => Revisions.Authentication,
+         Evidence_Revision         => Revisions.Evidence,
+         Session_Revision          => Revisions.Session,
+         Recovery_Restricted       => Recovery_Restricted,
+         Eligible                  => Eligible);
+   end Authenticated_Context;
+
+   function Revisions_From
+     (Account_Version  : Identity.Versions.Entity_Version;
+      Evidence_Version : Identity.Versions.Entity_Version;
+      Session_Version  : Identity.Versions.Entity_Version;
+      Session_Present  : Boolean) return Revision_Baseline is
+   begin
+      return
+        (Authentication => Identity.Versions.Authentication_State_Revision
+                             (Account_Version),
+         Evidence       => Identity.Versions.Evidence_Revision (Evidence_Version),
+         Session        => (if Session_Present
+                            then Identity.Versions.Session_Revision (Session_Version)
+                            else 0),
+         Session_Present => Session_Present);
+   end Revisions_From;
+
    function Current_Revisions (Context : Security_Context) return Revision_Baseline is
    begin
       case Context.State is
