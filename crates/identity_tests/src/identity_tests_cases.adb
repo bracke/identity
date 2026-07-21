@@ -18179,6 +18179,95 @@ package body Identity_Tests_Cases is
          "lockout: the correct password is rejected once the threshold is reached");
    end Test_74_lockout_blocks_after_threshold;
 
+   --  ------------------------------------------------------------------
+   --  Session expiry is time-based: a wrong comparison would either keep
+   --  stale sessions alive forever (a security hole) or kill valid ones
+   --  early. This pins the boundary -- nothing before the deadline, every
+   --  eligible session AT it (the predicate is Now >= deadline) -- and that
+   --  a second sweep expires nothing already expired.
+   --  ------------------------------------------------------------------
+   procedure Test_75_session_expiry_boundary
+     (T : in out AUnit.Test_Cases.Test_Case'Class)
+   is
+      pragma Unreferenced (T);
+
+      type SX_Store_Access is
+        access Identity.Adapters.Repositories.Memory.Store;
+      SX_Ptr : constant SX_Store_Access :=
+        new Identity.Adapters.Repositories.Memory.Store;
+      SX : Identity.Adapters.Repositories.Stores.Store_Interface'Class renames
+        Identity.Adapters.Repositories.Stores.Store_Interface'Class (SX_Ptr.all);
+
+      function SX_Id (Suffix : String)
+        return Identity.Identifiers.Encoded_Identifier is
+        (Identity.Identifiers.From_String
+           ("fd000000-0000-0000-0000-0000000000" & Suffix));
+
+      SX_P : constant Identity.Identifiers.Entities.Principal_Id :=
+        Identity.Identifiers.Entities.Principal (SX_Id ("01"));
+
+      Deadline : constant Identity.Times.Instant := 1_000;
+      Command  : Identity.Adapters.Repositories.Stores.Command_Status;
+
+      procedure Seed_Session (Suffix : String) is
+         Sec : constant Identity.Secrets.Sessions.Session_Secret :=
+           Identity.Secrets.Text.From_UTF_8 ("expiry probe secret " & Suffix);
+         Outcome : Identity.Adapters.Repositories.Stores.Command_Status;
+      begin
+         Outcome :=
+           Identity.Adapters.Repositories.Stores.Create_Session
+             (SX,
+              (Id => Identity.Identifiers.Entities.Session (SX_Id ("1" & Suffix)),
+               Family =>
+                 Identity.Identifiers.Entities.Session_Family (SX_Id ("2" & Suffix)),
+               Principal => SX_P,
+               Credential => (Present => False),
+               External_Provider => (Present => False),
+               Public_Reference =>
+                 Identity.Text.Bounded.From_String ("expiry-ref-" & Suffix),
+               Secret_Verifier =>
+                 Identity.Crypto.Secret_Verifiers.Derive_Text
+                   (Identity.Crypto.Domains.Session_Token, Sec),
+               Assurance => Identity.Assurance.Levels.Basic,
+               Attributes => <>,
+               Created_At => 100,
+               Original_Authenticated_At => 100,
+               Primary_Authenticated_At => 100,
+               MFA_Completed_At => (Present => False),
+               Step_Up_At => (Present => False),
+               Last_Seen_At => 100,
+               Idle_Expires_At => (Present => True, Time_Point => Deadline),
+               Absolute_Expires_At => (Present => True, Time_Point => 9_000),
+               Remembered => False, Generation => 0,
+               State => Identity.Sessions.Definitions.Active, Version => 0));
+         Assert (Outcome = Identity.Adapters.Repositories.Stores.Applied,
+                 "expiry: probe session " & Suffix & " is created");
+      end Seed_Session;
+   begin
+      Command :=
+        Identity.Adapters.Repositories.Stores.Create_Principal
+          (SX, (Id => SX_P, Kind => Identity.Principals.Kinds.Human,
+                State => Identity.Principals.Definitions.Active, Version => 0));
+      Assert (Command = Identity.Adapters.Repositories.Stores.Applied,
+              "expiry: probe principal is created");
+      Seed_Session ("a");
+      Seed_Session ("b");
+      Seed_Session ("c");
+
+      Assert
+        (Identity.Adapters.Repositories.Memory.Expire_Eligible_Sessions
+           (SX_Ptr.all, Deadline - 1) = 0,
+         "expiry: nothing expires one instant before the deadline");
+      Assert
+        (Identity.Adapters.Repositories.Memory.Expire_Eligible_Sessions
+           (SX_Ptr.all, Deadline) = 3,
+         "expiry: every eligible session expires exactly at the deadline");
+      Assert
+        (Identity.Adapters.Repositories.Memory.Expire_Eligible_Sessions
+           (SX_Ptr.all, Deadline + 1_000) = 0,
+         "expiry: a second sweep expires nothing already expired");
+   end Test_75_session_expiry_boundary;
+
    overriding procedure Register_Tests (T : in out Test_Case) is
    begin
       Registration.Register_Routine
@@ -18332,6 +18421,9 @@ package body Identity_Tests_Cases is
       Registration.Register_Routine
         (T, Test_74_lockout_blocks_after_threshold'Access,
          "Test_74_lockout_blocks_after_threshold");
+      Registration.Register_Routine
+        (T, Test_75_session_expiry_boundary'Access,
+         "Test_75_session_expiry_boundary");
    end Register_Tests;
 
    overriding function Name (T : Test_Case) return AUnit.Message_String is
