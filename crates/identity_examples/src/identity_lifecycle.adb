@@ -21,10 +21,13 @@ with Identity.Operations.Factors.Generate_Recovery_Codes;
 with Identity.Operations.Factors.Verify_TOTP;
 with Identity.Operations.Passwords.Complete_Reset;
 with Identity.Operations.Passwords.Request_Reset;
+with Identity.Operations.Recovery.Begin_Recovery;
+with Identity.Operations.Recovery.Continue;
 with Identity.Operations.Sessions.Revoke_Family;
 with Identity.Operations.Verification.Complete;
 with Identity.Operations.Verification.Request;
 with Identity.Contacts.Bindings;
+with Identity.Recovery.Transactions;
 with Identity.Secrets.Tokens;
 with Identity.Tokens.Verification;
 with Identity.One_Time_Passwords.Credentials;
@@ -63,6 +66,7 @@ procedure Identity_Lifecycle is
    use type Identity.One_Time_Passwords.Credentials.TOTP_Accept_Status;
    use type Identity.Recovery_Codes.Sets.Recovery_Code_Consume_Status;
    use type Identity.Tokens.Verification.Token_Verification_Outcome;
+   use type Identity.Recovery.Transactions.Recovery_Transition_Status;
 
    Store : Identity.Adapters.Repositories.Memory.Store;
 
@@ -182,6 +186,11 @@ procedure Identity_Lifecycle is
           ("d0000000-0000-0000-0000-0000000000f2"));
    Verify_Secret : constant Identity.Secrets.Tokens.Verification_Token_Secret :=
      Identity.Secrets.Text.From_UTF_8 ("example-contact-verify-secret");
+   Recovery_Tx :
+     constant Identity.Identifiers.Entities.Authentication_Transaction_Id :=
+     Identity.Identifiers.Entities.Authentication_Transaction
+       (Identity.Identifiers.From_String
+          ("d0000000-0000-0000-0000-0000000000f3"));
 
    --  Every operation below that changes stored state also writes an audit
    --  event, and refuses the change if that event cannot be stored. That is
@@ -491,6 +500,23 @@ begin
         (Store, Verify_Token, Verify_Secret, 4, Contact_Binding,
          Audit_Context, Next_Audit_Event, 4)
       = Identity.Tokens.Verification.Valid
+      --  Account recovery: begin a recovery transaction and accept its first
+      --  evidence (the account-restricting completion is left out here so the
+      --  disablement step below still sees the account at its original version).
+      and then Identity.Operations.Recovery.Begin_Recovery.Execute
+        (Store,
+         (Id => Recovery_Tx,
+          Principal => Principal,
+          Account => Account,
+          Created_At => 4,
+          Expires_At => Identity.Times.Expirations.At_Time (9_000),
+          State => Identity.Recovery.Transactions.Started,
+          Version => 0),
+         Audit_Context, Next_Audit_Event, 4)
+      = Identity.Recovery.Transactions.Applied
+      and then Identity.Operations.Recovery.Continue.Execute
+        (Store, Recovery_Tx, Principal, 4, Audit_Context, Next_Audit_Event, 4)
+      = Identity.Recovery.Transactions.Applied
       --  A service credential: issue an API key and authenticate with it
       --  (no session -- service auth returns an authenticated principal).
       and then Identity.Operations.API_Keys.Issue.Execute
