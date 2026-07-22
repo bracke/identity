@@ -9,6 +9,8 @@ with Identity.Identifiers.Operations;
 with Identity.Identifiers.Registry;
 with Identity.Identities.Bindings;
 with Identity.Operations.Accounts.Create;
+with Identity.Operations.Accounts.Disable;
+with Identity.Operations.Sessions.Revoke_Family;
 with Identity.Operations.Cancellation;
 with Identity.Operations.Contexts;
 with Identity.Operations.Disclosure;
@@ -62,6 +64,8 @@ procedure Identity_Lifecycle is
      Identity.Secrets.Text.From_UTF_8 ("example password");
    Presented : constant Identity.Secrets.Passwords.Presented_Password :=
      Identity.Secrets.Text.From_UTF_8 ("example password");
+   Wrong_Presented : constant Identity.Secrets.Passwords.Presented_Password :=
+     Identity.Secrets.Text.From_UTF_8 ("not the password");
    Session_Secret : constant Identity.Secrets.Sessions.Session_Secret :=
      Identity.Secrets.Text.From_UTF_8 ("example session secret");
    Rotated_Session_Secret : constant Identity.Secrets.Sessions.Session_Secret :=
@@ -263,6 +267,49 @@ begin
       and then Identity.Operations.Sessions.Lookup.Execute
         (Store, Rotated_Session_Reference, Rotated_Session_Secret, 3).Status
       = Identity.Sessions.Handles.Found
+      --  A wrong password is rejected without disturbing the account.
+      and then Identity.Operations.Passwords.Authenticate.Execute
+        (Store, (Kind => Subject_Kind, Value => Subject), Wrong_Presented,
+         Audit_Context, Next_Audit_Event, 4).Status
+      = Identity.Results.Rejected
+      --  Revoking the family revokes the surviving rotated session.
+      and then Identity.Operations.Sessions.Revoke_Family.Execute
+        (Store, Family, Audit_Context, Next_Audit_Event, 4)
+      = Identity.Adapters.Repositories.Memory.Applied
+      and then Identity.Operations.Sessions.Lookup.Execute
+        (Store, Rotated_Session_Reference, Rotated_Session_Secret, 4).Status
+      = Identity.Sessions.Handles.Revoked
+      --  Administrative disablement blocks further authentication, and
+      --  succeeding with the right password no longer works.
+      and then Identity.Operations.Accounts.Disable.Execute
+        (Store,
+         (Account => Account,
+          Principal => Principal,
+          Transition =>
+            (Actor =>
+               (Kind => Identity.Events.Envelopes.Authenticated_Principal,
+                Principal => (Present => True, Value => Principal)),
+             Reason => Identity.Identifiers.Registry.From_String
+               ("identity.account.disable"),
+             Operation => Identity.Identifiers.Operations.Operation
+               (Identity.Identifiers.From_String
+                  ("70000000-0000-0000-0000-0000000000d1")),
+             Correlation => Identity.Identifiers.Operations.Correlation
+               (Identity.Identifiers.From_String
+                  ("71000000-0000-0000-0000-0000000000d1")),
+             Requested_At => 4,
+             Expected_Version => 0,
+             Previous_State => Identity.Accounts.States.Enabled,
+             New_State => Identity.Accounts.States.Disabled,
+             Mandatory_Audit => True)),
+         Audit_Context, Next_Audit_Event, 4)
+      = Identity.Adapters.Repositories.Memory.Applied
+      and then Identity.Operations.Passwords.Authenticate.Execute
+        (Store, (Kind => Subject_Kind, Value => Subject), Presented,
+         Audit_Context, Next_Audit_Event, 5).Status
+      = Identity.Results.Rejected
+      --  Every transition above left an inspectable audit event.
+      and then Identity.Adapters.Repositories.Memory.Event_Count (Store) > 0
    then
       Ada.Text_IO.Put_Line ("identity_lifecycle:ok");
    else
