@@ -15,7 +15,8 @@ package body Identity_Tools_Evidence is
         when Gate_Self_Tests => "gate-selftests",
         when Proof           => "gnatprove",
         when Examples        => "examples",
-        when Concurrency     => "concurrency");
+        when Concurrency     => "concurrency",
+        when Coverage        => "coverage");
 
    function Path (Id : Evidence_Id) return String is
      (Prefix & "generated/evidence/" & Name (Id) & ".txt");

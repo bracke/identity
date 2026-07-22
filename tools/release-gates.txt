@@ -84,6 +84,15 @@ so a suite that never ran cannot be reported as satisfied.
   (untrusted projections collapse distinct causes), events: (registry and
   schema consistency) and emission: (each event type produced by the audited
   operation that emits it).
+- code coverage: measured, not self-reported                     [evidence: coverage]
+  tools/coverage.sh recompiles the AUnit suite with gcc coverage instrumentation
+  (-fprofile-arcs -ftest-coverage), runs it once, and reduces the resulting
+  .gcda execution data with gcov. Scored on body (.adb) line coverage of
+  src/public + src/adapters; fails below the threshold (80%). Package specs
+  (.ads) are reported but not gated -- their expression-function and predicate
+  lines are verified statically by GNATprove, so gcov scoring them as
+  unexecuted is an artifact. The report is generated/release/coverage.txt; the
+  step restores a non-instrumented build afterward.
 - crates/identity_conformance repository conformance             [evidence: conformance]
   Runs 45 real commands and queries against the in-memory store across the five
   certification profiles, and fails a profile unless the number of checks

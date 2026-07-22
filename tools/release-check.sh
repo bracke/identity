@@ -102,6 +102,20 @@ echo "release-check:library-release:passed"
 echo "== aunit suite =="
 run_crate aunit "$ROOT/crates/identity_tests" identity_tests
 
+echo "== code coverage =="
+# Measured line coverage of the library, not a self-report: the AUnit suite is
+# recompiled with gcc coverage instrumentation, run once, and reduced by gcov.
+# The gate fails if body (.adb) coverage drops below the threshold in
+# tools/coverage.sh. The step restores a non-instrumented build afterward.
+if cov_out=$("$ROOT/tools/coverage.sh" "$ROOT" 2>&1); then
+  record coverage passed \
+    "$(printf '%s\n' "$cov_out" | grep -o 'release-check:coverage:passed:.*' | sed 's/release-check:coverage:passed://')"
+else
+  record coverage failed \
+    "$(printf '%s\n' "$cov_out" | grep -o 'release-check:coverage:failed:.*' | sed 's/release-check:coverage:failed://' | tail -1)"
+  printf '%s\n' "$cov_out" | tail -20
+fi
+
 echo "== repository conformance =="
 run_crate conformance "$ROOT/crates/identity_conformance" identity_conformance
 

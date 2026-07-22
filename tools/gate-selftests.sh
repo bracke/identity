@@ -364,6 +364,21 @@ neg_case "identity_tools exits nonzero on canary secret leaks" \
    mutate_canary \
    "secret-leak:canary:${SEP}gate-selftest-canary.md"
 
+mutate_coverage_evidence() {
+   #  A coverage run that failed (or never happened) must not be reportable as
+   #  satisfied: overwrite its evidence with a failed outcome and require the
+   #  evidence gate to surface it.
+   local dir="$1"
+   mkdir -p "$dir/generated/evidence" || return 1
+   printf 'status:%s\ndetail:%s\n' failed "body-0.0%-below-min-80.0%" \
+      >"$dir/generated/evidence/coverage.txt" || return 1
+   return 0
+}
+
+neg_case "identity_tools fails when the coverage suite reports a failure" \
+   mutate_coverage_evidence \
+   "evidence:failed:coverage"
+
 ###############################################################################
 #  Negative cases -- event registry / public constant coverage
 ###############################################################################

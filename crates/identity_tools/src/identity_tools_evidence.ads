@@ -12,7 +12,8 @@ package Identity_Tools_Evidence is
       Gate_Self_Tests,
       Proof,
       Examples,
-      Concurrency);
+      Concurrency,
+      Coverage);
 
    type Evidence_State is (Passed, Failed, Missing);
 
