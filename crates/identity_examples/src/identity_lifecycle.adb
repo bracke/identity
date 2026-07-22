@@ -19,7 +19,11 @@ with Identity.Operations.Factors.Complete_Enrollment;
 with Identity.Operations.Factors.Consume_Recovery_Code;
 with Identity.Operations.Factors.Generate_Recovery_Codes;
 with Identity.Operations.Factors.Verify_TOTP;
+with Identity.Operations.Passwords.Complete_Reset;
+with Identity.Operations.Passwords.Request_Reset;
 with Identity.Operations.Sessions.Revoke_Family;
+with Identity.Secrets.Tokens;
+with Identity.Tokens.Verification;
 with Identity.One_Time_Passwords.Credentials;
 with Identity.Recovery_Codes.Sets;
 with Identity.Crypto.CryptoLib.Secret_Box;
@@ -55,6 +59,7 @@ procedure Identity_Lifecycle is
    use type Identity.Sessions.Handles.Session_Lookup_Status;
    use type Identity.One_Time_Passwords.Credentials.TOTP_Accept_Status;
    use type Identity.Recovery_Codes.Sets.Recovery_Code_Consume_Status;
+   use type Identity.Tokens.Verification.Token_Verification_Outcome;
 
    Store : Identity.Adapters.Repositories.Memory.Store;
 
@@ -148,6 +153,18 @@ procedure Identity_Lifecycle is
           ("d0000000-0000-0000-0000-0000000000c1"));
    Recovery_Code_Value : constant Identity.Secrets.Recovery_Codes.Recovery_Code :=
      Identity.Secrets.Text.From_UTF_8 ("EXAM-PLE0-CODE");
+   Reset_Token : constant Identity.Identifiers.Entities.Token_Id :=
+     Identity.Identifiers.Entities.Token
+       (Identity.Identifiers.From_String
+          ("d0000000-0000-0000-0000-0000000000e1"));
+   Reset_Secret : constant Identity.Secrets.Tokens.Reset_Token_Secret :=
+     Identity.Secrets.Text.From_UTF_8 ("example-reset-token-secret");
+   Reset_Credential : constant Identity.Identifiers.Entities.Credential_Id :=
+     Identity.Identifiers.Entities.Credential
+       (Identity.Identifiers.From_String
+          ("d0000000-0000-0000-0000-0000000000e2"));
+   Reset_New_Password : constant Identity.Secrets.Passwords.New_Password :=
+     Identity.Secrets.Text.From_UTF_8 ("reset example password");
 
    --  Every operation below that changes stored state also writes an audit
    --  event, and refuses the change if that event cannot be stored. That is
@@ -409,6 +426,31 @@ begin
         (Store, Recovery_Set, Recovery_Code_Value,
          Audit_Context, Next_Audit_Event, 4)
       = Identity.Recovery_Codes.Sets.Consumed
+      --  Password reset: request a purpose-bound token, then complete it,
+      --  atomically replacing the password credential.
+      and then Identity.Operations.Passwords.Request_Reset.Execute
+        (Store,
+         Identity.Operations.Passwords.Request_Reset.Reset_Request'
+           (Id => Reset_Token,
+            Principal => Principal,
+            Secret => Reset_Secret,
+            Issued_At => 4,
+            Expires_At => Identity.Times.Expirations.At_Time (9_000)),
+         Audit_Context, Next_Audit_Event, 4)
+      = Identity.Adapters.Repositories.Memory.Applied
+      and then Identity.Operations.Passwords.Complete_Reset.Execute
+        (Store,
+         Identity.Operations.Passwords.Complete_Reset.Reset_Completion_Request'
+           (Token => Reset_Token,
+            Principal => Principal,
+            Secret => Reset_Secret,
+            Now => 4,
+            New_Credential => Reset_Credential,
+            Password => Reset_New_Password,
+            Expected_Token_Version => 0,
+            Expected_Predecessor_Version => 0),
+         Audit_Context, Next_Audit_Event, 4)
+      = Identity.Tokens.Verification.Valid
       --  A service credential: issue an API key and authenticate with it
       --  (no session -- service auth returns an authenticated principal).
       and then Identity.Operations.API_Keys.Issue.Execute
