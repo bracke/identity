@@ -23,6 +23,7 @@ with Identity.Operations.Passwords.Complete_Reset;
 with Identity.Operations.Passwords.Request_Reset;
 with Identity.Operations.Recovery.Begin_Recovery;
 with Identity.Operations.Recovery.Continue;
+with Identity.Operations.Sessions.Renew;
 with Identity.Operations.Sessions.Revoke_Family;
 with Identity.Operations.Verification.Complete;
 with Identity.Operations.Verification.Request;
@@ -379,6 +380,13 @@ begin
       = Identity.Sessions.Handles.Revoked
       and then Identity.Operations.Sessions.Lookup.Execute
         (Store, Rotated_Session_Reference, Rotated_Session_Secret, 3).Status
+      = Identity.Sessions.Handles.Found
+      --  Renewing the live rotated session extends its idle window without
+      --  resetting its authentication age.
+      and then Identity.Operations.Sessions.Renew.Execute
+        (Store, Rotated_Session_Reference, Rotated_Session_Secret, 3,
+         Identity.Times.Expirations.At_Time (7_000),
+         Audit_Context, Next_Audit_Event, 3).Status
       = Identity.Sessions.Handles.Found
       --  A wrong password is rejected without disturbing the account.
       and then Identity.Operations.Passwords.Authenticate.Execute
