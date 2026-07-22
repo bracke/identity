@@ -1,0 +1,2 @@
+source:docs/threat-model.md
+invariant-registry:registries/invariants.json

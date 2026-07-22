@@ -1,0 +1,2 @@
+gate:conformance:passed:exit 0
+profiles:core,interactive,session,recovery,federated

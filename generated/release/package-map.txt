@@ -1,0 +1,3 @@
+source:docs/ai/package-map.md
+public-spec-root:src/public
+adapter-spec-root:src/adapters

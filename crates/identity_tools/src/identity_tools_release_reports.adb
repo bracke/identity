@@ -15,7 +15,13 @@ package body Identity_Tools_Release_Reports is
       Crypto_Inventory,
       Traceability_Report,
       Release_Provenance,
-      Artifact_Digests);
+      Artifact_Digests,
+      Package_Map,
+      Threat_Model,
+      Adapter_Conformance,
+      Changelog_Report,
+      Migration_Notes,
+      Persisted_Format_Compat);
 
    Expected_Output_Count : constant Natural := Output_Id'Pos (Output_Id'Last) + 1;
 
@@ -43,7 +49,19 @@ package body Identity_Tools_Release_Reports is
         when Release_Provenance =>
           Output_Dir & "/release-provenance.txt",
         when Artifact_Digests =>
-          Output_Dir & "/artifact-digests.txt");
+          Output_Dir & "/artifact-digests.txt",
+        when Package_Map =>
+          Output_Dir & "/package-map.txt",
+        when Threat_Model =>
+          Output_Dir & "/threat-model.txt",
+        when Adapter_Conformance =>
+          Output_Dir & "/adapter-conformance-report.txt",
+        when Changelog_Report =>
+          Output_Dir & "/changelog.txt",
+        when Migration_Notes =>
+          Output_Dir & "/migration-notes.txt",
+        when Persisted_Format_Compat =>
+          Output_Dir & "/persisted-format-compatibility.txt");
 
    procedure Write_Output (Id : Output_Id; Report : in out Generation_Report) is
       File : Ada.Text_IO.File_Type;
@@ -116,6 +134,37 @@ package body Identity_Tools_Release_Reports is
               & Natural'Image (Identity_Tools_Persisted_Formats.Format_Count));
             Ada.Text_IO.Put_Line (File, "fixture-count:"
               & Natural'Image (Identity_Tools_Persisted_Formats.Fixture_Count));
+         when Package_Map =>
+            Ada.Text_IO.Put_Line (File, "source:docs/ai/package-map.md");
+            Ada.Text_IO.Put_Line (File, "public-spec-root:src/public");
+            Ada.Text_IO.Put_Line (File, "adapter-spec-root:src/adapters");
+         when Threat_Model =>
+            Ada.Text_IO.Put_Line (File, "source:docs/threat-model.md");
+            Ada.Text_IO.Put_Line (File, "invariant-registry:registries/invariants.json");
+         when Adapter_Conformance =>
+            Ada.Text_IO.Put_Line (File, "gate:conformance:"
+              & Identity_Tools_Evidence.State_Image
+                  (Identity_Tools_Evidence.State
+                     (Identity_Tools_Evidence.Conformance))
+              & ":" & Identity_Tools_Evidence.Detail
+                        (Identity_Tools_Evidence.Conformance));
+            Ada.Text_IO.Put_Line (File, "profiles:core,interactive,session,recovery,federated");
+         when Changelog_Report =>
+            Ada.Text_IO.Put_Line (File, "source:CHANGELOG.md");
+            Ada.Text_IO.Put_Line (File, "crate-version:"
+              & Natural'Image (Identity.Version.V1_Major) & "."
+              & Natural'Image (Identity.Version.V1_Minor) & "."
+              & Natural'Image (Identity.Version.V1_Patch));
+         when Migration_Notes =>
+            Ada.Text_IO.Put_Line (File, "source:docs/migrations");
+            Ada.Text_IO.Put_Line (File, "persisted-format-versions:"
+              & Natural'Image (Identity_Tools_Persisted_Formats.Format_Count));
+         when Persisted_Format_Compat =>
+            Ada.Text_IO.Put_Line (File, "format-count:"
+              & Natural'Image (Identity_Tools_Persisted_Formats.Format_Count));
+            Ada.Text_IO.Put_Line (File, "fixture-count:"
+              & Natural'Image (Identity_Tools_Persisted_Formats.Fixture_Count));
+            Ada.Text_IO.Put_Line (File, "source-registry:registries/persisted-formats.json");
       end case;
       Ada.Text_IO.Close (File);
       Report.Output_Count := Report.Output_Count + 1;

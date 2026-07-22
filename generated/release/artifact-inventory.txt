@@ -1,4 +1,5 @@
-artifact-count: 15
+required-artifact-count: 15
+generated-report-count: 13
 prohibited-material-count: 8
 provenance-field-count: 9
 sensitive-artifacts: 0
