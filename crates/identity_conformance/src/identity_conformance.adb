@@ -31,8 +31,11 @@ with Identity.Events.Envelopes;
 with Identity.Identities.Resolution;
 with Identity.Principals.Definitions;
 with Identity.Principals.Kinds;
+with Identity.Authentication.Transactions;
 with Identity.Recovery.Transactions;
 with Identity.Recovery_Codes.Sets;
+with Identity.Verification.Changes;
+with Identity.WebAuthn.Credentials;
 with Identity.Results;
 with Identity.Secrets.Text;
 with Identity.Sessions.Definitions;
@@ -134,6 +137,10 @@ procedure Identity_Conformance is
       return Identity.Identifiers.Entities.Authentication_Transaction_Id is
      (Identity.Identifiers.Entities.Authentication_Transaction
         (Identity.Identifiers.From_String ("b0000000-0000-0000-0000-0000000000" & Suffix)));
+
+   function Token_Of (Suffix : String) return Identity.Identifiers.Entities.Token_Id is
+     (Identity.Identifiers.Entities.Token
+        (Identity.Identifiers.From_String ("c0000000-0000-0000-0000-0000000000" & Suffix)));
 
    P1 : constant Identity.Identifiers.Entities.Principal_Id := Principal_Of ("01");
    P2 : constant Identity.Identifiers.Entities.Principal_Id := Principal_Of ("02");
@@ -364,7 +371,67 @@ procedure Identity_Conformance is
       Check (Result.Status = Identity.Results.Conflict
              and then not Result.Principal.Present);
 
-      --  6. Retiring the principal applies.
+      --  6-7. A passkey registers, its assertion is accepted, and a replayed
+      --       sign count is a cloned authenticator -- certifying the passkey
+      --       primitives' forwarding on every adapter.
+      declare
+         PK_Found : Boolean;
+         PK       : Identity.WebAuthn.Credentials.Passkey_Credential_Record;
+         use type Identity.WebAuthn.Credentials.Assertion_Status;
+      begin
+         Check (Stores.Register_Passkey
+                  (Repository,
+                   (Id => Credential_Of ("pk"), Principal => P1,
+                    Credential_Reference =>
+                      Identity.Text.Bounded.From_String ("pk-ref"),
+                    Public_Key => Identity.Text.Bounded.From_String ("pk-key"),
+                    Authenticator_Model =>
+                      Identity.Text.Bounded.From_String ("pk-aaguid"),
+                    Highest_Sign_Count => 0,
+                    State => Identity.Credentials.States.Active,
+                    Created_At => 0, Version => 0))
+                = Stores.Applied
+                and then Stores.Accept_Passkey_Assertion
+                  (Repository, Credential_Of ("pk"),
+                   Expected_Version => 0, Presented => 1)
+                  = Identity.WebAuthn.Credentials.Accepted);
+         Stores.Find_Passkey_Credential
+           (Repository, Credential_Of ("pk"), PK_Found, PK);
+         Check (PK_Found
+                and then Stores.Accept_Passkey_Assertion
+                  (Repository, Credential_Of ("pk"),
+                   Expected_Version => PK.Version, Presented => 1)
+                  = Identity.WebAuthn.Credentials.Cloned);
+      end;
+
+      --  8-9. An authentication transaction can be resolved (cancelled) via
+      --       Resolve_Authentication_Transaction, certifying that primitive's
+      --       forwarding on every adapter.
+      declare
+         MT       : constant Identity.Identifiers.Entities.Authentication_Transaction_Id :=
+           Transaction_Of ("mt");
+         TX_Found : Boolean;
+         TX       : Identity.Authentication.Transactions.Authentication_Transaction_Record;
+         use type Identity.Authentication.Transactions.Authentication_Transaction_Status;
+         use type Identity.Authentication.Transactions.Authentication_Transaction_State;
+      begin
+         Check (Stores.Begin_Authentication_Transaction
+                  (Repository,
+                   (Id => MT, Principal => P1, Requested_Profile => Adapter_Profile,
+                    Created_At => 0, Expires_At => Far_Future,
+                    State => Identity.Authentication.Transactions.Started,
+                    Attempts => 0, Evidence_Count => 0, Version => 0))
+                = Identity.Authentication.Transactions.Applied);
+         Stores.Find_Authentication_Transaction (Repository, MT, TX_Found, TX);
+         Check (TX_Found
+                and then Stores.Resolve_Authentication_Transaction
+                  (Repository, MT, P1,
+                   Identity.Authentication.Transactions.Cancel_Transaction,
+                   Now_Instant, TX.Version)
+                  = Identity.Authentication.Transactions.Applied);
+      end;
+
+      --  10. Retiring the principal applies.
       Check (Stores.Retire_Principal (Repository, P1) = Stores.Applied);
 
       --  7. Once the principal is retired the same valid secret is rejected.
@@ -582,17 +649,45 @@ procedure Identity_Conformance is
                 Expected_Version => Stored.Version)
                = Identity.Recovery.Transactions.Applied);
 
-      --  7. Completion applies once, and a replayed completion is refused.
+      --  7. The approval path advances through Advance_Recovery (certifying that
+      --      primitive's forwarding on every adapter, not just the memory store).
+      Stores.Find_Recovery_Transaction (Repository, Transaction, Found, Stored);
+      Check (Found
+             and then Stored.State = Identity.Recovery.Transactions.Evidence_Accepted
+             and then Stores.Advance_Recovery
+               (Repository, Transaction, P1,
+                Identity.Recovery.Transactions.Approve_Recovery,
+                Now_Instant, Stored.Version)
+               = Identity.Recovery.Transactions.Applied);
+
+      --  8. Completion applies once from the approved state, and a replayed
+      --      completion is refused.
       Check (Stores.Complete_Recovery (Repository, Transaction, P1, Now_Instant)
              = Identity.Recovery.Transactions.Applied
              and then Stores.Complete_Recovery (Repository, Transaction, P1, Now_Instant)
                = Identity.Recovery.Transactions.State_Conflict);
-      --  8. Completion left the account under recovery restrictions.
+      --  9. Completion left the account under recovery restrictions.
       Stores.Find_Account (Repository, P1, Found, Account);
       Check (Found
              and then Account.State.Recovery.Restricted_Session
              and then Account.State.Requirements.Credential_Reestablishment_Required
              and then Account.State.Lifecycle = Identity.Accounts.States.Active);
+
+      --  10. The contact-change read and advance primitives delegate on every
+      --       adapter: an unknown change reads back absent and advancing it is a
+      --       state conflict, but the call still passes through the decorator.
+      declare
+         CC_Found : Boolean;
+         CC       : Identity.Verification.Changes.Contact_Change_Record;
+      begin
+         Stores.Find_Contact_Change (Repository, Token_Of ("cc"), CC_Found, CC);
+         Check (not CC_Found
+                and then Stores.Advance_Contact_Change
+                  (Repository, Token_Of ("cc"), P1,
+                   Identity.Verification.Changes.Cancel_Change,
+                   Expected_Version => 0)
+                  = Stores.State_Conflict);
+      end;
    end Run_Recovery;
 
    ---------------------------------------------------------------------------

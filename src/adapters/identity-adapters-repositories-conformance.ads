@@ -36,9 +36,9 @@ package Identity.Adapters.Repositories.Conformance is
    function Required_Check_Count (Profile : Certification_Profile) return Positive is
      (case Profile is
         when Core_Identity_Store => 8,
-        when Interactive_Authentication_Store => 7,
+        when Interactive_Authentication_Store => 11,
         when Session_Store => 9,
-        when Recovery_Store => 8,
+        when Recovery_Store => 10,
         when Federated_Identity_Store => 7);
 
    function Requires_Staged_External_Authentication
