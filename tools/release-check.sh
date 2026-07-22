@@ -42,6 +42,21 @@ run_crate() {
   fi
 }
 
+echo "== version metadata =="
+# Gate 1 (spec 67): the crate version in alire.toml must be present and well
+# formed (semver, optional pre-release), so a release cannot ship without a
+# valid version. identity_tools separately reports the code's own version.
+toml_version=$(sed -n 's/^version *= *"\([^"]*\)".*/\1/p' "$ROOT/alire.toml" | head -1)
+if [ -z "$toml_version" ]; then
+  echo "release-check:version-metadata:failed:no-version-in-alire.toml"
+  exit 1
+fi
+if ! printf '%s' "$toml_version" | grep -qE '^[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z.]+)?$'; then
+  echo "release-check:version-metadata:failed:malformed:$toml_version"
+  exit 1
+fi
+echo "release-check:version-metadata:passed:$toml_version"
+
 echo "== library =="
 if ! out=$(alr build 2>&1); then
   echo "$out" | tail -20
