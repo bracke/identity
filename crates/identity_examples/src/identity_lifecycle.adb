@@ -10,7 +10,10 @@ with Identity.Identifiers.Registry;
 with Identity.Identities.Bindings;
 with Identity.Operations.Accounts.Create;
 with Identity.Operations.Accounts.Disable;
+with Identity.Operations.API_Keys.Authenticate;
+with Identity.Operations.API_Keys.Issue;
 with Identity.Operations.Sessions.Revoke_Family;
+with Identity.Secrets.API_Keys;
 with Identity.Operations.Cancellation;
 with Identity.Operations.Contexts;
 with Identity.Operations.Disclosure;
@@ -78,6 +81,16 @@ procedure Identity_Lifecycle is
      Identity.Text.Bounded.From_String ("example@example.invalid");
    Subject_Kind : constant Identity.Identifiers.Registry.Registry_Id :=
      Identity.Identifiers.Registry.From_String ("identity.subject.email");
+   API_Credential : constant Identity.Identifiers.Entities.Credential_Id :=
+     Identity.Identifiers.Entities.Credential
+       (Identity.Identifiers.From_String
+          ("c0000000-0000-0000-0000-0000000000a1"));
+   API_Key_Reference : constant Identity.Text.Bounded.Bounded_Text :=
+     Identity.Text.Bounded.From_String ("example-api-key");
+   API_Key_Secret : constant Identity.Secrets.API_Keys.API_Key_Secret :=
+     Identity.Secrets.Text.From_UTF_8 ("example-api-key-secret-material");
+   API_Key_Class : constant Identity.Identifiers.Registry.Registry_Id :=
+     Identity.Identifiers.Registry.From_String ("identity.service.api-key");
 
    --  Every operation below that changes stored state also writes an audit
    --  event, and refuses the change if that event cannot be stored. That is
@@ -279,6 +292,25 @@ begin
       and then Identity.Operations.Sessions.Lookup.Execute
         (Store, Rotated_Session_Reference, Rotated_Session_Secret, 4).Status
       = Identity.Sessions.Handles.Revoked
+      --  A service credential: issue an API key and authenticate with it
+      --  (no session -- service auth returns an authenticated principal).
+      and then Identity.Operations.API_Keys.Issue.Execute
+        (Store,
+         Identity.Operations.API_Keys.Issue.Issue_Request'
+           (Id => API_Credential,
+            Principal => Principal,
+            Public_Key_Id => API_Key_Reference,
+            Credential_Class_Id => API_Key_Class,
+            Secret => API_Key_Secret,
+            Created_At => 4,
+            Expires_At => Identity.Times.Expirations.At_Time (9_000),
+            Rotation_Generation => 0),
+         Audit_Context, Next_Audit_Event, 4)
+      = Identity.Adapters.Repositories.Memory.Applied
+      and then Identity.Operations.API_Keys.Authenticate.Execute
+        (Store, API_Key_Reference, API_Key_Secret, 5,
+         Audit_Context, Next_Audit_Event, 5).Status
+      = Identity.Results.Succeeded
       --  Administrative disablement blocks further authentication, and
       --  succeeding with the right password no longer works.
       and then Identity.Operations.Accounts.Disable.Execute
