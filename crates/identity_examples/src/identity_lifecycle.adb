@@ -1,4 +1,6 @@
+with Ada.Streams;
 with Ada.Text_IO;
+with Interfaces;
 with Identity.Accounts.States;
 with Identity.Adapters.Repositories.Memory;
 with Identity.Assurance.Levels;
@@ -14,8 +16,11 @@ with Identity.Operations.API_Keys.Authenticate;
 with Identity.Operations.API_Keys.Issue;
 with Identity.Operations.Factors.Begin_Enrollment;
 with Identity.Operations.Factors.Complete_Enrollment;
+with Identity.Operations.Factors.Verify_TOTP;
 with Identity.Operations.Sessions.Revoke_Family;
+with Identity.One_Time_Passwords.Credentials;
 with Identity.Crypto.CryptoLib.Secret_Box;
+with Identity.Crypto.CryptoLib.TOTP;
 with Identity.Secrets.API_Keys;
 with Identity.Secrets.One_Time_Passwords;
 with Identity.Operations.Cancellation;
@@ -42,6 +47,7 @@ procedure Identity_Lifecycle is
    use type Identity.Adapters.Repositories.Memory.Command_Status;
    use type Identity.Results.Operation_Status;
    use type Identity.Sessions.Handles.Session_Lookup_Status;
+   use type Identity.One_Time_Passwords.Credentials.TOTP_Accept_Status;
 
    Store : Identity.Adapters.Repositories.Memory.Store;
 
@@ -101,10 +107,34 @@ procedure Identity_Lifecycle is
           ("c0000000-0000-0000-0000-0000000000f1"));
    TOTP_Algorithm : constant Identity.Identifiers.Registry.Registry_Id :=
      Identity.Identifiers.Registry.From_String ("identity.totp.sha1");
+   TOTP_Secret_Text : constant String := "example totp shared secret";
    TOTP_Secret : constant Identity.Secrets.One_Time_Passwords.TOTP_Secret :=
-     Identity.Secrets.Text.From_UTF_8 ("example totp shared secret");
+     Identity.Secrets.Text.From_UTF_8 (TOTP_Secret_Text);
    TOTP_Sealing_Key :
      constant Identity.Crypto.CryptoLib.Secret_Box.Key_Bytes := [others => 16#7C#];
+   TOTP_Now : constant Identity.Times.Instant := 1_600_000_000;
+
+   --  The code an authenticator app would show for this secret at TOTP_Now,
+   --  computed the RFC 6238 way from the same secret bytes the crate will
+   --  recover from the sealed verifier.
+   function TOTP_Bytes return Ada.Streams.Stream_Element_Array is
+      use type Ada.Streams.Stream_Element_Offset;
+      Result : Ada.Streams.Stream_Element_Array (1 .. TOTP_Secret_Text'Length);
+      Pos    : Ada.Streams.Stream_Element_Offset := Result'First;
+   begin
+      for C of TOTP_Secret_Text loop
+         Result (Pos) := Ada.Streams.Stream_Element (Character'Pos (C));
+         Pos := Pos + 1;
+      end loop;
+      return Result;
+   end TOTP_Bytes;
+
+   TOTP_App_Code : constant Natural :=
+     Identity.Crypto.CryptoLib.TOTP.Compute_Code
+       (TOTP_Bytes,
+        Identity.Crypto.CryptoLib.TOTP.Time_Step
+          (Interfaces.Unsigned_64 (TOTP_Now), 30, 0),
+        Identity.Crypto.CryptoLib.TOTP.SHA1, 6);
 
    --  Every operation below that changes stored state also writes an audit
    --  event, and refuses the change if that event cannot be stored. That is
@@ -329,6 +359,17 @@ begin
             Highest_Accepted_Counter => 0),
          Audit_Context, Next_Audit_Event, 4)
       = Identity.Adapters.Repositories.Memory.Applied
+      --  TOTP continuation: the crate recomputes the code from the recovered
+      --  secret and accepts the one the authenticator app shows.
+      and then Identity.Operations.Factors.Verify_TOTP.Execute
+        (Store,
+         (Credential => TOTP_Credential,
+          Presented_Code => TOTP_App_Code,
+          Now => TOTP_Now,
+          Skew_Steps => 1,
+          Opening_Key => TOTP_Sealing_Key),
+         Audit_Context, Next_Audit_Event, 4)
+      = Identity.One_Time_Passwords.Credentials.Accepted
       --  A service credential: issue an API key and authenticate with it
       --  (no session -- service auth returns an authenticated principal).
       and then Identity.Operations.API_Keys.Issue.Execute
