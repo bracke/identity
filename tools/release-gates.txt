@@ -233,10 +233,10 @@ text it prints -- do not edit the numbers to match.
   ..audited                   59
   ..exempt (justified)        1
   audited overloads           116
-  context-free overloads      4
+  context-free overloads      5
   proved packages             12
   security invariants         80
-  registered test routines    84
+  registered test routines    85
 <!-- end generated: identity-facts -->
 
 Cost

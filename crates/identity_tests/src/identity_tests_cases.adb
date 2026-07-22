@@ -19272,6 +19272,107 @@ package body Identity_Tests_Cases is
               "fault-inject: the retry creates the account (state entirely new)");
    end Test_84_fault_injection_atomicity;
 
+   --  Step-up binding (spec 18): the audit found step-up matched only session +
+   --  principal, ignoring the family/generation binding, and never checked
+   --  whether the session already satisfied the requested profile. This proves
+   --  the bound form rejects a stale (wrong-generation or wrong-family) binding
+   --  and short-circuits when the profile is already met -- both decided before
+   --  any transaction interaction, so no satisfied transaction is needed.
+   procedure Test_85_step_up_binding
+     (T : in out AUnit.Test_Cases.Test_Case'Class)
+   is
+      pragma Unreferenced (T);
+      package SU renames Identity.Operations.Authentication.Step_Up;
+      package MSU renames Identity.Multi_Factor.Step_Up;
+      package Txn renames Identity.Authentication.Transactions;
+
+      type SU_Store_Access is
+        access Identity.Adapters.Repositories.Memory.Store;
+      SU_Ptr : constant SU_Store_Access :=
+        new Identity.Adapters.Repositories.Memory.Store;
+      SR : Identity.Adapters.Repositories.Stores.Store_Interface'Class renames
+        Identity.Adapters.Repositories.Stores.Store_Interface'Class (SU_Ptr.all);
+
+      function SU_Id (Suffix : String)
+        return Identity.Identifiers.Encoded_Identifier is
+        (Identity.Identifiers.From_String
+           ("f6000000-0000-0000-0000-0000000000" & Suffix));
+
+      PR : constant Identity.Identifiers.Entities.Principal_Id :=
+        Identity.Identifiers.Entities.Principal (SU_Id ("01"));
+      SS : constant Identity.Identifiers.Entities.Session_Id :=
+        Identity.Identifiers.Entities.Session (SU_Id ("02"));
+      FM : constant Identity.Identifiers.Entities.Session_Family_Id :=
+        Identity.Identifiers.Entities.Session_Family (SU_Id ("03"));
+      TX : constant Identity.Identifiers.Entities.Authentication_Transaction_Id :=
+        Identity.Identifiers.Entities.Authentication_Transaction (SU_Id ("04"));
+
+      Secret : constant Identity.Secrets.Sessions.Session_Secret :=
+        Identity.Secrets.Text.From_UTF_8 ("step-up-binding-probe-secret");
+
+      --  Strong attributes so a Basic profile is already satisfied.
+      Strong : constant Identity.Assurance.Attributes.Assurance_Attributes :=
+        (Factor_Count => 2, Independent_Factor_Count => 2,
+         User_Presence => True, User_Verification => True,
+         Recent_Authentication => True, others => False);
+
+      Command : Identity.Adapters.Repositories.Stores.Command_Status;
+
+      function Bound (Family : Identity.Identifiers.Entities.Session_Family_Id;
+                      Generation : Identity.Versions.Rotation_Generation)
+        return MSU.Step_Up_Binding is
+        (Session => SS, Principal => PR, Family => Family, Generation => Generation);
+
+      function Step_Up (Binding : MSU.Step_Up_Binding;
+                        Profile : Identity.Identifiers.Registry.Registry_Id)
+        return Txn.Authentication_Transaction_Status is
+        (SU.Execute (SR, Binding, TX, Profile, 500,
+                     Identity.Assurance.Levels.Administrative, Strong,
+                     Audit_Context, Next_Audit_Event, 1));
+   begin
+      Command := Identity.Adapters.Repositories.Stores.Create_Principal
+        (SR, (Id => PR, Kind => Identity.Principals.Kinds.Human,
+              State => Identity.Principals.Definitions.Active, Version => 0));
+      Assert (Command = Identity.Adapters.Repositories.Stores.Applied,
+              "step-up-bind: principal created");
+      Command := Identity.Adapters.Repositories.Stores.Create_Session
+        (SR,
+         (Id => SS, Family => FM, Principal => PR,
+          Credential => (Present => False),
+          External_Provider => (Present => False),
+          Public_Reference => Identity.Text.Bounded.From_String ("step-up-bind-ref"),
+          Secret_Verifier => Identity.Crypto.Secret_Verifiers.Derive_Text
+            (Identity.Crypto.Domains.Session_Token, Secret),
+          Assurance => Identity.Assurance.Levels.Interactive,
+          Attributes => Strong,
+          Created_At => 100, Original_Authenticated_At => 100,
+          Primary_Authenticated_At => 100,
+          MFA_Completed_At => (Present => False),
+          Step_Up_At => (Present => False),
+          Last_Seen_At => 100,
+          Idle_Expires_At => (Present => True, Time_Point => 9_000),
+          Absolute_Expires_At => (Present => True, Time_Point => 9_000),
+          Remembered => False, Generation => 5,
+          State => Identity.Sessions.Definitions.Active, Version => 0));
+      Assert (Command = Identity.Adapters.Repositories.Stores.Applied,
+              "step-up-bind: session created at generation 5");
+
+      --  Already satisfies Basic -> no-op success, no upgrade attempted.
+      Assert (Step_Up (Bound (FM, 5), Identity.Assurance.Profiles.Basic) = Txn.Applied,
+              "step-up-bind: a session already meeting the profile is a no-op success");
+
+      --  Wrong generation -> the binding does not match (stale/rotated session).
+      Assert (Step_Up (Bound (FM, 4), Identity.Assurance.Profiles.Administrative)
+              = Txn.State_Conflict,
+              "step-up-bind: a wrong rotation generation is refused");
+
+      --  Wrong family -> the binding does not match.
+      Assert (Step_Up (Bound (Identity.Identifiers.Entities.Session_Family (SU_Id ("09")), 5),
+                       Identity.Assurance.Profiles.Administrative)
+              = Txn.State_Conflict,
+              "step-up-bind: a wrong session family is refused");
+   end Test_85_step_up_binding;
+
    overriding procedure Register_Tests (T : in out Test_Case) is
    begin
       Registration.Register_Routine
@@ -19455,6 +19556,9 @@ package body Identity_Tests_Cases is
       Registration.Register_Routine
         (T, Test_84_fault_injection_atomicity'Access,
          "Test_84_fault_injection_atomicity");
+      Registration.Register_Routine
+        (T, Test_85_step_up_binding'Access,
+         "Test_85_step_up_binding");
    end Register_Tests;
 
    overriding function Name (T : Test_Case) return AUnit.Message_String is

@@ -1,5 +1,7 @@
+with Identity.Assurance.Evaluation;
 with Identity.Events.Types;
 with Identity.Operations.Audit;
+with Identity.Sessions.Definitions;
 with Identity.Text.Bounded;
 
 package body Identity.Operations.Authentication.Step_Up is
@@ -69,5 +71,49 @@ package body Identity.Operations.Authentication.Step_Up is
       end;
 
       return Status;
+   end Execute;
+
+   function Execute
+     (Repository        : in out
+        Identity.Adapters.Repositories.Stores.Store_Interface'Class;
+      Binding           : Identity.Multi_Factor.Step_Up.Step_Up_Binding;
+      Transaction       : Identity.Identifiers.Entities.Authentication_Transaction_Id;
+      Requested_Profile : Identity.Identifiers.Registry.Registry_Id;
+      Now               : Identity.Times.Instant;
+      Assurance         : Identity.Assurance.Levels.Assurance_Level;
+      Attributes        : Identity.Assurance.Attributes.Assurance_Attributes;
+      Context           : Identity.Operations.Contexts.Operation_Context;
+      Event             : Identity.Identifiers.Entities.Event_Id;
+      Recorded_At       : Identity.Times.Instant)
+      return Identity.Authentication.Transactions.Authentication_Transaction_Status
+   is
+      Found       : Boolean;
+      Session_Rec : Identity.Sessions.Definitions.Session_Record;
+   begin
+      Identity.Adapters.Repositories.Stores.Find_Session
+        (Repository, Binding.Session, Found, Session_Rec);
+
+      --  A rotated, replaced or wrong session no longer matches the family and
+      --  generation the caller bound the step-up to.
+      if not Found
+        or else not Identity.Multi_Factor.Step_Up.Matches (Binding, Session_Rec)
+      then
+         return Identity.Authentication.Transactions.State_Conflict;
+      end if;
+
+      --  If the session already satisfies the requested profile there is
+      --  nothing to raise: report success without a spurious upgrade event.
+      if Identity.Assurance.Evaluation.Evaluation_Satisfied
+           (Identity.Assurance.Evaluation.Evaluate
+              (Requested_Profile, Session_Rec.Attributes))
+      then
+         return Identity.Authentication.Transactions.Applied;
+      end if;
+
+      --  A real raise is needed: perform the audited atomic upgrade against the
+      --  bound session and principal.
+      return Execute
+        (Repository, Binding.Session, Transaction, Binding.Principal, Now,
+         Assurance, Attributes, Context, Event, Recorded_At);
    end Execute;
 end Identity.Operations.Authentication.Step_Up;
