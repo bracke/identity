@@ -16,11 +16,17 @@ with Identity.Operations.API_Keys.Authenticate;
 with Identity.Operations.API_Keys.Issue;
 with Identity.Operations.Factors.Begin_Enrollment;
 with Identity.Operations.Factors.Complete_Enrollment;
+with Identity.Operations.Factors.Consume_Recovery_Code;
+with Identity.Operations.Factors.Generate_Recovery_Codes;
 with Identity.Operations.Factors.Verify_TOTP;
 with Identity.Operations.Sessions.Revoke_Family;
 with Identity.One_Time_Passwords.Credentials;
+with Identity.Recovery_Codes.Sets;
 with Identity.Crypto.CryptoLib.Secret_Box;
 with Identity.Crypto.CryptoLib.TOTP;
+with Identity.Crypto.Domains;
+with Identity.Crypto.Secret_Verifiers;
+with Identity.Secrets.Recovery_Codes;
 with Identity.Secrets.API_Keys;
 with Identity.Secrets.One_Time_Passwords;
 with Identity.Operations.Cancellation;
@@ -48,6 +54,7 @@ procedure Identity_Lifecycle is
    use type Identity.Results.Operation_Status;
    use type Identity.Sessions.Handles.Session_Lookup_Status;
    use type Identity.One_Time_Passwords.Credentials.TOTP_Accept_Status;
+   use type Identity.Recovery_Codes.Sets.Recovery_Code_Consume_Status;
 
    Store : Identity.Adapters.Repositories.Memory.Store;
 
@@ -135,6 +142,12 @@ procedure Identity_Lifecycle is
         Identity.Crypto.CryptoLib.TOTP.Time_Step
           (Interfaces.Unsigned_64 (TOTP_Now), 30, 0),
         Identity.Crypto.CryptoLib.TOTP.SHA1, 6);
+   Recovery_Set : constant Identity.Identifiers.Entities.Credential_Set_Id :=
+     Identity.Identifiers.Entities.Credential_Set
+       (Identity.Identifiers.From_String
+          ("d0000000-0000-0000-0000-0000000000c1"));
+   Recovery_Code_Value : constant Identity.Secrets.Recovery_Codes.Recovery_Code :=
+     Identity.Secrets.Text.From_UTF_8 ("EXAM-PLE0-CODE");
 
    --  Every operation below that changes stored state also writes an audit
    --  event, and refuses the change if that event cannot be stored. That is
@@ -370,6 +383,32 @@ begin
           Opening_Key => TOTP_Sealing_Key),
          Audit_Context, Next_Audit_Event, 4)
       = Identity.One_Time_Passwords.Credentials.Accepted
+      --  Recovery credentials: generate a single-use code set (verifier-only
+      --  storage) and consume a code once.
+      and then Identity.Operations.Factors.Generate_Recovery_Codes.Execute
+        (Store,
+         Identity.Recovery_Codes.Sets.Recovery_Code_Set_Record'
+           (Id => Recovery_Set,
+            Principal => Principal,
+            Created_At => 4,
+            Version => 0,
+            Count => 1,
+            Codes =>
+              [1 =>
+                 (Code_Id => Identity.Text.Bounded.From_String ("code-1"),
+                  Secret_Verifier => Identity.Crypto.Secret_Verifiers.Derive_Text
+                    (Identity.Crypto.Domains.Recovery_Code, Recovery_Code_Value),
+                  State => Identity.Recovery_Codes.Sets.Active),
+               others =>
+                 (Code_Id => Identity.Text.Bounded.From_String (""),
+                  Secret_Verifier => Identity.Text.Bounded.From_String (""),
+                  State => Identity.Recovery_Codes.Sets.Revoked)]),
+         Audit_Context, Next_Audit_Event, 4)
+      = Identity.Adapters.Repositories.Memory.Applied
+      and then Identity.Operations.Factors.Consume_Recovery_Code.Execute
+        (Store, Recovery_Set, Recovery_Code_Value,
+         Audit_Context, Next_Audit_Event, 4)
+      = Identity.Recovery_Codes.Sets.Consumed
       --  A service credential: issue an API key and authenticate with it
       --  (no session -- service auth returns an authenticated principal).
       and then Identity.Operations.API_Keys.Issue.Execute
