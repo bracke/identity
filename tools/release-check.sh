@@ -228,6 +228,29 @@ else
   echo "release-check:source-archive:passed:$(tar -tzf "$archive" | wc -l)-entries"
 fi
 
+echo "== artifact digests =="
+# Gate (spec 68 generated-artifact verification): compute real content digests
+# of every generated report plus the source archive, replacing the placeholder
+# "declared" record identity_tools emits, so a release can verify its artifacts
+# byte-for-byte.
+digests="$ROOT/generated/release/artifact-digests.txt"
+{
+  echo "digest-records:computed"
+  echo "algorithm:sha256"
+  for f in "$ROOT"/generated/release/*.txt "$archive"; do
+    [ "$f" = "$digests" ] && continue
+    [ -f "$f" ] || continue
+    printf '%s  %s\n' "$(sha256sum "$f" | cut -d' ' -f1)" "$(basename "$f")"
+  done
+} > "$digests.tmp" && mv "$digests.tmp" "$digests"
+digest_count=$(grep -cE '^[0-9a-f]{64}' "$digests")
+if [ "$digest_count" -gt 0 ]; then
+  echo "release-check:artifact-digests:passed:$digest_count-digests"
+else
+  echo "release-check:artifact-digests:failed:none-computed"
+  FAILED=1
+fi
+
 echo "== cryptolib self-tests =="
 # Gate (spec 67): the cryptographic backend must pass its own known-answer
 # tests, so the crate does not ship on a cryptolib whose primitives regressed.
