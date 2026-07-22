@@ -19272,6 +19272,42 @@ package body Identity_Tests_Cases is
               "fault-inject: the retry creates the account (state entirely new)");
    end Test_84_fault_injection_atomicity;
 
+   --  A store that drifts the active-password version on every read, so the
+   --  staged-verification revalidation (spec 34) can be exercised
+   --  deterministically: the version the verification snapshots differs from the
+   --  version seen on revalidation, exactly as a concurrent credential change
+   --  would make it. It overrides one inherited primitive; everything else is
+   --  the reference memory store. The counter is reached through an access
+   --  discriminant so it can advance on an in-mode read.
+   type Drift_Store (Counter : access Natural) is
+     new Identity.Adapters.Repositories.Memory.Store with null record;
+
+   overriding procedure Find_Active_Password
+     (Repository : Drift_Store;
+      Principal  : Identity.Identifiers.Entities.Principal_Id;
+      Found      : out Boolean;
+      Credential : out Identity.Passwords.Credentials.Password_Credential_Record);
+
+   overriding procedure Find_Active_Password
+     (Repository : Drift_Store;
+      Principal  : Identity.Identifiers.Entities.Principal_Id;
+      Found      : out Boolean;
+      Credential : out Identity.Passwords.Credentials.Password_Credential_Record)
+   is
+   begin
+      Identity.Adapters.Repositories.Memory.Find_Active_Password
+        (Identity.Adapters.Repositories.Memory.Store (Repository),
+         Principal, Found, Credential);
+      if Found then
+         --  Same verifier, drifting version: the password still verifies, but
+         --  revalidation sees a changed version.
+         Credential.Version :=
+           Credential.Version
+           + Identity.Versions.Entity_Version (Repository.Counter.all);
+         Repository.Counter.all := Repository.Counter.all + 1;
+      end if;
+   end Find_Active_Password;
+
    --  Step-up binding (spec 18): the audit found step-up matched only session +
    --  principal, ignoring the family/generation binding, and never checked
    --  whether the session already satisfied the requested profile. This proves
@@ -19372,6 +19408,110 @@ package body Identity_Tests_Cases is
               = Txn.State_Conflict,
               "step-up-bind: a wrong session family is refused");
    end Test_85_step_up_binding;
+
+   --  Staged-verification revalidation (spec 34): password verification runs
+   --  against a versioned snapshot outside the write path; a successful result
+   --  is trusted only if the credential and account versions still hold. A
+   --  stable store authenticates; a store whose credential version drifts during
+   --  verification (standing in for a concurrent credential change) is caught by
+   --  the revalidation and conflicts rather than returning a stale success.
+   procedure Test_86_staged_verification_revalidation
+     (T : in out AUnit.Test_Cases.Test_Case'Class)
+   is
+      pragma Unreferenced (T);
+      package PW renames Identity.Operations.Passwords.Authenticate;
+
+      function SV_Id (Suffix : String)
+        return Identity.Identifiers.Encoded_Identifier is
+        (Identity.Identifiers.From_String
+           ("f5000000-0000-0000-0000-0000000000" & Suffix));
+
+      PR : constant Identity.Identifiers.Entities.Principal_Id :=
+        Identity.Identifiers.Entities.Principal (SV_Id ("01"));
+      AC : constant Identity.Identifiers.Entities.Account_Id :=
+        Identity.Identifiers.Entities.Account (SV_Id ("02"));
+      BN : constant Identity.Identifiers.Entities.Identity_Binding_Id :=
+        Identity.Identifiers.Entities.Identity_Binding (SV_Id ("03"));
+      CR : constant Identity.Identifiers.Entities.Credential_Id :=
+        Identity.Identifiers.Entities.Credential (SV_Id ("04"));
+      Subj : constant Identity.Text.Bounded.Bounded_Text :=
+        Identity.Text.Bounded.From_String ("sv-user");
+
+      procedure Setup
+        (S : in out Identity.Adapters.Repositories.Stores.Store_Interface'Class)
+      is
+         Cmd : Identity.Adapters.Repositories.Stores.Command_Status;
+      begin
+         Cmd := Identity.Adapters.Repositories.Stores.Create_Principal
+           (S, (Id => PR, Kind => Identity.Principals.Kinds.Human,
+                State => Identity.Principals.Definitions.Active, Version => 0));
+         Assert (Cmd = Identity.Adapters.Repositories.Stores.Applied,
+                 "staged-verify: principal created");
+         Cmd := Identity.Adapters.Repositories.Stores.Create_Account
+           (S, (Id => AC, Principal => PR,
+                State => (Administrative => Identity.Accounts.States.Enabled,
+                          Lifecycle => Identity.Accounts.States.Active,
+                          Verification => Identity.Accounts.States.No_Verification_Required,
+                          Lock_State => Identity.Accounts.States.Not_Locked,
+                          Requirements => (others => False),
+                          Recovery => (others => False)),
+                Version => 0));
+         Assert (Cmd = Identity.Adapters.Repositories.Stores.Applied,
+                 "staged-verify: account created");
+         Cmd := Identity.Operations.Identities.Add.Execute
+           (S, (Id => BN, Principal => PR, Kind => Login_Kind, Normalized => Subj,
+                State => Identity.Identities.Bindings.Active, Version => 0),
+            Audit_Context, Next_Audit_Event, 1);
+         Assert (Cmd = Identity.Adapters.Repositories.Stores.Applied,
+                 "staged-verify: login binding added");
+         Cmd := Identity.Operations.Passwords.Enroll.Execute
+           (S, PR, CR, New_Password, Audit_Context, Next_Audit_Event, 1);
+         Assert (Cmd = Identity.Adapters.Repositories.Stores.Applied,
+                 "staged-verify: password enrolled");
+      end Setup;
+
+      function Auth
+        (S : in out Identity.Adapters.Repositories.Stores.Store_Interface'Class)
+        return Identity.Results.Operation_Status is
+        (PW.Execute
+           (S,
+            PW.Attempted_Request'
+              (Subject => (Kind => Login_Kind, Value => Subj),
+               Password => Presented_Password,
+               Attempt => Identity.Identifiers.Entities.Attempt (SV_Id ("05")),
+               Correlation => Identity.Identifiers.Operations.Correlation (SV_Id ("06")),
+               Subject_Fingerprint => Identity.Text.Bounded.From_String ("sv-fp"),
+               Started_At => 100, Completed_At => 101, Lockout_Threshold => 0),
+            Audit_Context, Next_Audit_Event, 1).Status);
+   begin
+      --  Control: a stable store authenticates (revalidation passes).
+      declare
+         type MA is access Identity.Adapters.Repositories.Memory.Store;
+         MP : constant MA := new Identity.Adapters.Repositories.Memory.Store;
+         SM : Identity.Adapters.Repositories.Stores.Store_Interface'Class renames
+           Identity.Adapters.Repositories.Stores.Store_Interface'Class (MP.all);
+      begin
+         Setup (SM);
+         Assert (Auth (SM) = Identity.Results.Succeeded,
+                 "staged-verify: a stable store authenticates (revalidation passes)");
+      end;
+
+      --  A store whose credential version drifts during verification: the
+      --  revalidation sees the change and the result conflicts, not a stale
+      --  success.
+      declare
+         type Counter_Access is access all Natural;
+         C  : constant Counter_Access := new Natural'(0);
+         type DA is access Drift_Store;
+         DP : constant DA := new Drift_Store (Counter => C);
+         SD : Identity.Adapters.Repositories.Stores.Store_Interface'Class renames
+           Identity.Adapters.Repositories.Stores.Store_Interface'Class (DP.all);
+      begin
+         Setup (SD);
+         Assert (Auth (SD) = Identity.Results.Conflict,
+                 "staged-verify: a credential change during verification is caught, not trusted");
+      end;
+   end Test_86_staged_verification_revalidation;
 
    overriding procedure Register_Tests (T : in out Test_Case) is
    begin
@@ -19559,6 +19699,9 @@ package body Identity_Tests_Cases is
       Registration.Register_Routine
         (T, Test_85_step_up_binding'Access,
          "Test_85_step_up_binding");
+      Registration.Register_Routine
+        (T, Test_86_staged_verification_revalidation'Access,
+         "Test_86_staged_verification_revalidation");
    end Register_Tests;
 
    overriding function Name (T : Test_Case) return AUnit.Message_String is

@@ -148,14 +148,63 @@ package body Identity.Operations.Passwords.Authenticate is
       use type Identity.Adapters.Repositories.Stores.Command_Status;
       use type Identity.Results.Operation_Status;
       use type Identity.Versions.Attempt_Count;
+      use type Identity.Versions.Entity_Version;
       use type Identity.Identities.Resolution.Resolution_Status;
       use type Identity.Attempts.Outcomes.Attempt_Outcome;
       use type Identity.Attempts.Outcomes.Failure_Category;
 
-      Result : constant Identity.Authentication.Results.Password_Authentication_Result :=
-        Execute (Repository, Request.Subject, Request.Password);
-      Resolution : constant Identity.Identities.Resolution.Resolution_Result :=
+      --  Snapshot the credential and account versions the verification relies
+      --  on, taken before the (lock-free) password derivation, so a concurrent
+      --  credential change during verification is detected afterwards rather
+      --  than trusted. This is the staged-verification revalidation of spec 34:
+      --  read a versioned snapshot, verify outside the write path, then confirm
+      --  the versions still hold before the result is acted on.
+      Pre : constant Identity.Identities.Resolution.Resolution_Result :=
         Identity.Adapters.Repositories.Stores.Resolve (Repository, Request.Subject);
+
+      function Credential_Version return Identity.Versions.Entity_Version is
+         Found : Boolean;
+         Cred  : Identity.Passwords.Credentials.Password_Credential_Record;
+      begin
+         if Pre.Status /= Identity.Identities.Resolution.Resolved then
+            return 0;
+         end if;
+         Identity.Adapters.Repositories.Stores.Find_Active_Password
+           (Repository, Pre.Principal, Found, Cred);
+         return (if Found then Cred.Version else Identity.Versions.Entity_Version'Last);
+      end Credential_Version;
+
+      function Account_Version return Identity.Versions.Entity_Version is
+         Found : Boolean;
+         Acct  : Identity.Accounts.Definitions.Account_Record;
+      begin
+         if Pre.Status /= Identity.Identities.Resolution.Resolved then
+            return 0;
+         end if;
+         Identity.Adapters.Repositories.Stores.Find_Account
+           (Repository, Pre.Principal, Found, Acct);
+         return (if Found then Acct.Version else Identity.Versions.Entity_Version'Last);
+      end Account_Version;
+
+      Credential_Version_Snapshot : constant Identity.Versions.Entity_Version :=
+        Credential_Version;
+      Account_Version_Snapshot    : constant Identity.Versions.Entity_Version :=
+        Account_Version;
+
+      Verified : constant Identity.Authentication.Results.Password_Authentication_Result :=
+        Execute (Repository, Request.Subject, Request.Password);
+
+      --  Revalidate: a successful verification is trusted only if the credential
+      --  and account are still at the versions it read. If either advanced (a
+      --  concurrent password change, credential revocation, or account
+      --  transition), the success is stale and the operation conflicts.
+      Result : constant Identity.Authentication.Results.Password_Authentication_Result :=
+        (if Verified.Status = Identity.Results.Succeeded
+           and then (Credential_Version /= Credential_Version_Snapshot
+                     or else Account_Version /= Account_Version_Snapshot)
+         then (Status => Identity.Results.Conflict, Principal => (Present => False))
+         else Verified);
+      Resolution : constant Identity.Identities.Resolution.Resolution_Result := Pre;
       Attempt_Status : Identity.Adapters.Repositories.Stores.Command_Status;
       Attempt_Outcome : Identity.Attempts.Outcomes.Attempt_Outcome :=
         Identity.Attempts.Outcomes.Failed;
