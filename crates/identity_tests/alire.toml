@@ -9,7 +9,7 @@ licenses = "MIT OR Apache-2.0 WITH LLVM-exception"
 website = "https://github.com/bracke/identity"
 tags = ["identity", "tests"]
 
-executables = ["identity_tests"]
+executables = ["identity_tests", "identity_coverage"]
 project-files = ["identity_tests.gpr"]
 
 [[depends-on]]
@@ -21,6 +21,11 @@ aunit = "*"
 [[depends-on]]
 identity = "*"
 
+# Shared check-program helpers: process spawning, directory walks and text
+# searches used by the code-coverage tool (identity_coverage).
+[[depends-on]]
+project_tools = "*"
+
 [[pins]]
 identity = { path = "../.." }
 
@@ -28,6 +33,9 @@ identity = { path = "../.." }
 # cryptolib, so it must pin cryptolib too.
 [[pins]]
 cryptolib = { path = "../../../cryptolib" }
+
+[[pins]]
+project_tools = { path = "../../../project_tools" }
 
 [build-profiles]
 "*" = "development"

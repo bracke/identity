@@ -103,11 +103,16 @@ echo "== aunit suite =="
 run_crate aunit "$ROOT/crates/identity_tests" identity_tests
 
 echo "== code coverage =="
-# Measured line coverage of the library, not a self-report: the AUnit suite is
-# recompiled with gcc coverage instrumentation, run once, and reduced by gcov.
-# The gate fails if body (.adb) coverage drops below the threshold in
-# tools/coverage.sh. The step restores a non-instrumented build afterward.
-if cov_out=$("$ROOT/tools/coverage.sh" "$ROOT" 2>&1); then
+# Measured line coverage of the library, not a self-report. The measurement
+# tool is Ada -- crates/identity_tests/bin/identity_coverage -- which rebuilds
+# the whole test corpus with gcc coverage instrumentation, runs it, and unions
+# the executed lines reduced by gcov. It gates on body (.adb) coverage and
+# restores a non-instrumented build afterward. Built with the AUnit crate above.
+cov_bin="$ROOT/crates/identity_tests/bin/identity_coverage"
+if [ ! -x "$cov_bin" ]; then
+  (cd "$ROOT/crates/identity_tests" && alr build >/dev/null 2>&1)
+fi
+if cov_out=$("$cov_bin" 2>&1); then
   record coverage passed \
     "$(printf '%s\n' "$cov_out" | grep -o 'release-check:coverage:passed:.*' | sed 's/release-check:coverage:passed://')"
 else

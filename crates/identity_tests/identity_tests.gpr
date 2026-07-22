@@ -2,7 +2,7 @@ with "config/identity_tests_config.gpr";
 
 project Identity_Tests is
    for Source_Dirs use ("src", "config");
-   for Main use ("identity_tests.adb");
+   for Main use ("identity_tests.adb", "identity_coverage.adb");
    for Object_Dir use "obj/" & Identity_Tests_Config.Build_Profile;
    for Exec_Dir use "bin";
    for Create_Missing_Dirs use "True";

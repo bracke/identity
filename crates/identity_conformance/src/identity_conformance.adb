@@ -7,6 +7,7 @@ with Identity.Adapters.Repositories.Conformance;
 with Identity.Adapters.Repositories.Memory;
 with Identity.Adapters.Repositories.Persistent;
 with Identity.Adapters.Repositories.Recording;
+with Identity.Adapters.Repositories.Serialized;
 with Identity.Adapters.Repositories.Stores;
 with Identity.API_Keys.Credentials;
 with Identity.Authentication.Results;
@@ -56,6 +57,7 @@ procedure Identity_Conformance is
    package Stores renames Identity.Adapters.Repositories.Stores;
    package Recording renames Identity.Adapters.Repositories.Recording;
    package Persistent renames Identity.Adapters.Repositories.Persistent;
+   package Serialized renames Identity.Adapters.Repositories.Serialized;
 
    use type Stores.Command_Status;
    use type Memory.Snapshot_Status;
@@ -821,13 +823,15 @@ procedure Identity_Conformance is
       end case;
    end Run;
 
-   type Adapter_Id is (Memory_Adapter, Recording_Adapter, Persistent_Adapter);
+   type Adapter_Id is
+     (Memory_Adapter, Recording_Adapter, Persistent_Adapter, Serialized_Adapter);
 
    function Adapter_Image (Value : Adapter_Id) return String is
      (case Value is
         when Memory_Adapter => "memory",
         when Recording_Adapter => "recording",
-        when Persistent_Adapter => "persistent");
+        when Persistent_Adapter => "persistent",
+        when Serialized_Adapter => "serialized");
 
    --  Reference implementation, and an independent adapter wrapping its own
    --  backing store through the same interface. Both live on the heap: a
@@ -845,6 +849,13 @@ procedure Identity_Conformance is
    --  the same profiles is what shows the SPI holds up against real storage.
    Persistent_Ptr   : constant Store_Access := new Memory.Store;
    Persistent_Store : Persistent.Store (Inner => Persistent_Ptr);
+
+   --  Fourth adapter: the serialising lock decorator. Certifying it through the
+   --  same profiles exercises its per-primitive forwarding, which the narrow
+   --  concurrency stress main alone leaves almost entirely uncovered.
+   Serialized_Ptr   : constant Store_Access := new Memory.Store;
+   Serialized_Store : Serialized.Store
+     (Inner => Stores.Store_Interface'Class (Serialized_Ptr.all)'Access);
    --  Resolved relative to the current directory, which differs between a
    --  developer running this from the repo root and release-check.sh running
    --  it from inside the crate. Create the directory rather than depending on
@@ -896,6 +907,8 @@ begin
                Run (Value, Wrapped_Store);
             when Persistent_Adapter =>
                Run (Value, Persistent_Store);
+            when Serialized_Adapter =>
+               Run (Value, Serialized_Store);
          end case;
 
          Required := Conformance.Required_Check_Count (Value);
