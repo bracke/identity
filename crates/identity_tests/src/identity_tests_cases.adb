@@ -1,3 +1,4 @@
+with Identity.Audit.Chain;
 with AUnit.Assertions;
 with Ada.Real_Time;
 with Ada.Streams;
@@ -19730,6 +19731,65 @@ package body Identity_Tests_Cases is
               "token-bind: an unbound session keeps bearer semantics (accepts any)");
    end Test_91_session_token_binding;
 
+   --  Tamper-evident audit log (hash chaining). The event envelope has no
+   --  prior-hash field, so a durable backend admin could delete or reorder
+   --  events undetectably. This chains the ordered events into a single head and
+   --  shows that deletion, reordering, and modification each change the head --
+   --  the tamper-evidence the log previously lacked.
+   procedure Test_92_audit_log_tamper_evidence
+     (T : in out AUnit.Test_Cases.Test_Case'Class)
+   is
+      pragma Unreferenced (T);
+      package Chain renames Identity.Audit.Chain;
+
+      function CE_Id (Suffix : String)
+        return Identity.Identifiers.Encoded_Identifier is
+        (Identity.Identifiers.From_String
+           ("f3000000-0000-0000-0000-0000000000" & Suffix));
+
+      function Ev (Suffix : String; Target : String)
+        return Identity.Events.Envelopes.Event_Envelope is
+        ((Id => Identity.Identifiers.Entities.Event (CE_Id ("a" & Suffix)),
+          Type_Id => Identity.Events.Types.Authentication_Succeeded,
+          Correlation =>
+            Identity.Identifiers.Operations.Correlation (CE_Id ("b" & Suffix)),
+          Operation =>
+            Identity.Identifiers.Operations.Operation (CE_Id ("c" & Suffix)),
+          Actor => (Kind => Identity.Events.Envelopes.Unauthenticated,
+                    Principal => (Present => False)),
+          Subject => (Present => False),
+          Target => Identity.Text.Bounded.From_String (Target),
+          others => <>));
+
+      E1  : constant Identity.Events.Envelopes.Event_Envelope := Ev ("1", "one");
+      E2  : constant Identity.Events.Envelopes.Event_Envelope := Ev ("2", "two");
+      E3  : constant Identity.Events.Envelopes.Event_Envelope := Ev ("3", "three");
+      E2b : constant Identity.Events.Envelopes.Event_Envelope := Ev ("2", "two-tampered");
+
+      function Head3
+        (A, B, C : Identity.Events.Envelopes.Event_Envelope) return Chain.Chain_Head
+      is (Chain.Extend (Chain.Extend (Chain.Extend (Chain.Genesis, A), B), C));
+
+      Honest : constant Chain.Chain_Head := Head3 (E1, E2, E3);
+   begin
+      --  Recomputing the same ordered events yields the same head.
+      Assert (Chain.Same_Head (Honest, Head3 (E1, E2, E3)),
+              "audit-chain: the chain head over a fixed event sequence is deterministic");
+
+      --  Deleting an event changes the head.
+      Assert (not Chain.Same_Head
+                (Honest, Chain.Extend (Chain.Extend (Chain.Genesis, E1), E3)),
+              "audit-chain: deleting an event is detected (head changes)");
+
+      --  Reordering events changes the head.
+      Assert (not Chain.Same_Head (Honest, Head3 (E1, E3, E2)),
+              "audit-chain: reordering events is detected (head changes)");
+
+      --  Modifying an event's content changes the head.
+      Assert (not Chain.Same_Head (Honest, Head3 (E1, E2b, E3)),
+              "audit-chain: modifying an event is detected (head changes)");
+   end Test_92_audit_log_tamper_evidence;
+
    --  Fuzz regressions (spec 52): the bounded, attacker-controlled decoders must
    --  classify every input into a bounded outcome and never raise or over-read.
    --  This drives adversarial inputs -- every single byte, malformed multi-byte
@@ -20092,6 +20152,9 @@ package body Identity_Tests_Cases is
       Registration.Register_Routine
         (T, Test_91_session_token_binding'Access,
          "Test_91_session_token_binding");
+      Registration.Register_Routine
+        (T, Test_92_audit_log_tamper_evidence'Access,
+         "Test_92_audit_log_tamper_evidence");
    end Register_Tests;
 
    overriding function Name (T : Test_Case) return AUnit.Message_String is
