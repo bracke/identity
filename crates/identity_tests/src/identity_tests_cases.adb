@@ -25,6 +25,7 @@ with Identity.Adapters.Repositories.Failures;
 with Identity.Adapters.Repositories.Identities;
 with Identity.Adapters.Repositories.Idempotency;
 with Identity.Adapters.Repositories.Memory;
+with Identity.Adapters.Compromised_Passwords;
 with Identity.Adapters.Repositories.Recording;
 with Identity.Authentication.Results;
 with Identity.Identities.Subjects;
@@ -19602,6 +19603,33 @@ package body Identity_Tests_Cases is
               "property: entity version advancement is monotone and saturates");
    end Test_87_property_suite;
 
+   --  Compromised-password admission (the breach-check boundary the policy flag
+   --  was declared for). The flag is now a real, tested decision path: a
+   --  compromised password is rejected only when the check is enabled, and an
+   --  unavailable check fails open so a down breach service cannot block every
+   --  credential change.
+   procedure Test_90_compromised_password_admission
+     (T : in out AUnit.Test_Cases.Test_Case'Class)
+   is
+      pragma Unreferenced (T);
+      package CP renames Identity.Adapters.Compromised_Passwords;
+      use type CP.Password_Compromise_Admission;
+   begin
+      Assert (CP.Admit (Check_Enabled => False, Verdict => CP.Compromised)
+              = CP.Admitted,
+              "compromise: with the check disabled, even a compromised password is admitted");
+      Assert (CP.Admit (Check_Enabled => True, Verdict => CP.Compromised)
+              = CP.Rejected_Compromised
+              and then CP.Rejected_Password
+                (CP.Admit (True, CP.Compromised)),
+              "compromise: with the check enabled, a compromised password is rejected");
+      Assert (CP.Admit (Check_Enabled => True, Verdict => CP.Clean) = CP.Admitted,
+              "compromise: a clean password is admitted");
+      Assert (CP.Admit (Check_Enabled => True, Verdict => CP.Unavailable)
+              = CP.Admitted,
+              "compromise: an unavailable check fails open (rotation is not blocked)");
+   end Test_90_compromised_password_admission;
+
    --  Fuzz regressions (spec 52): the bounded, attacker-controlled decoders must
    --  classify every input into a bounded outcome and never raise or over-read.
    --  This drives adversarial inputs -- every single byte, malformed multi-byte
@@ -19958,6 +19986,9 @@ package body Identity_Tests_Cases is
       Registration.Register_Routine
         (T, Test_89_resource_bounds'Access,
          "Test_89_resource_bounds");
+      Registration.Register_Routine
+        (T, Test_90_compromised_password_admission'Access,
+         "Test_90_compromised_password_admission");
    end Register_Tests;
 
    overriding function Name (T : Test_Case) return AUnit.Message_String is
