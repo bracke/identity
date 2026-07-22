@@ -23,8 +23,10 @@ with Identity.Operations.Passwords.Complete_Reset;
 with Identity.Operations.Passwords.Request_Reset;
 with Identity.Operations.Recovery.Begin_Recovery;
 with Identity.Operations.Recovery.Continue;
+with Identity.Operations.External_Identities.Bind;
 with Identity.Operations.Sessions.Renew;
 with Identity.Operations.Sessions.Revoke_Family;
+with Identity.External_Providers.Bindings;
 with Identity.Operations.Verification.Complete;
 with Identity.Operations.Verification.Request;
 with Identity.Contacts.Bindings;
@@ -192,6 +194,18 @@ procedure Identity_Lifecycle is
      Identity.Identifiers.Entities.Authentication_Transaction
        (Identity.Identifiers.From_String
           ("d0000000-0000-0000-0000-0000000000f3"));
+   Ext_Binding : constant Identity.Identifiers.Entities.External_Binding_Id :=
+     Identity.Identifiers.Entities.External_Binding
+       (Identity.Identifiers.From_String
+          ("d0000000-0000-0000-0000-0000000000f4"));
+   Ext_Provider : constant Identity.Identifiers.Entities.External_Provider_Id :=
+     Identity.Identifiers.Entities.External_Provider
+       (Identity.Identifiers.From_String
+          ("d0000000-0000-0000-0000-0000000000f5"));
+   Ext_Issuer : constant Identity.Text.Bounded.Bounded_Text :=
+     Identity.Text.Bounded.From_String ("https://idp.example.invalid");
+   Ext_Subject : constant Identity.Text.Bounded.Bounded_Text :=
+     Identity.Text.Bounded.From_String ("external-subject-123");
 
    --  Every operation below that changes stored state also writes an audit
    --  event, and refuses the change if that event cannot be stored. That is
@@ -525,6 +539,21 @@ begin
       and then Identity.Operations.Recovery.Continue.Execute
         (Store, Recovery_Tx, Principal, 4, Audit_Context, Next_Audit_Event, 4)
       = Identity.Recovery.Transactions.Applied
+      --  External identity: bind a validated provider subject to the principal
+      --  (the crate consumes normalized assertions; validation is an adapter's
+      --  job, so the binding is the crate-side step).
+      and then Identity.Operations.External_Identities.Bind.Execute
+        (Store,
+         (Id => Ext_Binding,
+          Principal => Principal,
+          Provider => Ext_Provider,
+          Issuer => Ext_Issuer,
+          External_Subject => Ext_Subject,
+          State => Identity.External_Providers.Bindings.Active,
+          Created_At => 4,
+          Version => 0),
+         Audit_Context, Next_Audit_Event, 4)
+      = Identity.Adapters.Repositories.Memory.Applied
       --  A service credential: issue an API key and authenticate with it
       --  (no session -- service auth returns an authenticated principal).
       and then Identity.Operations.API_Keys.Issue.Execute
