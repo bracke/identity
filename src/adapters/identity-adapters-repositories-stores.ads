@@ -45,6 +45,7 @@ with Identity.Times;
 with Identity.Tokens.Definitions;
 with Identity.Tokens.Verification;
 with Identity.Verification.Changes;
+with Identity.WebAuthn.Credentials;
 with Identity.Versions;
 
 package Identity.Adapters.Repositories.Stores is
@@ -618,6 +619,29 @@ package Identity.Adapters.Repositories.Stores is
       Credential : Identity.Identifiers.Entities.Credential_Id;
       Found      : out Boolean;
       Value      : out Identity.One_Time_Passwords.Credentials.TOTP_Credential_Record) is abstract;
+
+   --  Register a passkey (WebAuthn) credential: the public credential reference,
+   --  the stored public key, and the initial sign count.
+   function Register_Passkey
+     (Repository : in out Store_Interface;
+      Credential : Identity.WebAuthn.Credentials.Passkey_Credential_Record)
+      return Command_Status is abstract;
+
+   procedure Find_Passkey_Credential
+     (Repository : Store_Interface;
+      Credential : Identity.Identifiers.Entities.Credential_Id;
+      Found      : out Boolean;
+      Value      : out Identity.WebAuthn.Credentials.Passkey_Credential_Record) is abstract;
+
+   --  Admit a presented assertion (whose signature the adapter has verified)
+   --  against the stored passkey: clone detection on the sign count, then
+   --  advance the replay state -- the possession analogue of Accept_TOTP_Counter.
+   function Accept_Passkey_Assertion
+     (Repository       : in out Store_Interface;
+      Credential       : Identity.Identifiers.Entities.Credential_Id;
+      Expected_Version : Identity.Versions.Entity_Version;
+      Presented        : Identity.WebAuthn.Credentials.Sign_Count)
+      return Identity.WebAuthn.Credentials.Assertion_Status is abstract;
 
    function Remove_TOTP
      (Repository : in out Store_Interface;

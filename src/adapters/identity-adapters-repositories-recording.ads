@@ -30,6 +30,7 @@ with Identity.Identities.Bindings;
 with Identity.Identities.Resolution;
 with Identity.Identities.Subjects;
 with Identity.One_Time_Passwords.Credentials;
+with Identity.WebAuthn.Credentials;
 with Identity.Operations.Idempotency;
 with Identity.Passwords.Credentials;
 with Identity.Principals.Definitions;
@@ -591,6 +592,24 @@ package Identity.Adapters.Repositories.Recording is
       Credential : Identity.Identifiers.Entities.Credential_Id;
       Found      : out Boolean;
       Value      : out Identity.One_Time_Passwords.Credentials.TOTP_Credential_Record);
+
+   overriding function Register_Passkey
+     (Repository : in out Store;
+      Credential : Identity.WebAuthn.Credentials.Passkey_Credential_Record)
+      return Stores.Command_Status;
+
+   overriding procedure Find_Passkey_Credential
+     (Repository : Store;
+      Credential : Identity.Identifiers.Entities.Credential_Id;
+      Found      : out Boolean;
+      Value      : out Identity.WebAuthn.Credentials.Passkey_Credential_Record);
+
+   overriding function Accept_Passkey_Assertion
+     (Repository       : in out Store;
+      Credential       : Identity.Identifiers.Entities.Credential_Id;
+      Expected_Version : Identity.Versions.Entity_Version;
+      Presented        : Identity.WebAuthn.Credentials.Sign_Count)
+      return Identity.WebAuthn.Credentials.Assertion_Status;
 
    overriding function Remove_TOTP
      (Repository : in out Store;

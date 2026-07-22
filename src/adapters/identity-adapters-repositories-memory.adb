@@ -161,6 +161,7 @@ package body Identity.Adapters.Repositories.Memory is
       Repository.External_Replays :=
         [others => (Present => False, Fingerprint => <>)];
       Repository.TOTP_Credentials := [others => (Present => False, Value => <>)];
+      Repository.Passkey_Credentials := [others => (Present => False, Value => <>)];
       Repository.Idempotency :=
         [others =>
            (Present => False,
@@ -3689,6 +3690,84 @@ package body Identity.Adapters.Repositories.Memory is
          end if;
       end loop;
    end Find_TOTP_Credential;
+
+   overriding function Register_Passkey
+     (Repository : in out Store;
+      Credential : Identity.WebAuthn.Credentials.Passkey_Credential_Record)
+      return Command_Status
+   is
+      Free : Natural := 0;
+   begin
+      for Index in Repository.Passkey_Credentials'Range loop
+         if Repository.Passkey_Credentials (Index).Present then
+            if Same_Credential
+              (Repository.Passkey_Credentials (Index).Value.Id, Credential.Id)
+            then
+               return Uniqueness_Conflict;
+            end if;
+         elsif Free = 0 then
+            Free := Index;
+         end if;
+      end loop;
+
+      if Free = 0 then
+         return Capacity_Conflict;
+      end if;
+
+      Repository.Passkey_Credentials (Free) := (Present => True, Value => Credential);
+      return Applied;
+   end Register_Passkey;
+
+   overriding procedure Find_Passkey_Credential
+     (Repository : Store;
+      Credential : Identity.Identifiers.Entities.Credential_Id;
+      Found      : out Boolean;
+      Value      : out Identity.WebAuthn.Credentials.Passkey_Credential_Record)
+   is
+   begin
+      Found := False;
+      for Slot of Repository.Passkey_Credentials loop
+         if Slot.Present and then Same_Credential (Slot.Value.Id, Credential) then
+            Value := Slot.Value;
+            Found := True;
+            return;
+         end if;
+      end loop;
+   end Find_Passkey_Credential;
+
+   overriding function Accept_Passkey_Assertion
+     (Repository       : in out Store;
+      Credential       : Identity.Identifiers.Entities.Credential_Id;
+      Expected_Version : Identity.Versions.Entity_Version;
+      Presented        : Identity.WebAuthn.Credentials.Sign_Count)
+      return Identity.WebAuthn.Credentials.Assertion_Status
+   is
+      use type Identity.WebAuthn.Credentials.Assertion_Status;
+      Admission : Identity.WebAuthn.Credentials.Assertion_Status;
+   begin
+      for Slot of Repository.Passkey_Credentials loop
+         if Slot.Present and then Same_Credential (Slot.Value.Id, Credential) then
+            if not Identity.Versions.Same_Entity_Version
+              (Slot.Value.Version, Expected_Version)
+            then
+               return Identity.WebAuthn.Credentials.Version_Conflict;
+            end if;
+
+            Admission :=
+              Identity.WebAuthn.Credentials.Admit_Assertion (Slot.Value, Presented);
+            if Admission /= Identity.WebAuthn.Credentials.Accepted then
+               return Admission;
+            end if;
+
+            Slot.Value.Highest_Sign_Count := Presented;
+            Slot.Value.Version :=
+              Identity.Versions.Next_Entity_Version (Slot.Value.Version);
+            return Identity.WebAuthn.Credentials.Accepted;
+         end if;
+      end loop;
+
+      return Identity.WebAuthn.Credentials.Unknown;
+   end Accept_Passkey_Assertion;
 
    overriding function Remove_TOTP
      (Repository : in out Store;

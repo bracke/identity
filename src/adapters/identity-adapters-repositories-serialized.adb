@@ -2076,6 +2076,65 @@ package body Identity.Adapters.Repositories.Serialized is
          raise;
    end Find_TOTP_Credential;
 
+   overriding function Register_Passkey
+     (Repository : in out Store;
+      Credential : Identity.WebAuthn.Credentials.Passkey_Credential_Record)
+      return Stores.Command_Status
+   is
+   begin
+      Repository.Guard.Seize;
+      declare
+         Result : constant Stores.Command_Status :=
+           Stores.Register_Passkey (Repository.Inner.all, Credential);
+      begin
+         Repository.Guard.Release;
+         return Result;
+      end;
+   exception
+      when others =>
+         Repository.Guard.Release;
+         raise;
+   end Register_Passkey;
+
+   overriding procedure Find_Passkey_Credential
+     (Repository : Store;
+      Credential : Identity.Identifiers.Entities.Credential_Id;
+      Found      : out Boolean;
+      Value      : out Identity.WebAuthn.Credentials.Passkey_Credential_Record)
+   is
+   begin
+      Repository.Guard.Seize;
+      Stores.Find_Passkey_Credential (Repository.Inner.all, Credential, Found, Value);
+      Repository.Guard.Release;
+   exception
+      when others =>
+         Repository.Guard.Release;
+         raise;
+   end Find_Passkey_Credential;
+
+   overriding function Accept_Passkey_Assertion
+     (Repository       : in out Store;
+      Credential       : Identity.Identifiers.Entities.Credential_Id;
+      Expected_Version : Identity.Versions.Entity_Version;
+      Presented        : Identity.WebAuthn.Credentials.Sign_Count)
+      return Identity.WebAuthn.Credentials.Assertion_Status
+   is
+   begin
+      Repository.Guard.Seize;
+      declare
+         Result : constant Identity.WebAuthn.Credentials.Assertion_Status :=
+           Stores.Accept_Passkey_Assertion
+             (Repository.Inner.all, Credential, Expected_Version, Presented);
+      begin
+         Repository.Guard.Release;
+         return Result;
+      end;
+   exception
+      when others =>
+         Repository.Guard.Release;
+         raise;
+   end Accept_Passkey_Assertion;
+
    overriding function Remove_TOTP
      (Repository : in out Store;
       Credential : Identity.Identifiers.Entities.Credential_Id;

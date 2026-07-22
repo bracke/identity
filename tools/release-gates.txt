@@ -242,14 +242,14 @@ hand. If the release check reports this block stale, paste the
 text it prints -- do not edit the numbers to match.
 
   event types                 55
-  mutating operations         60
-  ..audited                   59
+  mutating operations         62
+  ..audited                   61
   ..exempt (justified)        1
-  audited overloads           116
+  audited overloads           118
   context-free overloads      5
   proved packages             12
   security invariants         80
-  registered test routines    93
+  registered test routines    94
 <!-- end generated: identity-facts -->
 
 Cost

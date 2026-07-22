@@ -1115,6 +1115,41 @@ package body Identity.Adapters.Repositories.Recording is
       Stores.Find_TOTP_Credential (Repository.Inner.all, Credential, Found, Value);
    end Find_TOTP_Credential;
 
+   overriding function Register_Passkey
+     (Repository : in out Store;
+      Credential : Identity.WebAuthn.Credentials.Passkey_Credential_Record)
+      return Stores.Command_Status
+   is
+   begin
+      Repository.Calls := Repository.Calls + 1;
+      Repository.Total := Repository.Total + 1;
+      return Stores.Register_Passkey (Repository.Inner.all, Credential);
+   end Register_Passkey;
+
+   overriding procedure Find_Passkey_Credential
+     (Repository : Store;
+      Credential : Identity.Identifiers.Entities.Credential_Id;
+      Found      : out Boolean;
+      Value      : out Identity.WebAuthn.Credentials.Passkey_Credential_Record)
+   is
+   begin
+      Stores.Find_Passkey_Credential (Repository.Inner.all, Credential, Found, Value);
+   end Find_Passkey_Credential;
+
+   overriding function Accept_Passkey_Assertion
+     (Repository       : in out Store;
+      Credential       : Identity.Identifiers.Entities.Credential_Id;
+      Expected_Version : Identity.Versions.Entity_Version;
+      Presented        : Identity.WebAuthn.Credentials.Sign_Count)
+      return Identity.WebAuthn.Credentials.Assertion_Status
+   is
+   begin
+      Repository.Calls := Repository.Calls + 1;
+      Repository.Total := Repository.Total + 1;
+      return Stores.Accept_Passkey_Assertion
+        (Repository.Inner.all, Credential, Expected_Version, Presented);
+   end Accept_Passkey_Assertion;
+
    overriding function Remove_TOTP
      (Repository : in out Store;
       Credential : Identity.Identifiers.Entities.Credential_Id;

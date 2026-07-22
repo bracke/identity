@@ -1,3 +1,5 @@
+with Identity.Operations.Factors.Register_Passkey;
+with Identity.Operations.Factors.Accept_Passkey_Assertion;
 with Identity.WebAuthn.Credentials;
 with Identity.Audit.Chain;
 with AUnit.Assertions;
@@ -19845,6 +19847,86 @@ package body Identity_Tests_Cases is
               "passkey: a counterless authenticator is accepted");
    end Test_93_passkey_clone_detection;
 
+   --  Passkey end to end through the store: register a passkey, accept a fresh
+   --  assertion, prove a replay (same sign count) is a cloned authenticator, and
+   --  a higher count is accepted again -- the possession analogue of the TOTP
+   --  counter, wired through the audited operations and the store.
+   procedure Test_94_passkey_store_and_accept
+     (T : in out AUnit.Test_Cases.Test_Case'Class)
+   is
+      pragma Unreferenced (T);
+      package PK renames Identity.WebAuthn.Credentials;
+      package RP renames Identity.Operations.Factors.Register_Passkey;
+      package AP renames Identity.Operations.Factors.Accept_Passkey_Assertion;
+      use type PK.Assertion_Status;
+      use type PK.Sign_Count;
+
+      type PS_Store_Access is
+        access Identity.Adapters.Repositories.Memory.Store;
+      PS_Ptr : constant PS_Store_Access :=
+        new Identity.Adapters.Repositories.Memory.Store;
+      SR : Identity.Adapters.Repositories.Stores.Store_Interface'Class renames
+        Identity.Adapters.Repositories.Stores.Store_Interface'Class (PS_Ptr.all);
+
+      function PS_Id (Suffix : String)
+        return Identity.Identifiers.Encoded_Identifier is
+        (Identity.Identifiers.From_String
+           ("f1000000-0000-0000-0000-0000000000" & Suffix));
+
+      PR : constant Identity.Identifiers.Entities.Principal_Id :=
+        Identity.Identifiers.Entities.Principal (PS_Id ("01"));
+      CR : constant Identity.Identifiers.Entities.Credential_Id :=
+        Identity.Identifiers.Entities.Credential (PS_Id ("02"));
+
+      Command : Identity.Adapters.Repositories.Stores.Command_Status;
+      Found   : Boolean;
+      Rec     : PK.Passkey_Credential_Record;
+
+      function Present_Assertion (Presented : PK.Sign_Count) return PK.Assertion_Status is
+         Ok : Boolean;
+         Cur : PK.Passkey_Credential_Record;
+      begin
+         Identity.Adapters.Repositories.Stores.Find_Passkey_Credential
+           (SR, CR, Ok, Cur);
+         return AP.Execute
+           (SR, CR, PR, Cur.Version, Presented,
+            Audit_Context, Next_Audit_Event, 1);
+      end Present_Assertion;
+   begin
+      Command := Identity.Adapters.Repositories.Stores.Create_Principal
+        (SR, (Id => PR, Kind => Identity.Principals.Kinds.Human,
+              State => Identity.Principals.Definitions.Active, Version => 0));
+      Assert (Command = Identity.Adapters.Repositories.Stores.Applied,
+              "passkey-e2e: principal created");
+
+      Command := RP.Execute
+        (SR,
+         (Id => CR, Principal => PR,
+          Credential_Reference => Identity.Text.Bounded.From_String ("cred-ref-1"),
+          Public_Key => Identity.Text.Bounded.From_String ("cose-public-key"),
+          Authenticator_Model => Identity.Text.Bounded.From_String ("aaguid-1"),
+          Highest_Sign_Count => 0,
+          State => Identity.Credentials.States.Active,
+          Created_At => 1, Version => 0),
+         Audit_Context, Next_Audit_Event, 1);
+      Assert (Command = Identity.Adapters.Repositories.Stores.Applied,
+              "passkey-e2e: passkey registered");
+      Identity.Adapters.Repositories.Stores.Find_Passkey_Credential (SR, CR, Found, Rec);
+      Assert (Found and then Rec.Highest_Sign_Count = 0,
+              "passkey-e2e: registered credential is readable at count 0");
+
+      Assert (Present_Assertion (5) = PK.Accepted,
+              "passkey-e2e: a fresh assertion (count 5) is accepted");
+      Assert (Present_Assertion (5) = PK.Cloned,
+              "passkey-e2e: replaying the same sign count is a cloned authenticator");
+      Assert (Present_Assertion (6) = PK.Accepted,
+              "passkey-e2e: a higher sign count is accepted again");
+
+      Identity.Adapters.Repositories.Stores.Find_Passkey_Credential (SR, CR, Found, Rec);
+      Assert (Rec.Highest_Sign_Count = 6,
+              "passkey-e2e: the replay state advanced to the highest accepted count");
+   end Test_94_passkey_store_and_accept;
+
    --  Fuzz regressions (spec 52): the bounded, attacker-controlled decoders must
    --  classify every input into a bounded outcome and never raise or over-read.
    --  This drives adversarial inputs -- every single byte, malformed multi-byte
@@ -20213,6 +20295,9 @@ package body Identity_Tests_Cases is
       Registration.Register_Routine
         (T, Test_93_passkey_clone_detection'Access,
          "Test_93_passkey_clone_detection");
+      Registration.Register_Routine
+        (T, Test_94_passkey_store_and_accept'Access,
+         "Test_94_passkey_store_and_accept");
    end Register_Tests;
 
    overriding function Name (T : Test_Case) return AUnit.Message_String is

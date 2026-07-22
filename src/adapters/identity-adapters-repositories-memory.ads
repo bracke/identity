@@ -21,6 +21,7 @@ with Identity.Identities.Subjects;
 with Identity.Identifiers.Entities;
 with Identity.Identifiers.Registry;
 with Identity.One_Time_Passwords.Credentials;
+with Identity.WebAuthn.Credentials;
 with Identity.Operations.Idempotency;
 with Identity.Passwords.Credentials;
 with Identity.Projections.Sessions;
@@ -60,6 +61,7 @@ package Identity.Adapters.Repositories.Memory is
    Max_External_Bindings : constant Natural := 128;
    Max_External_Replay_Markers : constant Natural := 512;
    Max_TOTP_Credentials : constant Natural := 128;
+   Max_Passkey_Credentials : constant Natural := 128;
    Max_Idempotency_Records : constant Natural := 256;
 
    --  The command outcome type now belongs to the SPI. These renamings keep
@@ -621,6 +623,24 @@ package Identity.Adapters.Repositories.Memory is
       Found      : out Boolean;
       Value      : out Identity.One_Time_Passwords.Credentials.TOTP_Credential_Record);
 
+   overriding function Register_Passkey
+     (Repository : in out Store;
+      Credential : Identity.WebAuthn.Credentials.Passkey_Credential_Record)
+      return Command_Status;
+
+   overriding procedure Find_Passkey_Credential
+     (Repository : Store;
+      Credential : Identity.Identifiers.Entities.Credential_Id;
+      Found      : out Boolean;
+      Value      : out Identity.WebAuthn.Credentials.Passkey_Credential_Record);
+
+   overriding function Accept_Passkey_Assertion
+     (Repository       : in out Store;
+      Credential       : Identity.Identifiers.Entities.Credential_Id;
+      Expected_Version : Identity.Versions.Entity_Version;
+      Presented        : Identity.WebAuthn.Credentials.Sign_Count)
+      return Identity.WebAuthn.Credentials.Assertion_Status;
+
    overriding function Remove_TOTP
      (Repository : in out Store;
       Credential : Identity.Identifiers.Entities.Credential_Id;
@@ -897,6 +917,11 @@ private
       Value   : Identity.One_Time_Passwords.Credentials.TOTP_Credential_Record;
    end record;
 
+   type Passkey_Credential_Slot is record
+      Present : Boolean := False;
+      Value   : Identity.WebAuthn.Credentials.Passkey_Credential_Record;
+   end record;
+
    type Idempotency_Slot is record
       Present   : Boolean := False;
       Operation : Identity.Operations.Idempotency.Idempotent_Operation_Kind :=
@@ -936,6 +961,8 @@ private
      array (Positive range 1 .. Max_External_Replay_Markers) of External_Replay_Slot;
    type TOTP_Credential_Array is
      array (Positive range 1 .. Max_TOTP_Credentials) of TOTP_Credential_Slot;
+   type Passkey_Credential_Array is
+     array (Positive range 1 .. Max_Passkey_Credentials) of Passkey_Credential_Slot;
    type Idempotency_Array is
      array (Positive range 1 .. Max_Idempotency_Records) of Idempotency_Slot;
 
@@ -960,6 +987,7 @@ private
       External_Bindings : External_Binding_Array;
       External_Replays  : External_Replay_Array;
       TOTP_Credentials  : TOTP_Credential_Array;
+      Passkey_Credentials : Passkey_Credential_Array;
       Idempotency       : Idempotency_Array;
    end record;
 end Identity.Adapters.Repositories.Memory;
