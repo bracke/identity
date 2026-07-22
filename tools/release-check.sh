@@ -169,6 +169,27 @@ else
   FAILED=1
 fi
 
+echo "== source archive + hygiene =="
+# Gate (spec 67 archive hygiene, spec 68 source archive): produce the release
+# source archive -- sources, registries, tools, docs, and the generated reports,
+# with build outputs excluded -- and scan it for prohibited material so the
+# bundle cannot ship a private key or an environment file.
+archive="$ROOT/generated/release/identity-source.tar.gz"
+tar -czf "$archive" -C "$ROOT" \
+  --exclude='*/obj' --exclude='*/bin' --exclude='*/alire' \
+  --exclude='*.tar.gz' \
+  src crates registries tools docs generated/release \
+  alire.toml README.md CHANGELOG.md SECURITY.md 2>/dev/null
+if [ ! -s "$archive" ]; then
+  echo "release-check:source-archive:failed:not-produced"
+  FAILED=1
+elif tar -tzf "$archive" | grep -qiE '\.pem$|\.key$|(^|/)id_rsa($|\.)|\.env$'; then
+  echo "release-check:source-archive:failed:prohibited-file"
+  FAILED=1
+else
+  echo "release-check:source-archive:passed:$(tar -tzf "$archive" | wc -l)-entries"
+fi
+
 if [ "$FAILED" -eq 0 ]; then
   echo "release-check:result:passed"
   exit 0

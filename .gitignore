@@ -13,3 +13,4 @@ generated/evidence/
 alire/
 crates/*/alire/
 crates/*/generated/
+generated/release/*.tar.gz
