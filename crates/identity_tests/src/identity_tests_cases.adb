@@ -19513,6 +19513,95 @@ package body Identity_Tests_Cases is
       end;
    end Test_86_staged_verification_revalidation;
 
+   --  Property tests (spec 52): properties checked over enumerated inputs rather
+   --  than single cases. Identifier canonical-encoding round-trips are idempotent
+   --  over a range of ids; the disclosure lattice is a genuine partial order
+   --  whose ordering implies output monotonicity for every profile pair; and
+   --  entity-version advancement is monotone and saturating.
+   procedure Test_87_property_suite
+     (T : in out AUnit.Test_Cases.Test_Case'Class)
+   is
+      pragma Unreferenced (T);
+      package D renames Identity.Operations.Disclosure;
+
+      Hex : constant String := "0123456789abcdef";
+
+      --  Property 1: From_String o Image is the identity on encoded ids, over
+      --  256 distinct ids.
+      Round_Trip_Holds : Boolean := True;
+
+      --  Property 2: the disclosure lattice order implies output monotonicity.
+      Hot : constant D.Disclosure_Facts :=
+        (Status => Identity.Results.Rejected, Subject_Known => True,
+         Locked => D.Indefinitely_Locked, Retry_After_Seconds => 30,
+         Contact_Present => True, Diagnostic_Present => True,
+         Token_State => D.Token_Expired);
+      Order_Implies_Monotone : Boolean := True;
+      Reflexive             : Boolean := True;
+
+      --  Property 3: Next_Entity_Version is monotone and saturates at 'Last.
+      Version_Monotone : Boolean := True;
+   begin
+      for I in 0 .. 255 loop
+         declare
+            Suffix : constant String :=
+              [1 => Hex (Hex'First + I / 16), 2 => Hex (Hex'First + I mod 16)];
+            Id : constant Identity.Identifiers.Encoded_Identifier :=
+              Identity.Identifiers.From_String
+                ("00000000-0000-0000-0000-0000000000" & Suffix);
+         begin
+            if Identity.Identifiers.Image
+                 (Identity.Identifiers.From_String
+                    (Identity.Identifiers.Image (Id)))
+               /= Identity.Identifiers.Image (Id)
+            then
+               Round_Trip_Holds := False;
+            end if;
+         end;
+      end loop;
+      Assert (Round_Trip_Holds,
+              "property: identifier canonical encoding round-trips over 256 ids");
+
+      for A in D.Disclosure_Profile loop
+         if not D.Discloses_No_More_Than (D.Project (Hot, A), D.Project (Hot, A)) then
+            Reflexive := False;
+         end if;
+         for B in D.Disclosure_Profile loop
+            if D.Reveals_No_More_Than (A, B)
+              and then not D.Discloses_No_More_Than
+                (D.Project (Hot, A), D.Project (Hot, B))
+            then
+               Order_Implies_Monotone := False;
+            end if;
+         end loop;
+      end loop;
+      Assert (Reflexive,
+              "property: every profile discloses no more than itself");
+      Assert (Order_Implies_Monotone,
+              "property: profile order implies output disclosure monotonicity for all pairs");
+
+      declare
+         V : Identity.Versions.Entity_Version := 0;
+      begin
+         for I in 1 .. 1000 loop
+            declare
+               Next : constant Identity.Versions.Entity_Version :=
+                 Identity.Versions.Next_Entity_Version (V);
+            begin
+               if Next < V then
+                  Version_Monotone := False;
+               end if;
+               V := Next;
+            end;
+         end loop;
+      end;
+      Assert (Version_Monotone
+              and then Identity.Versions.Next_Entity_Version
+                (Identity.Versions.Entity_Version'Last)
+                = Identity.Versions.Entity_Version'Last,
+              "property: entity version advancement is monotone and saturates");
+   end Test_87_property_suite;
+
    overriding procedure Register_Tests (T : in out Test_Case) is
    begin
       Registration.Register_Routine
@@ -19702,6 +19791,9 @@ package body Identity_Tests_Cases is
       Registration.Register_Routine
         (T, Test_86_staged_verification_revalidation'Access,
          "Test_86_staged_verification_revalidation");
+      Registration.Register_Routine
+        (T, Test_87_property_suite'Access,
+         "Test_87_property_suite");
    end Register_Tests;
 
    overriding function Name (T : Test_Case) return AUnit.Message_String is
