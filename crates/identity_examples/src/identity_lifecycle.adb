@@ -22,6 +22,9 @@ with Identity.Operations.Factors.Verify_TOTP;
 with Identity.Operations.Passwords.Complete_Reset;
 with Identity.Operations.Passwords.Request_Reset;
 with Identity.Operations.Sessions.Revoke_Family;
+with Identity.Operations.Verification.Complete;
+with Identity.Operations.Verification.Request;
+with Identity.Contacts.Bindings;
 with Identity.Secrets.Tokens;
 with Identity.Tokens.Verification;
 with Identity.One_Time_Passwords.Credentials;
@@ -165,6 +168,20 @@ procedure Identity_Lifecycle is
           ("d0000000-0000-0000-0000-0000000000e2"));
    Reset_New_Password : constant Identity.Secrets.Passwords.New_Password :=
      Identity.Secrets.Text.From_UTF_8 ("reset example password");
+   Contact_Binding : constant Identity.Identifiers.Entities.Contact_Binding_Id :=
+     Identity.Identifiers.Entities.Contact_Binding
+       (Identity.Identifiers.From_String
+          ("d0000000-0000-0000-0000-0000000000f1"));
+   Contact_Kind : constant Identity.Identifiers.Registry.Registry_Id :=
+     Identity.Identifiers.Registry.From_String ("identity.contact.email");
+   Contact_Value : constant Identity.Text.Bounded.Bounded_Text :=
+     Identity.Text.Bounded.From_String ("contact@example.invalid");
+   Verify_Token : constant Identity.Identifiers.Entities.Token_Id :=
+     Identity.Identifiers.Entities.Token
+       (Identity.Identifiers.From_String
+          ("d0000000-0000-0000-0000-0000000000f2"));
+   Verify_Secret : constant Identity.Secrets.Tokens.Verification_Token_Secret :=
+     Identity.Secrets.Text.From_UTF_8 ("example-contact-verify-secret");
 
    --  Every operation below that changes stored state also writes an audit
    --  event, and refuses the change if that event cannot be stored. That is
@@ -449,6 +466,29 @@ begin
             Password => Reset_New_Password,
             Expected_Token_Version => 0,
             Expected_Predecessor_Version => 0),
+         Audit_Context, Next_Audit_Event, 4)
+      = Identity.Tokens.Verification.Valid
+      --  Contact verification: request a token bound to a pending contact, then
+      --  complete it, marking the contact verified.
+      and then Identity.Operations.Verification.Request.Execute
+        (Store,
+         Identity.Contacts.Bindings.Contact_Binding_Record'
+           (Id => Contact_Binding,
+            Principal => Principal,
+            Kind => Contact_Kind,
+            Normalized_Value => Contact_Value,
+            State => Identity.Contacts.Bindings.Pending_Verification,
+            Version => 0),
+         Identity.Operations.Verification.Request.Verification_Token_Request'
+           (Id => Verify_Token,
+            Principal => Principal,
+            Secret => Verify_Secret,
+            Issued_At => 4,
+            Expires_At => Identity.Times.Expirations.At_Time (9_000)),
+         Audit_Context, Next_Audit_Event, 4)
+      = Identity.Adapters.Repositories.Memory.Applied
+      and then Identity.Operations.Verification.Complete.Execute
+        (Store, Verify_Token, Verify_Secret, 4, Contact_Binding,
          Audit_Context, Next_Audit_Event, 4)
       = Identity.Tokens.Verification.Valid
       --  A service credential: issue an API key and authenticate with it
