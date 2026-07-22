@@ -52,7 +52,20 @@ records its outcome to generated/evidence/<name>.txt; identity_tools refuses to
 generate release reports if any evidence file is missing or records a failure,
 so a suite that never ran cannot be reported as satisfied.
 
+- version metadata: alire.toml declares a present, well-formed semver version
+- dependency lockfile: alire/alire.lock exists and is non-empty
+- clean repository: uncommitted tracked-source changes are reported (build and
+  generated outputs excluded); a release runs against a committed tree
 - alr build of the library under -gnatwe (warnings are errors)
+- alr build --release of the library (the release-profile build the provenance
+  asserts), in addition to the development build that runs the suites
+- cryptolib self-tests: ../cryptolib/tests known-answer suite builds and passes
+- api surface: generated/release/api-surface.txt lists every public and adapter
+  spec (the API/SPI surface a release exposes)
+- source archive + hygiene: generated/release/identity-source.tar.gz is built
+  (build outputs excluded) and scanned for prohibited material (keys, env files)
+- artifact digests: sha256 of every generated report and the source archive,
+  replacing the placeholder record
 - crates/identity_tests AUnit suite                              [evidence: aunit]
   Registered AUnit test routines in identity_tests_cases.adb (the count is in
   the generated facts block above). A failure is reported against the named
