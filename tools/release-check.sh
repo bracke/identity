@@ -169,6 +169,20 @@ else
   FAILED=1
 fi
 
+echo "== api surface =="
+# Artifact (spec 68 api-documentation): a manifest of every public and adapter
+# spec -- the crate's API and SPI surface -- so a release records exactly what
+# it exposes. A full gnatdoc render is a separate, tool-dependent step.
+api_surface="$ROOT/generated/release/api-surface.txt"
+{ find "$ROOT/src/public" "$ROOT/src/adapters" -name '*.ads' | sed "s#$ROOT/##" | sort; } \
+  > "$api_surface"
+if [ -s "$api_surface" ]; then
+  echo "release-check:api-surface:passed:$(wc -l < "$api_surface" | tr -d ' ')-specs"
+else
+  echo "release-check:api-surface:failed:no-specs"
+  FAILED=1
+fi
+
 echo "== source archive + hygiene =="
 # Gate (spec 67 archive hygiene, spec 68 source archive): produce the release
 # source archive -- sources, registries, tools, docs, and the generated reports,
@@ -188,6 +202,23 @@ elif tar -tzf "$archive" | grep -qiE '\.pem$|\.key$|(^|/)id_rsa($|\.)|\.env$'; t
   FAILED=1
 else
   echo "release-check:source-archive:passed:$(tar -tzf "$archive" | wc -l)-entries"
+fi
+
+echo "== cryptolib self-tests =="
+# Gate (spec 67): the cryptographic backend must pass its own known-answer
+# tests, so the crate does not ship on a cryptolib whose primitives regressed.
+crypto_tests="$ROOT/../cryptolib/tests"
+if [ -f "$crypto_tests/tests.gpr" ]; then
+  if (cd "$crypto_tests" && alr build >/dev/null 2>&1) \
+     && ct_out=$(cd "$crypto_tests" && ./bin/tests 2>&1); then
+    echo "release-check:cryptolib-selftests:passed:$(printf '%s' "$ct_out" | tail -1)"
+  else
+    echo "release-check:cryptolib-selftests:failed"
+    printf '%s\n' "$ct_out" | tail -10
+    FAILED=1
+  fi
+else
+  echo "release-check:cryptolib-selftests:skipped:not-present"
 fi
 
 if [ "$FAILED" -eq 0 ]; then
