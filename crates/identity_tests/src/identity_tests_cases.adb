@@ -19695,6 +19695,71 @@ package body Identity_Tests_Cases is
               & "envelopes without raising and never reports Verified");
    end Test_88_fuzz_regressions;
 
+   --  Resource bounds (spec 53): every store is a fixed-capacity value and every
+   --  public text is byte-bounded. This exercises those bounds adversarially --
+   --  filling a store past its principal capacity, and validating text at and
+   --  beyond the maximum -- and asserts the bound is enforced (a capacity
+   --  conflict, a Too_Large classification) rather than unbounded growth or a
+   --  crash.
+   procedure Test_89_resource_bounds
+     (T : in out AUnit.Test_Cases.Test_Case'Class)
+   is
+      pragma Unreferenced (T);
+
+      type RBS_Store_Access is
+        access Identity.Adapters.Repositories.Memory.Store;
+      RB_Ptr : constant RBS_Store_Access :=
+        new Identity.Adapters.Repositories.Memory.Store;
+      SR : Identity.Adapters.Repositories.Stores.Store_Interface'Class renames
+        Identity.Adapters.Repositories.Stores.Store_Interface'Class (RB_Ptr.all);
+
+      function Nth (I : Natural) return Identity.Identifiers.Entities.Principal_Id is
+         Raw    : constant String := Natural'Image (I);
+         Digits_Text : constant String := Raw (Raw'First + 1 .. Raw'Last);
+         Padded : String (1 .. 12) := [others => '0'];
+      begin
+         Padded (Padded'Last - Digits_Text'Length + 1 .. Padded'Last) := Digits_Text;
+         return Identity.Identifiers.Entities.Principal
+           (Identity.Identifiers.From_String
+              ("e0000000-0000-0000-0000-" & Padded));
+      end Nth;
+
+      Command       : Identity.Adapters.Repositories.Stores.Command_Status;
+      Applied_Count : Natural := 0;
+      Hit_Capacity  : Boolean := False;
+   begin
+      --  Fill past the fixed principal capacity; every insert is either applied
+      --  or a capacity conflict, and the store stops accepting at its bound.
+      for I in 1 .. Identity.Adapters.Repositories.Memory.Max_Principals + 8 loop
+         Command := Identity.Adapters.Repositories.Stores.Create_Principal
+           (SR, (Id => Nth (I), Kind => Identity.Principals.Kinds.Human,
+                 State => Identity.Principals.Definitions.Active, Version => 0));
+         if Command = Identity.Adapters.Repositories.Stores.Applied then
+            Applied_Count := Applied_Count + 1;
+         elsif Command = Identity.Adapters.Repositories.Stores.Capacity_Conflict then
+            Hit_Capacity := True;
+         end if;
+      end loop;
+      Assert (Hit_Capacity
+              and then Applied_Count <= Identity.Adapters.Repositories.Memory.Max_Principals,
+              "resource-bound: principal creation is capped and reports a capacity "
+              & "conflict at the bound, never growing unbounded");
+
+      --  Public text is byte-bounded: exactly the maximum validates, one over is
+      --  rejected as Too_Large -- a bounded classification, not a crash.
+      declare
+         At_Max  : constant String (1 .. Identity.Limits.Max_Public_Text_Bytes) :=
+           [others => 'a'];
+         Over    : constant String (1 .. Identity.Limits.Max_Public_Text_Bytes + 1) :=
+           [others => 'a'];
+      begin
+         Assert (Identity.Text.UTF_8.Validate (At_Max) = Identity.Text.UTF_8.Valid,
+                 "resource-bound: text at the maximum length validates");
+         Assert (Identity.Text.UTF_8.Validate (Over) = Identity.Text.UTF_8.Too_Large,
+                 "resource-bound: text one byte over the maximum is bounded to Too_Large");
+      end;
+   end Test_89_resource_bounds;
+
    overriding procedure Register_Tests (T : in out Test_Case) is
    begin
       Registration.Register_Routine
@@ -19890,6 +19955,9 @@ package body Identity_Tests_Cases is
       Registration.Register_Routine
         (T, Test_88_fuzz_regressions'Access,
          "Test_88_fuzz_regressions");
+      Registration.Register_Routine
+        (T, Test_89_resource_bounds'Access,
+         "Test_89_resource_bounds");
    end Register_Tests;
 
    overriding function Name (T : Test_Case) return AUnit.Message_String is

@@ -236,7 +236,7 @@ text it prints -- do not edit the numbers to match.
   context-free overloads      5
   proved packages             12
   security invariants         80
-  registered test routines    88
+  registered test routines    89
 <!-- end generated: identity-facts -->
 
 Cost
