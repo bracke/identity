@@ -13,4 +13,6 @@ package Identity.Credentials.Kinds is
      Identity.Identifiers.Registry.From_String ("identity.credential.external-binding");
    Generic_Factor : constant Identity.Identifiers.Registry.Registry_Id :=
      Identity.Identifiers.Registry.From_String ("identity.credential.generic-factor");
+   Passkey : constant Identity.Identifiers.Registry.Registry_Id :=
+     Identity.Identifiers.Registry.From_String ("identity.credential.passkey");
 end Identity.Credentials.Kinds;

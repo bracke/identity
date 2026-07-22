@@ -133,6 +133,9 @@ not named here.
 - `Identity.Lockout` - lockout state and cleanup-independent evaluation.
 - `Identity.Multi_Factor` - factor kinds, enrollment state, and challenges.
 - `Identity.One_Time_Passwords` - one-time password material and replay state.
+- `Identity.WebAuthn` - public-key possession factors (passkeys): the credential
+  model and signature-counter clone detection. Signature verification and
+  attestation parsing are the identity_webauthn adapter's job.
 - `Identity.Operations` - the transport-neutral operation families
   (authentication, sessions, accounts, API keys, recovery, disclosure, budgets,
   idempotency, and post-commit admission).

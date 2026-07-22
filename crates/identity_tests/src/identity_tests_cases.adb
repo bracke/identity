@@ -1,3 +1,4 @@
+with Identity.WebAuthn.Credentials;
 with Identity.Audit.Chain;
 with AUnit.Assertions;
 with Ada.Real_Time;
@@ -19790,6 +19791,60 @@ package body Identity_Tests_Cases is
               "audit-chain: modifying an event is detected (head changes)");
    end Test_92_audit_log_tamper_evidence;
 
+   --  Passkey / WebAuthn clone detection (the modern phishing-resistant factor
+   --  the crate had no model for). The signature counter is the possession
+   --  analogue of the TOTP counter: a strictly greater count is a fresh
+   --  assertion; equal-or-lower with either non-zero is a cloned authenticator;
+   --  both zero is a counterless authenticator, which the spec permits.
+   procedure Test_93_passkey_clone_detection
+     (T : in out AUnit.Test_Cases.Test_Case'Class)
+   is
+      pragma Unreferenced (T);
+      package PK renames Identity.WebAuthn.Credentials;
+      use type PK.Sign_Count_Verdict;
+      use type PK.Assertion_Status;
+
+      function Cred (Count : PK.Sign_Count;
+                     State : Identity.Credentials.States.Credential_State)
+        return PK.Passkey_Credential_Record is
+        ((Id => Identity.Identifiers.Entities.Credential
+            (Identity.Identifiers.From_String
+               ("f2000000-0000-0000-0000-0000000000c1")),
+          Principal => Identity.Identifiers.Entities.Principal
+            (Identity.Identifiers.From_String
+               ("f2000000-0000-0000-0000-0000000000p1")),
+          Credential_Reference => Identity.Text.Bounded.From_String ("cred-ref"),
+          Public_Key => Identity.Text.Bounded.From_String ("cose-key"),
+          Authenticator_Model => Identity.Text.Bounded.From_String ("aaguid"),
+          Highest_Sign_Count => Count,
+          State => State,
+          Created_At => 0,
+          Version => 0));
+   begin
+      --  Sign-count verdict.
+      Assert (PK.Evaluate_Sign_Count (Stored => 5, Presented => 6) = PK.Fresh,
+              "passkey: a strictly greater sign count is a fresh assertion");
+      Assert (PK.Evaluate_Sign_Count (5, 5) = PK.Cloned_Authenticator
+              and then PK.Evaluate_Sign_Count (5, 4) = PK.Cloned_Authenticator,
+              "passkey: an equal or lower sign count is a cloned authenticator");
+      Assert (PK.Evaluate_Sign_Count (0, 0) = PK.Counterless,
+              "passkey: both counts zero is a counterless authenticator (permitted)");
+
+      --  Full admission against a stored credential.
+      Assert (PK.Admit_Assertion (Cred (5, Identity.Credentials.States.Active), 6)
+              = PK.Accepted,
+              "passkey: an active credential with a fresh count is accepted");
+      Assert (PK.Cloned_Assertion
+                (PK.Admit_Assertion (Cred (5, Identity.Credentials.States.Active), 5)),
+              "passkey: a replayed (cloned) assertion is detected");
+      Assert (PK.Unusable_Assertion
+                (PK.Admit_Assertion (Cred (5, Identity.Credentials.States.Revoked), 6)),
+              "passkey: a revoked credential cannot authenticate");
+      Assert (PK.Admit_Assertion (Cred (0, Identity.Credentials.States.Active), 0)
+              = PK.Accepted,
+              "passkey: a counterless authenticator is accepted");
+   end Test_93_passkey_clone_detection;
+
    --  Fuzz regressions (spec 52): the bounded, attacker-controlled decoders must
    --  classify every input into a bounded outcome and never raise or over-read.
    --  This drives adversarial inputs -- every single byte, malformed multi-byte
@@ -20155,6 +20210,9 @@ package body Identity_Tests_Cases is
       Registration.Register_Routine
         (T, Test_92_audit_log_tamper_evidence'Access,
          "Test_92_audit_log_tamper_evidence");
+      Registration.Register_Routine
+        (T, Test_93_passkey_clone_detection'Access,
+         "Test_93_passkey_clone_detection");
    end Register_Tests;
 
    overriding function Name (T : Test_Case) return AUnit.Message_String is
