@@ -273,6 +273,7 @@ with Identity.Service_Credentials;
 with Identity.Service_Principals;
 with Identity.Services.Construction;
 with Identity.Services.Contexts;
+with Identity.Sessions.Binding;
 with Identity.Sessions.Definitions;
 with Identity.Sessions.Activity;
 with Identity.Sessions.Assurance;
@@ -3453,6 +3454,7 @@ package body Identity_Tests_Cases is
          Absolute_Expires_At => (Present => True, Time_Point => 200),
          Remembered => False,
          Generation => 2,
+         Client_Binding => Identity.Sessions.Binding.Unbound,
          State => Identity.Sessions.Definitions.Active,
          Version => 0);
       Absolute_Expired_Session_Record : constant Identity.Sessions.Definitions.Session_Record :=
@@ -3485,6 +3487,7 @@ package body Identity_Tests_Cases is
          Absolute_Expires_At => (Present => True, Time_Point => 200),
          Remembered => False,
          Generation => 2,
+         Client_Binding => Identity.Sessions.Binding.Unbound,
          State => Identity.Sessions.Definitions.Active,
          Version => 0);
       Exhausted_Generation_Session_Record : constant Identity.Sessions.Definitions.Session_Record :=
@@ -6795,6 +6798,7 @@ package body Identity_Tests_Cases is
          Absolute_Expires_At => (Present => True, Time_Point => 300),
          Remembered => False,
          Generation => 0,
+         Client_Binding => Identity.Sessions.Binding.Unbound,
          State => Identity.Sessions.Definitions.Active,
          Version => 7);
       Domain_Session_View : constant Identity.Sessions.Projections.Session_Summary_Projection :=
@@ -7458,6 +7462,7 @@ package body Identity_Tests_Cases is
          Absolute_Expires_At => (Present => True, Time_Point => 200),
          Remembered => False,
          Generation => 4,
+         Client_Binding => Identity.Sessions.Binding.Unbound,
          State => Identity.Sessions.Definitions.Active,
          Version => 0);
       Step_Up_Binding : constant Identity.Multi_Factor.Step_Up.Step_Up_Binding :=
@@ -9868,6 +9873,7 @@ package body Identity_Tests_Cases is
                Absolute_Expires_At => (Present => True, Time_Point => 1000),
                Remembered => False,
                Generation => 0,
+               Client_Binding => Identity.Sessions.Binding.Unbound,
                State => Identity.Sessions.Definitions.Active,
                Version => 0), Audit_Context, Next_Audit_Event, 1)
          = Identity.Adapters.Repositories.Memory.State_Conflict,
@@ -9897,6 +9903,7 @@ package body Identity_Tests_Cases is
              Absolute_Expires_At => (Present => True, Time_Point => 1000),
              Remembered => False,
              Generation => 0,
+             Client_Binding => Identity.Sessions.Binding.Unbound,
              State => Identity.Sessions.Definitions.Active,
              Version => 0), Audit_Context, Next_Audit_Event, 1)
          = Identity.Adapters.Repositories.Memory.Applied,
@@ -10048,6 +10055,7 @@ package body Identity_Tests_Cases is
              Absolute_Expires_At => (Present => True, Time_Point => 1000),
              Remembered => False,
              Generation => 1,
+             Client_Binding => Identity.Sessions.Binding.Unbound,
              State => Identity.Sessions.Definitions.Active,
              Version => 0), Audit_Context, Next_Audit_Event, 1)
          = Identity.Adapters.Repositories.Memory.Applied,
@@ -10146,6 +10154,7 @@ package body Identity_Tests_Cases is
              Absolute_Expires_At => (Present => True, Time_Point => 1000),
              Remembered => False,
              Generation => 2,
+             Client_Binding => Identity.Sessions.Binding.Unbound,
              State => Identity.Sessions.Definitions.Active,
              Version => 0), Audit_Context, Next_Audit_Event, 1)
          = Identity.Adapters.Repositories.Memory.State_Conflict,
@@ -10330,6 +10339,7 @@ package body Identity_Tests_Cases is
              Absolute_Expires_At => (Present => True, Time_Point => 1000),
              Remembered => False,
              Generation => 2,
+             Client_Binding => Identity.Sessions.Binding.Unbound,
              State => Identity.Sessions.Definitions.Active,
              Version => 0), Audit_Context, Next_Audit_Event, 1)
          = Identity.Adapters.Repositories.Memory.Applied,
@@ -10388,6 +10398,7 @@ package body Identity_Tests_Cases is
              Absolute_Expires_At => (Present => True, Time_Point => 1000),
              Remembered => False,
              Generation => 3,
+             Client_Binding => Identity.Sessions.Binding.Unbound,
              State => Identity.Sessions.Definitions.Active,
              Version => 0), Audit_Context, Next_Audit_Event, 1)
          = Identity.Adapters.Repositories.Memory.Applied,
@@ -10443,6 +10454,7 @@ package body Identity_Tests_Cases is
              Absolute_Expires_At => (Present => True, Time_Point => 1000),
              Remembered => False,
              Generation => 4,
+             Client_Binding => Identity.Sessions.Binding.Unbound,
              State => Identity.Sessions.Definitions.Active,
              Version => 0), Audit_Context, Next_Audit_Event, 1)
          = Identity.Adapters.Repositories.Memory.Applied,
@@ -14072,6 +14084,7 @@ package body Identity_Tests_Cases is
              Absolute_Expires_At => (Present => True, Time_Point => 300),
              Remembered => False,
              Generation => 6,
+             Client_Binding => Identity.Sessions.Binding.Unbound,
              State => Identity.Sessions.Definitions.Active,
              Version => 0), Audit_Context, Next_Audit_Event, 1)
          = Identity.Adapters.Repositories.Memory.Applied,
@@ -14978,6 +14991,7 @@ package body Identity_Tests_Cases is
              Absolute_Expires_At => (Present => True, Time_Point => 300),
              Remembered => False,
              Generation => 5,
+             Client_Binding => Identity.Sessions.Binding.Unbound,
              State => Identity.Sessions.Definitions.Active,
              Version => 0), Audit_Context, Next_Audit_Event, 1)
          = Identity.Adapters.Repositories.Memory.Applied,
@@ -15689,6 +15703,7 @@ package body Identity_Tests_Cases is
          Absolute_Expires_At => (Present => True, Time_Point => 5000),
          Remembered => False,
          Generation => 0,
+         Client_Binding => Identity.Sessions.Binding.Unbound,
          State => Identity.Sessions.Definitions.Active,
          Version => 0);
 
@@ -16041,6 +16056,7 @@ package body Identity_Tests_Cases is
          Absolute_Expires_At => (Present => True, Time_Point => 7000),
          Remembered => False,
          Generation => 0,
+         Client_Binding => Identity.Sessions.Binding.Unbound,
          State => Identity.Sessions.Definitions.Active,
          Version => 0);
 
@@ -18337,6 +18353,7 @@ package body Identity_Tests_Cases is
                Idle_Expires_At => (Present => True, Time_Point => Deadline),
                Absolute_Expires_At => (Present => True, Time_Point => 9_000),
                Remembered => False, Generation => 0,
+               Client_Binding => Identity.Sessions.Binding.Unbound,
                State => Identity.Sessions.Definitions.Active, Version => 0));
          Assert (Outcome = Identity.Adapters.Repositories.Stores.Applied,
                  "expiry: probe session " & Suffix & " is created");
@@ -19390,6 +19407,7 @@ package body Identity_Tests_Cases is
           Idle_Expires_At => (Present => True, Time_Point => 9_000),
           Absolute_Expires_At => (Present => True, Time_Point => 9_000),
           Remembered => False, Generation => 5,
+          Client_Binding => Identity.Sessions.Binding.Unbound,
           State => Identity.Sessions.Definitions.Active, Version => 0));
       Assert (Command = Identity.Adapters.Repositories.Stores.Applied,
               "step-up-bind: session created at generation 5");
@@ -19629,6 +19647,88 @@ package body Identity_Tests_Cases is
               = CP.Admitted,
               "compromise: an unavailable check fails open (rotation is not blocked)");
    end Test_90_compromised_password_admission;
+
+   --  Session token binding: a session bound to a client is usable only by that
+   --  client. A bound token presented from a different client -- or with no
+   --  fingerprint at all -- is a theft signal; an unbound session keeps bearer
+   --  semantics. The binding is stored on the session and read back.
+   procedure Test_91_session_token_binding
+     (T : in out AUnit.Test_Cases.Test_Case'Class)
+   is
+      pragma Unreferenced (T);
+      package SB renames Identity.Sessions.Binding;
+      use type SB.Binding_Match;
+
+      type TB_Store_Access is
+        access Identity.Adapters.Repositories.Memory.Store;
+      TB_Ptr : constant TB_Store_Access :=
+        new Identity.Adapters.Repositories.Memory.Store;
+      SR : Identity.Adapters.Repositories.Stores.Store_Interface'Class renames
+        Identity.Adapters.Repositories.Stores.Store_Interface'Class (TB_Ptr.all);
+
+      function TB_Id (Suffix : String)
+        return Identity.Identifiers.Encoded_Identifier is
+        (Identity.Identifiers.From_String
+           ("f4000000-0000-0000-0000-0000000000" & Suffix));
+
+      PR : constant Identity.Identifiers.Entities.Principal_Id :=
+        Identity.Identifiers.Entities.Principal (TB_Id ("01"));
+      SS : constant Identity.Identifiers.Entities.Session_Id :=
+        Identity.Identifiers.Entities.Session (TB_Id ("02"));
+
+      Client_FP : constant SB.Optional_Binding :=
+        (Present => True,
+         Fingerprint => Identity.Text.Bounded.From_String ("client-key-abc"));
+      Wrong_FP : constant SB.Optional_Binding :=
+        (Present => True,
+         Fingerprint => Identity.Text.Bounded.From_String ("client-key-xyz"));
+
+      Command : Identity.Adapters.Repositories.Stores.Command_Status;
+      Found   : Boolean;
+      Rec     : Identity.Sessions.Definitions.Session_Record;
+   begin
+      Command := Identity.Adapters.Repositories.Stores.Create_Principal
+        (SR, (Id => PR, Kind => Identity.Principals.Kinds.Human,
+              State => Identity.Principals.Definitions.Active, Version => 0));
+      Assert (Command = Identity.Adapters.Repositories.Stores.Applied,
+              "token-bind: principal created");
+
+      Command := Identity.Adapters.Repositories.Stores.Create_Session
+        (SR,
+         (Id => SS,
+          Family => Identity.Identifiers.Entities.Session_Family (TB_Id ("03")),
+          Principal => PR,
+          Credential => (Present => False),
+          External_Provider => (Present => False),
+          Public_Reference => Identity.Text.Bounded.From_String ("token-bind-ref"),
+          Secret_Verifier => Identity.Text.Bounded.From_String ("token-bind-verifier"),
+          Assurance => Identity.Assurance.Levels.Basic,
+          Attributes => (others => <>),
+          Created_At => 100, Original_Authenticated_At => 100,
+          Primary_Authenticated_At => 100,
+          MFA_Completed_At => (Present => False),
+          Step_Up_At => (Present => False),
+          Last_Seen_At => 100,
+          Idle_Expires_At => (Present => True, Time_Point => 9_000),
+          Absolute_Expires_At => (Present => True, Time_Point => 9_000),
+          Remembered => False, Generation => 0,
+          Client_Binding => Client_FP,
+          State => Identity.Sessions.Definitions.Active, Version => 0));
+      Assert (Command = Identity.Adapters.Repositories.Stores.Applied,
+              "token-bind: bound session created");
+
+      Identity.Adapters.Repositories.Stores.Find_Session (SR, SS, Found, Rec);
+      Assert (Found and then Rec.Client_Binding.Present,
+              "token-bind: the binding is stored on the session and read back");
+      Assert (SB.Evaluate (Rec.Client_Binding, Client_FP) = SB.Bound_Matched,
+              "token-bind: the bound client is accepted");
+      Assert (SB.Theft_Signal (SB.Evaluate (Rec.Client_Binding, Wrong_FP)),
+              "token-bind: a different client presenting the token is a theft signal");
+      Assert (SB.Theft_Signal (SB.Evaluate (Rec.Client_Binding, SB.Unbound)),
+              "token-bind: presenting no fingerprint to a bound session is a theft signal");
+      Assert (SB.Evaluate (SB.Unbound, Client_FP) = SB.Unbound_Accepts_Any,
+              "token-bind: an unbound session keeps bearer semantics (accepts any)");
+   end Test_91_session_token_binding;
 
    --  Fuzz regressions (spec 52): the bounded, attacker-controlled decoders must
    --  classify every input into a bounded outcome and never raise or over-read.
@@ -19989,6 +20089,9 @@ package body Identity_Tests_Cases is
       Registration.Register_Routine
         (T, Test_90_compromised_password_admission'Access,
          "Test_90_compromised_password_admission");
+      Registration.Register_Routine
+        (T, Test_91_session_token_binding'Access,
+         "Test_91_session_token_binding");
    end Register_Tests;
 
    overriding function Name (T : Test_Case) return AUnit.Message_String is

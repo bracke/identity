@@ -1,3 +1,4 @@
+with Identity.Sessions.Binding;
 with Identity.Crypto.Domains;
 with Identity.Events.Types;
 with Identity.Operations.Audit;
@@ -39,6 +40,7 @@ package body Identity.Operations.Sessions.Create is
           Absolute_Expires_At => Request.Absolute_Expires_At,
           Remembered      => Request.Remembered,
           Generation      => Request.Generation,
+          Client_Binding  => Identity.Sessions.Binding.Unbound,
           State           => Identity.Sessions.Definitions.Active,
           Version         => 0));
    end Execute;

@@ -1,6 +1,7 @@
 with Identity.Assurance.Attributes;
 with Identity.Assurance.Levels;
 with Identity.Identifiers.Entities;
+with Identity.Sessions.Binding;
 with Identity.Text.Bounded;
 with Identity.Times;
 with Identity.Versions;
@@ -145,6 +146,10 @@ package Identity.Sessions.Definitions is
       Absolute_Expires_At : Identity.Times.Expiration;
       Remembered      : Boolean := False;
       Generation      : Identity.Versions.Rotation_Generation := 0;
+      --  The client this session is bound to, if any (token binding). Unbound
+      --  by default, preserving bearer semantics.
+      Client_Binding  : Identity.Sessions.Binding.Optional_Binding :=
+                          Identity.Sessions.Binding.Unbound;
       State           : Session_Revocation_State := Active;
       Version         : Identity.Versions.Entity_Version := 0;
    end record;

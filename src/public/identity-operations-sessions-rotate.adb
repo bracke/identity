@@ -1,3 +1,4 @@
+with Identity.Sessions.Binding;
 with Identity.Adapters.Repositories.Idempotency;
 with Identity.Crypto.Domains;
 with Identity.Crypto.Secret_Verifiers;
@@ -43,6 +44,7 @@ package body Identity.Operations.Sessions.Rotate is
           Absolute_Expires_At => Request.Absolute_Expires_At,
           Remembered      => Request.Remembered,
           Generation      => Request.Generation,
+          Client_Binding  => Identity.Sessions.Binding.Unbound,
           State           => Identity.Sessions.Definitions.Active,
           Version         => 0));
    end Execute;
@@ -78,6 +80,7 @@ package body Identity.Operations.Sessions.Rotate is
           Absolute_Expires_At => Request.Request.Absolute_Expires_At,
           Remembered      => Request.Request.Remembered,
           Generation      => Request.Request.Generation,
+          Client_Binding  => Identity.Sessions.Binding.Unbound,
           State           => Identity.Sessions.Definitions.Active,
           Version         => 0));
    end Execute;
