@@ -19602,6 +19602,99 @@ package body Identity_Tests_Cases is
               "property: entity version advancement is monotone and saturates");
    end Test_87_property_suite;
 
+   --  Fuzz regressions (spec 52): the bounded, attacker-controlled decoders must
+   --  classify every input into a bounded outcome and never raise or over-read.
+   --  This drives adversarial inputs -- every single byte, malformed multi-byte
+   --  UTF-8, and malformed password-verifier envelopes -- through the decoders
+   --  and asserts each returns a status without an exception escaping.
+   procedure Test_88_fuzz_regressions
+     (T : in out AUnit.Test_Cases.Test_Case'Class)
+   is
+      pragma Unreferenced (T);
+      use type Identity.Crypto.Password_Hashing.Verification_Outcome;
+      No_Exception : Boolean := True;
+
+      --  Adversarial envelope strings for the password verifier parser.
+      type Envelope_List is array (Positive range <>) of access constant String;
+      E01 : aliased constant String := "";
+      E02 : aliased constant String := "garbage";
+      E03 : aliased constant String := "identity-pbkdf2-sha256:v2:";
+      E04 : aliased constant String :=
+        "identity-pbkdf2-sha256:v2:99999999999999:zz:yy";
+      E05 : aliased constant String :=
+        "identity-pbkdf2-sha256:v2:600000:nothex:nothex";
+      E06 : aliased constant String := "identity-pbkdf2-sha256:v99:1:00:00";
+      E07 : aliased constant String := ":::::::::::::::::::::::::::";
+      E08 : aliased constant String := "identity-pbkdf2-sha256:v2:0:";
+      E09 : aliased constant String :=
+        "identity-argon2id:v2:600000:00000000000000000000000000000000:ff";
+      Envelopes : constant Envelope_List :=
+        [E01'Access, E02'Access, E03'Access, E04'Access, E05'Access,
+         E06'Access, E07'Access, E08'Access, E09'Access];
+   begin
+      --  Every single byte, and a run of malformed multi-byte prefixes.
+      for B in 0 .. 255 loop
+         begin
+            declare
+               S : constant String := [1 => Character'Val (B)];
+               Status : constant Identity.Text.UTF_8.UTF_8_Status :=
+                 Identity.Text.UTF_8.Validate (S);
+            begin
+               --  A bare continuation or high byte is never Valid on its own.
+               if B >= 128 and then Status = Identity.Text.UTF_8.Valid then
+                  No_Exception := False;  -- misclassification, treat as failure
+               end if;
+            end;
+         exception
+            when others =>
+               No_Exception := False;
+         end;
+      end loop;
+
+      declare
+         Malformed : constant array (Positive range <>) of String (1 .. 2) :=
+           [1 => [Character'Val (16#C0#), Character'Val (16#28#)],
+            2 => [Character'Val (16#E0#), Character'Val (16#80#)],
+            3 => [Character'Val (16#FF#), Character'Val (16#FE#)]];
+      begin
+         for M of Malformed loop
+            begin
+               if Identity.Text.UTF_8.Validate (M) = Identity.Text.UTF_8.Valid then
+                  No_Exception := False;
+               end if;
+            exception
+               when others => No_Exception := False;
+            end;
+         end loop;
+      end;
+
+      Assert (No_Exception,
+              "fuzz: the UTF-8 decoder classifies every byte and malformed "
+              & "sequence without raising or accepting invalid input");
+
+      --  Malformed verifier envelopes: each must reject, never raise.
+      No_Exception := True;
+      for E of Envelopes loop
+         begin
+            declare
+               Result : constant Identity.Crypto.Password_Hashing.Verification_Result :=
+                 Identity.Crypto.Password_Hashing.Verify (Presented_Password, E.all);
+            begin
+               --  No malformed envelope may ever report Verified.
+               if Result.Outcome = Identity.Crypto.Password_Hashing.Verified then
+                  No_Exception := False;
+               end if;
+            end;
+         exception
+            when others =>
+               No_Exception := False;
+         end;
+      end loop;
+      Assert (No_Exception,
+              "fuzz: the password-verifier envelope parser rejects malformed "
+              & "envelopes without raising and never reports Verified");
+   end Test_88_fuzz_regressions;
+
    overriding procedure Register_Tests (T : in out Test_Case) is
    begin
       Registration.Register_Routine
@@ -19794,6 +19887,9 @@ package body Identity_Tests_Cases is
       Registration.Register_Routine
         (T, Test_87_property_suite'Access,
          "Test_87_property_suite");
+      Registration.Register_Routine
+        (T, Test_88_fuzz_regressions'Access,
+         "Test_88_fuzz_regressions");
    end Register_Tests;
 
    overriding function Name (T : Test_Case) return AUnit.Message_String is
