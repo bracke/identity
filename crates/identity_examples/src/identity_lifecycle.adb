@@ -12,8 +12,12 @@ with Identity.Operations.Accounts.Create;
 with Identity.Operations.Accounts.Disable;
 with Identity.Operations.API_Keys.Authenticate;
 with Identity.Operations.API_Keys.Issue;
+with Identity.Operations.Factors.Begin_Enrollment;
+with Identity.Operations.Factors.Complete_Enrollment;
 with Identity.Operations.Sessions.Revoke_Family;
+with Identity.Crypto.CryptoLib.Secret_Box;
 with Identity.Secrets.API_Keys;
+with Identity.Secrets.One_Time_Passwords;
 with Identity.Operations.Cancellation;
 with Identity.Operations.Contexts;
 with Identity.Operations.Disclosure;
@@ -91,6 +95,16 @@ procedure Identity_Lifecycle is
      Identity.Secrets.Text.From_UTF_8 ("example-api-key-secret-material");
    API_Key_Class : constant Identity.Identifiers.Registry.Registry_Id :=
      Identity.Identifiers.Registry.From_String ("identity.service.api-key");
+   TOTP_Credential : constant Identity.Identifiers.Entities.Credential_Id :=
+     Identity.Identifiers.Entities.Credential
+       (Identity.Identifiers.From_String
+          ("c0000000-0000-0000-0000-0000000000f1"));
+   TOTP_Algorithm : constant Identity.Identifiers.Registry.Registry_Id :=
+     Identity.Identifiers.Registry.From_String ("identity.totp.sha1");
+   TOTP_Secret : constant Identity.Secrets.One_Time_Passwords.TOTP_Secret :=
+     Identity.Secrets.Text.From_UTF_8 ("example totp shared secret");
+   TOTP_Sealing_Key :
+     constant Identity.Crypto.CryptoLib.Secret_Box.Key_Bytes := [others => 16#7C#];
 
    --  Every operation below that changes stored state also writes an audit
    --  event, and refuses the change if that event cannot be stored. That is
@@ -292,6 +306,29 @@ begin
       and then Identity.Operations.Sessions.Lookup.Execute
         (Store, Rotated_Session_Reference, Rotated_Session_Secret, 4).Status
       = Identity.Sessions.Handles.Revoked
+      --  Enroll a TOTP second factor: begin (pending, no verifier) then
+      --  complete, which seals the shared secret at rest under a caller key.
+      and then Identity.Operations.Factors.Begin_Enrollment.Execute
+        (Store,
+         Identity.Operations.Factors.Begin_Enrollment.TOTP_Begin_Request'
+           (Id => TOTP_Credential,
+            Principal => Principal,
+            Algorithm => TOTP_Algorithm,
+            Created_At => 4),
+         Audit_Context, Next_Audit_Event, 4)
+      = Identity.Adapters.Repositories.Memory.Applied
+      and then Identity.Operations.Factors.Complete_Enrollment.Execute
+        (Store,
+         Identity.Operations.Factors.Complete_Enrollment.TOTP_Completion_Request'
+           (Id => TOTP_Credential,
+            Principal => Principal,
+            Algorithm => TOTP_Algorithm,
+            Secret => TOTP_Secret,
+            Sealing_Key => TOTP_Sealing_Key,
+            Created_At => 4,
+            Highest_Accepted_Counter => 0),
+         Audit_Context, Next_Audit_Event, 4)
+      = Identity.Adapters.Repositories.Memory.Applied
       --  A service credential: issue an API key and authenticate with it
       --  (no session -- service auth returns an authenticated principal).
       and then Identity.Operations.API_Keys.Issue.Execute
