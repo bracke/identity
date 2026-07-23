@@ -3,6 +3,7 @@ with Identity.Operations.Factors.Accept_Passkey_Assertion;
 with Identity.WebAuthn.Credentials;
 with Identity.Audit.Chain;
 with AUnit.Assertions;
+with Ada.Directories;
 with Ada.Real_Time;
 with Ada.Streams;
 with Identity.Adapters.Diagnostics;
@@ -11,6 +12,8 @@ with Identity.Adapters.External_Providers;
 with Identity.Adapters.Keys;
 with Identity.Adapters.Notifications;
 with Identity.Adapters.Repositories;
+with Identity.Adapters.Repositories.Serialized;
+with Identity.Adapters.Repositories.Persistent;
 with Identity.Adapters.Repositories.Accounts;
 with Identity.Adapters.Repositories.Attempts;
 with Identity.Adapters.Repositories.Authentication;
@@ -20085,6 +20088,323 @@ package body Identity_Tests_Cases is
       end;
    end Test_89_resource_bounds;
 
+   --  Adapter forwarding surface: drive every Store_Interface primitive through
+   --  a decorator so each forwarding method delegates rather than sitting dead.
+   --  The conformance harness exercises only the primitives its five profiles
+   --  use -- about a third of the surface -- so the rest of each decorator's
+   --  per-primitive forwarding was never executed. This drives the whole SPI
+   --  through two decorator stacks, and asserts Recording tallied exactly one
+   --  delegation per mutating call: a decorator that dropped, duplicated, or
+   --  mis-routed a delegation would fail here. The SPI has no preconditions, so
+   --  minimally-typed arguments suffice -- the delegation runs whatever the
+   --  inner store returns for unknown ids.
+   procedure Test_95_adapter_forwarding_surface
+     (T : in out AUnit.Test_Cases.Test_Case'Class)
+   is
+      pragma Unreferenced (T);
+      package Stores renames Identity.Adapters.Repositories.Stores;
+      package Ent renames Identity.Identifiers.Entities;
+      package Txns renames Identity.Authentication.Transactions;
+      package Chg renames Identity.Verification.Changes;
+      package RTx renames Identity.Recovery.Transactions;
+      package Idem renames Identity.Operations.Idempotency;
+      package Mem_Pkg renames Identity.Adapters.Repositories.Memory;
+      package Rec_Pkg renames Identity.Adapters.Repositories.Recording;
+      package Ser_Pkg renames Identity.Adapters.Repositories.Serialized;
+      package Per_Pkg renames Identity.Adapters.Repositories.Persistent;
+
+      function U (S : String) return Identity.Identifiers.Encoded_Identifier is
+        (Identity.Identifiers.From_String
+           ("a5000000-0000-0000-0000-0000000000" & S));
+
+      function Ref (S : String) return Identity.Text.Bounded.Bounded_Text is
+        (Identity.Text.Bounded.From_String (S));
+
+      PR   : constant Ent.Principal_Id := Ent.Principal (U ("01"));
+      AC   : constant Ent.Account_Id := Ent.Account (U ("02"));
+      CR   : constant Ent.Credential_Id := Ent.Credential (U ("03"));
+      SE   : constant Ent.Session_Id := Ent.Session (U ("04"));
+      SF   : constant Ent.Session_Family_Id := Ent.Session_Family (U ("05"));
+      TK   : constant Ent.Token_Id := Ent.Token (U ("06"));
+      AI   : constant Ent.Attempt_Id := Ent.Attempt (U ("07"));
+      CH   : constant Ent.Challenge_Id := Ent.Challenge (U ("08"));
+      IB   : constant Ent.Identity_Binding_Id := Ent.Identity_Binding (U ("09"));
+      CB   : constant Ent.Contact_Binding_Id := Ent.Contact_Binding (U ("10"));
+      XP   : constant Ent.External_Provider_Id := Ent.External_Provider (U ("11"));
+      XB   : constant Ent.External_Binding_Id := Ent.External_Binding (U ("12"));
+      TX   : constant Ent.Authentication_Transaction_Id :=
+        Ent.Authentication_Transaction (U ("13"));
+      CSet : constant Ent.Credential_Set_Id := Ent.Credential_Set (U ("14"));
+      Reg  : constant Identity.Identifiers.Registry.Registry_Id :=
+        Identity.Identifiers.Registry.From_String ("identity.token.reset");
+
+      type Mem_Access is access Mem_Pkg.Store;
+      Mem_A : constant Mem_Access := new Mem_Pkg.Store;
+      Rec_A : aliased Rec_Pkg.Store
+        (Inner => Stores.Store_Interface'Class (Mem_A.all)'Access);
+      Ser_A : Ser_Pkg.Store
+        (Inner => Stores.Store_Interface'Class (Rec_A)'Access);
+      Mem_B : constant Mem_Access := new Mem_Pkg.Store;
+      Per_B : Per_Pkg.Store (Inner => Mem_B);
+
+      Snapshot  : constant String := "identity-forwarding-store.bin";
+      Mutations : Natural := 0;
+
+      --  Discard a delegation result without tripping -gnatwe's
+      --  assigned-but-never-read check: the result is read by being passed here.
+      generic
+         type Item (<>) is limited private;
+      procedure Gen_Ignore (Value : Item);
+      procedure Gen_Ignore (Value : Item) is
+         pragma Unreferenced (Value);
+      begin
+         null;
+      end Gen_Ignore;
+
+      procedure Ignore is new Gen_Ignore (Stores.Command_Status);
+      procedure Ignore is new Gen_Ignore (Txns.Authentication_Transaction_Status);
+      procedure Ignore is new Gen_Ignore
+        (Identity.Tokens.Verification.Token_Verification_Outcome);
+      procedure Ignore is new Gen_Ignore (RTx.Recovery_Transition_Status);
+      procedure Ignore is new Gen_Ignore
+        (Identity.Adapters.Repositories.Idempotency.Reservation);
+      procedure Ignore is new Gen_Ignore
+        (Identity.WebAuthn.Credentials.Assertion_Status);
+      procedure Ignore is new Gen_Ignore
+        (Identity.One_Time_Passwords.Credentials.TOTP_Accept_Status);
+      procedure Ignore is new Gen_Ignore
+        (Identity.Recovery_Codes.Sets.Recovery_Code_Consume_Status);
+      procedure Ignore is new Gen_Ignore
+        (Identity.Authentication.Results.Password_Authentication_Result);
+      procedure Ignore is new Gen_Ignore
+        (Identity.Sessions.Handles.Session_Handle);
+      procedure Ignore is new Gen_Ignore
+        (Identity.Identities.Resolution.Resolution_Result);
+      procedure Ignore is new Gen_Ignore
+        (Identity.Adapters.Repositories.Capabilities.Repository_Capabilities);
+      procedure Ignore is new Gen_Ignore
+        (Identity.Projections.Sessions.Session_Summary_List);
+      procedure Ignore is new Gen_Ignore (Identity.Versions.Attempt_Count);
+      procedure Ignore is new Gen_Ignore (Natural);
+      procedure Ignore is new Gen_Ignore (Boolean);
+
+      --  One call per SPI primitive. Mutating (in out) primitives are counted;
+      --  queries are not, matching what Recording tallies.
+      procedure Exercise (SR : in out Stores.Store_Interface'Class) is
+         Found  : Boolean := False;
+         Pr_Rec : Identity.Principals.Definitions.Principal_Record;
+         Ac_Rec : Identity.Accounts.Definitions.Account_Record;
+         Bn_Rec : Identity.Identities.Bindings.Binding_Record;
+         Pw_Rec : Identity.Passwords.Credentials.Password_Credential_Record;
+         Se_Rec : Identity.Sessions.Definitions.Session_Record;
+         Tk_Rec : Identity.Tokens.Definitions.Action_Token_Record;
+         Tx_Rec : Txns.Authentication_Transaction_Record;
+         Ch_Rec : Identity.Authentication.Challenges.Challenge_Record;
+         Ak_Rec : Identity.API_Keys.Credentials.API_Key_Credential_Record;
+         Ev_Rec : Identity.Events.Envelopes.Event_Envelope;
+         At_Rec : Identity.Attempts.Definitions.Attempt_Record;
+         Cb_Rec : Identity.Contacts.Bindings.Contact_Binding_Record;
+         Cc_Rec : Chg.Contact_Change_Record;
+         Rc_Rec : Identity.Recovery_Codes.Sets.Recovery_Code_Set_Record;
+         Rt_Rec : RTx.Recovery_Transaction_Record;
+         Xb_Rec : Identity.External_Providers.Bindings.External_Binding_Record;
+         Tp_Rec : Identity.One_Time_Passwords.Credentials.TOTP_Credential_Record;
+         Pk_Rec : Identity.WebAuthn.Credentials.Passkey_Credential_Record;
+         Na_Rec : Identity.External_Providers.Assertions.Normalized_Assertion;
+         Su_Rec : Identity.Identities.Subjects.Authentication_Subject;
+         As_Att : Identity.Assurance.Attributes.Assurance_Attributes;
+         St_Vw  : Identity.Accounts.States.Account_State_View;
+         Ik_Key : Idem.Idempotency_Key;
+         Vt_Sec : Identity.Secrets.Tokens.Verification_Token_Secret;
+         Rt_Sec : Identity.Secrets.Tokens.Reset_Token_Secret;
+         Ss_Sec : Identity.Secrets.Sessions.Session_Secret;
+         Ak_Sec : Identity.Secrets.API_Keys.API_Key_Secret;
+         Rc_Cod : Identity.Secrets.Recovery_Codes.Recovery_Code;
+         Exp    : Identity.Times.Expiration;
+
+         procedure Mutated is
+         begin
+            Mutations := Mutations + 1;
+         end Mutated;
+      begin
+         Pr_Rec.Id := PR;
+
+         Ignore (Stores.Capabilities (SR));
+         Mutated; Ignore (Stores.Create_Principal (SR, Pr_Rec));
+         Mutated; Ignore (Stores.Retire_Principal (SR, PR));
+         Mutated; Ignore (Stores.Retire_Principal (SR, PR, 0));
+         Mutated; Ignore (Stores.Create_Account (SR, Ac_Rec));
+         Mutated; Ignore (Stores.Update_Account_State (SR, AC, PR, St_Vw));
+         Mutated; Ignore (Stores.Add_Binding (SR, Bn_Rec));
+         Mutated; Ignore (Stores.Revoke_Binding (SR, IB, PR));
+         Mutated; Ignore (Stores.Revoke_Binding (SR, IB, PR, 0));
+         Mutated; Ignore (Stores.Change_Binding (SR, IB, Bn_Rec));
+         Mutated; Ignore (Stores.Change_Binding (SR, IB, 0, Bn_Rec));
+         Mutated; Ignore (Stores.Enroll_Password (SR, Pw_Rec));
+         Mutated; Ignore (Stores.Replace_Password (SR, CR, Pw_Rec));
+         Mutated; Ignore (Stores.Replace_Password (SR, CR, 0, Pw_Rec));
+         Mutated; Ignore (Stores.Create_Session (SR, Se_Rec));
+         Stores.Find_Session (SR, SE, Found, Se_Rec);
+         Mutated; Ignore (Stores.Revoke_Session (SR, SE));
+         Mutated; Ignore (Stores.Revoke_Session (SR, SE, 0));
+         Mutated; Ignore (Stores.Rotate_Session (SR, SE, Se_Rec));
+         Mutated; Ignore (Stores.Rotate_Session (SR, SE, 0, Se_Rec));
+         Mutated; Ignore (Stores.Revoke_Session_Family (SR, SF));
+         Mutated; Ignore (Stores.Revoke_Session_Family (SR, SF, 0));
+         Mutated; Ignore (Stores.Revoke_Principal_Sessions (SR, PR));
+         Mutated; Ignore (Stores.Revoke_Principal_Sessions (SR, PR, 0));
+         Mutated; Ignore (Stores.Revoke_Credential_Sessions (SR, CR));
+         Mutated; Ignore (Stores.Revoke_Credential_Sessions (SR, CR, 0));
+         Mutated; Ignore (Stores.Revoke_Provider_Sessions (SR, XP));
+         Mutated; Ignore (Stores.Revoke_Provider_Sessions (SR, XP, 0));
+         Mutated; Ignore (Stores.Expire_Eligible_Sessions (SR, 1));
+         Mutated; Ignore (Stores.Purge_Retained_Sessions (SR, 1));
+         Ignore (Stores.Enumerate_Principal_Sessions (SR, PR));
+         Mutated; Ignore (Stores.Issue_Token (SR, Tk_Rec));
+         Stores.Find_Token (SR, TK, Found, Tk_Rec);
+         Mutated; Ignore (Stores.Begin_Authentication_Transaction (SR, Tx_Rec));
+         Mutated; Ignore (Stores.Issue_Challenge (SR, Ch_Rec));
+         Mutated; Ignore (Stores.Issue_Challenge (SR, Ch_Rec, 0));
+         Mutated; Ignore (Stores.Complete_Challenge (SR, CH, PR, 1));
+         Mutated; Ignore (Stores.Complete_Challenge (SR, CH, PR, 1, 0, 0));
+         Mutated; Ignore (Stores.Satisfy_Authentication_Transaction (SR, TX, PR, 1));
+         Mutated; Ignore (Stores.Satisfy_Authentication_Transaction (SR, TX, PR, 1, 0));
+         Mutated; Ignore (Stores.Resolve_Authentication_Transaction
+                            (SR, TX, PR, Txns.Authentication_Transaction_Action'First, 1, 0));
+         Mutated; Ignore (Stores.Upgrade_Session_Assurance
+                            (SR, SE, TX, PR, 1,
+                             Identity.Assurance.Levels.Assurance_Level'First, As_Att));
+         Mutated; Ignore (Stores.Upgrade_Session_Assurance
+                            (SR, SE, TX, PR, 1,
+                             Identity.Assurance.Levels.Assurance_Level'First, As_Att, 0, 0));
+         Stores.Find_Authentication_Transaction (SR, TX, Found, Tx_Rec);
+         Stores.Find_Challenge (SR, CH, Found, Ch_Rec);
+         Mutated; Ignore (Stores.Issue_API_Key (SR, Ak_Rec));
+         Mutated; Ignore (Stores.Revoke_API_Key (SR, CR));
+         Mutated; Ignore (Stores.Revoke_API_Key (SR, CR, 0));
+         Mutated; Ignore (Stores.Rotate_API_Key (SR, CR, Ak_Rec));
+         Mutated; Ignore (Stores.Rotate_API_Key (SR, CR, 0, Ak_Rec));
+         Stores.Find_API_Key (SR, CR, Found, Ak_Rec);
+         Ignore (Stores.Event_Capacity_Available (SR, 1));
+         Mutated; Ignore (Stores.Append_Event (SR, Ev_Rec));
+         Mutated; Ignore (Stores.Record_Attempt (SR, At_Rec));
+         Stores.Find_Attempt (SR, AI, Found, At_Rec);
+         Mutated; Ignore (Stores.Request_Contact_Verification (SR, Cb_Rec, Tk_Rec));
+         Mutated; Ignore (Stores.Complete_Contact_Verification (SR, TK, Vt_Sec, 1, CB));
+         Mutated; Ignore (Stores.Complete_Contact_Verification (SR, TK, 0, 0, Vt_Sec, 1, CB));
+         Mutated; Ignore (Stores.Begin_Contact_Change (SR, Cc_Rec, Cb_Rec, Tk_Rec));
+         Mutated; Ignore (Stores.Complete_Contact_Change (SR, TK, Vt_Sec, 1, CB, CB));
+         Mutated; Ignore (Stores.Complete_Contact_Change
+                            (SR, TK, 0, 0, 0, 0, Vt_Sec, 1, CB, CB));
+         Mutated; Ignore (Stores.Advance_Contact_Change
+                            (SR, TK, PR, Chg.Contact_Change_Action'First, 0));
+         Stores.Find_Contact_Change (SR, TK, Found, Cc_Rec);
+         Stores.Find_Contact_Binding (SR, CB, Found, Cb_Rec);
+         Mutated; Ignore (Stores.Install_Recovery_Code_Set (SR, Rc_Rec));
+         Mutated; Ignore (Stores.Regenerate_Recovery_Code_Set (SR, Rc_Rec));
+         Mutated; Ignore (Stores.Regenerate_Recovery_Code_Set (SR, Rc_Rec, 0));
+         Stores.Find_Recovery_Code_Set (SR, CSet, Found, Rc_Rec);
+         Mutated; Ignore (Stores.Begin_Recovery (SR, Rt_Rec));
+         Mutated; Ignore (Stores.Accept_Recovery_Evidence (SR, TX, PR, 1));
+         Mutated; Ignore (Stores.Accept_Recovery_Evidence (SR, TX, PR, 1, 0));
+         Mutated; Ignore (Stores.Complete_Recovery (SR, TX, PR, 1));
+         Mutated; Ignore (Stores.Complete_Recovery (SR, TX, PR, 1, 0, 0));
+         Mutated; Ignore (Stores.Cancel_Recovery (SR, TX, PR));
+         Mutated; Ignore (Stores.Cancel_Recovery (SR, TX, PR, 0));
+         Mutated; Ignore (Stores.Advance_Recovery
+                            (SR, TX, PR, RTx.Recovery_Transaction_Action'First, 1, 0));
+         Stores.Find_Recovery_Transaction (SR, TX, Found, Rt_Rec);
+         Mutated; Ignore (Stores.Bind_External (SR, Xb_Rec));
+         Mutated; Ignore (Stores.Revoke_External (SR, XB, PR));
+         Mutated; Ignore (Stores.Revoke_External (SR, XB, PR, 0));
+         Ignore (Stores.External_Replay_Registered (SR, Ref ("fp")));
+         Mutated; Ignore (Stores.Register_External_Replay (SR, Ref ("fp")));
+         Mutated; Ignore (Stores.Reserve_Idempotency
+                            (SR, Idem.Idempotent_Operation_Kind'First, Ik_Key));
+         Mutated; Ignore (Stores.Complete_Idempotency
+                            (SR, Idem.Idempotent_Operation_Kind'First, Ik_Key));
+         Mutated; Ignore (Stores.Complete_Idempotency
+                            (SR, Idem.Idempotent_Operation_Kind'First, Ik_Key, 0));
+         Mutated; Ignore (Stores.Begin_TOTP_Enrollment (SR, Tp_Rec));
+         Mutated; Ignore (Stores.Complete_TOTP_Enrollment (SR, Tp_Rec));
+         Mutated; Ignore (Stores.Complete_TOTP_Enrollment (SR, Tp_Rec, 0));
+         Stores.Find_TOTP_Credential (SR, CR, Found, Tp_Rec);
+         Mutated; Ignore (Stores.Register_Passkey (SR, Pk_Rec));
+         Stores.Find_Passkey_Credential (SR, CR, Found, Pk_Rec);
+         Mutated; Ignore (Stores.Accept_Passkey_Assertion (SR, CR, 0, 1));
+         Mutated; Ignore (Stores.Remove_TOTP (SR, CR, PR));
+         Mutated; Ignore (Stores.Remove_TOTP (SR, CR, PR, 0));
+         Ignore (Stores.Resolve (SR, Su_Rec));
+         Stores.Find_Active_Password (SR, PR, Found, Pw_Rec);
+         Stores.Find_Principal (SR, PR, Found, Pr_Rec);
+         Stores.Find_Account (SR, PR, Found, Ac_Rec);
+         Ignore (Stores.Lookup_Session (SR, Ref ("ref"), Ss_Sec, 1));
+         Mutated; Ignore (Stores.Renew_Session (SR, Ref ("ref"), Ss_Sec, 1, Exp));
+         Ignore (Stores.Verify_Token (SR, TK, Reg, Rt_Sec, 1));
+         Mutated; Ignore (Stores.Consume_Token (SR, TK, Reg, Rt_Sec, 1));
+         Mutated; Ignore (Stores.Consume_Token (SR, TK, 0, Reg, Rt_Sec, 1));
+         Mutated; Ignore (Stores.Complete_Password_Reset (SR, TK, Reg, Rt_Sec, 1, Pw_Rec));
+         Mutated; Ignore (Stores.Complete_Password_Reset
+                            (SR, TK, 0, 0, Reg, Rt_Sec, 1, Pw_Rec));
+         Mutated; Ignore (Stores.Authenticate_API_Key (SR, Ref ("k"), Ak_Sec, 1));
+         Mutated; Ignore (Stores.Authenticate_API_Key (SR, Ref ("k"), Ak_Sec, 1, 0));
+         Ignore (Stores.Failure_Count
+                   (SR, PR, Identity.Attempts.Outcomes.Failure_Category'First));
+         Mutated; Ignore (Stores.Consume_Recovery_Code (SR, CSet, Rc_Cod));
+         Mutated; Ignore (Stores.Consume_Recovery_Code (SR, CSet, 0, Rc_Cod));
+         Mutated; Ignore (Stores.Authenticate_External (SR, Na_Rec, 1));
+         Mutated; Ignore (Stores.Authenticate_External (SR, Na_Rec, 1, 0));
+         Mutated; Ignore (Stores.Accept_TOTP_Counter (SR, CR, 1));
+         Mutated; Ignore (Stores.Accept_TOTP_Counter (SR, CR, 0, 1));
+         Ignore (Stores.Principal_Count (SR));
+         Ignore (Stores.Account_Count (SR));
+         Ignore (Stores.Binding_Count (SR));
+         Ignore (Stores.Password_Credential_Count (SR));
+         Ignore (Stores.Session_Count (SR));
+         Ignore (Stores.Token_Count (SR));
+         Ignore (Stores.Authentication_Transaction_Count (SR));
+         Ignore (Stores.Challenge_Count (SR));
+         Ignore (Stores.API_Key_Count (SR));
+         Stores.Find_Event (SR, 1, Found, Ev_Rec);
+         Ignore (Stores.Event_Count (SR));
+         Ignore (Stores.Attempt_Count (SR));
+         Ignore (Stores.Contact_Binding_Count (SR));
+         Ignore (Stores.Contact_Change_Count (SR));
+         Ignore (Stores.Recovery_Code_Set_Count (SR));
+         Ignore (Stores.Recovery_Transaction_Count (SR));
+         Ignore (Stores.External_Binding_Count (SR));
+         Ignore (Stores.External_Replay_Count (SR));
+         Ignore (Stores.TOTP_Credential_Count (SR));
+         Ignore (Found);
+      end Exercise;
+   begin
+      declare
+         Snap_Status : Mem_Pkg.Snapshot_Status;
+      begin
+         if Ada.Directories.Exists (Snapshot) then
+            Ada.Directories.Delete_File (Snapshot);
+         end if;
+         Per_Pkg.Open (Per_B, Snapshot, Snap_Status);
+      end;
+
+      --  Stack A (Serialized over Recording over Memory): one pass counts the
+      --  mutating delegations Recording must have tallied.
+      Mutations := 0;
+      Exercise (Ser_A);
+      Assert (Rec_A.Total_Call_Count = Mutations,
+              "forwarding: Serialized+Recording delegated every mutating call"
+              & " (tallied" & Natural'Image (Rec_A.Total_Call_Count)
+              & " of" & Natural'Image (Mutations) & ")");
+
+      --  Stack B (Persistent over Memory): the write-through decorator forwards
+      --  the whole surface too, snapshotting after each mutation.
+      Exercise (Per_B);
+
+      if Ada.Directories.Exists (Snapshot) then
+         Ada.Directories.Delete_File (Snapshot);
+      end if;
+   end Test_95_adapter_forwarding_surface;
+
    overriding procedure Register_Tests (T : in out Test_Case) is
    begin
       Registration.Register_Routine
@@ -20298,6 +20618,9 @@ package body Identity_Tests_Cases is
       Registration.Register_Routine
         (T, Test_94_passkey_store_and_accept'Access,
          "Test_94_passkey_store_and_accept");
+      Registration.Register_Routine
+        (T, Test_95_adapter_forwarding_surface'Access,
+         "Test_95_adapter_forwarding_surface");
    end Register_Tests;
 
    overriding function Name (T : Test_Case) return AUnit.Message_String is
