@@ -292,9 +292,14 @@ Known gaps
   outside SPARK, recorded per package with the reason.
 
   Still outside the scope entirely: Identity.Crypto.Secret_Verifiers,
-  .Constant_Time and Identity.Secrets.Bytes. All three are thin wrappers over
-  cryptolib or over a controlled type, so there is little there to prove that
-  SPARK would accept; their bounds rest on review and tests.
+  .Constant_Time and Identity.Secrets.Bytes. The first two are thin wrappers
+  over cryptolib. Identity.Secrets.Bytes is a controlled type
+  (Ada.Finalization.Controlled) whose Finalize scrubs the secret buffer; a
+  direct SPARK_Mode attempt on it is rejected -- SPARK does not admit the
+  controlled type's Finalize primitive (the first freezing point must fall
+  within the primitive's early call region) -- so the exclusion is a verified,
+  deliberate consequence of the auto-scrubbing security design, not an untried
+  gap. Their bounds rest on review and tests.
 
 These are listed as mandatory above the line in earlier revisions of this file
 but are NOT yet enforced. They are recorded here rather than being described as
