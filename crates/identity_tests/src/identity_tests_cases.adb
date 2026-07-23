@@ -20868,6 +20868,87 @@ package body Identity_Tests_Cases is
       Ignore (Acc.Unlock.Execute (SR, AC, PR, Audit_Context, Next_Audit_Event, 1));
    end Test_98_account_operation_success_paths;
 
+   --  Pure admission and evaluation logic the corpus reached on only some of
+   --  its branches: challenge-completion admission over every challenge state
+   --  (and time expiry), and token consumption and verification over every
+   --  token state. Pure case functions, so the gap was states never supplied.
+   procedure Test_99_pure_admission_logic
+     (T : in out AUnit.Test_Cases.Test_Case'Class)
+   is
+      pragma Unreferenced (T);
+      package Ent renames Identity.Identifiers.Entities;
+      package Ch renames Identity.Authentication.Challenges;
+      package TC renames Identity.Tokens.Consumption;
+      package TV renames Identity.Tokens.Verification;
+      package TD renames Identity.Tokens.Definitions;
+
+      function U (S : String) return Identity.Identifiers.Encoded_Identifier is
+        (Identity.Identifiers.From_String
+           ("a8000000-0000-0000-0000-0000000000" & S));
+      Reg : constant Identity.Identifiers.Registry.Registry_Id :=
+        Identity.Identifiers.Registry.From_String ("identity.token.reset");
+
+      Chal : Ch.Challenge_Record :=
+        (Id          => Ent.Challenge (U ("01")),
+         Transaction => Ent.Authentication_Transaction (U ("02")),
+         Principal   => Ent.Principal (U ("03")),
+         Method      => Reg,
+         Created_At  => 0,
+         Expires_At  => (Present => True, Time_Point => 100),
+         State       => Ch.Issued,
+         Attempts    => 0,
+         Version     => 0);
+      Tok : TD.Action_Token_Record;
+
+      generic
+         type Item (<>) is limited private;
+      procedure Gen_Ignore (Value : Item);
+      procedure Gen_Ignore (Value : Item) is
+         pragma Unreferenced (Value);
+      begin
+         null;
+      end Gen_Ignore;
+      procedure Ignore is new Gen_Ignore (Ch.Challenge_Completion_Admission);
+      procedure Ignore is new Gen_Ignore (TC.Consumption_Status);
+      procedure Ignore is new Gen_Ignore (TV.Token_Verification_Outcome);
+   begin
+      --  Challenge completion admission over every state.
+      for S in Ch.Challenge_State loop
+         Chal.State := S;
+         Ignore (Ch.Admit_Completion (Chal, 1));
+      end loop;
+      Chal.State := Ch.Completed;
+      Assert (Ch.Already_Completed_Rejected (Ch.Admit_Completion (Chal, 1)),
+              "challenge: a completed challenge rejects re-completion");
+      Chal.State := Ch.Issued;
+      Assert (Ch.Completion_Admitted (Ch.Admit_Completion (Chal, 1)),
+              "challenge: an issued challenge admits completion");
+      --  Expired-by-time: an issued challenge past its expiry.
+      Chal.Expires_At := (Present => True, Time_Point => 5);
+      Assert (Ch.Expiration_Rejected (Ch.Admit_Completion (Chal, 10)),
+              "challenge: an issued challenge past its expiry is time-expired");
+
+      --  Token consumption and state-first verification over every token state.
+      for S in TD.Token_State loop
+         Ignore (TC.Evaluate (S));
+         Ignore (TV.Evaluate_State_First (S, False));
+         Ignore (TV.Evaluate_State_First (S, True));
+      end loop;
+      Assert (TC.Consumable (TC.Evaluate (TD.Issued)),
+              "token: an issued token can be consumed");
+      Assert (TC.Already_Consumed_Rejection (TC.Evaluate (TD.Consumed)),
+              "token: a consumed token cannot be consumed again");
+      Assert (TC.Revoked_Rejection (TC.Evaluate (TD.Revoked)),
+              "token: a revoked token cannot be consumed");
+
+      --  Record-based evaluation, including the secret and binding branches.
+      Tok.State := TD.Issued;
+      Ignore (TC.Evaluate (Tok, 1));
+      Ignore (TV.Evaluate (Tok, Reg, True, True, 1));
+      Ignore (TV.Evaluate (Tok, Reg, False, True, 1));
+      Ignore (TV.Evaluate (Tok, Reg, True, False, 1));
+   end Test_99_pure_admission_logic;
+
    overriding procedure Register_Tests (T : in out Test_Case) is
    begin
       Registration.Register_Routine
@@ -21093,6 +21174,9 @@ package body Identity_Tests_Cases is
       Registration.Register_Routine
         (T, Test_98_account_operation_success_paths'Access,
          "Test_98_account_operation_success_paths");
+      Registration.Register_Routine
+        (T, Test_99_pure_admission_logic'Access,
+         "Test_99_pure_admission_logic");
    end Register_Tests;
 
    overriding function Name (T : Test_Case) return AUnit.Message_String is
