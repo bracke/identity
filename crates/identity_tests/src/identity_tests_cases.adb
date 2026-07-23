@@ -184,6 +184,7 @@ with Identity.Operations.Passwords.Request_Reset;
 with Identity.Operations.Principals.Create;
 with Identity.Operations.Principals.Retire;
 with Identity.Operations.Recovery.Begin_Recovery;
+with Identity.Operations.Replay;
 with Identity.Operations.Recovery.Cancel;
 with Identity.Operations.Recovery.Complete;
 with Identity.Operations.Recovery.Continue;
@@ -20949,6 +20950,109 @@ package body Identity_Tests_Cases is
       Ignore (TV.Evaluate (Tok, Reg, True, False, 1));
    end Test_99_pure_admission_logic;
 
+   --  Account recovery is account-takeover surface, so its refusal and
+   --  replay-protection paths matter. The corpus reached begin-recovery only on
+   --  its wrapper-fault and unknown-subject branches; this drives the real
+   --  flow: an active principal begins recovery on its own account (the audited
+   --  success path), begin refuses a non-existent account, and the
+   --  idempotency-keyed form performs once and refuses a replay of the same key
+   --  rather than beginning a second recovery.
+   procedure Test_100_recovery_begin_and_replay
+     (T : in out AUnit.Test_Cases.Test_Case'Class)
+   is
+      pragma Unreferenced (T);
+      package Stores renames Identity.Adapters.Repositories.Stores;
+      package Ent renames Identity.Identifiers.Entities;
+      package RB renames Identity.Operations.Recovery.Begin_Recovery;
+      package RT renames Identity.Recovery.Transactions;
+      package Rep renames Identity.Operations.Replay;
+      package Idem renames Identity.Operations.Idempotency;
+      package St renames Identity.Accounts.States;
+
+      function U (S : String) return Identity.Identifiers.Encoded_Identifier is
+        (Identity.Identifiers.From_String
+           ("a9000000-0000-0000-0000-0000000000" & S));
+
+      Far_Future : constant Identity.Times.Expiration :=
+        (Present => True, Time_Point => 1_000_000);
+      View : constant St.Account_State_View :=
+        (Administrative => St.Enabled, Lifecycle => St.Active,
+         Verification => St.Verified, Lock_State => St.Not_Locked,
+         Requirements => (others => False), Recovery => (others => False));
+      Key : constant Idem.Idempotency_Key :=
+        Idem.From_String ("recovery-begin:principal-3");
+
+      type Mem_Access is access Identity.Adapters.Repositories.Memory.Store;
+      Ptr : constant Mem_Access :=
+        new Identity.Adapters.Repositories.Memory.Store;
+      SR : Stores.Store_Interface'Class renames
+        Stores.Store_Interface'Class (Ptr.all);
+
+      generic
+         type Item (<>) is limited private;
+      procedure Gen_Ignore (Value : Item);
+      procedure Gen_Ignore (Value : Item) is
+         pragma Unreferenced (Value);
+      begin
+         null;
+      end Gen_Ignore;
+      procedure Ignore is new Gen_Ignore (Stores.Command_Status);
+
+      procedure Fresh (P_Sfx : String; A_Sfx : String;
+                       Ac : out Ent.Account_Id; Pr : out Ent.Principal_Id) is
+      begin
+         Pr := Ent.Principal (U (P_Sfx));
+         Ac := Ent.Account (U (A_Sfx));
+         Ignore (Stores.Create_Principal
+                   (SR, (Id => Pr, Kind => Identity.Principals.Kinds.Human,
+                         State => Identity.Principals.Definitions.Active,
+                         Version => 0)));
+         Ignore (Stores.Create_Account
+                   (SR, (Id => Ac, Principal => Pr, State => View, Version => 0)));
+      end Fresh;
+
+      function Txn (Id_Sfx : String; Pr : Ent.Principal_Id; Ac : Ent.Account_Id)
+        return RT.Recovery_Transaction_Record is
+        (Id         => Ent.Authentication_Transaction (U (Id_Sfx)),
+         Principal   => Pr,
+         Account     => Ac,
+         Created_At  => 0,
+         Expires_At  => Far_Future,
+         State       => RT.Started,
+         Version     => 0);
+
+      AC : Ent.Account_Id;
+      PR : Ent.Principal_Id;
+   begin
+      --  Audited success: an active principal begins recovery on its account.
+      Fresh ("10", "11", AC, PR);
+      Assert (RT.Transition_Applied
+                (RB.Execute (SR, Txn ("12", PR, AC),
+                             Audit_Context, Next_Audit_Event, 1)),
+              "recovery: an active principal begins recovery on its own account");
+
+      --  Refusal: begin against an account that does not exist.
+      Fresh ("13", "14", AC, PR);
+      Assert (not RT.Transition_Applied
+                (RB.Execute (SR, Txn ("15", PR, Ent.Account (U ("ff"))),
+                             Audit_Context, Next_Audit_Event, 1)),
+              "recovery: begin refuses an account that does not exist");
+
+      --  Idempotency: the keyed form performs once and refuses a replay.
+      Fresh ("16", "17", AC, PR);
+      declare
+         First  : constant Rep.Recovery_Outcome :=
+           RB.Execute (SR, Txn ("18", PR, AC), Audit_Context, Next_Audit_Event, 1, Key);
+         Second : constant Rep.Recovery_Outcome :=
+           RB.Execute (SR, Txn ("18", PR, AC), Audit_Context, Next_Audit_Event, 1, Key);
+      begin
+         Assert (Rep.Performed (First),
+                 "recovery: a fresh idempotency key performs the begin");
+         Assert (Rep.Was_Replayed (Second),
+                 "recovery: replaying the same key does not begin recovery again");
+      end;
+   end Test_100_recovery_begin_and_replay;
+
    overriding procedure Register_Tests (T : in out Test_Case) is
    begin
       Registration.Register_Routine
@@ -21177,6 +21281,9 @@ package body Identity_Tests_Cases is
       Registration.Register_Routine
         (T, Test_99_pure_admission_logic'Access,
          "Test_99_pure_admission_logic");
+      Registration.Register_Routine
+        (T, Test_100_recovery_begin_and_replay'Access,
+         "Test_100_recovery_begin_and_replay");
    end Register_Tests;
 
    overriding function Name (T : Test_Case) return AUnit.Message_String is
