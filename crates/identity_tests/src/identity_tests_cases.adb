@@ -21053,6 +21053,81 @@ package body Identity_Tests_Cases is
       end;
    end Test_100_recovery_begin_and_replay;
 
+   --  Password-reset request issues a reset token and must not issue a second
+   --  one for a replayed request. The corpus reached request-reset only on its
+   --  wrapper-fault and unknown branches (69%); this drives the real flow: a
+   --  request issues the token (the audited success path), and the
+   --  idempotency-keyed form issues once and refuses a replay of the same key
+   --  rather than issuing a second reset token -- the guard against a replayed
+   --  request flooding an account with valid reset tokens.
+   procedure Test_101_password_reset_request_and_replay
+     (T : in out AUnit.Test_Cases.Test_Case'Class)
+   is
+      pragma Unreferenced (T);
+      package Stores renames Identity.Adapters.Repositories.Stores;
+      package Ent renames Identity.Identifiers.Entities;
+      package RR renames Identity.Operations.Passwords.Request_Reset;
+      package Rep renames Identity.Operations.Replay;
+      package Idem renames Identity.Operations.Idempotency;
+
+      function U (S : String) return Identity.Identifiers.Encoded_Identifier is
+        (Identity.Identifiers.From_String
+           ("aa000000-0000-0000-0000-0000000000" & S));
+
+      Far_Future : constant Identity.Times.Expiration :=
+        (Present => True, Time_Point => 1_000_000);
+      Key : constant Idem.Idempotency_Key :=
+        Idem.From_String ("password-reset:principal-1");
+
+      type Mem_Access is access Identity.Adapters.Repositories.Memory.Store;
+      Ptr : constant Mem_Access :=
+        new Identity.Adapters.Repositories.Memory.Store;
+      SR : Stores.Store_Interface'Class renames
+        Stores.Store_Interface'Class (Ptr.all);
+
+      PR : constant Ent.Principal_Id := Ent.Principal (U ("01"));
+
+      function Req (Id_Sfx : String) return RR.Reset_Request is
+        (Id         => Ent.Token (U (Id_Sfx)),
+         Principal   => PR,
+         Secret      => Reset_Token_Secret,
+         Issued_At   => 0,
+         Expires_At  => Far_Future);
+
+      generic
+         type Item (<>) is limited private;
+      procedure Gen_Ignore (Value : Item);
+      procedure Gen_Ignore (Value : Item) is
+         pragma Unreferenced (Value);
+      begin
+         null;
+      end Gen_Ignore;
+      procedure Ignore is new Gen_Ignore (Stores.Command_Status);
+   begin
+      Ignore (Stores.Create_Principal
+                (SR, (Id => PR, Kind => Identity.Principals.Kinds.Human,
+                      State => Identity.Principals.Definitions.Active,
+                      Version => 0)));
+
+      --  Audited success: a reset request issues a reset token.
+      Assert (RR.Execute (SR, Req ("10"), Audit_Context, Next_Audit_Event, 1)
+                = Stores.Applied,
+              "reset: a reset request issues a reset token");
+
+      --  Idempotency: the keyed form issues once, then refuses a replay.
+      declare
+         First  : constant Rep.Command_Outcome :=
+           RR.Execute (SR, Req ("11"), Audit_Context, Next_Audit_Event, 1, Key);
+         Second : constant Rep.Command_Outcome :=
+           RR.Execute (SR, Req ("11"), Audit_Context, Next_Audit_Event, 1, Key);
+      begin
+         Assert (Rep.Performed (First),
+                 "reset: a fresh idempotency key issues the reset token");
+         Assert (Rep.Was_Replayed (Second),
+                 "reset: replaying the same key does not issue a second token");
+      end;
+   end Test_101_password_reset_request_and_replay;
+
    overriding procedure Register_Tests (T : in out Test_Case) is
    begin
       Registration.Register_Routine
@@ -21284,6 +21359,9 @@ package body Identity_Tests_Cases is
       Registration.Register_Routine
         (T, Test_100_recovery_begin_and_replay'Access,
          "Test_100_recovery_begin_and_replay");
+      Registration.Register_Routine
+        (T, Test_101_password_reset_request_and_replay'Access,
+         "Test_101_password_reset_request_and_replay");
    end Register_Tests;
 
    overriding function Name (T : Test_Case) return AUnit.Message_String is
