@@ -21128,6 +21128,182 @@ package body Identity_Tests_Cases is
       end;
    end Test_101_password_reset_request_and_replay;
 
+   --  Deep adversarial fuzz of the attacker-controlled decoders the threat
+   --  model names (A8 persistence tamperer, envelope DoS, malformed UTF-8).
+   --  Unlike Test_88's hand-picked cases, this is systematic: the entire
+   --  two-byte UTF-8 space against a correctness oracle, every truncation and a
+   --  field-mutation set of the password-verifier envelope, and malformed
+   --  persisted frames over a version range. Each decoder must classify every
+   --  input into a bounded status without raising, over-reading, or accepting
+   --  malformed input.
+   procedure Test_102_deep_decoder_fuzz
+     (T : in out AUnit.Test_Cases.Test_Case'Class)
+   is
+      pragma Unreferenced (T);
+      package U8 renames Identity.Text.UTF_8;
+      package PH renames Identity.Crypto.Password_Hashing;
+      package PC renames Identity.Codecs.Persisted;
+      use type PH.Verification_Outcome;
+      type Str_Access is access constant String;
+   begin
+      --  1. The whole two-byte UTF-8 space against a correctness oracle: a
+      --  two-byte string is valid iff it is two ASCII bytes or one well-formed
+      --  2-byte sequence. Any misclassification -- or a raise -- is a defect.
+      declare
+         Misclassified : Natural := 0;
+      begin
+         for B1 in 0 .. 255 loop
+            for B2 in 0 .. 255 loop
+               declare
+                  S : constant String :=
+                    [Character'Val (B1), Character'Val (B2)];
+                  Expected_Valid : constant Boolean :=
+                    (B1 <= 16#7F# and then B2 <= 16#7F#)
+                    or else (B1 in 16#C2# .. 16#DF#
+                             and then B2 in 16#80# .. 16#BF#);
+               begin
+                  if (U8.Validate (S) = U8.Valid) /= Expected_Valid then
+                     Misclassified := Misclassified + 1;
+                  end if;
+               end;
+            end loop;
+         end loop;
+         Assert (Misclassified = 0,
+                 "fuzz: UTF-8 classifies all 65536 two-byte sequences per the"
+                 & " oracle (" & Natural'Image (Misclassified) & " wrong)");
+      exception
+         when others =>
+            Assert (False, "fuzz: UTF-8 validation raised on a two-byte input");
+      end;
+
+      --  2. Every lead byte followed by a truncation and a non-continuation
+      --  byte: a bare 3/4-byte lead, and a lead with a bad second byte.
+      declare
+         Bad : Natural := 0;
+      begin
+         for Lead in 16#C2# .. 16#FF# loop
+            declare
+               Solo : constant String := [1 => Character'Val (Lead)];
+               Broken : constant String :=
+                 [Character'Val (Lead), 'A'];
+            begin
+               if U8.Validate (Solo) = U8.Valid
+                 or else U8.Validate (Broken) = U8.Valid
+               then
+                  Bad := Bad + 1;
+               end if;
+            end;
+         end loop;
+         Assert (Bad = 0,
+                 "fuzz: no truncated or broken multi-byte lead validates");
+      exception
+         when others =>
+            Assert (False, "fuzz: UTF-8 validation raised on a lead byte");
+      end;
+
+      --  3. Password-verifier envelope: every truncation of a plausible
+      --  envelope, plus a field-mutation set (empty, non-hex, oversized,
+      --  absurd iteration count, extra separators, embedded control bytes).
+      --  The parser must never raise and never accept a malformed envelope.
+      declare
+         Base : constant String :=
+           "identity-pbkdf2-sha256:v2:600000:"
+           & "0123456789abcdef0123456789abcdef:"
+           & "0123456789abcdef0123456789abcdef"
+           & "0123456789abcdef0123456789abcdef";
+         Huge_Iter : constant String := [1 .. 400 => '9'];
+         Huge_Blob : constant String := [1 .. 2000 => 'a'];
+         Raised, False_Accept : Boolean := False;
+
+         procedure Probe (Envelope : String) is
+         begin
+            if PH.Verify (Presented_Password, Envelope).Outcome = PH.Verified
+            then
+               False_Accept := True;
+            end if;
+         exception
+            when others =>
+               Raised := True;
+         end Probe;
+      begin
+         for L in 0 .. Base'Length loop
+            Probe (Base (Base'First .. Base'First + L - 1));
+         end loop;
+         Probe ("identity-pbkdf2-sha256:v2:" & Huge_Iter & ":00:00");
+         Probe ("identity-pbkdf2-sha256:v2:600000:nothex:nothex");
+         Probe ("identity-pbkdf2-sha256:v2:600000:" & Huge_Blob & ":00");
+         Probe ("identity-pbkdf2-sha256:v2::::::::");
+         Probe ("identity-pbkdf2-sha256:v2:-1:00:00");
+         Probe ("identity-pbkdf2-sha256:v2:0x10:00:00");
+         Probe ("identity-pbkdf2-sha256:v2:600000:0"
+                & [1 => Character'Val (0)] & ":00");
+         Probe (Huge_Blob);
+         Probe ([1 => Character'Val (0)]);
+         Assert (not Raised,
+                 "fuzz: the envelope parser never raises on malformed input");
+         Assert (not False_Accept,
+                 "fuzz: the envelope parser never accepts a malformed envelope");
+      end;
+
+      --  4. Persisted frames (A8 persistence tamperer): malformed canonical
+      --  frames over a version range must yield a bounded codec status, never
+      --  raise, and never admit as Valid.
+      declare
+         Window : constant PC.Version_Window :=
+           (Current => 1, Minimum => 1, Maximum => 1);
+         --  Frames that reach the canonical parser's index arithmetic: the "IF"
+         --  prefix, then malformed length-delimited fields -- truncated
+         --  numbers, a label length past the buffer, an over-bound payload
+         --  length, an embedded control byte, and a maximal blob.
+         --  Every frame here is genuinely malformed: too short for the "IF"
+         --  header, wrong header, a label length past the buffer, an over-bound
+         --  payload length, and a numeric field that overflows the reader.
+         Frames : constant array (Positive range <>) of Str_Access :=
+           [new String'(""),
+            new String'("not-a-frame"),
+            new String'("IF"),
+            new String'("IF9"),
+            new String'("IF9#"),
+            new String'("IF3#5:abc"),
+            new String'("IF2#2:ab#999999:"),
+            new String'("IF" & [1 .. 40 => '9'] & "#0:#0:"),
+            new String'([1 .. 400 => 'x'])];
+         False_Admit : Boolean := False;
+         Raised_On   : Natural := 0;
+      begin
+         --  Format_Version is constrained to 1 .. 2**31-1, so 0 is not even
+         --  representable; versions above the window's Maximum (1) are the
+         --  unsupported-version case.
+         Sweep : for V in 1 .. 6 loop
+            for I in Frames'Range loop
+               begin
+                  declare
+                     Value : constant Identity.Text.Bounded.Bounded_Text :=
+                       Identity.Text.Bounded.From_String (Frames (I).all);
+                     Version : constant Identity.Versions.Format_Version :=
+                       Identity.Versions.Format_Version (V);
+                  begin
+                     if PC.Validate_Canonical (Value, Version, Window)
+                        = Identity.Codecs.Valid
+                     then
+                        False_Admit := True;
+                     end if;
+                  end;
+               exception
+                  when others =>
+                     Raised_On := I;
+                     exit Sweep;
+               end;
+            end loop;
+         end loop Sweep;
+         Assert (Raised_On = 0,
+                 "fuzz: the persisted-frame codec raised on frame #"
+                 & Natural'Image (Raised_On));
+         Assert (not False_Admit,
+                 "fuzz: no malformed frame is admitted as valid");
+      end;
+   end Test_102_deep_decoder_fuzz;
+
    overriding procedure Register_Tests (T : in out Test_Case) is
    begin
       Registration.Register_Routine
@@ -21362,6 +21538,9 @@ package body Identity_Tests_Cases is
       Registration.Register_Routine
         (T, Test_101_password_reset_request_and_replay'Access,
          "Test_101_password_reset_request_and_replay");
+      Registration.Register_Routine
+        (T, Test_102_deep_decoder_fuzz'Access,
+         "Test_102_deep_decoder_fuzz");
    end Register_Tests;
 
    overriding function Name (T : Test_Case) return AUnit.Message_String is
