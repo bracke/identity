@@ -20405,6 +20405,145 @@ package body Identity_Tests_Cases is
       end if;
    end Test_95_adapter_forwarding_surface;
 
+   --  Pure state machines and validators the corpus reached only on their happy
+   --  path: the repository transaction state machine (every function over every
+   --  context state) and the two UTF-8 validators (multi-byte decode and every
+   --  rejection branch, plus the status predicates). These are pure functions,
+   --  so the coverage gap was simply inputs never supplied, not unreachable
+   --  code -- and each transition and decode branch is real behaviour worth
+   --  pinning.
+   procedure Test_96_pure_state_and_validators
+     (T : in out AUnit.Test_Cases.Test_Case'Class)
+   is
+      pragma Unreferenced (T);
+      package Repo renames Identity.Adapters.Repositories;
+      package Tr renames Identity.Adapters.Repositories.Transactions;
+      package U8 renames Identity.Text.UTF_8;
+      package ST renames Identity.Secrets.Text;
+
+      --  UTF-8 vectors: valid 2/3/4-byte sequences, each broken two ways
+      --  (truncated at end of string, and a non-continuation second byte), a
+      --  lone continuation, an invalid start byte, and an over-limit slice.
+      Two    : constant String := [Character'Val (16#C3#), Character'Val (16#A9#)];
+      Three  : constant String :=
+        [Character'Val (16#E2#), Character'Val (16#82#), Character'Val (16#AC#)];
+      Four   : constant String :=
+        [Character'Val (16#F0#), Character'Val (16#9F#),
+         Character'Val (16#98#), Character'Val (16#80#)];
+      Lone   : constant String := [1 => Character'Val (16#80#)];
+      Start  : constant String := [1 => Character'Val (16#FF#)];
+      Trunc2 : constant String := [1 => Character'Val (16#C3#)];
+      Bad2   : constant String := [Character'Val (16#C3#), 'A'];
+      Trunc3 : constant String := [Character'Val (16#E2#), Character'Val (16#82#)];
+      Bad3   : constant String :=
+        [Character'Val (16#E2#), Character'Val (16#82#), 'A'];
+      Trunc4 : constant String :=
+        [Character'Val (16#F0#), Character'Val (16#9F#), Character'Val (16#98#)];
+      Bad4   : constant String :=
+        [Character'Val (16#F0#), Character'Val (16#9F#),
+         Character'Val (16#98#), 'A'];
+      Big    : constant String := [1 .. 5000 => 'a'];
+
+      States : constant array (Positive range <>) of Repo.Context_State :=
+        [Repo.Opened, Repo.Transaction_Active, Repo.Committed,
+         Repo.Rolled_Back, Repo.Closed, Repo.Faulted];
+   begin
+      --  Transaction state machine: drive every function over every state, so
+      --  each case arm and each predicate is executed.
+      for S of States loop
+         declare
+            B : constant Tr.Transaction_Result :=
+              Tr.Begin_Transaction (S, Repo.Read_Write);
+            C : constant Tr.Transaction_Result := Tr.Commit (S);
+            R : constant Tr.Transaction_Result := Tr.Rollback (S);
+            X : constant Tr.Transaction_Result := Tr.Close (S);
+         begin
+            --  Succeeded and Failed partition every result.
+            Assert (Tr.Succeeded (B) = not Tr.Failed (B),
+                    "txn: begin succeeded xor failed from "
+                    & Repo.Context_State'Image (S));
+            Assert (Tr.Succeeded (C) = not Tr.Failed (C),
+                    "txn: commit succeeded xor failed");
+            Assert (Tr.Succeeded (R) = not Tr.Failed (R),
+                    "txn: rollback succeeded xor failed");
+            --  Close is total: it never fails from any state.
+            Assert (Tr.Succeeded (X),
+                    "txn: close succeeds from " & Repo.Context_State'Image (S));
+            --  The three state predicates only hold on a succeeded result.
+            Assert ((if Tr.Active (B) then Tr.Succeeded (B)),
+                    "txn: active implies succeeded");
+            Assert ((if Tr.Committed (C) then Tr.Succeeded (C)),
+                    "txn: committed implies succeeded");
+            Assert ((if Tr.Rolled_Back (R) then Tr.Succeeded (R)),
+                    "txn: rolled_back implies succeeded");
+         end;
+      end loop;
+
+      --  Specific transitions worth pinning (and the Read_Only mode).
+      Assert (Tr.Active (Tr.Begin_Transaction (Repo.Opened, Repo.Read_Only)),
+              "txn: begin on Opened yields an active transaction");
+      Assert (Tr.Failed
+                (Tr.Begin_Transaction (Repo.Transaction_Active, Repo.Read_Write)),
+              "txn: begin on an active transaction is rejected");
+      Assert (Tr.Committed (Tr.Commit (Repo.Transaction_Active)),
+              "txn: commit on an active transaction commits");
+      Assert (Tr.Failed (Tr.Commit (Repo.Opened)),
+              "txn: commit with no active transaction fails");
+      Assert (Tr.Rolled_Back (Tr.Rollback (Repo.Transaction_Active)),
+              "txn: rollback on an active transaction rolls back");
+      Assert (Tr.Failed (Tr.Rollback (Repo.Committed)),
+              "txn: rollback of a finalized transaction fails");
+
+      --  UTF-8 validator: every accept and reject branch, then the predicates.
+      Assert (U8.Validate ("plain-ascii") = U8.Valid, "utf8: ascii valid");
+      Assert (U8.Validate (Two) = U8.Valid, "utf8: 2-byte valid");
+      Assert (U8.Validate (Three) = U8.Valid, "utf8: 3-byte valid");
+      Assert (U8.Validate (Four) = U8.Valid, "utf8: 4-byte valid");
+      Assert (U8.Validate (Lone) = U8.Invalid, "utf8: lone continuation");
+      Assert (U8.Validate (Start) = U8.Invalid, "utf8: invalid start byte");
+      Assert (U8.Validate (Trunc2) = U8.Invalid, "utf8: truncated 2-byte");
+      Assert (U8.Validate (Bad2) = U8.Invalid, "utf8: broken 2-byte");
+      Assert (U8.Validate (Trunc3) = U8.Invalid, "utf8: truncated 3-byte");
+      Assert (U8.Validate (Bad3) = U8.Invalid, "utf8: broken 3-byte");
+      Assert (U8.Validate (Trunc4) = U8.Invalid, "utf8: truncated 4-byte");
+      Assert (U8.Validate (Bad4) = U8.Invalid, "utf8: broken 4-byte");
+      Assert (U8.Validate (Big) = U8.Too_Large, "utf8: over the byte limit");
+      Assert (U8.Valid_Status (U8.Validate (Two)), "utf8: valid-status predicate");
+      Assert (U8.Invalid_Status (U8.Validate (Lone)),
+              "utf8: invalid-status predicate");
+      Assert (U8.Size_Rejected (U8.Validate (Big)),
+              "utf8: size-rejected predicate");
+      Assert (U8.Rejected (U8.Validate (Start)), "utf8: rejected predicate");
+      Assert (not U8.Rejected (U8.Validate ("ok")),
+              "utf8: a valid string is not rejected");
+
+      --  Secret-text validator: the same surface over Secret_Text_Status.
+      Assert (ST.Validate_UTF_8 ("secret") = ST.Valid, "secret-text: ascii valid");
+      Assert (ST.Validate_UTF_8 (Two) = ST.Valid, "secret-text: 2-byte valid");
+      Assert (ST.Validate_UTF_8 (Three) = ST.Valid, "secret-text: 3-byte valid");
+      Assert (ST.Validate_UTF_8 (Four) = ST.Valid, "secret-text: 4-byte valid");
+      Assert (ST.Validate_UTF_8 (Lone) = ST.Invalid_UTF_8,
+              "secret-text: lone continuation");
+      Assert (ST.Validate_UTF_8 (Bad3) = ST.Invalid_UTF_8,
+              "secret-text: broken 3-byte");
+      Assert (ST.Validate_UTF_8 (Big) = ST.Too_Large,
+              "secret-text: over the byte limit");
+      Assert (ST.Accepted_Input (ST.Validate_UTF_8 ("ok")),
+              "secret-text: accepted-input predicate");
+      Assert (ST.Rejected_Input (ST.Validate_UTF_8 (Lone)),
+              "secret-text: rejected-input predicate");
+      Assert (ST.Invalid_UTF_8_Rejected (ST.Validate_UTF_8 (Bad2)),
+              "secret-text: invalid-utf8 predicate");
+      Assert (ST.Size_Rejected (ST.Validate_UTF_8 (Big)),
+              "secret-text: size-rejected predicate");
+      declare
+         Held : constant ST.Secret_Text := ST.From_UTF_8 (Three);
+         pragma Unreferenced (Held);
+      begin
+         null;
+      end;
+   end Test_96_pure_state_and_validators;
+
    overriding procedure Register_Tests (T : in out Test_Case) is
    begin
       Registration.Register_Routine
@@ -20621,6 +20760,9 @@ package body Identity_Tests_Cases is
       Registration.Register_Routine
         (T, Test_95_adapter_forwarding_surface'Access,
          "Test_95_adapter_forwarding_surface");
+      Registration.Register_Routine
+        (T, Test_96_pure_state_and_validators'Access,
+         "Test_96_pure_state_and_validators");
    end Register_Tests;
 
    overriding function Name (T : Test_Case) return AUnit.Message_String is

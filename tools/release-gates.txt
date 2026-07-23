@@ -94,7 +94,7 @@ so a suite that never ran cannot be reported as satisfied.
   example), and unions the executed lines reduced by gcov. A line counts as
   covered when any suite reaches it, so the number reflects the corpus, not one
   suite. Scored on body (.adb) line coverage of src/public + src/adapters;
-  fails below the threshold -- a ratchet at the honest measured floor (85%),
+  fails below the threshold -- a ratchet at the honest measured floor (87%),
   raised as the lowest-covered files the report names improve. Package specs
   (.ads) are reported but not
   gated -- their expression-function and predicate lines are verified
@@ -266,7 +266,7 @@ text it prints -- do not edit the numbers to match.
   context-free overloads      5
   proved packages             12
   security invariants         80
-  registered test routines    95
+  registered test routines    96
 <!-- end generated: identity-facts -->
 
 Cost

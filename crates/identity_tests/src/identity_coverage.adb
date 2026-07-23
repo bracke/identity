@@ -45,8 +45,8 @@ procedure Identity_Coverage is
    --  catches a regression without failing on noise. The lowest-covered files
    --  the report names are where to raise it from; raise this as they improve,
    --  never lower it silently.
-   Minimum_Body       : constant Float := 85.0;
-   Minimum_Body_Image : constant String := "85.0";
+   Minimum_Body       : constant Float := 87.0;
+   Minimum_Body_Image : constant String := "87.0";
 
    --  Line numbers reached, accumulated as sets so the union across suites is
    --  exact: a line covered by any suite is covered, counted once.
