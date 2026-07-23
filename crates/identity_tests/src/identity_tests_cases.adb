@@ -20544,6 +20544,238 @@ package body Identity_Tests_Cases is
       end;
    end Test_96_pure_state_and_validators;
 
+   --  A no-capacity store: Capacity_Reserved (Event_Capacity_Available) always
+   --  fails, so every audited operation takes its reserve-refused early return.
+   type No_Capacity_Store is
+     new Identity.Adapters.Repositories.Memory.Store with null record;
+   overriding function Event_Capacity_Available
+     (Repository : No_Capacity_Store; Count : Positive) return Boolean is
+     (False);
+
+   --  An emit-failing store: capacity is available so the reserve and the core
+   --  mutation proceed, but the audit Append_Event fails, so every audited
+   --  operation takes its "emit failed after reserve" return.
+   type Emit_Fail_Store is
+     new Identity.Adapters.Repositories.Memory.Store with null record;
+   overriding function Append_Event
+     (Repository : in out Emit_Fail_Store;
+      Event      : Identity.Events.Envelopes.Event_Envelope)
+      return Identity.Adapters.Repositories.Stores.Command_Status is
+     (Identity.Adapters.Repositories.Stores.State_Conflict);
+
+   --  Every audited operation driven once, so its reserve, core and emit
+   --  branches all execute. The conformance and happy-path tests reach the
+   --  success paths; run against the two fault stores above this reaches the
+   --  reserve-refused and emit-failed returns that the corpus never did. The
+   --  operations carry no argument preconditions, so minimally-typed requests
+   --  suffice -- the audited wrapper reserves, delegates, and emits regardless
+   --  of what the core returns for an unknown subject.
+   procedure Test_97_audited_operation_faults
+     (T : in out AUnit.Test_Cases.Test_Case'Class)
+   is
+      pragma Unreferenced (T);
+      package Stores renames Identity.Adapters.Repositories.Stores;
+      package Ent renames Identity.Identifiers.Entities;
+      package Ops renames Identity.Operations;
+
+      function U (S : String) return Identity.Identifiers.Encoded_Identifier is
+        (Identity.Identifiers.From_String
+           ("a6000000-0000-0000-0000-0000000000" & S));
+      function Ref (S : String) return Identity.Text.Bounded.Bounded_Text is
+        (Identity.Text.Bounded.From_String (S));
+
+      PR  : constant Ent.Principal_Id := Ent.Principal (U ("01"));
+      CR  : constant Ent.Credential_Id := Ent.Credential (U ("03"));
+      TX  : constant Ent.Authentication_Transaction_Id :=
+        Ent.Authentication_Transaction (U ("13"));
+      Reg : constant Identity.Identifiers.Registry.Registry_Id :=
+        Identity.Identifiers.Registry.From_String ("identity.assurance.mfa");
+
+      --  All three stores live on the heap: a Memory.Store is a large
+      --  fixed-capacity record and several on the stack overflow it.
+      type Mem_Access is access Identity.Adapters.Repositories.Memory.Store;
+      type No_Cap_Access is access No_Capacity_Store;
+      type No_Emit_Access is access Emit_Fail_Store;
+      Normal_Ptr  : constant Mem_Access :=
+        new Identity.Adapters.Repositories.Memory.Store;
+      No_Cap_Ptr  : constant No_Cap_Access := new No_Capacity_Store;
+      No_Emit_Ptr : constant No_Emit_Access := new Emit_Fail_Store;
+      Normal : Stores.Store_Interface'Class renames
+        Stores.Store_Interface'Class (Normal_Ptr.all);
+
+      generic
+         type Item (<>) is limited private;
+      procedure Gen_Ignore (Value : Item);
+      procedure Gen_Ignore (Value : Item) is
+         pragma Unreferenced (Value);
+      begin
+         null;
+      end Gen_Ignore;
+
+      procedure Ignore is new Gen_Ignore (Stores.Command_Status);
+      procedure Ignore is new Gen_Ignore
+        (Identity.Authentication.Results.Password_Authentication_Result);
+      procedure Ignore is new Gen_Ignore
+        (Identity.Authentication.Transactions.Authentication_Transaction_Status);
+      procedure Ignore is new Gen_Ignore
+        (Identity.One_Time_Passwords.Credentials.TOTP_Accept_Status);
+      procedure Ignore is new Gen_Ignore
+        (Identity.Recovery_Codes.Sets.Recovery_Code_Consume_Status);
+      procedure Ignore is new Gen_Ignore (Identity.Results.Operation_Status);
+      procedure Ignore is new Gen_Ignore
+        (Identity.Tokens.Verification.Token_Verification_Outcome);
+      procedure Ignore is new Gen_Ignore
+        (Ops.Passwords.Migrate_Verifier.Migration_Outcome);
+      procedure Ignore is new Gen_Ignore
+        (Identity.Recovery.Transactions.Recovery_Transition_Status);
+      procedure Ignore is new Gen_Ignore (Natural);
+
+      procedure Sweep (SR : in out Stores.Store_Interface'Class) is
+         --  Each request is a minimal default value: the audited operations
+         --  have no argument preconditions, and this test drives their reserve,
+         --  core and emit branches, not their input validation. The requests
+         --  are read (passed in), never assigned -- deliberately so.
+         pragma Warnings (Off, "*read but never assigned*");
+         Ac_Close  : Ops.Accounts.Close.Close_Request;
+         Ac_Create : Identity.Accounts.Definitions.Account_Record;
+         Ac_Dis    : Ops.Accounts.Disable.Disable_Request;
+         Ac_En     : Ops.Accounts.Enable.Enable_Request;
+         Ac_Mfa    : Ops.Accounts.Require_MFA.Requirement_Request;
+         Ac_Pwc    : Ops.Accounts.Require_Password_Change.Requirement_Request;
+         Ac_Susp   : Ops.Accounts.Suspend.Suspend_Request;
+         Ac_Unlk   : Ops.Accounts.Unlock.Unlock_Request;
+         Ak_Auth   : Ops.API_Keys.Authenticate.Staged_Authentication_Request;
+         Ak_Iss    : Ops.API_Keys.Issue.Issue_Request;
+         Ak_Rev    : Ops.API_Keys.Revoke.Staged_Revoke_Request;
+         Ak_Rot    : Ops.API_Keys.Rotate.Rotate_Request;
+         Au_Secret : Identity.Secrets.API_Keys.API_Key_Secret;
+         Au_Txn    : Identity.Authentication.Transactions.Authentication_Transaction_Record;
+         Au_Cont   : Ops.Authentication.Continue.Staged_Challenge_Completion_Request;
+         Au_Ext    : Identity.External_Providers.Assertions.Normalized_Assertion;
+         Su_Bind   : Identity.Multi_Factor.Step_Up.Step_Up_Binding;
+         Su_Attr   : Identity.Assurance.Attributes.Assurance_Attributes;
+         Xi_Bind   : Identity.External_Providers.Bindings.External_Binding_Record;
+         Xi_Rev    : Ops.External_Identities.Revoke.Staged_Revoke_Request;
+         Fa_Totp   : Ops.Factors.Accept_TOTP_Counter.Accept_Request;
+         Fa_Beg    : Ops.Factors.Begin_Enrollment.TOTP_Begin_Request;
+         Fa_Cmp    : Ops.Factors.Complete_Enrollment.Staged_TOTP_Completion_Request;
+         Fa_Crc    : Ops.Factors.Consume_Recovery_Code.Consume_Request;
+         Fa_Gen    : Ops.Factors.Generate_Recovery_Codes.Generate_Request;
+         Fa_Iss    : Ops.Factors.Issue_Challenge.Staged_Issue_Request;
+         Fa_Reg    : Ops.Factors.Regenerate_Recovery_Codes.Staged_Regenerate_Request;
+         Fa_Pk     : Identity.WebAuthn.Credentials.Passkey_Credential_Record;
+         Fa_Rem    : Ops.Factors.Remove.Staged_Removal_Request;
+         Fa_Vfy    : Ops.Factors.Verify_TOTP.Verify_Request;
+         Id_Bind   : Identity.Identities.Bindings.Binding_Record;
+         Id_Chg    : Ops.Identities.Change.Staged_Change_Request;
+         Id_Rev    : Ops.Identities.Revoke.Staged_Revoke_Request;
+         Pw_Auth   : Ops.Passwords.Authenticate.Attempted_Request;
+         Pw_Chg    : Ops.Passwords.Change.Change_Request;
+         Pw_Cmp    : Ops.Passwords.Complete_Reset.Reset_Completion_Request;
+         Pw_New    : Identity.Secrets.Passwords.New_Password;
+         Pw_Mig    : Ops.Passwords.Migrate_Verifier.Migration_Request;
+         Pw_Req    : Ops.Passwords.Request_Reset.Reset_Request;
+         Pr_Rec    : Identity.Principals.Definitions.Principal_Record;
+         Pr_Ret    : Ops.Principals.Retire.Staged_Retire_Request;
+         Rc_Txn    : Identity.Recovery.Transactions.Recovery_Transaction_Record;
+         Rc_Can    : Ops.Recovery.Cancel.Staged_Cancellation_Request;
+         Rc_Cmp    : Ops.Recovery.Complete.Staged_Completion_Request;
+         Rc_Con    : Ops.Recovery.Continue.Staged_Continue_Request;
+         Se_Cre    : Ops.Sessions.Create.Create_Request;
+         Se_Rev    : Ops.Sessions.Revoke.Staged_Revoke_Request;
+         Se_Rvc    : Ops.Sessions.Revoke_Credential.Staged_Revoke_Request;
+         Se_Rvf    : Ops.Sessions.Revoke_Family.Staged_Revoke_Request;
+         Se_Rvp    : Ops.Sessions.Revoke_Principal.Staged_Revoke_Request;
+         Se_Rvpr   : Ops.Sessions.Revoke_Provider.Staged_Revoke_Request;
+         Se_Rot    : Ops.Sessions.Rotate.Rotate_Request;
+         Se_Upg    : Ops.Sessions.Upgrade_Assurance.Staged_Upgrade_Request;
+         Tk_Con    : Ops.Tokens.Consume.Consume_Request;
+         Tk_Iss    : Ops.Tokens.Issue.Issue_Request;
+         Vf_Chg    : Identity.Verification.Changes.Contact_Change_Record;
+         Vf_Suc    : Identity.Contacts.Bindings.Contact_Binding_Record;
+         Vf_Cct    : Ops.Verification.Begin_Contact_Change.Contact_Change_Token_Request;
+         Vf_Cmp    : Ops.Verification.Complete.Staged_Completion_Request;
+         Vf_Ccc    : Ops.Verification.Complete_Contact_Change.Staged_Completion_Request;
+         Vf_Con    : Identity.Contacts.Bindings.Contact_Binding_Record;
+         Vf_Req    : Ops.Verification.Request.Verification_Token_Request;
+         pragma Warnings (On, "*read but never assigned*");
+      begin
+         Ignore (Ops.Accounts.Close.Execute (SR, Ac_Close, Audit_Context, Next_Audit_Event, 1));
+         Ignore (Ops.Accounts.Create.Execute (SR, Ac_Create, Audit_Context, Next_Audit_Event, 1));
+         Ignore (Ops.Accounts.Disable.Execute (SR, Ac_Dis, Audit_Context, Next_Audit_Event, 1));
+         Ignore (Ops.Accounts.Enable.Execute (SR, Ac_En, Audit_Context, Next_Audit_Event, 1));
+         Ignore (Ops.Accounts.Require_MFA.Execute (SR, Ac_Mfa, Audit_Context, Next_Audit_Event, 1));
+         Ignore (Ops.Accounts.Require_Password_Change.Execute (SR, Ac_Pwc, Audit_Context, Next_Audit_Event, 1));
+         Ignore (Ops.Accounts.Suspend.Execute (SR, Ac_Susp, Audit_Context, Next_Audit_Event, 1));
+         Ignore (Ops.Accounts.Unlock.Execute (SR, Ac_Unlk, Audit_Context, Next_Audit_Event, 1));
+         Ignore (Ops.API_Keys.Authenticate.Execute (SR, Ak_Auth, Audit_Context, Next_Audit_Event, 1));
+         Ignore (Ops.API_Keys.Issue.Execute (SR, Ak_Iss, Audit_Context, Next_Audit_Event, 1));
+         Ignore (Ops.API_Keys.Revoke.Execute (SR, Ak_Rev, Audit_Context, Next_Audit_Event, 1));
+         Ignore (Ops.API_Keys.Rotate.Execute (SR, Ak_Rot, Audit_Context, Next_Audit_Event, 1));
+         Ignore (Ops.Authentication.API_Key.Execute (SR, Ref ("k"), Au_Secret, 1, Audit_Context, Next_Audit_Event, 1));
+         Ignore (Ops.Authentication.Begin_Transaction.Execute (SR, Au_Txn, Audit_Context, Next_Audit_Event, 1));
+         Ignore (Ops.Authentication.Continue.Complete_Challenge (SR, Au_Cont, Audit_Context, Next_Audit_Event, 1));
+         Ignore (Ops.Authentication.External.Execute (SR, Au_Ext, 1, Audit_Context, Next_Audit_Event, 1));
+         Ignore (Ops.Authentication.Step_Up.Execute
+                   (SR, Su_Bind, TX, Reg, 1,
+                    Identity.Assurance.Levels.Assurance_Level'First, Su_Attr,
+                    Audit_Context, Next_Audit_Event, 1));
+         Ignore (Ops.External_Identities.Bind.Execute (SR, Xi_Bind, Audit_Context, Next_Audit_Event, 1));
+         Ignore (Ops.External_Identities.Revoke.Execute (SR, Xi_Rev, Audit_Context, Next_Audit_Event, 1));
+         Ignore (Ops.Factors.Accept_TOTP_Counter.Execute (SR, Fa_Totp, Audit_Context, Next_Audit_Event, 1));
+         Ignore (Ops.Factors.Begin_Enrollment.Execute (SR, Fa_Beg, Audit_Context, Next_Audit_Event, 1));
+         Ignore (Ops.Factors.Complete_Enrollment.Execute (SR, Fa_Cmp, Audit_Context, Next_Audit_Event, 1));
+         Ignore (Ops.Factors.Consume_Recovery_Code.Execute (SR, Fa_Crc, Audit_Context, Next_Audit_Event, 1));
+         Ignore (Ops.Factors.Generate_Recovery_Codes.Execute (SR, Fa_Gen, Audit_Context, Next_Audit_Event, 1));
+         Ignore (Ops.Factors.Issue_Challenge.Execute (SR, Fa_Iss, Audit_Context, Next_Audit_Event, 1));
+         Ignore (Ops.Factors.Regenerate_Recovery_Codes.Execute (SR, Fa_Reg, Audit_Context, Next_Audit_Event, 1));
+         Ignore (Ops.Factors.Register_Passkey.Execute (SR, Fa_Pk, Audit_Context, Next_Audit_Event, 1));
+         Ignore (Ops.Factors.Remove.Execute (SR, Fa_Rem, Audit_Context, Next_Audit_Event, 1));
+         Ignore (Ops.Factors.Verify_TOTP.Execute (SR, Fa_Vfy, Audit_Context, Next_Audit_Event, 1));
+         Ignore (Ops.Identities.Add.Execute (SR, Id_Bind, Audit_Context, Next_Audit_Event, 1));
+         Ignore (Ops.Identities.Change.Execute (SR, Id_Chg, Audit_Context, Next_Audit_Event, 1));
+         Ignore (Ops.Identities.Revoke.Execute (SR, Id_Rev, Audit_Context, Next_Audit_Event, 1));
+         Ignore (Ops.Passwords.Authenticate.Execute (SR, Pw_Auth, Audit_Context, Next_Audit_Event, 1));
+         Ignore (Ops.Passwords.Change.Execute (SR, Pw_Chg, Audit_Context, Next_Audit_Event, 1));
+         Ignore (Ops.Passwords.Complete_Reset.Execute (SR, Pw_Cmp, Audit_Context, Next_Audit_Event, 1));
+         Ignore (Ops.Passwords.Enroll.Execute (SR, PR, CR, Pw_New, Audit_Context, Next_Audit_Event, 1));
+         Ignore (Ops.Passwords.Migrate_Verifier.Execute (SR, Pw_Mig, Audit_Context, Next_Audit_Event, 1));
+         Ignore (Ops.Passwords.Request_Reset.Execute (SR, Pw_Req, Audit_Context, Next_Audit_Event, 1));
+         Ignore (Ops.Principals.Create.Execute (SR, Pr_Rec, Audit_Context, Next_Audit_Event, 1));
+         Ignore (Ops.Principals.Retire.Execute (SR, Pr_Ret, Audit_Context, Next_Audit_Event, 1));
+         Ignore (Ops.Recovery.Begin_Recovery.Execute (SR, Rc_Txn, Audit_Context, Next_Audit_Event, 1));
+         Ignore (Ops.Recovery.Cancel.Execute (SR, Rc_Can, Audit_Context, Next_Audit_Event, 1));
+         Ignore (Ops.Recovery.Complete.Execute (SR, Rc_Cmp, Audit_Context, Next_Audit_Event, 1));
+         Ignore (Ops.Recovery.Continue.Execute (SR, Rc_Con, Audit_Context, Next_Audit_Event, 1));
+         Ignore (Ops.Sessions.Create.Execute (SR, Se_Cre, Audit_Context, Next_Audit_Event, 1));
+         Ignore (Ops.Sessions.Expire_Eligible.Execute (SR, 1, Audit_Context, Next_Audit_Event, 1));
+         Ignore (Ops.Sessions.Revoke.Execute (SR, Se_Rev, Audit_Context, Next_Audit_Event, 1));
+         Ignore (Ops.Sessions.Revoke_Credential.Execute (SR, Se_Rvc, Audit_Context, Next_Audit_Event, 1));
+         Ignore (Ops.Sessions.Revoke_Family.Execute (SR, Se_Rvf, Audit_Context, Next_Audit_Event, 1));
+         Ignore (Ops.Sessions.Revoke_Principal.Execute (SR, Se_Rvp, Audit_Context, Next_Audit_Event, 1));
+         Ignore (Ops.Sessions.Revoke_Provider.Execute (SR, Se_Rvpr, Audit_Context, Next_Audit_Event, 1));
+         Ignore (Ops.Sessions.Rotate.Execute (SR, Se_Rot, Audit_Context, Next_Audit_Event, 1));
+         Ignore (Ops.Sessions.Upgrade_Assurance.Execute (SR, Se_Upg, Audit_Context, Next_Audit_Event, 1));
+         Ignore (Ops.Tokens.Consume.Execute (SR, Tk_Con, Audit_Context, Next_Audit_Event, 1));
+         Ignore (Ops.Tokens.Issue.Execute (SR, Tk_Iss, Audit_Context, Next_Audit_Event, 1));
+         Ignore (Ops.Verification.Begin_Contact_Change.Execute
+                   (SR, Vf_Chg, Vf_Suc, Vf_Cct, Audit_Context, Next_Audit_Event, 1));
+         Ignore (Ops.Verification.Complete.Execute (SR, Vf_Cmp, Audit_Context, Next_Audit_Event, 1));
+         Ignore (Ops.Verification.Complete_Contact_Change.Execute (SR, Vf_Ccc, Audit_Context, Next_Audit_Event, 1));
+         Ignore (Ops.Verification.Request.Execute (SR, Vf_Con, Vf_Req, Audit_Context, Next_Audit_Event, 1));
+      end Sweep;
+   begin
+      --  Reserve-refused early return in every audited operation.
+      Sweep (Stores.Store_Interface'Class (No_Cap_Ptr.all));
+      --  Emit-failed-after-reserve return in every audited operation.
+      Sweep (Stores.Store_Interface'Class (No_Emit_Ptr.all));
+      --  Reserve and emit both succeed; the core rejects an unknown subject, so
+      --  the wrapper's success-path emit-then-return runs too.
+      Sweep (Normal);
+      Assert (Stores.Event_Capacity_Available (Normal, 1),
+              "audited-faults: the normal store retains event capacity");
+   end Test_97_audited_operation_faults;
+
    overriding procedure Register_Tests (T : in out Test_Case) is
    begin
       Registration.Register_Routine
@@ -20763,6 +20995,9 @@ package body Identity_Tests_Cases is
       Registration.Register_Routine
         (T, Test_96_pure_state_and_validators'Access,
          "Test_96_pure_state_and_validators");
+      Registration.Register_Routine
+        (T, Test_97_audited_operation_faults'Access,
+         "Test_97_audited_operation_faults");
    end Register_Tests;
 
    overriding function Name (T : Test_Case) return AUnit.Message_String is
