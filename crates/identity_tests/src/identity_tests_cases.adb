@@ -20776,6 +20776,98 @@ package body Identity_Tests_Cases is
               "audited-faults: the normal store retains event capacity");
    end Test_97_audited_operation_faults;
 
+   --  Account administrative operations on live accounts: the corpus reached
+   --  these mainly through their request forms and error paths; driving the
+   --  convenience Execute (Account, Principal, ...) form on a real enabled
+   --  account runs the found-and-valid transition path -- read current state,
+   --  build the transition, apply it, emit -- that the audited-fault sweep and
+   --  the junk-subject calls do not.
+   procedure Test_98_account_operation_success_paths
+     (T : in out AUnit.Test_Cases.Test_Case'Class)
+   is
+      pragma Unreferenced (T);
+      package Stores renames Identity.Adapters.Repositories.Stores;
+      package Ent renames Identity.Identifiers.Entities;
+      package Acc renames Identity.Operations.Accounts;
+      package St renames Identity.Accounts.States;
+
+      function U (S : String) return Identity.Identifiers.Encoded_Identifier is
+        (Identity.Identifiers.From_String
+           ("a7000000-0000-0000-0000-0000000000" & S));
+
+      View : constant St.Account_State_View :=
+        (Administrative => St.Enabled,
+         Lifecycle      => St.Active,
+         Verification   => St.Verified,
+         Lock_State     => St.Not_Locked,
+         Requirements   => (others => False),
+         Recovery       => (others => False));
+
+      type Mem_Access is access Identity.Adapters.Repositories.Memory.Store;
+      Ptr : constant Mem_Access :=
+        new Identity.Adapters.Repositories.Memory.Store;
+      SR : Stores.Store_Interface'Class renames
+        Stores.Store_Interface'Class (Ptr.all);
+
+      generic
+         type Item (<>) is limited private;
+      procedure Gen_Ignore (Value : Item);
+      procedure Gen_Ignore (Value : Item) is
+         pragma Unreferenced (Value);
+      begin
+         null;
+      end Gen_Ignore;
+      procedure Ignore is new Gen_Ignore (Stores.Command_Status);
+
+      procedure Fresh (P_Sfx : String; A_Sfx : String;
+                       Ac : out Ent.Account_Id; Pr : out Ent.Principal_Id) is
+      begin
+         Pr := Ent.Principal (U (P_Sfx));
+         Ac := Ent.Account (U (A_Sfx));
+         Ignore (Stores.Create_Principal
+                   (SR, (Id => Pr, Kind => Identity.Principals.Kinds.Human,
+                         State => Identity.Principals.Definitions.Active,
+                         Version => 0)));
+         Ignore (Stores.Create_Account
+                   (SR, (Id => Ac, Principal => Pr, State => View, Version => 0)));
+      end Fresh;
+
+      AC    : Ent.Account_Id;
+      PR    : Ent.Principal_Id;
+      Found : Boolean;
+      Rec   : Identity.Accounts.Definitions.Account_Record;
+   begin
+      Fresh ("a0", "a1", AC, PR);
+      Assert (Acc.Suspend.Execute
+                (SR, AC, PR, Audit_Context, Next_Audit_Event, 1) = Stores.Applied,
+              "account-ops: suspend applies to an enabled account");
+      Stores.Find_Account (SR, PR, Found, Rec);
+      Assert (Found and then Rec.State.Administrative = St.Suspended,
+              "account-ops: the suspended state is persisted");
+
+      Fresh ("a2", "a3", AC, PR);
+      Assert (Acc.Disable.Execute
+                (SR, AC, PR, Audit_Context, Next_Audit_Event, 1) = Stores.Applied,
+              "account-ops: disable applies to an enabled account");
+
+      Fresh ("a4", "a5", AC, PR);
+      --  Enable is valid from a disabled account: disable, then enable.
+      Ignore (Acc.Disable.Execute (SR, AC, PR, Audit_Context, Next_Audit_Event, 1));
+      Assert (Acc.Enable.Execute
+                (SR, AC, PR, Audit_Context, Next_Audit_Event, 1) = Stores.Applied,
+              "account-ops: enable applies to a disabled account");
+
+      Fresh ("a6", "a7", AC, PR);
+      Ignore (Acc.Require_MFA.Execute (SR, AC, PR, Audit_Context, Next_Audit_Event, 1));
+      Fresh ("a8", "a9", AC, PR);
+      Ignore (Acc.Require_Password_Change.Execute
+                (SR, AC, PR, Audit_Context, Next_Audit_Event, 1));
+      Fresh ("b0", "b1", AC, PR);
+      Ignore (Acc.Close.Execute (SR, AC, PR, Audit_Context, Next_Audit_Event, 1));
+      Fresh ("b2", "b3", AC, PR);
+      Ignore (Acc.Unlock.Execute (SR, AC, PR, Audit_Context, Next_Audit_Event, 1));
+   end Test_98_account_operation_success_paths;
+
    overriding procedure Register_Tests (T : in out Test_Case) is
    begin
       Registration.Register_Routine
@@ -20998,6 +21090,9 @@ package body Identity_Tests_Cases is
       Registration.Register_Routine
         (T, Test_97_audited_operation_faults'Access,
          "Test_97_audited_operation_faults");
+      Registration.Register_Routine
+        (T, Test_98_account_operation_success_paths'Access,
+         "Test_98_account_operation_success_paths");
    end Register_Tests;
 
    overriding function Name (T : Test_Case) return AUnit.Message_String is
