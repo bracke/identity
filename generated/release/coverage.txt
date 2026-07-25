@@ -1,0 +1,24 @@
+identity library code coverage (measured via gcc/gcov)
+scope: src/public + src/adapters; corpus: aunit + conformance + concurrency + examples
+
+body (.adb)  7755/8601 = 90.2%  [gated, min 89.0%]
+spec (.ads)  554/2005 = 27.6%  [reported, GNATprove-verified]
+combined     8309/10606 = 78.3%
+
+lowest-covered body files:
+  46.7%  adapters/identity-adapters-repositories-idempotency.adb
+  53.1%  public/identity-operations-sessions-upgrade_assurance.adb
+  54.5%  public/identity-passwords-migrations.adb
+  62.5%  public/identity-identifiers-operations.adb
+  64.3%  public/identity-operations-api_keys-issue.adb
+  66.7%  adapters/identity-adapters-repositories-serialized.adb
+  68.9%  public/identity-operations-verification-request.adb
+  73.0%  public/identity-operations-sessions-rotate.adb
+  75.0%  public/identity-services-contexts.adb
+  75.0%  adapters/identity-adapters-diagnostics.adb
+  76.5%  public/identity-crypto-cryptolib-entropy.adb
+  76.7%  public/identity-operations-budgets.adb
+  79.3%  public/identity-tokens-verification.adb
+  79.7%  public/identity-operations-audit.adb
+  80.0%  public/identity-operations-authentication-external.adb
+

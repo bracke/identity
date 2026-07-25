@@ -1,4 +1,4 @@
 suite:aunit:passed:exit 0
 suite:repository-conformance:passed:exit 0
-suite:gate-selftests:passed:gate-selftest:total:49:passed:49:failed:0
+suite:gate-selftests:passed:gate-selftest:total:50:passed:50:failed:0
 suite:examples:passed:exit 0
