@@ -60,7 +60,7 @@ jobs:
       # on, so keep them for any run that needs explaining.
       - name: Upload evidence and release reports
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: release-evidence
           path: |
