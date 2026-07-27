@@ -19,20 +19,20 @@ jobs:
 
     steps:
       - name: Check out identity
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
         with:
           path: identity
 
       # cryptolib is a path-pinned sibling of this crate, so the checkout has
       # to reproduce that layout: ../cryptolib relative to the identity root.
       - name: Check out cryptolib
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
         with:
           repository: bracke/cryptolib
           path: cryptolib
 
       - name: Install Alire
-        uses: alire-project/setup-alire@v4
+        uses: alire-project/setup-alire@v6
         with:
           version: 2.1.0
 
