@@ -186,6 +186,18 @@ PY
   fi
 fi
 
+# Build identity_tools before the gate self-tests: the self-test harness runs
+# the identity_tools binary against mutated repository copies, so the executable
+# must already exist. On a fresh checkout nothing is built yet; a stale local
+# build previously masked this ordering, so the self-tests only failed in clean
+# CI with "gate-selftest:error:missing-executable".
+echo "== identity_tools build =="
+if ! out=$(cd "$ROOT/crates/identity_tools" && alr build 2>&1); then
+  printf '%s\n' "$out" | tail -20
+  echo "release-check:identity_tools:failed:build"
+  exit 1
+fi
+
 echo "== gate self-tests =="
 if [ -x "$ROOT/tools/gate-selftests.sh" ]; then
   if selftest_out=$("$ROOT/tools/gate-selftests.sh" "$ROOT" 2>&1); then
@@ -193,18 +205,13 @@ if [ -x "$ROOT/tools/gate-selftests.sh" ]; then
       "$(printf '%s\n' "$selftest_out" | grep -o 'gate-selftest:total:.*' | tail -1)"
   else
     record gate-selftests failed "one or more gate self-tests failed"
-    printf '%s\n' "$selftest_out" | grep 'gate-selftest:FAIL' | head -20
+    printf '%s\n' "$selftest_out" | grep -E 'gate-selftest:(FAIL|error)' | head -20
   fi
 else
   record gate-selftests failed "tools/gate-selftests.sh missing or not executable"
 fi
 
 echo "== identity_tools gates =="
-if ! out=$(cd "$ROOT/crates/identity_tools" && alr build 2>&1); then
-  printf '%s\n' "$out" | tail -20
-  echo "release-check:identity_tools:failed:build"
-  exit 1
-fi
 if "$ROOT/crates/identity_tools/bin/identity_tools"; then
   echo "release-check:identity_tools:passed"
 else
