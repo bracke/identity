@@ -118,7 +118,7 @@ so a suite that never ran cannot be reported as satisfied.
 - GNATprove over registries/proof-scope.json                     [evidence: gnatprove]
   Fails on any unproved check, any SPARK legality error, and any non-excluded
   proof-scope package that was not analysed. Currently 789 checks, 0 unproved.
-- tools/gate-selftests.sh gate self-tests                        [evidence: gate-selftests]
+- crates/identity_gate_selftests gate self-tests                 [evidence: gate-selftests]
   Mutation-tests the gates themselves: each case copies the tree, breaks one
   piece of evidence, and requires identity_tools to fail with that gate's own
   marker. Proves the gates fail closed rather than passing vacuously.

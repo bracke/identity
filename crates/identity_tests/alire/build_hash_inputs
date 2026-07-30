@@ -1,5 +1,6 @@
 dependency:aunit=26.0.0=f9a812acc3245faf82cf61aa1ca4a0f6a7905353073f854c8fdbcf5e4cd478af
 dependency:identity=1.0.0-dev=2f0052f24a307972111e03de8da1d9222ba1225770f4db56ce85ef16d48d2276
+dependency:project_tools=0.1.0=c3258f263e87dfd5141ce0af8cbac0d79d64065ab3a692080c1503486f82c789
 external:IDENTITY_TESTS_LIBRARY_TYPE=default
 external:LIBRARY_TYPE=default
 profile:identity_tests=DEVELOPMENT

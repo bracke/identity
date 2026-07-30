@@ -1,2 +1,2 @@
-last_build_profile = "aunit=DEVELOPMENT,cryptolib=DEVELOPMENT,gnat_native=DEVELOPMENT,identity=DEVELOPMENT,identity_tests=DEVELOPMENT"
+last_build_profile = "aunit=DEVELOPMENT,cryptolib=DEVELOPMENT,gnat_native=DEVELOPMENT,identity=DEVELOPMENT,identity_tests=DEVELOPMENT,project_tools=DEVELOPMENT"
 
