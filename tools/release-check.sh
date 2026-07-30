@@ -198,9 +198,17 @@ if ! out=$(cd "$ROOT/crates/identity_tools" && alr build 2>&1); then
   exit 1
 fi
 
+echo "== gate self-tests build =="
+if ! out=$(cd "$ROOT/crates/identity_gate_selftests" && alr build 2>&1); then
+  printf '%s\n' "$out" | tail -20
+  echo "release-check:gate-selftests:failed:build"
+  exit 1
+fi
+
 echo "== gate self-tests =="
-if [ -x "$ROOT/tools/gate-selftests.sh" ]; then
-  if selftest_out=$("$ROOT/tools/gate-selftests.sh" "$ROOT" 2>&1); then
+SELFTESTS="$ROOT/crates/identity_gate_selftests/bin/gate_selftests"
+if [ -x "$SELFTESTS" ]; then
+  if selftest_out=$("$SELFTESTS" "$ROOT" 2>&1); then
     record gate-selftests passed \
       "$(printf '%s\n' "$selftest_out" | grep -o 'gate-selftest:total:.*' | tail -1)"
   else
@@ -208,7 +216,7 @@ if [ -x "$ROOT/tools/gate-selftests.sh" ]; then
     printf '%s\n' "$selftest_out" | grep -E 'gate-selftest:(FAIL|error)' | head -20
   fi
 else
-  record gate-selftests failed "tools/gate-selftests.sh missing or not executable"
+  record gate-selftests failed "gate_selftests tool missing or not executable"
 fi
 
 echo "== identity_tools gates =="
