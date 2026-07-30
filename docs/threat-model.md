@@ -431,8 +431,9 @@ crate cannot detect that.
 
 ## 10. How these claims are checked
 
-`./tools/release-check.sh` is the definition of the gate; CI runs exactly that
-script. It builds under `-gnatwe`, runs every suite, records each run's real
+The `release_check` tool (`crates/identity_release_check`) is the definition of
+the gate; CI runs exactly that tool. It builds under `-gnatwe`, runs every suite,
+records each run's real
 outcome under `generated/evidence/`, and only then runs `identity_tools` to
 validate registries and generate release reports from that evidence. A suite
 that never ran cannot be reported as satisfied.

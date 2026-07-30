@@ -79,9 +79,9 @@
   real evidence source, instead of only counting registry metadata.
 - Release reports are generated from the recorded outcomes of runs that actually
   happened; missing evidence fails the release check.
-- Added tools/release-check.sh as the release gate and the gate_selftests
-  harness (crates/identity_gate_selftests), which mutation-tests the gates to
-  prove they fail closed.
+- Added the release_check tool (crates/identity_release_check) as the release
+  gate and the gate_selftests harness (crates/identity_gate_selftests), which
+  mutation-tests the gates to prove they fail closed.
 - identity_tools exits non-zero when any gate fails.
 
 ### Added

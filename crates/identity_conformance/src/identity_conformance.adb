@@ -857,9 +857,10 @@ procedure Identity_Conformance is
    Serialized_Store : Serialized.Store
      (Inner => Stores.Store_Interface'Class (Serialized_Ptr.all)'Access);
    --  Resolved relative to the current directory, which differs between a
-   --  developer running this from the repo root and release-check.sh running
-   --  it from inside the crate. Create the directory rather than depending on
-   --  one existing, so a missing directory cannot be mistaken for a store
+   --  developer running this from the repo root and the release_check tool
+   --  running it from inside the crate. Create the directory rather than
+   --  depending on one existing, so a missing directory cannot be mistaken
+   --  for a store
    --  that failed to persist.
    Snapshot_Dir     : constant String := "generated/evidence";
    Snapshot_Path    : constant String := Snapshot_Dir & "/conformance-store.bin";

@@ -1,0 +1,43 @@
+name = "identity_release_check"
+description = "Release-gate orchestration tool for identity"
+version = "1.0.0-dev"
+
+authors = ["Bent Bracke"]
+maintainers = ["Bent Bracke <bent@bracke.dk>"]
+maintainers-logins = ["bracke"]
+licenses = "MIT OR Apache-2.0 WITH LLVM-exception"
+website = "https://github.com/bracke/identity"
+tags = ["identity", "tools"]
+
+executables = ["release_check"]
+project-files = ["identity_release_check.gpr"]
+
+[[depends-on]]
+gnat_native = "=15.2.1"
+
+# Process/file primitives: builds and binary runs are spawned with captured
+# output, the git status / tar / gnatprove invocations are driven through the
+# process API, and the file helpers read the evidence and registry inputs.
+[[depends-on]]
+project_tools = "*"
+
+# The stack's Ada JSON parser: registries/proof-scope.json is parsed here rather
+# than shelling out to python.
+[[depends-on]]
+representation = "*"
+
+# SHA-256 for the artifact-digests gate, replacing sha256sum.
+[[depends-on]]
+cryptolib = "*"
+
+[[pins]]
+project_tools = { path = "../../../project_tools" }
+
+[[pins]]
+representation = { path = "../../../representation" }
+
+[[pins]]
+cryptolib = { path = "../../../cryptolib" }
+
+[build-profiles]
+"*" = "development"
