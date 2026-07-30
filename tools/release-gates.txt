@@ -4,19 +4,21 @@ identity release gates
 How to run
 ----------
 
-    ./tools/release-check.sh
+    (cd crates/identity_release_check && alr build)
+    ./crates/identity_release_check/bin/release_check
 
-CI runs exactly this script on every push and pull request
-(.github/workflows/release-check.yml) and uploads generated/evidence/ and
-generated/release/ as artifacts. If the workflow and the script ever disagree,
-the script is the definition.
+Run it from the repository root. CI runs exactly this tool on every push and
+pull request (.github/workflows/release-check.yml) and uploads
+generated/evidence/ and generated/release/ as artifacts. If the workflow and
+the tool ever disagree, the tool is the definition.
 
-That script is the release gate. It builds the library, runs every suite,
-records each run's real outcome under generated/evidence/, and only then runs
-identity_tools, which validates the registries and generates the release
-reports in generated/release/ from that evidence. It exits non-zero if any
-gate fails. Nothing downstream should treat generated/release/ as meaningful
-unless release-check.sh exited 0 in the same run that produced it.
+That tool (crates/identity_release_check) is the release gate. It builds the
+library, runs every suite, records each run's real outcome under
+generated/evidence/, and only then runs identity_tools, which validates the
+registries and generates the release reports in generated/release/ from that
+evidence. It exits non-zero if any gate fails. Nothing downstream should treat
+generated/release/ as meaningful unless release_check exited 0 in the same run
+that produced it.
 
 The repository SPI
 ------------------

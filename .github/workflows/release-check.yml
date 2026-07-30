@@ -1,10 +1,11 @@
 name: release-check
 
-# The release gate. tools/release-check.sh builds the library, runs every
-# suite, records each run's real outcome under generated/evidence/, and only
-# then runs identity_tools to validate the registries and generate the release
-# reports from that evidence. Nothing here re-implements those checks: if this
-# workflow and the script ever disagree, the script is the definition.
+# The release gate. The release_check tool (crates/identity_release_check)
+# builds the library, runs every suite, records each run's real outcome under
+# generated/evidence/, and only then runs identity_tools to validate the
+# registries and generate the release reports from that evidence. Nothing here
+# re-implements those checks: if this workflow and the tool ever disagree, the
+# tool is the definition.
 
 on:
   push:
@@ -61,7 +62,8 @@ jobs:
         working-directory: identity
         run: |
           export PATH="$HOME/.alire/bin:$PATH"
-          ./tools/release-check.sh
+          (cd crates/identity_release_check && alr -n build)
+          ./crates/identity_release_check/bin/release_check
 
       # The evidence and generated reports are what the gate actually asserts
       # on, so keep them for any run that needs explaining.

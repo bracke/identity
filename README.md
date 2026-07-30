@@ -70,17 +70,19 @@ alr build
 
 ## Release check
 
-`tools/release-check.sh` is the release gate. It builds the library, runs the
-AUnit suite, the repository conformance harness, the examples, GNATprove, and
-the gate self-tests; records each run's real outcome under `generated/evidence/`;
-and only then runs `identity_tools`, which validates the registries and writes
-the release reports in `generated/release/` from that evidence. It exits
-non-zero if any gate fails.
+The `release_check` tool (`crates/identity_release_check`) is the release gate.
+It builds the library, runs the AUnit suite, the repository conformance harness,
+the examples, GNATprove, and the gate self-tests; records each run's real
+outcome under `generated/evidence/`; and only then runs `identity_tools`, which
+validates the registries and writes the release reports in `generated/release/`
+from that evidence. It exits non-zero if any gate fails.
 
 ```sh
-./tools/release-check.sh
+(cd crates/identity_release_check && alr build)
+./crates/identity_release_check/bin/release_check
 ```
 
-Reports under `generated/release/` are only meaningful when produced by a run of
-`release-check.sh` that exited 0. See `tools/release-gates.txt` for what each
-gate enforces and for the gaps that are not yet enforced.
+Run it from the repository root. Reports under `generated/release/` are only
+meaningful when produced by a `release_check` run that exited 0. See
+`tools/release-gates.txt` for what each gate enforces and for the gaps that are
+not yet enforced.

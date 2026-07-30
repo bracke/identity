@@ -1,0 +1,35 @@
+name = "identity_gate_selftests"
+description = "Mutation-test harness for the identity_tools release gates"
+version = "1.0.0-dev"
+
+authors = ["Bent Bracke"]
+maintainers = ["Bent Bracke <bent@bracke.dk>"]
+maintainers-logins = ["bracke"]
+licenses = "MIT OR Apache-2.0 WITH LLVM-exception"
+website = "https://github.com/bracke/identity"
+tags = ["identity", "tools"]
+
+executables = ["gate_selftests"]
+project-files = ["identity_gate_selftests.gpr"]
+
+[[depends-on]]
+gnat_native = "=15.2.1"
+
+# Process/file primitives: repository copy, mutated-copy tool invocation with
+# captured output, and the text/line assertions the harness cases rely on.
+[[depends-on]]
+project_tools = "*"
+
+# The stack's Ada JSON parser: the "every listed fixture exists" case walks
+# registries/persisted-formats.json rather than shelling out to grep/python.
+[[depends-on]]
+representation = "*"
+
+[[pins]]
+project_tools = { path = "../../../project_tools" }
+
+[[pins]]
+representation = { path = "../../../representation" }
+
+[build-profiles]
+"*" = "development"

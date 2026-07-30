@@ -46,7 +46,7 @@ package body Identity_Tools_Invariants is
         when Test_Suite =>
           Resolve ("crates/identity_tests/src/identity_tests_cases.adb"),
         when Gate_Self_Tests =>
-          Resolve ("tools/gate-selftests.sh"),
+          Resolve ("crates/identity_gate_selftests/src/gate_selftests.adb"),
         when Conformance =>
           Resolve ("crates/identity_conformance/src/identity_conformance.adb"),
         when Examples =>
