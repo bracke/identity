@@ -7,6 +7,7 @@ maintainers = ["Bent Bracke <bent@bracke.dk>"]
 maintainers-logins = ["bracke"]
 licenses = "MIT OR Apache-2.0 WITH LLVM-exception"
 website = "https://github.com/bracke/identity"
+long-description = "identity is an Ada 2022 crate for transport-neutral identity and authentication contracts. The V1 boundary keeps authentication facts separate from authorization: no roles, permissions, tenant memberships, delegation, impersonation, scopes, obligations, overrides, or enforcement receipts are modeled in this crate."
 tags = ["identity", "authentication", "security", "library"]
 
 project-files = ["identity.gpr"]
